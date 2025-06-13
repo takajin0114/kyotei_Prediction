@@ -25,8 +25,8 @@ class DataIntegration:
     
     def __init__(self):
         """初期化"""
-        self.sample_data_path = "complete_race_data_20240615_KIRYU_R1.json"
-        self.predictions_path = "predictions.json"
+        self.sample_data_path = os.path.join(os.path.dirname(__file__), 'data', 'complete_race_data_20240615_KIRYU_R1.json')
+        self.predictions_path = os.path.join(os.path.dirname(__file__), 'data', 'predictions.json')
         self.cache = {}  # データキャッシュ
         
         # 利用可能な競艇場コードのマッピング

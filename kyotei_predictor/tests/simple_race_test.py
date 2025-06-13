@@ -7,6 +7,10 @@
 
 import json
 import os
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from data_integration import DataIntegration
 from prediction_engine import PredictionEngine
 
@@ -18,7 +22,7 @@ def load_and_test_race(filename, description):
     print("=" * 50)
     
     # ファイル読み込み
-    filepath = os.path.join(os.path.dirname(__file__), filename)
+    filepath = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', filename)
     if not os.path.exists(filepath):
         print(f"❌ ファイルが見つかりません: {filename}")
         return

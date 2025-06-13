@@ -10,7 +10,11 @@
 import json
 import os
 from datetime import date
-from race_data_fetcher import fetch_complete_race_data
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from tools.race_data_fetcher import fetch_complete_race_data
 from metaboatrace.models.stadium import StadiumTelCode
 
 def fetch_multiple_races():
@@ -62,7 +66,7 @@ def fetch_multiple_races():
             if race_data:
                 # ファイル名生成
                 filename = f"race_data_{config['date']}_{config['stadium'].name}_R{config['race_number']}.json"
-                filepath = os.path.join(os.path.dirname(__file__), filename)
+                filepath = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', filename)
                 
                 # ファイル保存
                 with open(filepath, 'w', encoding='utf-8') as f:
