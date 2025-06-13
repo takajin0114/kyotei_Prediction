@@ -11,6 +11,7 @@ import traceback
 
 # データ統合レイヤーのインポート
 from data_integration import DataIntegration
+from prediction_engine import PredictionEngine
 
 # Flaskアプリケーションの初期化
 app = Flask(__name__)
@@ -25,6 +26,7 @@ class KyoteiPredictorApp:
     def __init__(self, flask_app):
         self.app = flask_app
         self.data_integration = DataIntegration()  # データ統合レイヤーの初期化
+        self.prediction_engine = PredictionEngine()  # 予測エンジンの初期化
         self.setup_routes()
         self.test_data_integration()
     
@@ -162,7 +164,7 @@ class KyoteiPredictorApp:
             }), 500
     
     def predict(self):
-        """予測実行API（基本実装）"""
+        """予測実行API（予測エンジン統合版）"""
         try:
             print("🎯 予測APIが呼び出されました")
             
@@ -174,34 +176,35 @@ class KyoteiPredictorApp:
             algorithm = request_data.get('algorithm', 'basic')
             print(f"   アルゴリズム: {algorithm}")
             
-            # 現在は基本的なレスポンスを返す（後でprediction_engine.pyと統合）
-            return jsonify({
+            # レースデータの取得
+            race_data = self.data_integration.get_race_data('sample')
+            if not race_data:
+                raise ValueError("レースデータの取得に失敗しました")
+            
+            # 予測エンジンで予測実行
+            prediction_result = self.prediction_engine.predict(race_data, algorithm)
+            
+            # レスポンスの構築
+            response = {
                 'status': 'success',
-                'message': f'{algorithm}予測を実行しました（実装中）',
-                'algorithm': algorithm,
-                'timestamp': datetime.now().isoformat(),
-                'predictions': [
-                    {
-                        'pit_number': 1,
-                        'racer_name': 'テスト選手1',
-                        'prediction_score': 4.5,
-                        'predicted_rank': 1
-                    },
-                    {
-                        'pit_number': 2,
-                        'racer_name': 'テスト選手2',
-                        'prediction_score': 4.2,
-                        'predicted_rank': 2
-                    }
-                ]
-            })
+                'message': f'{algorithm}アルゴリズムによる予測を実行しました',
+                'prediction_result': prediction_result,
+                'timestamp': datetime.now().isoformat()
+            }
+            
+            print(f"✅ 予測完了: {algorithm}アルゴリズム")
+            print(f"   実行時間: {prediction_result['execution_time']}秒")
+            print(f"   本命: {prediction_result['summary']['favorite']['racer_name']}")
+            
+            return jsonify(response)
             
         except Exception as e:
             print(f"❌ 予測エラー: {e}")
+            print(traceback.format_exc())
             return jsonify({
                 'status': 'error',
                 'message': f'予測実行中にエラーが発生しました: {str(e)}',
-                'error_type': 'PredictionError'
+                'error_type': type(e).__name__
             }), 500
     
     def save_prediction(self):
