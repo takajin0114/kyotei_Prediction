@@ -1,11 +1,20 @@
 """
-競艇予測エンジン - Phase 1: 基本アルゴリズム実装
+競艇予測エンジン - Phase 2: 中級アルゴリズム実装
 
 このモジュールは競艇レースの予測を行うためのアルゴリズムを提供します。
 段階的な実装により、基本的な勝率ベース予測から高度な分析まで対応します。
 
+Phase 1: 基本アルゴリズム (完了)
+- basic: シンプル勝率ベース
+- rating_weighted: 級別重み付け
+
+Phase 2: 中級アルゴリズム (実装中)
+- equipment_focused: 機材重視アルゴリズム
+- comprehensive: 総合評価アルゴリズム  
+- relative_strength: 相対評価アルゴリズム
+
 作成日: 2025-06-13
-バージョン: 1.0 (Phase 1)
+バージョン: 2.0 (Phase 2)
 """
 
 import json
@@ -46,7 +55,10 @@ class PredictionEngine:
         """予測エンジンの初期化"""
         self.algorithms = {
             'basic': self._basic_algorithm,
-            'rating_weighted': self._rating_weighted_algorithm
+            'rating_weighted': self._rating_weighted_algorithm,
+            'equipment_focused': self._equipment_focused_algorithm,
+            'comprehensive': self._comprehensive_algorithm,
+            'relative_strength': self._relative_strength_algorithm
         }
         
         # 級別係数の定義
@@ -462,14 +474,308 @@ class PredictionEngine:
         
         return race_info
 
+    # ========================================
+    # Phase 2: 中級アルゴリズム実装
+    # ========================================
+    
+    def _equipment_focused_algorithm(self, race_data: Dict[str, Any], options: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """
+        機材重視アルゴリズム
+        
+        ボート・モーターの成績を重視した予測
+        選手の実力よりも機材の調子を重視
+        
+        Args:
+            race_data: レースデータ
+            options: アルゴリズムオプション
+        
+        Returns:
+            予測結果リスト
+        """
+        predictions = []
+        race_entries = race_data['race_entries']
+        
+        for entry in race_entries:
+            pit_number = entry['pit_number']
+            racer = entry['racer']
+            performance = entry['performance']
+            
+            # 機材データの取得
+            boat_rate = performance.get('boat_quinella_rate', 0) / 100  # パーセントを小数に変換
+            motor_rate = performance.get('motor_quinella_rate', 0) / 100
+            
+            # 選手の基本データ
+            all_stadium_rate = performance.get('rate_in_all_stadium', 0)
+            local_rate = performance.get('rate_in_event_going_stadium', 0)
+            rating = racer.get('current_rating', 'B2')
+            
+            # 機材重視スコア計算
+            # 機材成績 70% + 選手成績 30%
+            equipment_score = (boat_rate * 0.4 + motor_rate * 0.3)  # 機材70%
+            racer_score = (all_stadium_rate * 0.15 + local_rate * 0.15) / 10  # 選手30% (10で割って正規化)
+            
+            # 級別ボーナス（軽微）
+            rating_bonus = self.rating_coefficients.get(rating, 1.0) * 0.1
+            
+            # 総合スコア
+            total_score = equipment_score + racer_score + rating_bonus
+            
+            prediction = {
+                'pit_number': pit_number,
+                'racer_name': racer['name'],
+                'rating': rating,
+                'prediction_score': total_score,
+                'details': {
+                    'equipment_score': round(equipment_score, 3),
+                    'racer_score': round(racer_score, 3),
+                    'rating_bonus': round(rating_bonus, 3),
+                    'boat_rate': boat_rate,
+                    'motor_rate': motor_rate,
+                    'algorithm': 'equipment_focused'
+                }
+            }
+            
+            predictions.append(prediction)
+        
+        return predictions
+    
+    def _comprehensive_algorithm(self, race_data: Dict[str, Any], options: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """
+        総合評価アルゴリズム
+        
+        選手・機材・環境すべてを考慮した総合的な予測
+        バランス重視のアプローチ
+        
+        Args:
+            race_data: レースデータ
+            options: アルゴリズムオプション
+        
+        Returns:
+            予測結果リスト
+        """
+        predictions = []
+        race_entries = race_data['race_entries']
+        
+        for entry in race_entries:
+            pit_number = entry['pit_number']
+            racer = entry['racer']
+            performance = entry['performance']
+            
+            # 各要素のデータ取得
+            all_stadium_rate = performance.get('rate_in_all_stadium', 0)
+            local_rate = performance.get('rate_in_event_going_stadium', 0)
+            boat_rate = performance.get('boat_quinella_rate', 0) / 100
+            motor_rate = performance.get('motor_quinella_rate', 0) / 100
+            rating = racer.get('current_rating', 'B2')
+            
+            # 各要素のスコア計算
+            # 1. 選手成績スコア (40%)
+            racer_score = (all_stadium_rate * 0.25 + local_rate * 0.15) / 10
+            
+            # 2. 機材成績スコア (35%)
+            equipment_score = (boat_rate * 0.2 + motor_rate * 0.15)
+            
+            # 3. 級別スコア (25%)
+            rating_coefficient = self.rating_coefficients.get(rating, 1.0)
+            rating_score = (rating_coefficient - 0.9) * 0.25  # 0.9を基準として正規化
+            
+            # 総合スコア
+            total_score = racer_score + equipment_score + rating_score
+            
+            prediction = {
+                'pit_number': pit_number,
+                'racer_name': racer['name'],
+                'rating': rating,
+                'prediction_score': total_score,
+                'details': {
+                    'racer_score': round(racer_score, 3),
+                    'equipment_score': round(equipment_score, 3),
+                    'rating_score': round(rating_score, 3),
+                    'rating_coefficient': rating_coefficient,
+                    'algorithm': 'comprehensive'
+                }
+            }
+            
+            predictions.append(prediction)
+        
+        return predictions
+    
+    def _relative_strength_algorithm(self, race_data: Dict[str, Any], options: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """
+        相対評価アルゴリズム
+        
+        各艇の他艇に対する相対的な強さを評価
+        レース内での相対的な優位性を重視
+        
+        Args:
+            race_data: レースデータ
+            options: アルゴリズムオプション
+        
+        Returns:
+            予測結果リスト
+        """
+        predictions = []
+        race_entries = race_data['race_entries']
+        
+        # 全艇のデータを事前に収集
+        all_entries_data = []
+        for entry in race_entries:
+            performance = entry['performance']
+            data = {
+                'pit_number': entry['pit_number'],
+                'racer_name': entry['racer']['name'],
+                'rating': entry['racer'].get('current_rating', 'B2'),
+                'all_stadium_rate': performance.get('rate_in_all_stadium', 0),
+                'local_rate': performance.get('rate_in_event_going_stadium', 0),
+                'boat_rate': performance.get('boat_quinella_rate', 0) / 100,
+                'motor_rate': performance.get('motor_quinella_rate', 0) / 100
+            }
+            all_entries_data.append(data)
+        
+        # 各艇の相対的強さを計算
+        for target_data in all_entries_data:
+            wins = 0
+            total_comparisons = 0
+            
+            # 他の全艇と比較
+            for other_data in all_entries_data:
+                if target_data['pit_number'] != other_data['pit_number']:
+                    # 各要素での比較
+                    comparisons = [
+                        target_data['all_stadium_rate'] > other_data['all_stadium_rate'],
+                        target_data['local_rate'] > other_data['local_rate'],
+                        target_data['boat_rate'] > other_data['boat_rate'],
+                        target_data['motor_rate'] > other_data['motor_rate']
+                    ]
+                    
+                    wins += sum(comparisons)
+                    total_comparisons += len(comparisons)
+            
+            # 相対的強さの計算
+            relative_strength = wins / total_comparisons if total_comparisons > 0 else 0
+            
+            # 級別ボーナス
+            rating_coefficient = self.rating_coefficients.get(target_data['rating'], 1.0)
+            rating_bonus = (rating_coefficient - 1.0) * 0.2
+            
+            # 総合スコア
+            total_score = relative_strength + rating_bonus
+            
+            prediction = {
+                'pit_number': target_data['pit_number'],
+                'racer_name': target_data['racer_name'],
+                'rating': target_data['rating'],
+                'prediction_score': total_score,
+                'details': {
+                    'relative_strength': round(relative_strength, 3),
+                    'wins': wins,
+                    'total_comparisons': total_comparisons,
+                    'win_rate_vs_others': round(relative_strength * 100, 1),
+                    'rating_bonus': round(rating_bonus, 3),
+                    'algorithm': 'relative_strength'
+                }
+            }
+            
+            predictions.append(prediction)
+        
+        return predictions
+
+    # ========================================
+    # Phase 2: 3連単確率計算機能
+    # ========================================
+    
+    def calculate_trifecta_probabilities(self, predictions: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """
+        3連単の全組み合わせ確率を計算
+        
+        Args:
+            predictions: 予測結果リスト
+        
+        Returns:
+            3連単確率リスト（確率順）
+        """
+        import itertools
+        
+        # 各艇の勝率を取得
+        win_probabilities = self._calculate_win_probabilities(predictions)
+        pit_numbers = [pred['pit_number'] for pred in predictions]
+        
+        trifecta_combinations = []
+        
+        # 全ての3連単組み合わせを生成
+        for combination in itertools.permutations(pit_numbers, 3):
+            first, second, third = combination
+            
+            # 各艇のインデックスを取得
+            first_idx = pit_numbers.index(first)
+            second_idx = pit_numbers.index(second)
+            third_idx = pit_numbers.index(third)
+            
+            # 簡易確率計算（独立性を仮定）
+            # 実際にはより複雑な相関を考慮すべき
+            first_prob = win_probabilities[first_idx] / 100
+            second_prob = win_probabilities[second_idx] / 100 * 0.8  # 2着確率は1着より低い
+            third_prob = win_probabilities[third_idx] / 100 * 0.6   # 3着確率はさらに低い
+            
+            # 組み合わせ確率
+            combination_prob = first_prob * second_prob * third_prob
+            
+            trifecta_combinations.append({
+                'combination': f"{first}-{second}-{third}",
+                'pit_numbers': [first, second, third],
+                'probability': combination_prob,
+                'percentage': round(combination_prob * 100, 2),
+                'expected_odds': round(1 / combination_prob, 1) if combination_prob > 0 else 999.9
+            })
+        
+        # 確率順でソート
+        trifecta_combinations.sort(key=lambda x: x['probability'], reverse=True)
+        
+        return trifecta_combinations
+    
+    def get_top_trifecta_recommendations(self, race_data: Dict[str, Any], 
+                                       algorithm: str = 'comprehensive',
+                                       top_n: int = 10) -> Dict[str, Any]:
+        """
+        上位3連単推奨組み合わせを取得
+        
+        Args:
+            race_data: レースデータ
+            algorithm: 使用するアルゴリズム
+            top_n: 上位何位まで取得するか
+        
+        Returns:
+            3連単推奨結果
+        """
+        # 予測実行
+        prediction_result = self.predict(race_data, algorithm)
+        
+        # 3連単確率計算
+        trifecta_probs = self.calculate_trifecta_probabilities(prediction_result['predictions'])
+        
+        # 上位N位を取得
+        top_combinations = trifecta_probs[:top_n]
+        
+        return {
+            'algorithm': algorithm,
+            'race_info': prediction_result['race_info'],
+            'top_combinations': top_combinations,
+            'total_combinations': len(trifecta_probs),
+            'summary': {
+                'most_likely': top_combinations[0] if top_combinations else None,
+                'total_probability': sum(combo['probability'] for combo in top_combinations),
+                'average_odds': sum(combo['expected_odds'] for combo in top_combinations) / len(top_combinations) if top_combinations else 0
+            }
+        }
+
 
 def test_prediction_engine():
     """
-    予測エンジンのテスト関数
+    予測エンジンのテスト関数 - Phase 2対応
     """
-    print("🧪 PredictionEngine テスト開始")
+    print("🧪 PredictionEngine Phase 2 テスト開始")
     
-    # テスト用のサンプルデータ
+    # テスト用のサンプルデータ（機材データ追加）
     sample_race_data = {
         'race_entries': [
             {
@@ -480,7 +786,9 @@ def test_prediction_engine():
                 },
                 'performance': {
                     'rate_in_all_stadium': 3.89,
-                    'rate_in_event_going_stadium': 4.36
+                    'rate_in_event_going_stadium': 4.36,
+                    'boat_quinella_rate': 34.2,
+                    'motor_quinella_rate': 29.5
                 }
             },
             {
@@ -491,7 +799,22 @@ def test_prediction_engine():
                 },
                 'performance': {
                     'rate_in_all_stadium': 3.95,
-                    'rate_in_event_going_stadium': 3.00
+                    'rate_in_event_going_stadium': 3.00,
+                    'boat_quinella_rate': 44.6,
+                    'motor_quinella_rate': 38.3
+                }
+            },
+            {
+                'pit_number': 3,
+                'racer': {
+                    'name': '松尾 基成',
+                    'current_rating': 'B1'
+                },
+                'performance': {
+                    'rate_in_all_stadium': 4.07,
+                    'rate_in_event_going_stadium': 4.22,
+                    'boat_quinella_rate': 36.1,
+                    'motor_quinella_rate': 40.0
                 }
             },
             {
@@ -502,7 +825,22 @@ def test_prediction_engine():
                 },
                 'performance': {
                     'rate_in_all_stadium': 5.75,
-                    'rate_in_event_going_stadium': 7.11
+                    'rate_in_event_going_stadium': 7.11,
+                    'boat_quinella_rate': 29.8,
+                    'motor_quinella_rate': 32.2
+                }
+            },
+            {
+                'pit_number': 6,
+                'racer': {
+                    'name': '上之 晃弘',
+                    'current_rating': 'A2'
+                },
+                'performance': {
+                    'rate_in_all_stadium': 4.89,
+                    'rate_in_event_going_stadium': 5.20,
+                    'boat_quinella_rate': 23.9,
+                    'motor_quinella_rate': 28.1
                 }
             }
         ]
@@ -510,24 +848,47 @@ def test_prediction_engine():
     
     try:
         engine = PredictionEngine()
+        algorithms = ['basic', 'rating_weighted', 'equipment_focused', 'comprehensive', 'relative_strength']
         
-        # 基本アルゴリズムのテスト
-        print("\n📊 基本アルゴリズムテスト")
-        result_basic = engine.predict(sample_race_data, 'basic')
-        print(f"実行時間: {result_basic['execution_time']}秒")
-        print(f"本命: {result_basic['summary']['favorite']['racer_name']} ({result_basic['summary']['favorite']['win_probability']}%)")
+        print("\n" + "="*60)
+        print("🏁 Phase 2 アルゴリズム比較テスト")
+        print("="*60)
         
-        # 級別重み付けアルゴリズムのテスト
-        print("\n📊 級別重み付けアルゴリズムテスト")
-        result_rating = engine.predict(sample_race_data, 'rating_weighted')
-        print(f"実行時間: {result_rating['execution_time']}秒")
-        print(f"本命: {result_rating['summary']['favorite']['racer_name']} ({result_rating['summary']['favorite']['win_probability']}%)")
+        results = {}
         
-        print("\n✅ テスト完了")
+        for algorithm in algorithms:
+            print(f"\n📊 {algorithm.upper()} アルゴリズム")
+            print("-" * 40)
+            
+            result = engine.predict(sample_race_data, algorithm)
+            results[algorithm] = result
+            
+            print(f"⏱️  実行時間: {result['execution_time']}秒")
+            print(f"🏆 本命: {result['summary']['favorite']['racer_name']} ({result['summary']['favorite']['win_probability']}%)")
+            print(f"📈 信頼度: {result['summary']['confidence_level']}")
+            
+            # 上位3位表示
+            print("🥇 予測順位:")
+            for i, pred in enumerate(result['predictions'][:3], 1):
+                print(f"   {i}位: {pred['pit_number']}号艇 {pred['racer_name']} ({pred['win_probability']}%)")
+        
+        # アルゴリズム比較サマリー
+        print(f"\n" + "="*60)
+        print("📊 アルゴリズム比較サマリー")
+        print("="*60)
+        
+        for algorithm in algorithms:
+            result = results[algorithm]
+            favorite = result['summary']['favorite']
+            print(f"{algorithm:15}: {favorite['pit_number']}号艇 {favorite['racer_name']} ({favorite['win_probability']}%)")
+        
+        print("\n✅ Phase 2 テスト完了")
         return True
         
     except Exception as e:
         print(f"❌ テストエラー: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return False
 
 
