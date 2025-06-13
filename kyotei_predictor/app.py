@@ -111,7 +111,7 @@ class KyoteiPredictorApp:
                             <p><strong>Flask:</strong> 正常動作中</p>
                             <p><strong>ポート:</strong> 12000</p>
                             <p><strong>デバッグモード:</strong> 有効</p>
-                            <p><strong>サンプルデータ:</strong> {self.sample_data_path}</p>
+                            <p><strong>データ統合:</strong> 有効</p>
                         </div>
                     </div>
                 </div>
