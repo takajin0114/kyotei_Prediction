@@ -37,12 +37,14 @@ async function loadRaceData() {
         const response = await fetch('/api/race_data');
         const data = await response.json();
         
-        if (data.success) {
+        console.log('📊 APIレスポンス:', data);
+        
+        if (data.status === 'success') {
             currentRaceData = data.data;
             displayRaceInfo(data.data);
             console.log('✅ レースデータ読み込み完了');
         } else {
-            throw new Error(data.error || 'レースデータの取得に失敗');
+            throw new Error(data.message || 'レースデータの取得に失敗');
         }
     } catch (error) {
         console.error('❌ レースデータ読み込みエラー:', error);
@@ -60,6 +62,10 @@ function displayRaceInfo(raceData) {
     const weatherInfo = raceData.weather_condition || {};
     const entries = raceData.race_entries || [];
     
+    console.log('🏁 レース情報:', raceInfo);
+    console.log('🌤️ 天候情報:', weatherInfo);
+    console.log('🚤 出走艇:', entries.length);
+    
     const html = `
         <div class="race-basic-info">
             <h6><i class="fas fa-calendar"></i> ${raceInfo.date || '2024-06-15'}</h6>
@@ -67,14 +73,15 @@ function displayRaceInfo(raceData) {
             <h6><i class="fas fa-flag"></i> ${raceInfo.title || '第1レース'}</h6>
             <hr>
             <p><strong>出走艇数:</strong> ${entries.length}艇</p>
+            <p><strong>レース番号:</strong> 第${raceInfo.race_number || 1}レース</p>
         </div>
         
-        ${weatherInfo.weather ? `
+        ${Object.keys(weatherInfo).length > 0 ? `
         <div class="weather-info">
             <h6><i class="fas fa-cloud-sun"></i> 天候情報</h6>
             <div class="row">
                 <div class="col-6">
-                    <small><strong>天候:</strong> ${getWeatherIcon(weatherInfo.weather)} ${weatherInfo.weather}</small>
+                    <small><strong>天候:</strong> ${getWeatherIcon(weatherInfo.weather)} ${weatherInfo.weather || 'N/A'}</small>
                 </div>
                 <div class="col-6">
                     <small><strong>風速:</strong> ${weatherInfo.wind_velocity || 'N/A'}m/s</small>
@@ -87,7 +94,7 @@ function displayRaceInfo(raceData) {
                 </div>
             </div>
         </div>
-        ` : ''}
+        ` : '<div class="alert alert-info"><small>天候情報は利用できません</small></div>'}
         
         <div class="entries-summary mt-3">
             <h6><i class="fas fa-users"></i> 出走選手</h6>
@@ -187,12 +194,14 @@ async function executePrediction() {
         
         const result = await response.json();
         
-        if (result.success) {
+        console.log('🎯 予測APIレスポンス:', result);
+        
+        if (result.status === 'success') {
             currentPrediction = result.data;
             displayPredictionResults(result.data);
             console.log('✅ 予測完了');
         } else {
-            throw new Error(result.error || '予測の実行に失敗');
+            throw new Error(result.message || '予測の実行に失敗');
         }
     } catch (error) {
         console.error('❌ 予測エラー:', error);
@@ -489,10 +498,12 @@ async function loadPredictionHistory() {
         const response = await fetch('/api/predictions_history');
         const data = await response.json();
         
-        if (data.success) {
+        console.log('📚 履歴APIレスポンス:', data);
+        
+        if (data.status === 'success') {
             displayPredictionHistory(data.data);
         } else {
-            throw new Error(data.error || '履歴の取得に失敗');
+            throw new Error(data.message || '履歴の取得に失敗');
         }
     } catch (error) {
         console.error('❌ 履歴読み込みエラー:', error);
@@ -571,11 +582,13 @@ async function savePrediction() {
         
         const result = await response.json();
         
-        if (result.success) {
+        console.log('💾 保存APIレスポンス:', result);
+        
+        if (result.status === 'success') {
             alert('予想を保存しました');
             loadPredictionHistory(); // 履歴を更新
         } else {
-            throw new Error(result.error || '保存に失敗');
+            throw new Error(result.message || '保存に失敗');
         }
     } catch (error) {
         console.error('❌ 保存エラー:', error);
