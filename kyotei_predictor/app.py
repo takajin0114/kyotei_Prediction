@@ -34,6 +34,7 @@ class KyoteiPredictorApp:
         """ルーティングの設定"""
         self.app.route('/')(self.index)
         self.app.route('/api/race_data')(self.get_race_data)
+        self.app.route('/api/available_races')(self.get_available_races)
         self.app.route('/api/predict', methods=['POST'])(self.predict)
         self.app.route('/api/save_prediction', methods=['POST'])(self.save_prediction)
         self.app.route('/api/predictions_history')(self.get_predictions_history)
@@ -128,8 +129,15 @@ class KyoteiPredictorApp:
         try:
             print("📊 レースデータ取得APIが呼び出されました")
             
+            # クエリパラメータから選択されたレースIDを取得
+            race_id = request.args.get('race_id', None)
+            print(f"   選択されたレースID: {race_id}")
+            
             # データ統合レイヤーを使用してデータ取得
-            race_data = self.data_integration.get_race_data(source="sample")
+            if race_id:
+                race_data = self.data_integration.get_race_data(source="file", race_id=race_id)
+            else:
+                race_data = self.data_integration.get_race_data(source="sample")
             
             # 要約データも作成
             entries_summary = self.data_integration.get_race_entries_summary(race_data)
@@ -160,6 +168,84 @@ class KyoteiPredictorApp:
             return jsonify({
                 'status': 'error',
                 'message': f'データ取得中にエラーが発生しました: {str(e)}',
+                'error_type': type(e).__name__
+            }), 500
+    
+    def get_available_races(self):
+        """利用可能なレース一覧取得API"""
+        try:
+            print("📋 利用可能なレース一覧取得APIが呼び出されました")
+            
+            # データディレクトリからレースファイルを検索
+            import os
+            import re
+            
+            data_dir = os.path.join(os.path.dirname(__file__), 'data')
+            race_files = []
+            
+            # レースデータファイルのパターン
+            patterns = [
+                r'complete_race_data_(\d{8})_([A-Z]+)_R(\d+)\.json',
+                r'race_data_(\d{4}-\d{2}-\d{2})_([A-Z]+)_R(\d+)\.json',
+                r'race_data_(\d{8})_([A-Z]+)_R(\d+)\.json'
+            ]
+            
+            for filename in os.listdir(data_dir):
+                if filename.endswith('.json') and 'race_data' in filename:
+                    for pattern in patterns:
+                        match = re.match(pattern, filename)
+                        if match:
+                            if len(match.groups()) == 3:
+                                date_str, stadium, race_num = match.groups()
+                                
+                                # 日付フォーマットの統一
+                                if '-' in date_str:
+                                    formatted_date = date_str
+                                else:
+                                    # YYYYMMDD -> YYYY-MM-DD
+                                    formatted_date = f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:8]}"
+                                
+                                race_files.append({
+                                    'id': f"{formatted_date}_{stadium}_R{race_num}",
+                                    'date': formatted_date,
+                                    'stadium': stadium,
+                                    'race_number': int(race_num),
+                                    'filename': filename,
+                                    'display_name': f"{formatted_date} {stadium} 第{race_num}レース"
+                                })
+                            break
+            
+            # 重複を除去（同じrace_idのものは1つだけ残す）
+            unique_races = {}
+            for race in race_files:
+                race_id = race['id']
+                if race_id not in unique_races:
+                    unique_races[race_id] = race
+                else:
+                    # より完全なデータファイルを優先（complete_race_dataを優先）
+                    if 'complete_race_data' in race['filename']:
+                        unique_races[race_id] = race
+            
+            race_files = list(unique_races.values())
+            
+            # 日付・競艇場・レース番号でソート
+            race_files.sort(key=lambda x: (x['date'], x['stadium'], x['race_number']))
+            
+            print(f"✅ 利用可能なレース: {len(race_files)}件（重複除去後）")
+            
+            return jsonify({
+                'status': 'success',
+                'data': race_files,
+                'count': len(race_files),
+                'message': f'{len(race_files)}件のレースデータが利用可能です'
+            })
+            
+        except Exception as e:
+            print(f"❌ レース一覧取得エラー: {e}")
+            print(traceback.format_exc())
+            return jsonify({
+                'status': 'error',
+                'message': f'レース一覧取得中にエラーが発生しました: {str(e)}',
                 'error_type': type(e).__name__
             }), 500
     
