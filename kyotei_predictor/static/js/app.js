@@ -217,6 +217,15 @@ async function executePrediction() {
 function displayPredictionResults(prediction) {
     const resultsElement = document.getElementById('predictionResults');
     
+    console.log('📊 予測結果表示:', prediction);
+    
+    // データ構造の確認
+    if (!prediction || !prediction.summary || !prediction.predictions) {
+        console.error('❌ 予測結果の構造が不正:', prediction);
+        displayError('predictionResults', '予測結果の構造が不正です');
+        return;
+    }
+    
     const summary = prediction.summary;
     const predictions = prediction.predictions;
     const algorithm = prediction.algorithm;
@@ -350,8 +359,10 @@ async function calculateTrifecta() {
         
         const predictionResult = await predictionResponse.json();
         
-        if (!predictionResult.success) {
-            throw new Error('予測の実行に失敗');
+        console.log('🎯 3連単用予測APIレスポンス:', predictionResult);
+        
+        if (predictionResult.status !== 'success') {
+            throw new Error(predictionResult.message || '予測の実行に失敗');
         }
         
         // 3連単確率を計算（フロントエンドで実装）
@@ -370,6 +381,13 @@ async function calculateTrifecta() {
  * 3連単確率の計算（フロントエンド実装）
  */
 function calculateTrifectaProbabilities(predictions, topN) {
+    console.log('🎯 3連単確率計算開始:', predictions, topN);
+    
+    // データ検証
+    if (!predictions || !Array.isArray(predictions) || predictions.length === 0) {
+        throw new Error('予測データが不正です');
+    }
+    
     const combinations = [];
     
     // 全ての3連単組み合わせを生成
@@ -380,6 +398,15 @@ function calculateTrifectaProbabilities(predictions, topN) {
                     const first = predictions[i];
                     const second = predictions[j];
                     const third = predictions[k];
+                    
+                    // データ構造の確認
+                    if (!first || !second || !third || 
+                        typeof first.win_probability === 'undefined' ||
+                        typeof second.win_probability === 'undefined' ||
+                        typeof third.win_probability === 'undefined') {
+                        console.warn('⚠️ 予測データの構造が不正:', {first, second, third});
+                        continue;
+                    }
                     
                     // 簡易確率計算
                     const firstProb = first.win_probability / 100;
