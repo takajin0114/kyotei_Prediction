@@ -209,7 +209,14 @@ Week 2: データ取得機能実装 ✅ 完了
 ├── ✅ データ表形式表示機能の実装
 └── ✅ 基本的なエラーハンドリング (ライブラリ内蔵)
 
-Week 3: データベース設計・連携 🔄 開始
+🚨 **緊急対応: Webアプリケーション本体の実装状況確認・復旧** 🚨 開始
+├── ⏳ 現在のファイル構成と不整合の詳細調査
+├── ⏳ 欠損ファイルの特定（app.py, templates/, static/）
+├── ⏳ Webアプリケーション本体の実装・復旧
+├── ⏳ 既存データ取得機能との統合
+└── ⏳ 基本動作確認・テスト
+
+Week 3: データベース設計・連携 ⏸️ 一時停止
 ├── ⏳ データベース設計・スキーマ定義
 ├── ⏳ データベース連携機能の実装
 ├── ⏳ データ永続化・検索機能
@@ -661,8 +668,143 @@ kyotei_predictor/
 ### ライセンス
 MIT License - 詳細は LICENSE ファイルを参照
 
+## 🚨 **緊急対応タスク: Webアプリケーション本体の実装状況確認・復旧**
+
+### 📋 **問題の詳細**
+
+#### 🔍 **現状分析**
+repo.mdには以下のWebアプリケーション構成が記載されているが、実際のリポジトリには存在しない：
+
+```
+kyotei_predictor/            # メインアプリケーション
+├── app.py                   # ❌ Flask Webアプリケーション（不在）
+├── predictions.json         # ❌ 予想履歴データ（不在）
+├── templates/               # ❌ ディレクトリ自体が不在
+│   └── index.html          # ❌ HTMLテンプレート（不在）
+└── static/                  # ❌ ディレクトリ自体が不在
+    ├── css/
+    │   └── style.css       # ❌ カスタムスタイル（不在）
+    └── js/
+        └── app.js          # ❌ JavaScript機能（不在）
+```
+
+#### ✅ **実際に存在するファイル**
+```
+kyotei_predictor/
+├── requirements.txt         # ✅ 存在
+├── race_data_fetcher.py     # ✅ データ取得機能
+├── data_display.py          # ✅ コンソール表示
+├── html_display.py          # ✅ HTML表示
+├── test_data_fetch.py       # ✅ テストスクリプト
+└── *.json, *.html          # ✅ サンプルデータ
+```
+
+### 🎯 **実装計画**
+
+#### **Phase 0: 緊急復旧作業** 🚨
+
+**Day 1: 現状調査・設計**
+- [x] ✅ ファイル構成の詳細調査完了
+- [ ] ⏳ 既存データ取得機能の分析
+- [ ] ⏳ Webアプリケーション要件の整理
+- [ ] ⏳ 統合設計の策定
+
+**Day 2: Flask Webアプリケーション実装**
+- [ ] ⏳ `app.py` - Flask アプリケーション本体の実装
+- [ ] ⏳ APIエンドポイントの実装
+  - `/` - メインページ
+  - `/api/racers` - 選手データ取得
+  - `/api/race_conditions` - レース条件取得
+  - `/api/predict` - 予測実行
+  - `/api/save_prediction` - 予想保存
+  - `/api/predictions_history` - 予想履歴取得
+
+**Day 3: フロントエンド実装**
+- [ ] ⏳ `templates/index.html` - HTMLテンプレート
+- [ ] ⏳ `static/css/style.css` - カスタムスタイル
+- [ ] ⏳ `static/js/app.js` - JavaScript機能
+- [ ] ⏳ Bootstrap 5 + Chart.js + Font Awesome 統合
+
+**Day 4: データ統合・機能実装**
+- [ ] ⏳ 既存データ取得機能との統合
+- [ ] ⏳ 予測アルゴリズムの実装
+- [ ] ⏳ 予想保存・履歴管理機能
+- [ ] ⏳ 統計分析・グラフ表示機能
+
+**Day 5: テスト・最適化**
+- [ ] ⏳ 基本動作確認
+- [ ] ⏳ レスポンシブデザインテスト
+- [ ] ⏳ エラーハンドリング
+- [ ] ⏳ パフォーマンス最適化
+
+#### **実装優先順位**
+
+**🔥 最優先 (P0)**
+1. **Flask アプリケーション本体** (`app.py`)
+2. **基本HTMLテンプレート** (`templates/index.html`)
+3. **メインページの表示確認**
+
+**⚡ 高優先 (P1)**
+4. **既存データ取得機能との統合**
+5. **基本的な予測機能**
+6. **CSS・JavaScript の基本実装**
+
+**📈 中優先 (P2)**
+7. **予想保存・履歴管理**
+8. **統計分析・グラフ表示**
+9. **レスポンシブデザイン**
+
+#### **技術仕様**
+
+**Backend (Flask)**
+```python
+# app.py の基本構成
+from flask import Flask, render_template, request, jsonify
+import json
+from datetime import datetime
+
+# 既存機能の統合
+from race_data_fetcher import fetch_race_entry_data
+from data_display import display_race_data
+```
+
+**Frontend (HTML/CSS/JS)**
+```html
+<!-- templates/index.html の基本構成 -->
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>競艇予測ツール</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+</head>
+```
+
+#### **成功基準**
+
+**✅ 完了条件**
+1. **基本動作**: `python app.py` でWebアプリケーションが起動する
+2. **アクセス確認**: `http://localhost:12000` でメインページが表示される
+3. **機能確認**: 予測機能が基本的に動作する
+4. **データ統合**: 既存のデータ取得機能が統合されている
+
+#### **リスク・対策**
+
+**⚠️ 想定リスク**
+1. **既存機能との統合の複雑さ** → 段階的統合で対応
+2. **フロントエンドの実装工数** → 最小限のMVPから開始
+3. **データ形式の不整合** → 既存JSONデータの活用
+
+**🛡️ 対策**
+- **段階的実装**: 最小限の動作確認から開始
+- **既存資産活用**: 取得済みのサンプルデータを活用
+- **プロトタイプ優先**: 完璧性より動作確認を優先
+
 ---
 
 **最終更新**: 2025-06-13  
 **バージョン**: 1.0.0  
-**ステータス**: 開発完了・プルリクエスト作成済み
+**ステータス**: 🚨 緊急復旧作業中 - Webアプリケーション本体実装
