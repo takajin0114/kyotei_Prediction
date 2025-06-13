@@ -188,7 +188,7 @@ class KyoteiPredictorApp:
             response = {
                 'status': 'success',
                 'message': f'{algorithm}アルゴリズムによる予測を実行しました',
-                'prediction_result': prediction_result,
+                'data': prediction_result,
                 'timestamp': datetime.now().isoformat()
             }
             
@@ -249,7 +249,7 @@ class KyoteiPredictorApp:
             
             return jsonify({
                 'status': 'success',
-                'history': history,
+                'data': history,
                 'count': len(history),
                 'message': f'予想履歴を正常に取得しました（{len(history)}件）',
                 'timestamp': datetime.now().isoformat()
