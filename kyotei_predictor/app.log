@@ -1,0 +1,37 @@
+🚤 競艇予測Webアプリケーション起動中...
+==================================================
+✅ サンプルデータ読み込み成功: complete_race_data_20240615_KIRYU_R1.json
+   レース: 2024-06-15 KIRYU 第1レース
+   出走艇数: 6艇
+🔧 設定情報:
+   ポート: 12000
+   デバッグモード: True
+   サンプルデータ: complete_race_data_20240615_KIRYU_R1.json
+
+🌐 アクセス情報:
+   メインページ: http://localhost:12000
+   レースデータAPI: http://localhost:12000/api/race_data
+   予測API: http://localhost:12000/api/predict
+
+📋 利用可能なエンドポイント:
+   GET  /                        - メインページ
+   GET  /api/race_data           - レースデータ取得
+   POST /api/predict             - 予測実行
+   POST /api/save_prediction     - 予想保存
+   GET  /api/predictions_history - 予想履歴取得
+
+🚀 サーバー起動中...
+   Ctrl+C で停止
+==================================================
+ * Serving Flask app 'app'
+ * Debug mode: on
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:12000
+ * Running on http://10.2.126.141:12000
+[33mPress CTRL+C to quit[0m
+127.0.0.1 - - [13/Jun/2025 06:47:30] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [13/Jun/2025 06:47:36] "GET /api/race_data HTTP/1.1" 200 -
+127.0.0.1 - - [13/Jun/2025 06:47:40] "POST /api/predict HTTP/1.1" 200 -
+10.2.58.81 - - [13/Jun/2025 06:47:46] "GET / HTTP/1.1" 200 -
+10.2.58.81 - - [13/Jun/2025 06:47:52] "GET /api/race_data HTTP/1.1" 200 -
