@@ -9,6 +9,9 @@ import os
 from datetime import datetime
 import traceback
 
+# データ統合レイヤーのインポート
+from data_integration import DataIntegration
+
 # Flaskアプリケーションの初期化
 app = Flask(__name__)
 
@@ -21,9 +24,9 @@ class KyoteiPredictorApp:
     
     def __init__(self, flask_app):
         self.app = flask_app
-        self.sample_data_path = "complete_race_data_20240615_KIRYU_R1.json"
+        self.data_integration = DataIntegration()  # データ統合レイヤーの初期化
         self.setup_routes()
-        self.load_sample_data()
+        self.test_data_integration()
     
     def setup_routes(self):
         """ルーティングの設定"""
@@ -37,21 +40,29 @@ class KyoteiPredictorApp:
         self.app.errorhandler(404)(self.not_found)
         self.app.errorhandler(500)(self.internal_error)
     
-    def load_sample_data(self):
-        """サンプルデータの読み込み確認"""
+    def test_data_integration(self):
+        """データ統合レイヤーのテスト"""
         try:
-            if os.path.exists(self.sample_data_path):
-                with open(self.sample_data_path, 'r', encoding='utf-8') as f:
-                    data = json.load(f)
-                print(f"✅ サンプルデータ読み込み成功: {self.sample_data_path}")
-                print(f"   レース: {data['race_info']['date']} {data['race_info']['stadium']} 第{data['race_info']['race_number']}レース")
-                print(f"   出走艇数: {len(data['race_entries'])}艇")
-                return True
-            else:
-                print(f"❌ サンプルデータが見つかりません: {self.sample_data_path}")
-                return False
+            print("🔧 データ統合レイヤーとの連携テスト開始")
+            
+            # サンプルデータ取得テスト
+            race_data = self.data_integration.get_race_data(source="sample")
+            
+            print(f"✅ データ統合レイヤー連携成功")
+            print(f"   レース: {race_data['race_info']['date']} {race_data['race_info']['stadium']} 第{race_data['race_info']['race_number']}レース")
+            print(f"   出走艇数: {len(race_data['race_entries'])}艇")
+            
+            # 要約データ作成テスト
+            entries_summary = self.data_integration.get_race_entries_summary(race_data)
+            results_summary = self.data_integration.get_race_results_summary(race_data)
+            weather_summary = self.data_integration.get_weather_summary(race_data)
+            
+            print(f"   要約データ: 出走表{len(entries_summary)}艇, 結果{len(results_summary) if results_summary else 0}艇, 天候{'あり' if weather_summary else 'なし'}")
+            
+            return True
+            
         except Exception as e:
-            print(f"❌ サンプルデータ読み込みエラー: {e}")
+            print(f"❌ データ統合レイヤー連携エラー: {e}")
             return False
     
     def index(self):
@@ -111,49 +122,43 @@ class KyoteiPredictorApp:
             """
     
     def get_race_data(self):
-        """レースデータの取得API"""
+        """レースデータの取得API（データ統合レイヤー使用）"""
         try:
             print("📊 レースデータ取得APIが呼び出されました")
             
-            # サンプルデータの読み込み
-            if not os.path.exists(self.sample_data_path):
-                raise FileNotFoundError(f"サンプルデータが見つかりません: {self.sample_data_path}")
+            # データ統合レイヤーを使用してデータ取得
+            race_data = self.data_integration.get_race_data(source="sample")
             
-            with open(self.sample_data_path, 'r', encoding='utf-8') as f:
-                race_data = json.load(f)
+            # 要約データも作成
+            entries_summary = self.data_integration.get_race_entries_summary(race_data)
+            results_summary = self.data_integration.get_race_results_summary(race_data)
+            weather_summary = self.data_integration.get_weather_summary(race_data)
             
             print(f"✅ データ取得成功: {race_data['race_info']['stadium']} 第{race_data['race_info']['race_number']}レース")
             
-            return jsonify({
+            # レスポンスデータの構築
+            response_data = {
                 'status': 'success',
                 'data': race_data,
+                'summary': {
+                    'entries': entries_summary,
+                    'results': results_summary,
+                    'weather': weather_summary
+                },
                 'timestamp': datetime.now().isoformat(),
-                'message': 'レースデータを正常に取得しました'
-            })
+                'message': 'レースデータを正常に取得しました',
+                'source': 'sample'
+            }
             
-        except FileNotFoundError as e:
-            print(f"❌ ファイルエラー: {e}")
-            return jsonify({
-                'status': 'error',
-                'message': f'データファイルが見つかりません: {str(e)}',
-                'error_type': 'FileNotFoundError'
-            }), 404
-            
-        except json.JSONDecodeError as e:
-            print(f"❌ JSONエラー: {e}")
-            return jsonify({
-                'status': 'error',
-                'message': f'データファイルの形式が正しくありません: {str(e)}',
-                'error_type': 'JSONDecodeError'
-            }), 400
+            return jsonify(response_data)
             
         except Exception as e:
-            print(f"❌ 予期しないエラー: {e}")
+            print(f"❌ データ取得エラー: {e}")
             print(traceback.format_exc())
             return jsonify({
                 'status': 'error',
                 'message': f'データ取得中にエラーが発生しました: {str(e)}',
-                'error_type': 'UnexpectedError'
+                'error_type': type(e).__name__
             }), 500
     
     def predict(self):
@@ -200,7 +205,7 @@ class KyoteiPredictorApp:
             }), 500
     
     def save_prediction(self):
-        """予想保存API（基本実装）"""
+        """予想保存API（データ統合レイヤー使用）"""
         try:
             print("💾 予想保存APIが呼び出されました")
             
@@ -208,11 +213,16 @@ class KyoteiPredictorApp:
             if not prediction_data:
                 raise ValueError("保存するデータがありません")
             
-            # 現在は基本的なレスポンスを返す（後で実装）
+            # データ統合レイヤーを使用して保存
+            save_result = self.data_integration.save_prediction_data(prediction_data)
+            
+            print(f"✅ 予想保存成功: ID={save_result['prediction_id']}")
+            
             return jsonify({
                 'status': 'success',
-                'message': '予想を保存しました（実装中）',
-                'prediction_id': 1,
+                'message': '予想を正常に保存しました',
+                'prediction_id': save_result['prediction_id'],
+                'saved_at': save_result['saved_at'],
                 'timestamp': datetime.now().isoformat()
             })
             
@@ -221,20 +231,24 @@ class KyoteiPredictorApp:
             return jsonify({
                 'status': 'error',
                 'message': f'予想保存中にエラーが発生しました: {str(e)}',
-                'error_type': 'SaveError'
+                'error_type': type(e).__name__
             }), 500
     
     def get_predictions_history(self):
-        """予想履歴取得API（基本実装）"""
+        """予想履歴取得API（データ統合レイヤー使用）"""
         try:
             print("📚 予想履歴取得APIが呼び出されました")
             
-            # 現在は基本的なレスポンスを返す（後で実装）
+            # データ統合レイヤーを使用して履歴取得
+            history = self.data_integration.get_predictions_history()
+            
+            print(f"✅ 履歴取得成功: {len(history)}件")
+            
             return jsonify({
                 'status': 'success',
-                'history': [],
-                'count': 0,
-                'message': '履歴機能は実装中です',
+                'history': history,
+                'count': len(history),
+                'message': f'予想履歴を正常に取得しました（{len(history)}件）',
                 'timestamp': datetime.now().isoformat()
             })
             
@@ -243,7 +257,7 @@ class KyoteiPredictorApp:
             return jsonify({
                 'status': 'error',
                 'message': f'履歴取得中にエラーが発生しました: {str(e)}',
-                'error_type': 'HistoryError'
+                'error_type': type(e).__name__
             }), 500
     
     def not_found(self, error):
@@ -273,7 +287,7 @@ def main():
     print("🔧 設定情報:")
     print(f"   ポート: 12000")
     print(f"   デバッグモード: {app.config['DEBUG']}")
-    print(f"   サンプルデータ: {kyotei_app.sample_data_path}")
+    print(f"   データ統合レイヤー: 有効")
     print()
     
     print("🌐 アクセス情報:")

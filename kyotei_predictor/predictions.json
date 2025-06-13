@@ -37,5 +37,29 @@
       }
     ],
     "user_notes": "田中太郎は勝率・連対率ともに高く、スタートタイムも良好。天候が晴れで有利な条件。佐藤花子も安定した成績で2着候補。"
+  },
+  {
+    "algorithm": "test",
+    "predictions": [
+      {
+        "pit_number": 1,
+        "score": 4.5
+      }
+    ],
+    "memo": "テストデータ",
+    "id": 2,
+    "saved_at": "2025-06-13T06:53:30.501499"
+  },
+  {
+    "algorithm": "test",
+    "predictions": [
+      {
+        "pit_number": 1,
+        "score": 4.5
+      }
+    ],
+    "memo": "APIテスト",
+    "id": 3,
+    "saved_at": "2025-06-13T06:55:30.635394"
   }
 ]
