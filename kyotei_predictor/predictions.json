@@ -1,0 +1,41 @@
+[
+  {
+    "timestamp": "2025-06-13T02:58:54.872445",
+    "predictions": [
+      {
+        "racer": {
+          "avg_start_time": 0.15,
+          "id": 1,
+          "name": "田中太郎",
+          "quinella_rate": 0.78,
+          "win_rate": 0.65
+        },
+        "score": 0.557,
+        "win_probability": 55.7
+      },
+      {
+        "racer": {
+          "avg_start_time": 0.18,
+          "id": 2,
+          "name": "佐藤花子",
+          "quinella_rate": 0.72,
+          "win_rate": 0.58
+        },
+        "score": 0.502,
+        "win_probability": 50.2
+      },
+      {
+        "racer": {
+          "avg_start_time": 0.16,
+          "id": 3,
+          "name": "鈴木一郎",
+          "quinella_rate": 0.68,
+          "win_rate": 0.52
+        },
+        "score": 0.472,
+        "win_probability": 47.2
+      }
+    ],
+    "user_notes": "田中太郎は勝率・連対率ともに高く、スタートタイムも良好。天候が晴れで有利な条件。佐藤花子も安定した成績で2着候補。"
+  }
+]
