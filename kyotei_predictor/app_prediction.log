@@ -68,3 +68,6 @@ INFO:prediction_engine:📊 予測開始: algorithm=rating_weighted
 INFO:prediction_engine:📊 級別重み付けアルゴリズム完了: 6艇の予測
 INFO:prediction_engine:✅ 予測完了: 0.002秒
 INFO:werkzeug:127.0.0.1 - - [13/Jun/2025 07:19:52] "POST /api/predict HTTP/1.1" 200 -
+INFO:werkzeug:10.2.38.137 - - [13/Jun/2025 07:22:24] "GET / HTTP/1.1" 200 -
+INFO:werkzeug:10.2.58.81 - - [13/Jun/2025 07:25:29] "GET / HTTP/1.1" 200 -
+INFO:werkzeug:10.2.58.81 - - [13/Jun/2025 07:28:10] "GET / HTTP/1.1" 200 -
