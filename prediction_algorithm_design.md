@@ -121,56 +121,67 @@
 - ✅ バランスの取れた重み配分
 - ❌ 天候・コース条件は未考慮
 
-#### 2-2. 天候補正アルゴリズム
-**目的**: レース条件による影響の反映
+#### 2-2. 機材重視アルゴリズム
+**目的**: ボート・モーター成績を重視した評価
 
 ```python
-# 天候による影響
-天候係数 = {
-    'FINE': 1.0,      # 晴れ（標準条件）
-    'CLOUDY': 0.98,   # 曇り（やや視界不良）
-    'RAIN': 0.95      # 雨（水面荒れ、視界不良）
-}
+選手スコア = 全国勝率 × 0.4 + 当地勝率 × 0.3 + 級別補正 × 0.1
+機材スコア = (ボート2連率 × 0.1 + モーター2連率 × 0.1) / 100
 
-# 風速による影響
-風速補正 = {
-    '0-2m/s': 1.0,    # 無風〜微風（理想的）
-    '3-5m/s': 0.98,   # 弱風（やや影響）
-    '6-8m/s': 0.95,   # 中風（明確な影響）
-    '9m/s以上': 0.90   # 強風（大きな影響）
-}
+# 機材成績を重視した総合評価
+機材重視スコア = 選手スコア + 機材スコア
 
-# 風向による影響（追い風・向かい風）
-風向補正 = calculate_wind_direction_factor(wind_angle, course_direction)
+# 機材ボーナス（特に良い機材の場合）
+if ボート2連率 > 40 or モーター2連率 > 35:
+    機材ボーナス = 0.1
+else:
+    機材ボーナス = 0
 
-補正後スコア = 総合スコア × 天候係数 × 風速補正 × 風向補正
+最終スコア = 機材重視スコア + 機材ボーナス
 ```
 
-**補正係数の根拠**:
-- **雨天**: 視界不良、水面状況悪化により5%減
-- **強風**: スタート・コース取りに大きく影響し10%減
-- **風向**: コースによる有利・不利を±3%で調整
+**特徴**:
+- ✅ 機材成績の影響を明確に評価
+- ✅ 高性能機材のボーナス評価
+- ✅ 事前に取得可能なデータのみ使用
 
-#### 2-3. コース別補正アルゴリズム
-**目的**: スタートコースによる有利・不利の反映
+#### 2-3. 3連単確率計算アルゴリズム
+**目的**: 各艇のスコアから3連単の確率を算出し、投資判断を支援
 
 ```python
-コース係数 = {
-    1: 1.15,  # 1コース（イン）- 最も有利
-    2: 1.05,  # 2コース - やや有利
-    3: 1.00,  # 3コース - 標準
-    4: 0.95,  # 4コース - やや不利
-    5: 0.90,  # 5コース - 不利
-    6: 0.85   # 6コース（アウト）- 最も不利
-}
-
-コース補正スコア = 補正後スコア × コース係数[pit_number]
+def calculate_trifecta_probabilities(individual_scores):
+    """
+    各艇のスコアから3連単の確率を計算
+    
+    Args:
+        individual_scores: 各艇の予測スコア [score1, score2, ..., score6]
+    
+    Returns:
+        trifecta_probabilities: 3連単の確率辞書
+    """
+    
+    # 1. 各艇の勝率を正規化
+    win_probabilities = normalize_to_probabilities(individual_scores)
+    
+    # 2. 3連単の全組み合わせ (6P3 = 120通り)
+    trifecta_combinations = generate_trifecta_combinations()
+    
+    # 3. 各組み合わせの確率を計算
+    trifecta_probs = {}
+    for combo in trifecta_combinations:
+        # 1着確率 × 2着確率 × 3着確率
+        prob = (win_probabilities[combo[0]-1] * 
+                win_probabilities[combo[1]-1] * 
+                win_probabilities[combo[2]-1])
+        trifecta_probs[f"{combo[0]}-{combo[1]}-{combo[2]}"] = prob
+    
+    return trifecta_probs
 ```
 
-**係数の根拠**:
-- **1コース**: 統計的に約50%の勝率を持つため15%加算
-- **6コース**: 統計的に約5%の勝率のため15%減算
-- **中間コース**: 段階的に調整
+**特徴**:
+- ✅ 120通りの3連単組み合わせを網羅
+- ✅ オッズとの比較による投資価値分析
+- ✅ 実際の舟券購入判断に直結
 
 ---
 
@@ -189,9 +200,8 @@
     ボート2連率, ボート3連率,
     モーター2連率, モーター3連率,
     
-    # 環境関連
-    天候数値化, 風速, 風向正規化,
-    気温正規化, 水温正規化, 波高,
+    # 環境関連（将来拡張用）
+    # 注意: 環境データはレース当日まで確定しないため現在は未使用
     
     # 相対評価
     勝率ランキング, 機材ランキング,
@@ -243,31 +253,48 @@ def calculate_relative_strength(race_entries):
     return relative_scores
 ```
 
-#### 3-3. 動的重み調整アルゴリズム
-**目的**: レース条件に応じた重み配分の最適化
+#### 3-3. 投資価値分析アルゴリズム
+**目的**: 3連単の確率とオッズを比較し、投資価値を算出
 
 ```python
-def calculate_dynamic_weights(weather_condition, wind_velocity, course_type):
-    base_weights = {
-        'racer_skill': 0.6,
-        'boat_performance': 0.2,
-        'motor_performance': 0.2
-    }
+def calculate_investment_value(trifecta_probabilities, odds_data):
+    """
+    3連単の予測確率とオッズから投資価値を分析
     
-    # 天候による調整
-    if weather_condition == 'RAIN':
-        base_weights['racer_skill'] += 0.1  # 雨天では技術重視
-        base_weights['boat_performance'] -= 0.05
-        base_weights['motor_performance'] -= 0.05
+    Args:
+        trifecta_probabilities: 予測した3連単確率
+        odds_data: 実際のオッズ情報
     
-    # 風速による調整
-    if wind_velocity > 6.0:
-        base_weights['racer_skill'] += 0.05  # 強風では技術重視
-        base_weights['motor_performance'] += 0.05  # エンジン性能も重要
-        base_weights['boat_performance'] -= 0.1
+    Returns:
+        investment_analysis: 投資価値分析結果
+    """
     
-    return base_weights
+    investment_opportunities = []
+    
+    for combination, predicted_prob in trifecta_probabilities.items():
+        if combination in odds_data:
+            odds = odds_data[combination]
+            expected_return = odds * predicted_prob
+            
+            # 期待値が1.0を超える場合は投資価値あり
+            if expected_return > 1.2:  # 20%以上の期待利益
+                investment_opportunities.append({
+                    'combination': combination,
+                    'predicted_probability': predicted_prob,
+                    'odds': odds,
+                    'expected_return': expected_return,
+                    'investment_value': 'high' if expected_return > 1.5 else 'medium'
+                })
+    
+    return sorted(investment_opportunities, 
+                 key=lambda x: x['expected_return'], reverse=True)
 ```
+
+**特徴**:
+- ✅ 期待値理論に基づく投資判断
+- ✅ リスク・リターンの定量評価
+- ✅ 実際の舟券購入戦略に直結
+
 
 ---
 
@@ -285,16 +312,15 @@ def calculate_dynamic_weights(weather_condition, wind_velocity, course_type):
 | 項目 | 所要時間 | 内容 |
 |------|----------|------|
 | 総合評価アルゴリズム | 30分 | 選手・機材の総合評価 |
-| 天候補正 | 20分 | 天候・風速・風向補正 |
-| コース別補正 | 20分 | スタートコース有利・不利 |
-| アルゴリズム選択UI | 20分 | フロントエンド連携 |
+| 機材重視アルゴリズム | 20分 | ボート・モーター成績重視 |
+| 3連単確率計算 | 40分 | 120通りの組み合わせ確率算出 |
 
 ### Phase 3: 高級実装 (将来拡張)
 | 項目 | 所要時間 | 内容 |
 |------|----------|------|
-| 機械学習アプローチ | 120分 | 特徴量エンジニアリング |
-| 過去データ学習 | 90分 | 重み最適化 |
-| 動的重み調整 | 60分 | 条件別重み配分 |
+| 機械学習アプローチ | 120分 | 特徴量エンジニアリング（環境データ除く） |
+| 相対評価アルゴリズム | 60分 | 他艇との比較による強さ評価 |
+| 投資価値分析 | 90分 | オッズ比較・期待値計算 |
 
 ---
 
@@ -354,11 +380,11 @@ def calculate_dynamic_weights(weather_condition, wind_velocity, course_type):
 - [ ] 当地勝率の高い選手が有利に評価される
 - [ ] 機材成績の良い組み合わせが高評価
 
-#### 3-2. 条件別妥当性
-- [ ] 悪天候時にスコアが全体的に下がる
-- [ ] 強風時に技術重視の評価になる
-- [ ] 1コースの選手が有利に評価される
-- [ ] 6コースの選手が不利に評価される
+#### 3-2. 機材別妥当性
+- [ ] 高性能ボートの選手が高評価される
+- [ ] 高性能モーターの選手が高評価される
+- [ ] 機材ボーナスが適切に適用される
+- [ ] 機材成績の差が予測に反映される
 
 #### 3-3. 極端値チェック
 - [ ] スコアが負の値にならない
@@ -380,8 +406,7 @@ class PredictionEngine:
             'basic': self.basic_algorithm,
             'rating_weighted': self.rating_weighted_algorithm,
             'comprehensive': self.comprehensive_algorithm,
-            'weather_adjusted': self.weather_adjusted_algorithm,
-            'course_adjusted': self.course_adjusted_algorithm,
+            'equipment_focused': self.equipment_focused_algorithm,
             'ml_approach': self.ml_approach_algorithm,
             'relative_evaluation': self.relative_evaluation_algorithm
         }
