@@ -12,8 +12,8 @@ let charts = {};
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚤 競艇予測ツール Phase 2 初期化開始');
     
-    // レースデータの読み込み
-    loadRaceData();
+    // 利用可能なレース一覧を読み込み
+    loadAvailableRaces();
     
     // 予想履歴の読み込み
     loadPredictionHistory();
@@ -24,17 +24,94 @@ document.addEventListener('DOMContentLoaded', function() {
     // タブ切り替えイベント
     initializeTabEvents();
     
+    // レース選択イベント
+    initializeRaceSelection();
+    
     console.log('✅ 初期化完了');
 });
 
 /**
+ * 利用可能なレース一覧の読み込み
+ */
+async function loadAvailableRaces() {
+    try {
+        console.log('📋 利用可能なレース一覧を読み込み中...');
+        
+        const response = await fetch('/api/available_races');
+        const result = await response.json();
+        
+        console.log('📋 レース一覧APIレスポンス:', result);
+        
+        if (result.status === 'success') {
+            populateRaceSelector(result.data);
+            console.log(`✅ レース一覧読み込み完了: ${result.count}件`);
+        } else {
+            throw new Error(result.message || 'レース一覧の取得に失敗');
+        }
+    } catch (error) {
+        console.error('❌ レース一覧読み込みエラー:', error);
+        displayError('raceInfo', 'レース一覧の読み込みに失敗しました');
+    }
+}
+
+/**
+ * レースセレクターにオプションを追加
+ */
+function populateRaceSelector(races) {
+    const selector = document.getElementById('raceSelector');
+    
+    // 既存のオプションをクリア（最初のオプションは残す）
+    while (selector.children.length > 1) {
+        selector.removeChild(selector.lastChild);
+    }
+    
+    // レースオプションを追加
+    races.forEach(race => {
+        const option = document.createElement('option');
+        option.value = race.id;
+        option.textContent = race.display_name;
+        selector.appendChild(option);
+    });
+    
+    console.log(`📋 レースセレクターに${races.length}件のレースを追加`);
+}
+
+/**
+ * レース選択イベントの初期化
+ */
+function initializeRaceSelection() {
+    const selector = document.getElementById('raceSelector');
+    const loadBtn = document.getElementById('loadRaceBtn');
+    
+    // セレクター変更イベント
+    selector.addEventListener('change', function() {
+        const selectedRaceId = this.value;
+        loadBtn.disabled = !selectedRaceId;
+        
+        if (selectedRaceId) {
+            console.log(`🎯 レース選択: ${selectedRaceId}`);
+        }
+    });
+    
+    // 読み込みボタンクリックイベント
+    loadBtn.addEventListener('click', function() {
+        const selectedRaceId = selector.value;
+        if (selectedRaceId) {
+            loadRaceData(selectedRaceId);
+        }
+    });
+}
+
+/**
  * レースデータの読み込み
  */
-async function loadRaceData() {
+async function loadRaceData(raceId = null) {
     try {
-        console.log('📊 レースデータ読み込み開始');
+        console.log(`📊 レースデータ読み込み開始: ${raceId || 'デフォルト'}`);
         
-        const response = await fetch('/api/race_data');
+        // レースIDが指定されている場合はクエリパラメータに追加
+        const url = raceId ? `/api/race_data?race_id=${encodeURIComponent(raceId)}` : '/api/race_data';
+        const response = await fetch(url);
         const data = await response.json();
         
         console.log('📊 APIレスポンス:', data);
