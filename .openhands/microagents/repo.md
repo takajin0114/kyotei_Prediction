@@ -209,10 +209,11 @@ Week 2: データ取得機能実装 ✅ 完了
 ├── ✅ データ表形式表示機能の実装
 └── ✅ 基本的なエラーハンドリング (ライブラリ内蔵)
 
-Week 3: レース結果・データ処理
-├── レース結果取得機能の実装
-├── データクレンジング機能
-└── データベース連携
+Week 3: データベース設計・連携 🔄 開始
+├── ⏳ データベース設計・スキーマ定義
+├── ⏳ データベース連携機能の実装
+├── ⏳ データ永続化・検索機能
+└── ⏳ 過去データ蓄積・分析基盤
 
 Week 4: 最適化・テスト
 ├── パフォーマンス最適化
@@ -352,6 +353,250 @@ python data_display.py complete_race_data_20240615_KIRYU_R1.json
 # HTML表示生成
 python html_display.py complete_race_data_20240615_KIRYU_R1.json
 ```
+
+## 🗄️ Phase 1 Week 3: データベース設計・連携
+
+### 📋 **実装計画**
+
+#### 1. **データベース設計・スキーマ定義**
+
+**🎯 目標**: 取得した競艇データを効率的に保存・検索できるデータベース設計
+
+**📊 対象データ分析**:
+現在取得可能な5カテゴリのデータを正規化してテーブル設計
+
+**🏗️ 設計方針**:
+- **正規化**: データの重複を避け、整合性を保つ
+- **パフォーマンス**: 予測・分析に必要なクエリを高速化
+- **拡張性**: 将来的なデータ追加に対応
+- **SQLite**: 軽量で導入が容易、後にPostgreSQLへ移行可能
+
+#### 2. **テーブル設計**
+
+**🏟️ stadiums（競艇場マスタ）**
+```sql
+CREATE TABLE stadiums (
+    id INTEGER PRIMARY KEY,
+    code TEXT UNIQUE NOT NULL,  -- 'KIRYU', 'TODA' など
+    name TEXT NOT NULL,         -- '桐生競艇場', '戸田競艇場'
+    prefecture TEXT,            -- '群馬県', '埼玉県'
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+**🏁 races（レース基本情報）**
+```sql
+CREATE TABLE races (
+    id INTEGER PRIMARY KEY,
+    stadium_id INTEGER NOT NULL,
+    race_date DATE NOT NULL,
+    race_number INTEGER NOT NULL,
+    title TEXT,                 -- '予選', '一般戦'
+    deadline_at TIMESTAMP,      -- 締切時刻
+    number_of_laps INTEGER,     -- 周回数
+    is_course_fixed BOOLEAN,    -- コース固定
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (stadium_id) REFERENCES stadiums(id),
+    UNIQUE(stadium_id, race_date, race_number)
+);
+```
+
+**👤 racers（選手マスタ）**
+```sql
+CREATE TABLE racers (
+    id INTEGER PRIMARY KEY,
+    registration_number INTEGER UNIQUE NOT NULL,
+    last_name TEXT NOT NULL,
+    first_name TEXT NOT NULL,
+    branch TEXT,                -- 支部
+    born_prefecture TEXT,       -- 出身地
+    birth_date DATE,           -- 生年月日
+    height INTEGER,            -- 身長(cm)
+    gender TEXT,               -- 性別
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+**🚤 race_entries（出走表）**
+```sql
+CREATE TABLE race_entries (
+    id INTEGER PRIMARY KEY,
+    race_id INTEGER NOT NULL,
+    pit_number INTEGER NOT NULL,    -- 艇番
+    racer_id INTEGER NOT NULL,
+    current_rating TEXT,            -- 級別 (A1, A2, B1, B2)
+    rate_in_all_stadium REAL,       -- 全国勝率
+    rate_in_event_going_stadium REAL, -- 当地勝率
+    boat_number INTEGER,            -- ボート番号
+    boat_quinella_rate REAL,        -- ボート2連率
+    boat_trio_rate REAL,            -- ボート3連率
+    motor_number INTEGER,           -- モーター番号
+    motor_quinella_rate REAL,       -- モーター2連率
+    motor_trio_rate REAL,           -- モーター3連率
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (race_id) REFERENCES races(id),
+    FOREIGN KEY (racer_id) REFERENCES racers(id),
+    UNIQUE(race_id, pit_number)
+);
+```
+
+**🏆 race_results（レース結果）**
+```sql
+CREATE TABLE race_results (
+    id INTEGER PRIMARY KEY,
+    race_id INTEGER NOT NULL,
+    pit_number INTEGER NOT NULL,
+    start_course INTEGER,           -- スタートコース
+    start_time REAL,               -- スタートタイム
+    total_time REAL,               -- 総タイム
+    arrival INTEGER,               -- 着順
+    winning_trick TEXT,            -- 決まり手
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (race_id) REFERENCES races(id),
+    UNIQUE(race_id, pit_number)
+);
+```
+
+**🌤️ weather_conditions（天候情報）**
+```sql
+CREATE TABLE weather_conditions (
+    id INTEGER PRIMARY KEY,
+    race_id INTEGER NOT NULL,
+    weather TEXT,                  -- 天候
+    wind_velocity REAL,            -- 風速
+    wind_angle REAL,               -- 風向
+    air_temperature REAL,          -- 気温
+    water_temperature REAL,        -- 水温
+    wavelength REAL,               -- 波高
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (race_id) REFERENCES races(id),
+    UNIQUE(race_id)
+);
+```
+
+**💰 payoffs（払戻情報）**
+```sql
+CREATE TABLE payoffs (
+    id INTEGER PRIMARY KEY,
+    race_id INTEGER NOT NULL,
+    betting_method TEXT NOT NULL,   -- 'TRIFECTA', 'TRIO', 'EXACTA'
+    betting_numbers TEXT NOT NULL,  -- '3-5-6' (JSON配列も可)
+    amount INTEGER NOT NULL,        -- 払戻金額
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (race_id) REFERENCES races(id)
+);
+```
+
+#### 3. **インデックス設計**
+
+**🚀 パフォーマンス最適化のためのインデックス**:
+```sql
+-- レース検索用
+CREATE INDEX idx_races_date_stadium ON races(race_date, stadium_id);
+CREATE INDEX idx_races_date ON races(race_date);
+
+-- 選手検索用
+CREATE INDEX idx_racers_registration ON racers(registration_number);
+CREATE INDEX idx_racers_name ON racers(last_name, first_name);
+
+-- 出走表検索用
+CREATE INDEX idx_entries_race_pit ON race_entries(race_id, pit_number);
+CREATE INDEX idx_entries_racer ON race_entries(racer_id);
+
+-- 結果検索用
+CREATE INDEX idx_results_race ON race_results(race_id);
+CREATE INDEX idx_results_arrival ON race_results(arrival);
+
+-- 払戻検索用
+CREATE INDEX idx_payoffs_race_method ON payoffs(race_id, betting_method);
+```
+
+#### 4. **データベース連携機能の実装**
+
+**🔧 実装予定機能**:
+
+**4-1. データベース接続・初期化**
+- SQLiteデータベースファイルの作成
+- テーブル作成・マイグレーション機能
+- 接続プール管理
+
+**4-2. データ挿入機能**
+- JSONデータからデータベースへの一括挿入
+- 重複データのチェック・更新
+- トランザクション管理
+
+**4-3. データ検索機能**
+- 日付・競艇場での絞り込み検索
+- 選手別成績検索
+- レース結果検索
+- 統計情報取得
+
+**4-4. データ更新・削除機能**
+- 選手情報の更新
+- レースデータの修正
+- 古いデータの削除
+
+#### 5. **実装ファイル構成**
+
+```
+kyotei_predictor/
+├── database/
+│   ├── __init__.py
+│   ├── models.py          # SQLAlchemyモデル定義
+│   ├── connection.py      # データベース接続管理
+│   ├── migrations/        # マイグレーションファイル
+│   │   └── 001_initial.sql
+│   └── queries.py         # よく使うクエリ集
+├── data_manager.py        # データ挿入・更新の統合管理
+├── db_setup.py           # データベース初期化スクリプト
+└── db_test.py            # データベース機能テスト
+```
+
+#### 6. **実装スケジュール**
+
+**Day 1-2: データベース設計・セットアップ**
+- スキーマ定義・テーブル作成
+- SQLAlchemyモデル実装
+- 初期化スクリプト作成
+
+**Day 3-4: データ挿入機能**
+- JSONからデータベースへの変換
+- 一括挿入機能
+- 重複チェック機能
+
+**Day 5-6: データ検索機能**
+- 基本的なCRUD操作
+- 複雑な検索クエリ
+- 統計情報取得
+
+**Day 7: テスト・最適化**
+- 機能テスト
+- パフォーマンステスト
+- ドキュメント作成
+
+#### 7. **期待される成果**
+
+**✅ 完了予定機能**:
+- 📊 **構造化データ保存**: 正規化されたテーブルでの効率的なデータ管理
+- 🔍 **高速検索**: インデックスによる高速なデータ検索
+- 📈 **統計分析基盤**: 過去データを活用した分析機能
+- 🔄 **データ更新**: リアルタイムでのデータ更新・同期
+- 📋 **データ整合性**: 外部キー制約による整合性保証
+
+**🎯 活用例**:
+- 選手の過去成績分析
+- 競艇場別の傾向分析
+- 天候条件と結果の相関分析
+- 予測モデルの学習データ準備
+
+#### 8. **技術スタック**
+
+- **データベース**: SQLite → PostgreSQL（将来）
+- **ORM**: SQLAlchemy
+- **マイグレーション**: Alembic
+- **接続管理**: SQLAlchemy Engine Pool
+- **テスト**: pytest + SQLite in-memory
 
 #### 5-A. 実装方針の選択肢
 **Option 1: 既存ライブラリ活用** (推奨 ★★★★★)
