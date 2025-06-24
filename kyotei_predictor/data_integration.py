@@ -63,6 +63,8 @@ class DataIntegration:
             
             if source == "sample":
                 return self._load_sample_data()
+            elif source == "file":
+                return self._load_file_data(**kwargs)
             elif source == "live":
                 return self._fetch_live_data(**kwargs)
             else:
@@ -105,6 +107,81 @@ class DataIntegration:
         except Exception as e:
             print(f"❌ サンプルデータ読み込みエラー: {e}")
             raise
+    
+    def _load_file_data(self, race_id: str = None, **kwargs) -> Dict:
+        """指定されたファイルからレースデータを読み込み"""
+        try:
+            print(f"📁 ファイルデータ読み込み開始: race_id={race_id}")
+            
+            if not race_id:
+                raise ValueError("race_idが指定されていません")
+            
+            # データディレクトリ内のファイルを検索
+            data_dir = os.path.join(os.path.dirname(__file__), 'data')
+            
+            # race_idから対応するファイルを検索
+            target_file = None
+            for filename in os.listdir(data_dir):
+                if filename.endswith('.json') and 'race_data' in filename:
+                    # ファイル名からrace_idを生成して比較
+                    if self._extract_race_id_from_filename(filename) == race_id:
+                        target_file = os.path.join(data_dir, filename)
+                        break
+            
+            if not target_file:
+                raise FileNotFoundError(f"指定されたレースのデータファイルが見つかりません: {race_id}")
+            
+            # キャッシュチェック
+            cache_key = f"file_{target_file}"
+            if cache_key in self.cache:
+                print(f"📋 キャッシュからファイルデータを取得: {os.path.basename(target_file)}")
+                return self.cache[cache_key]
+            
+            # データ読み込み
+            with open(target_file, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            
+            # データ検証
+            self._validate_race_data(data)
+            
+            # キャッシュに保存
+            self.cache[cache_key] = data
+            
+            print(f"✅ ファイルデータ読み込み成功: {os.path.basename(target_file)}")
+            print(f"   レース: {data['race_info']['date']} {data['race_info']['stadium']} 第{data['race_info']['race_number']}レース")
+            print(f"   出走艇数: {len(data['race_entries'])}艇")
+            
+            return data
+            
+        except Exception as e:
+            print(f"❌ ファイルデータ読み込みエラー: {e}")
+            raise
+    
+    def _extract_race_id_from_filename(self, filename: str) -> str:
+        """ファイル名からrace_idを抽出"""
+        import re
+        
+        patterns = [
+            r'complete_race_data_(\d{8})_([A-Z]+)_R(\d+)\.json',
+            r'race_data_(\d{4}-\d{2}-\d{2})_([A-Z]+)_R(\d+)\.json',
+            r'race_data_(\d{8})_([A-Z]+)_R(\d+)\.json'
+        ]
+        
+        for pattern in patterns:
+            match = re.match(pattern, filename)
+            if match:
+                date_str, stadium, race_num = match.groups()
+                
+                # 日付フォーマットの統一
+                if '-' in date_str:
+                    formatted_date = date_str
+                else:
+                    # YYYYMMDD -> YYYY-MM-DD
+                    formatted_date = f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:8]}"
+                
+                return f"{formatted_date}_{stadium}_R{race_num}"
+        
+        return None
     
     def _fetch_live_data(self, race_date: Union[str, date], stadium_code: str, race_number: int) -> Dict:
         """ライブデータ取得（既存機能を使用）"""
