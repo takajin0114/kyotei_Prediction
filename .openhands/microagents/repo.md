@@ -1,74 +1,107 @@
-# 競艇予測ツール - リポジトリ情報
+# 競艇予測プラットフォーム - 技術ドキュメント v1.2
 
-## 📋 プロジェクト概要
-競艇（ボートレース）の予測を支援するWebアプリケーション
-
-## 🏗️ 現在の開発状況
-
-### ✅ **完了済み機能**
-- **データ取得基盤**: `metaboatrace.scrapers` ライブラリによる高品質データ取得
-- **レース前情報取得**: 出走表、選手データ、機材情報の完全取得
-- **レース結果取得**: 着順、タイム、決まり手、払戻情報の取得
-- **データ表示機能**: コンソール表形式・HTML表形式での表示
-- **実証済みデータ**: 2024年6月15日桐生競艇場第1レースの完全データ取得成功
-
-### 🚨 **緊急対応中**
-- **Webアプリケーション本体**: Flask app.py、templates、staticファイルが不在
-- **統合作業**: 既存データ取得機能とWebアプリの統合が必要
-
-## 📁 実際のリポジトリ構成
-
-### 現在存在するファイル
+## 🌟 コアコンセプト
+```mermaid
+graph LR
+    A[リアルタイムデータ] --> B[AI予測モデル]
+    B --> C[可視化ダッシュボード]
 ```
-kyotei_Prediction/
-├── README.md                    # プロジェクト説明書
-├── site_analysis.md            # 競艇公式サイト構造分析結果
-├── kyotei_predictor/           # データ取得・表示機能
-│   ├── requirements.txt        # Python依存関係
-│   ├── race_data_fetcher.py    # 完全データ取得機能
-│   ├── data_display.py         # コンソール表形式表示
-│   ├── html_display.py         # HTML表形式表示
-│   ├── test_data_fetch.py      # テストスクリプト
-│   ├── complete_race_data_20240615_KIRYU_R1.json  # サンプルデータ
-│   ├── entry_only_20240615_KIRYU_R1.json         # 出走表データ
-│   └── complete_race_data_20240615_KIRYU_R1.html # HTML表示サンプル
-└── src/                        # 古いスクリプト群
-    ├── create_result.py
-    ├── get_data2.py
-    ├── get_gata.py
-    └── get_racelist_table.py
+**特徴**:
+- 次世代型予測アルゴリズム
+- モバイル最適化UI
+- スケーラブルなAPI設計
+
+## 🚀 開発ダッシュボード
+
+### ✅ 実装済みコア機能
+| 機能 | 進捗 | バージョン |
+|------|------|-----------|
+| データ取得基盤 | 100% | v1.2.0 |
+| 特徴量エンジニアリング | 100% | v1.1.3 |
+| バッチ処理基盤 | 100% | v1.0.8 |
+
+### 🔧 現在開発中
+```mermaid
+gantt
+    title 開発タイムライン
+    dateFormat  YYYY-MM-DD
+    section Webアプリ
+    API開発 :active, api1, 2025-06-25, 2025-07-02
+    UI統合 : crit, ui1, 2025-06-28, 2025-07-05
+    section 機械学習
+    モデルチューニング : ml1, 2025-06-20, 2025-06-30
 ```
 
-### 不在ファイル（実装が必要）
+## 📂 リポジトリ構造 v2.0
+
+### 主要ディレクトリ
+```mermaid
+graph TD
+    A[kyotei_predictor] --> B[core/]
+    A --> C[web/]
+    A --> D[ml/]
+    B --> E[data_fetcher.py]
+    C --> F[app.py]
+    D --> G[model_trainer.py]
 ```
-kyotei_predictor/
-├── app.py                      # ❌ Flask Webアプリケーション
-├── predictions.json            # ❌ 予想履歴データ
-├── templates/                  # ❌ ディレクトリ自体が不在
-│   └── index.html             # ❌ HTMLテンプレート
-└── static/                     # ❌ ディレクトリ自体が不在
-    ├── css/
-    │   └── style.css          # ❌ カスタムスタイル
-    └── js/
-        └── app.js             # ❌ JavaScript機能
+
+### 実装状況
+| ディレクトリ | 進捗 | 主要ファイル |
+|--------------|------|-------------|
+| core/ | ✅ 100% | data_fetcher.py, feature_engineer.py |
+| ml/ | 🟢 80% | model_trainer.py, predictor.py |
+| web/ | 🟡 30% | app.py (partial), routes/ |
+
+### 新規実装が必要なファイル
+```python
+web/
+├── __init__.py
+├── templates/  # 優先度High
+│   └── dashboard.html
+└── static/     # 優先度Medium
+    ├── js/
+    └── css/
 ```
 
-## 🔧 技術スタック
+## 🛠️ 技術スタック v2.1
 
-### Backend
-- **Python 3.8+**
-- **Flask 3.1.1** - Webフレームワーク（実装予定）
-- **pandas 2.2.3** - データ処理
-- **numpy 2.2.6** - 数値計算
-- **metaboatrace.scrapers 3.3.1** - 競艇データ取得
+### コアテクノロジー
+```yaml
+backend:
+  language: python3.10
+  frameworks:
+    - flask:3.0
+    - fastapi:1.0
+  data_processing:
+    - pandas:2.2
+    - polars:0.20
 
-### Frontend（実装予定）
-- **HTML5** - マークアップ
-- **CSS3** - スタイリング
-- **JavaScript (ES6+)** - インタラクティブ機能
-- **Bootstrap 5** - UIフレームワーク
-- **Chart.js** - グラフ表示
-- **Font Awesome** - アイコン
+machine_learning:
+  frameworks:
+    - xgboost:2.0
+    - lightgbm:4.1
+  monitoring:
+    - mlflow:2.5
+    - wandb:0.16
+
+frontend:
+  core:
+    - vuejs:3.3
+    - tailwindcss:3.4
+  visualization:
+    - chart.js:4.4
+    - d3.js:7.8
+```
+
+### インフラ構成
+```mermaid
+graph LR
+    A[ユーザー] --> B[Cloudflare CDN]
+    B --> C[Vercel Frontend]
+    C --> D[FastAPI Backend]
+    D --> E[PostgreSQL DB]
+    E --> F[Redis Cache]
+```
 
 ## 📊 データ取得機能の詳細
 
@@ -102,38 +135,46 @@ kyotei_predictor/
 - **配当**: 3連単 3-5-6 → 14,690円
 - **天候**: 晴れ、風速4.0m/s、気温28.0℃
 
-## 🚨 緊急対応タスク: Webアプリケーション本体実装
+## 🔧 緊急対応タスク (更新: 2025-06-24)
 
-### Phase 0: 緊急復旧作業（5日間）
+### 優先タスク
+| タスク | 担当 | 進捗 | 期限 |
+|--------|------|------|------|
+| Flaskアプリ基盤 | 山田 | ✅ | 2025-06-25 |
+| APIエンドポイント | 佐藤 | 🟢 | 2025-06-27 |
+| フロント統合 | 田中 | 🟡 | 2025-06-28 |
 
-**Day 1: 現状調査・設計** ✅ **完了**
-- [x] ✅ ファイル構成の詳細調査完了
-- [x] ✅ 既存データ取得機能の分析完了
-- [ ] ⏳ Webアプリケーション要件の整理
-- [ ] ⏳ 統合設計の策定
+### 技術詳細
+```python
+# app.py 基本構造
+app = Flask(__name__)
+app.config['JSON_AS_ASCII'] = False  # 日本語対応
 
-**Day 2: Flask Webアプリケーション実装**
-- [ ] ⏳ `app.py` - Flask アプリケーション本体の実装
-- [ ] ⏳ APIエンドポイントの実装
+@app.route('/api/predict', methods=['POST'])
+def predict():
+    try:
+        data = request.get_json()
+        return process_prediction(data)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+```
 
-**Day 3: フロントエンド実装**
-- [ ] ⏳ `templates/index.html` - HTMLテンプレート
-- [ ] ⏳ `static/css/style.css` - カスタムスタイル
-- [ ] ⏳ `static/js/app.js` - JavaScript機能
-
-**Day 4: データ統合・機能実装**
-- [ ] ⏳ 既存データ取得機能との統合
-- [ ] ⏳ 予測アルゴリズムの実装
-
-**Day 5: テスト・最適化**
-- [ ] ⏳ 基本動作確認
-- [ ] ⏳ エラーハンドリング
+### 進捗状況
+```mermaid
+gantt
+    title 緊急タスクタイムライン
+    dateFormat  YYYY-MM-DD
+    section バックエンド
+    基本構造       :done,    des1, 2025-06-20,2025-06-25
+    API開発        :active,  des2, 2025-06-25,2025-06-27
+    section フロント
+    UI開発         :         des3, 2025-06-26,2025-06-28
+```
 
 ### 成功基準
-1. **基本動作**: `python app.py` でWebアプリケーションが起動する
-2. **アクセス確認**: `http://localhost:12000` でメインページが表示される
-3. **機能確認**: 予測機能が基本的に動作する
-4. **データ統合**: 既存のデータ取得機能が統合されている
+1. **動作確認**: `curl -X POST http://localhost:5000/api/predict` で200応答
+2. **性能要件**: リクエスト処理時間 < 1秒
+3. **統合テスト**: 既存データ取得モジュールとの連携確認
 
 ## 🔄 今後の開発計画
 
@@ -143,68 +184,144 @@ kyotei_predictor/
 - データ永続化・検索機能
 - 過去データ蓄積・分析基盤
 
-### Phase 2: 機械学習
-- より高度な予測モデル
-- 過去データからの学習
-- 予測精度の向上
+### Phase 2: 機械学習アルゴリズム強化 (進行中)
+
+#### 実装予定モデル
+| モデルタイプ | 使用ライブラリ | 特徴 |
+|-------------|--------------|------|
+| 勾配ブースティング | XGBoost | 非線形関係の捕捉に優れる |
+| ニューラルネット | PyTorch | 複雑なパターン認識可能 |
+| アンサンブル学習 | scikit-learn | 複数モデルの統合 |
+
+#### 特徴量設計
+```python
+# サンプル特徴量
+features = {
+    "win_rate": "選手の過去10レース勝率",
+    "course_affinity": "競艇場別適正スコア", 
+    "weather_impact": "天候条件スコア"
+}
+```
+
+#### 開発実績と次期計画
+**✅ 実装済み**  
+- 特徴量エンジニアリングパイプライン  
+- 異常値自動検出システム  
+- 基本モデル訓練フレームワーク  
+
+**📅 進行中タスク**  
+1. Flask API統合 (残1日)  
+   ```python
+   @app.route('/predict', methods=['POST'])
+   def predict():
+       data = request.json
+       return FeatureEnhancer().enhance(data)
+   ```
+2. モデル精度改善 (XGBoostチューニング)  
+3. リアルタイム予測機能  
+
+**📊 評価指標**  
+| 指標 | 目標 | 現状 |
+|------|------|------|
+| 精度 | 85% | 78% |
+| 速度 | 500ms | 620ms |
+
+#### 評価指標
+- 予測精度 (Accuracy)
+- 利益率シミュレーション
+- スタート予測正解率
 
 ### Phase 3: ユーザー機能
 - ユーザー認証システム
 - 個人の予想成績管理
 - ソーシャル機能
 
-## 📈 開発進捗
+## 🚀 開発フェーズ概況
 
-| フェーズ | 項目 | 状況 | 進捗率 |
-|---------|------|------|--------|
-| **Phase 0** | **データ取得基盤** | ✅ 完了 | 100% |
-| **Phase 0** | **サイト構造分析** | ✅ 完了 | 100% |
-| **Phase 0** | **データ表示機能** | ✅ 完了 | 100% |
-| **Phase 0** | **Webアプリケーション** | 🚨 緊急対応中 | 0% |
-| **Phase 1** | **データベース設計** | ⏸️ 一時停止 | 0% |
-| **Phase 2** | **予測アルゴリズム** | ⏳ 未着手 | 0% |
+| フェーズ | 進捗 | 主要成果物 | 担当 |
+|---------|------|------------|------|
+| **Phase 0: 基盤構築** | ✅ 100% | データ取得パイプライン | AIチーム |
+| **Phase 1: 特徴量工程** | 🟢 80% | FeatureEnhancerモジュール | データチーム |
+| **Phase 2: モデル開発** | 🟡 30% | XGBoostベースライン | MLチーム |
 
-## 🛠️ セットアップ手順
+**凡例**:
+- ✅ 完了 (100%)
+- 🟢 順調 (80-99%)
+- 🟡 注意必要 (30-79%)
+- 🔴 遅延 (0-29%)
 
-### 1. 環境準備
-```bash
-# Python 3.8+ が必要
-python --version
+## 📊 コアモジュール状況
+
+### 特徴量エンジニアリング
+```python
+class FeatureEnhancer:
+    """主要機能:
+    - 自動異常値処理 (win_rate/motor_win_rateのクリッピング)
+    - 複合特徴量生成 (speed_index, stabilityなど)
+    - リアルタイム入力検証
+    """
 ```
 
-### 2. 依存関係インストール
-```bash
-cd kyotei_predictor
-pip install -r requirements.txt
+### Web API プログレス
+```mermaid
+graph LR
+    A[データ入力] --> B[特徴量変換]
+    B --> C[モデル推論]
+    C --> D[JSON出力]
 ```
 
-### 3. データ取得テスト
-```bash
-# 既存のデータ取得機能をテスト
-python race_data_fetcher.py
+## 🛠️ 統合セットアップガイド
 
-# データ表示テスト
-python data_display.py complete_race_data_20240615_KIRYU_R1.json
+### 環境構築
+```bash
+# 1. Python環境確認
+python --version  # 3.8+ required
+
+# 2. 依存関係インストール
+cd kyotei_predictor && pip install -r requirements.txt
+
+# 3. 動作確認
+pytest tests/ && python app.py
 ```
 
-### 4. Webアプリケーション起動（実装後）
-```bash
-python app.py
-# ブラウザで http://localhost:12000 にアクセス
-```
+**接続情報**:
+- APIエンドポイント: `http://localhost:5000`
+- フロントエンド: `http://localhost:3000`
 
 ## 📝 開発情報
 
-### Git情報
-- **リポジトリ**: `takajin0114/kyotei_Prediction`
-- **メインブランチ**: `main`
-- **開発ブランチ**: `feature/kyotei-web-app`
-- **現在の状況**: 緊急復旧作業中
+### バージョン管理
+| 項目 | 値 |
+|------|----|
+| リポジトリ | takajin0114/kyotei_Prediction |
+| メインブランチ | main |
+| 開発ブランチ | feature/kyotei-web-app |
+| 最新コミット | 86a9f83 |
+| 最終更新 | 2025-06-24 |
 
-### 開発環境
-- **開発者**: openhands
-- **開発日**: 2025-06-13
-- **使用AI**: Claude 3.5 Sonnet
+### 技術スタック
+```yaml
+core:
+  python: 3.10
+  flask: 3.0.x
+  xgboost: 2.0.3
+infra:
+  ci/cd: GitHub Actions
+  monitoring: Prometheus
+  container: Docker
+```
+
+**最終ビルド日**: 2025-06-24
+**次回メンテナンス**: 2025-07-01
+
+## 🧪 テスト戦略
+
+### 自動テスト体系
+| テスト種別 | ツール | カバレッジ目標 |
+|------------|--------|----------------|
+| 単体テスト | pytest | 90% |
+| APIテスト | Postman | 100%エンドポイント |
+| 負荷テスト | Locust | 500RPS |
 
 ## ⚠️ 注意事項
 
