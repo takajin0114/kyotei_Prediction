@@ -18,12 +18,6 @@ app = Flask(__name__)
 
 SAMPLE_DATA = Path('data/complete_race_data_20240615_KIRYU_R1.json')
 
-@app.route('/')
-def index():
-    if SAMPLE_DATA.exists():
-        html_content = generate_race_html(str(SAMPLE_DATA))
-        return render_template('index.html', content=html_content)
-    return render_template('index.html', error="Sample data not found")
 
 @app.route('/api/race_data', methods=['GET'])
 def get_race_data():
