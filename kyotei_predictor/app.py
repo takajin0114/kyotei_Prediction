@@ -52,6 +52,42 @@ def predict():
         "confidence": 0.75
     })
 
+@app.route('/api/races', methods=['GET'])
+@cache.cached(timeout=300)  # 5分間キャッシュ
+def get_races():
+    # サンプルデータからレース一覧を生成
+    sample_files = Path('data').glob('complete_race_data_*.json')
+    races = []
+    for file in sample_files:
+        with open(file) as f:
+            data = json.load(f)
+            races.append({
+                'date': data['race_info']['date'],
+                'stadium': data['race_info']['stadium'],
+                'race_number': data['race_info']['race_number'],
+                'title': data['race_info']['title']
+            })
+    return jsonify(races)
+
+@app.route('/api/weather', methods=['GET'])
+@cache.cached(timeout=300, query_string=True)  # 5分間キャッシュ（クエリパラメータ考慮）
+def get_weather():
+    # クエリパラメータから日付と競艇場を取得
+    date = request.args.get('date')
+    stadium = request.args.get('stadium')
+    
+    if not date or not stadium:
+        return jsonify({"error": "date and stadium parameters are required"}), 400
+    
+    # 該当するデータファイルを検索
+    file_path = Path(f'data/complete_race_data_{date}_{stadium}_R1.json')
+    if not file_path.exists():
+        return jsonify({"error": "Data not found"}), 404
+    
+    with open(file_path) as f:
+        data = json.load(f)
+        return jsonify(data['weather_condition'])
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=51932, debug=True)
 
