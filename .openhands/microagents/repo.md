@@ -50,36 +50,10 @@
 ---
 
 ## 🛠️ 技術スタック
-- **Backend**: Python 3.10, Flask 3.0, FastAPI, PostgreSQL, Redis, Pandas, Polars
-- **ML**: XGBoost, LightGBM, PyTorch, MLflow, WandB
-- **RL**: gymnasium, stable-baselines3, Optuna
-- **Frontend**: Vue.js 3, Tailwind CSS, Chart.js, D3.js
 
----
 
-## 🗃️ データ基盤・特徴量
-- PostgreSQL拡張（RL用テーブル）
-- Airflow DAGによる自動更新・DVC連携
-- FeatureEnhancerによる特徴量生成
-- 選手・機材・環境データの統合
-
----
-
-## 🤖 強化学習開発サブタスク（詳細）
-1. 依存関係・DBスキーマ整備
-2. KyoteiEnv（gym環境）実装
-3. 特徴量設計・エンジニアリング
-4. PPO/SAC等のRLモデル開発
-5. バックテスト・A/Bテスト
-6. PredictionEngine/フロント統合
-7. モニタリング・CI/CD
-
----
-
-## 🔮 将来機能（現開発対象外）
-- マルチユーザー/ソーシャル/課金
-
-**注記**: v2.0では開発者単独利用を想定
+**注記**: v2.0では開発者単独利用を想定  
+**APIドキュメント**: [設計書](/integration_design.md)
 
 **リスク管理**:
 - データ取得規制変更 → 代替API確保
