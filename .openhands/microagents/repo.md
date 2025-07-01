@@ -25,7 +25,8 @@
 ## 🏁 RLファースト開発ロードマップ
 
 ### 1. 強化学習基盤構築
-- [ ] 依存関係追加（gymnasium, stable-baselines3, torch, optuna, mlflow等）
+- [x] 依存関係追加（gymnasium, stable-baselines3, torch, optuna, mlflow等）
+- [x] 仮想環境構築・動作確認
 - [ ] DB（PostgreSQLまたはSQLite等）にRL用テーブル追加
 - [ ] KyoteiEnv（gym.Env）実装（状態・行動・報酬設計）
 - [ ] サンプルデータで環境テスト
@@ -53,9 +54,73 @@
 - [ ] API/フロント連携
 - [ ] A/Bテスト・CI/CD・モニタリング
 
+### 3. 特徴量ごとの型・前処理方針（案）
+
+| 特徴量                | 型         | 前処理・エンコーディング例                |
+|-----------------------|------------|-------------------------------------------|
+| pit_number（枠番）    | int        | 1〜6を0〜1にmin-max正規化                 |
+| current_rating（級別）| str        | one-hot（A1/A2/B1/B2）                    |
+| rate_in_all_stadium   | float      | min-max正規化（例: 0〜10→0〜1）           |
+| rate_in_event_going_stadium | float | min-max正規化                             |
+| boat_quinella_rate    | float      | min-max正規化                             |
+| boat_trio_rate        | float      | min-max正規化                             |
+| motor_quinella_rate   | float      | min-max正規化                             |
+| motor_trio_rate       | float      | min-max正規化                             |
+| stadium（場ID）       | str        | one-hot or ラベルエンコーディング          |
+| race_number           | int        | 1〜12を0〜1にmin-max正規化                |
+| date                  | str        | 月/曜日/連番などに分解 or 無変換           |
+| number_of_laps        | int        | そのまま or min-max正規化                 |
+| is_course_fixed       | bool       | 0/1に変換                                 |
+| オッズ（3連単120通り）| float      | log(odds+1)変換＋min-max正規化 or クリップ |
+| 欠損値                | -          | 0埋め/平均値補完/特殊値/欠損フラグ追加     |
+
+- 各艇ごと特徴量（上記×6）＋レース特徴量＋オッズ120個
+- 最終shape例: (6, 選手特徴量数) + レース特徴量数 + 120
+
+### 4. サンプルデータでのベクトル化テスト
+- race_data/odds_dataから状態ベクトルを生成する関数を実装
+- unittestでshapeや値の正規化・欠損処理も含めて妥当性を確認済み
+- 状態ベクトルshape例: (179,)（6艇×特徴量+レース特徴量+オッズ120）
+
 ---
 
-## 📊 開発状況（2025-06-27）
+次は「action→買い目変換関数の実装・テスト」「報酬計算ロジックの実装」に進みます。
+
+---
+
+## 🏆 RL設計方針（2024-06-27時点）
+
+- **対象舟券種**：3連単（6艇×5×4=120通り）
+- **行動空間**：`gym.spaces.Discrete(120)`、action→買い目はpermutationsでマッピング
+- **状態ベクトル**：取得できるjsonデータ（出走表・選手・モーター・レース条件・オッズ等）を最大限活用
+- **報酬関数**：損益ベース（的中時: 払戻金-賭け金、不的中時: -賭け金）
+- **目的**：回収率最大化（期待値重視）
+- **学習データ**：data/配下のrace_data_*.json, odds_data_*.json等
+- **仮想環境/依存**：venv311, gymnasium, stable-baselines3, torch, metaboatrace.scrapers等
+
+### 今後の決定・実装事項
+- 状態ベクトルの特徴量リスト・前処理方針
+- action→買い目変換関数の実装
+- 報酬計算ロジック（oddsデータ連携）
+- データ抽出・分割・学習ループ設計
+
+---
+
+## ✅ 進捗表（2024-06-27）
+| 項目         | 状況 | 備考 |
+|--------------|------|------|
+| 環境構築     | ✅   | venv311, 依存OK |
+| データ取得   | ✅   | スクレイパー・odds取得OK |
+| RL環境雛形   | ✅   | KyoteiEnv雛形・テストOK |
+| RL設計方針   | ✅   | 3連単・損益ベースで決定 |
+| 状態設計     | ⏳   | 特徴量リスト・前処理検討中 |
+| 行動設計     | ⏳   | permutations実装予定 |
+| 報酬設計     | ⏳   | odds連携・損益計算実装予定 |
+| 学習ループ   | ⏳   | データ連携・評価設計予定 |
+
+---
+
+## 📊 開発状況（2024-06-27 現在）
 
 | コンポーネント   | 進捗   | バージョン | 担当           |
 |------------------|--------|------------|----------------|
@@ -63,8 +128,15 @@
 | API基盤          | ✅100% | v1.3.0     | バックエンド   |
 | 予測モデル       | 🟢85%  | v1.2.1     | AIチーム       |
 | フロントエンド   | 🟡40%  | v1.1.0     | フロントチーム |
-| 強化学習         | 🔲0%   | v2.0.0     | AIチーム       |
-| 投資価値判定     | 🔲0%   | v2.0.0     | AIチーム       |
+| 強化学習         | 🟡10%  | v2.0.0     | AIチーム       |
+| 投資価値判定     | 🟡10%  | v2.0.0     | AIチーム       |
+| 環境構築         | ✅100% | v2.0.0     | 全体           |
+
+- Python 3.11仮想環境（venv311）構築・有効化済み
+- 主要依存パッケージ（Flask, gymnasium, stable-baselines3, torch, optuna, mlflow, metaboatrace.scrapers等）インストール済み
+- `pip list`/`import`による動作確認OK
+- データ取得・分析スクリプトも正常動作
+- 依存競合・ビルドエラーは3.11環境で解消済み
 
 ---
 
