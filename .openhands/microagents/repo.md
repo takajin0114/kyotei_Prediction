@@ -10,11 +10,23 @@
 
 ---
 
+## 🎯 今後の主目標
+
+### 投資価値判定型3連単予測の実現
+- 各レースの全3連単組み合わせについて、
+  1. **AI/強化学習で的中確率を計算**
+  2. **公式サイトからリアルタイムで3連単オッズを取得**
+  3. **「期待値 = オッズ × 的中確率」で全組み合わせを評価**
+  4. **期待値が一定以上の組み合わせのみを投資対象とする**
+- これにより「期待値投資」戦略を自動化し、実運用可能な予測システムを目指す
+
+---
+
 ## 🏁 RLファースト開発ロードマップ
 
 ### 1. 強化学習基盤構築
 - [ ] 依存関係追加（gymnasium, stable-baselines3, torch, optuna, mlflow等）
-- [ ] PostgreSQLにRL用テーブル追加
+- [ ] DB（PostgreSQLまたはSQLite等）にRL用テーブル追加
 - [ ] KyoteiEnv（gym.Env）実装（状態・行動・報酬設計）
 - [ ] サンプルデータで環境テスト
 
@@ -30,7 +42,13 @@
 - [ ] バックテスト・精度評価
 - [ ] SACやアンサンブル等の高度化（任意）
 
-### 4. 統合・評価・運用
+### 4. 投資価値判定型3連単予測
+- [ ] 3連単全組み合わせの確率計算（AI/強化学習モデル出力）
+- [ ] odds_fetcher.py等で3連単オッズを自動取得
+- [ ] 期待値計算・投資判定ロジック実装
+- [ ] 投資推奨リストの自動生成・可視化
+
+### 5. 統合・評価・運用
 - [ ] PredictionEngineへのRL統合
 - [ ] API/フロント連携
 - [ ] A/Bテスト・CI/CD・モニタリング
@@ -46,11 +64,12 @@
 | 予測モデル       | 🟢85%  | v1.2.1     | AIチーム       |
 | フロントエンド   | 🟡40%  | v1.1.0     | フロントチーム |
 | 強化学習         | 🔲0%   | v2.0.0     | AIチーム       |
+| 投資価値判定     | 🔲0%   | v2.0.0     | AIチーム       |
 
 ---
 
 ## 🛠️ 技術スタック
-- **Backend**: Python 3.10, Flask 3.0, FastAPI, PostgreSQL, Redis, Pandas, Polars
+- **Backend**: Python 3.10, Flask 3.0, FastAPI, PostgreSQL/SQLite, Redis, Pandas, Polars
 - **ML**: XGBoost, LightGBM, PyTorch, MLflow, WandB
 - **RL**: gymnasium, stable-baselines3, Optuna
 - **Frontend**: Vue.js 3, Tailwind CSS, Chart.js, D3.js
@@ -58,21 +77,23 @@
 ---
 
 ## 🗃️ データ基盤・特徴量
-- PostgreSQL拡張（RL用テーブル）
+- DB拡張（RL用テーブル）
 - Airflow DAGによる自動更新・DVC連携
 - FeatureEnhancerによる特徴量生成
 - 選手・機材・環境データの統合
+- オッズデータ自動取得
 
 ---
 
-## 🤖 強化学習開発サブタスク（詳細）
+## 🤖 強化学習・投資価値判定タスク（詳細）
 1. 依存関係・DBスキーマ整備
 2. KyoteiEnv（gym環境）実装
 3. 特徴量設計・エンジニアリング
 4. PPO/SAC等のRLモデル開発
 5. バックテスト・A/Bテスト
-6. PredictionEngine/フロント統合
-7. モニタリング・CI/CD
+6. 3連単確率計算・オッズ自動取得・期待値判定
+7. PredictionEngine/フロント統合
+8. モニタリング・CI/CD
 
 ---
 
