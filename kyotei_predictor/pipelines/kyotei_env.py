@@ -151,12 +151,16 @@ def calc_trifecta_reward(action: int, arrival_tuple: Tuple[int,int,int], odds_da
     reward = payout - bet_amount
     return reward 
 
-class KyoteiEnvManager:
+class KyoteiEnvManager(gym.Env):
     """
     複数レースデータを使ったエピソード切替用ラッパー。
     dataディレクトリからrace_data/odds_dataのペア一覧を作成し、resetごとにランダムなレースを選択してKyoteiEnvを初期化する。
+    gym.Envを継承してstable-baselines3との互換性を確保。
     """
+    metadata = {"render_modes": ["human"]}
+    
     def __init__(self, data_dir="../data", bet_amount=100):
+        super().__init__()
         self.data_dir = data_dir
         self.bet_amount = bet_amount
         self.pairs = self._find_race_odds_pairs()
@@ -209,7 +213,8 @@ class KyoteiEnvManager:
         
         return pairs
 
-    def reset(self):
+    def reset(self, *, seed=None, options=None):
+        super().reset(seed=seed)
         # ランダムに1レース選択
         race_path, odds_path = random.choice(self.pairs)
         self.env = KyoteiEnv(race_data_path=race_path, odds_data_path=odds_path, bet_amount=self.bet_amount)
@@ -219,6 +224,15 @@ class KyoteiEnvManager:
         if self.env is None:
             raise RuntimeError("envが初期化されていません。reset()を先に呼んでください。")
         return self.env.step(action)
+    
+    def render(self, mode="human"):
+        if self.env is not None:
+            return self.env.render(mode)
+        return None
+    
+    def close(self):
+        if self.env is not None:
+            self.env.close()
 
     @property
     def action_space(self):

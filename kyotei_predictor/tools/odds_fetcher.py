@@ -13,6 +13,8 @@ import requests
 import time
 from io import StringIO
 import json
+import argparse
+import sys
 
 def fetch_trifecta_odds(race_date, stadium_code, race_number):
     """
@@ -58,7 +60,7 @@ def fetch_trifecta_odds(race_date, stadium_code, race_number):
         for odds in odds_data:
             formatted_odds.append({
                 'betting_numbers': odds.betting_numbers,
-                'ratio': float(odds.ratio),
+                'ratio': float(odds.ratio) if odds.ratio is not None else 0.0,
                 'betting_method': str(odds.betting_method),
                 'combination': f"{odds.betting_numbers[0]}-{odds.betting_numbers[1]}-{odds.betting_numbers[2]}"
             })
@@ -84,37 +86,37 @@ def fetch_trifecta_odds(race_date, stadium_code, race_number):
         print(f"❌ スクレイピングエラー: {e}")
         return None
 
-def test_odds_fetching():
+def fetch_odds_for_race(race_date_str, stadium_name, race_number):
     """
-    オッズ取得のテスト実行
+    指定されたレースのオッズを取得
     """
-    print("🎰 競艇オッズ取得テスト")
-    print("=" * 50)
-    
-    # テスト設定
-    test_configs = [
-        {
-            'date': date(2024, 6, 15),
-            'stadium': StadiumTelCode.KIRYU,
-            'race_number': 1,
-            'description': '桐生競艇場 第1レース (過去データ)'
+    try:
+        # 日付の解析
+        year, month, day = map(int, race_date_str.split('-'))
+        race_date = date(year, month, day)
+        
+        # スタジアムコードの取得
+        stadium_map = {
+            'KIRYU': StadiumTelCode.KIRYU,
+            'TODA': StadiumTelCode.TODA,
+            'EDOGAWA': StadiumTelCode.EDOGAWA
         }
-    ]
-    
-    for config in test_configs:
-        print(f"\n🏁 {config['description']}")
+        
+        if stadium_name not in stadium_map:
+            print(f"❌ 未対応のスタジアム: {stadium_name}")
+            return None
+        
+        stadium_code = stadium_map[stadium_name]
+        
+        print(f"\n🏁 {stadium_name}競艇場 第{race_number}レース")
         print("-" * 40)
         
-        odds_data = fetch_trifecta_odds(
-            config['date'],
-            config['stadium'],
-            config['race_number']
-        )
+        odds_data = fetch_trifecta_odds(race_date, stadium_code, race_number)
         
         if odds_data:
             # ファイル保存
-            filename = f"odds_data_{config['date']}_{config['stadium'].name}_R{config['race_number']}.json"
-            filepath = f"../data/{filename}"
+            filename = f"odds_data_{race_date_str}_{stadium_name}_R{race_number}.json"
+            filepath = f"data/{filename}"
             
             try:
                 with open(filepath, 'w', encoding='utf-8') as f:
@@ -125,8 +127,38 @@ def test_odds_fetching():
             
             # オッズ分析
             analyze_odds_data(odds_data)
+            return odds_data
         else:
             print("❌ オッズデータ取得失敗")
+            return None
+            
+    except Exception as e:
+        print(f"❌ エラー: {e}")
+        return None
+
+def test_odds_fetching():
+    """
+    オッズ取得のテスト実行
+    """
+    print("🎰 競艇オッズ取得テスト")
+    print("=" * 50)
+    
+    # テスト設定
+    test_configs = [
+        {
+            'date': '2024-06-15',
+            'stadium': 'KIRYU',
+            'race_number': 1,
+            'description': '桐生競艇場 第1レース (過去データ)'
+        }
+    ]
+    
+    for config in test_configs:
+        fetch_odds_for_race(
+            config['date'],
+            config['stadium'],
+            config['race_number']
+        )
 
 def analyze_odds_data(odds_data):
     """
@@ -155,7 +187,19 @@ def main():
     """
     メイン実行関数
     """
-    test_odds_fetching()
+    parser = argparse.ArgumentParser(description='競艇オッズ取得ツール')
+    parser.add_argument('--date', type=str, help='レース日 (YYYY-MM-DD)')
+    parser.add_argument('--stadium', type=str, help='スタジアム名 (KIRYU, TODA, EDOGAWA等)')
+    parser.add_argument('--race', type=int, help='レース番号')
+    
+    args = parser.parse_args()
+    
+    if args.date and args.stadium and args.race:
+        # コマンドライン引数で指定された場合
+        fetch_odds_for_race(args.date, args.stadium, args.race)
+    else:
+        # デフォルトのテスト実行
+        test_odds_fetching()
 
 if __name__ == "__main__":
     main()
