@@ -1,0 +1,86 @@
+{
+  "optimization": {
+    "study_name": "kyotei_ppo_optimization",
+    "n_trials": 20,
+    "timeout": 1800,
+    "direction": "maximize",
+    "metric": "mean_reward",
+    "eval_freq": 1000,
+    "n_eval_episodes": 10,
+    "total_timesteps": 10000
+  },
+  "hyperparameters": {
+    "learning_rate": {
+      "type": "float",
+      "range": [1e-5, 1e-2],
+      "log": true,
+      "description": "学習率（対数スケール）"
+    },
+    "n_steps": {
+      "type": "int",
+      "range": [64, 2048],
+      "description": "1エポックあたりのステップ数"
+    },
+    "batch_size": {
+      "type": "int",
+      "range": [32, 256],
+      "description": "バッチサイズ"
+    },
+    "n_epochs": {
+      "type": "int",
+      "range": [1, 20],
+      "description": "1エポックあたりの更新回数"
+    },
+    "gamma": {
+      "type": "float",
+      "range": [0.8, 0.999],
+      "description": "割引率"
+    },
+    "gae_lambda": {
+      "type": "float",
+      "range": [0.8, 0.999],
+      "description": "GAEのλパラメータ"
+    },
+    "clip_range": {
+      "type": "float",
+      "range": [0.1, 0.4],
+      "description": "PPOのクリップ範囲"
+    },
+    "clip_range_vf": {
+      "type": "float",
+      "range": [0.1, 0.4],
+      "description": "価値関数のクリップ範囲"
+    },
+    "ent_coef": {
+      "type": "float",
+      "range": [0.0, 0.1],
+      "description": "エントロピー係数"
+    },
+    "vf_coef": {
+      "type": "float",
+      "range": [0.1, 1.0],
+      "description": "価値関数の係数"
+    },
+    "max_grad_norm": {
+      "type": "float",
+      "range": [0.1, 2.0],
+      "description": "勾配クリッピングの閾値"
+    }
+  },
+  "environment": {
+    "data_dir": "data",
+    "bet_amount": 100,
+    "random_seed": 42
+  },
+  "evaluation": {
+    "metrics": ["mean_reward", "win_rate", "return_rate"],
+    "n_eval_episodes": 10,
+    "deterministic": true
+  },
+  "logging": {
+    "level": "INFO",
+    "save_models": true,
+    "save_logs": true,
+    "tensorboard_log": "./optuna_tensorboard/"
+  }
+} 

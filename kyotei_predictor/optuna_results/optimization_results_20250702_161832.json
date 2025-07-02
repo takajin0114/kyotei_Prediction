@@ -1,0 +1,117 @@
+{
+  "timestamp": "2025-07-02T16:18:32.694381",
+  "best_params": {
+    "learning_rate": 0.00010796386445890871,
+    "n_steps": 1322,
+    "batch_size": 211,
+    "n_epochs": 17,
+    "gamma": 0.8061315180410766,
+    "gae_lambda": 0.9535035313222477,
+    "clip_range": 0.30380427529778453,
+    "clip_range_vf": 0.1429347595504409,
+    "ent_coef": 0.034671362316610464,
+    "vf_coef": 0.30663572463695665,
+    "max_grad_norm": 1.0044655159437712
+  },
+  "best_value": -1000.0,
+  "optimization_config": {
+    "n_trials": 50,
+    "timeout": 3600,
+    "direction": "maximize",
+    "metric": "mean_reward",
+    "eval_freq": 1000,
+    "n_eval_episodes": 10,
+    "total_timesteps": 10000
+  },
+  "param_ranges": {
+    "learning_rate": {
+      "type": "float",
+      "range": [
+        1e-05,
+        0.01
+      ],
+      "log": true,
+      "description": "\u5b66\u7fd2\u7387\uff08\u5bfe\u6570\u30b9\u30b1\u30fc\u30eb\uff09"
+    },
+    "n_steps": {
+      "type": "int",
+      "range": [
+        64,
+        2048
+      ],
+      "description": "1\u30a8\u30dd\u30c3\u30af\u3042\u305f\u308a\u306e\u30b9\u30c6\u30c3\u30d7\u6570"
+    },
+    "batch_size": {
+      "type": "int",
+      "range": [
+        32,
+        256
+      ],
+      "description": "\u30d0\u30c3\u30c1\u30b5\u30a4\u30ba"
+    },
+    "n_epochs": {
+      "type": "int",
+      "range": [
+        1,
+        20
+      ],
+      "description": "1\u30a8\u30dd\u30c3\u30af\u3042\u305f\u308a\u306e\u66f4\u65b0\u56de\u6570"
+    },
+    "gamma": {
+      "type": "float",
+      "range": [
+        0.8,
+        0.999
+      ],
+      "description": "\u5272\u5f15\u7387"
+    },
+    "gae_lambda": {
+      "type": "float",
+      "range": [
+        0.8,
+        0.999
+      ],
+      "description": "GAE\u306e\u03bb\u30d1\u30e9\u30e1\u30fc\u30bf"
+    },
+    "clip_range": {
+      "type": "float",
+      "range": [
+        0.1,
+        0.4
+      ],
+      "description": "PPO\u306e\u30af\u30ea\u30c3\u30d7\u7bc4\u56f2"
+    },
+    "clip_range_vf": {
+      "type": "float",
+      "range": [
+        0.1,
+        0.4
+      ],
+      "description": "\u4fa1\u5024\u95a2\u6570\u306e\u30af\u30ea\u30c3\u30d7\u7bc4\u56f2"
+    },
+    "ent_coef": {
+      "type": "float",
+      "range": [
+        0.0,
+        0.1
+      ],
+      "description": "\u30a8\u30f3\u30c8\u30ed\u30d4\u30fc\u4fc2\u6570"
+    },
+    "vf_coef": {
+      "type": "float",
+      "range": [
+        0.1,
+        1.0
+      ],
+      "description": "\u4fa1\u5024\u95a2\u6570\u306e\u4fc2\u6570"
+    },
+    "max_grad_norm": {
+      "type": "float",
+      "range": [
+        0.1,
+        2.0
+      ],
+      "description": "\u52fe\u914d\u30af\u30ea\u30c3\u30d4\u30f3\u30b0\u306e\u95be\u5024"
+    }
+  }
+}
