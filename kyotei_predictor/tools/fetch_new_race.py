@@ -43,7 +43,37 @@ def fetch_multiple_races():
             'stadium': StadiumTelCode.EDOGAWA, # 江戸川
             'race_number': 1, 
             'description': '江戸川競艇場 第1レース'
-        }
+        },
+        {
+            'date': date(2024, 6, 16),
+            'stadium': StadiumTelCode.KIRYU,
+            'race_number': 1,
+            'description': '桐生競艇場 2024-06-16 第1レース'
+        },
+        {
+            'date': date(2024, 6, 17),
+            'stadium': StadiumTelCode.TODA,
+            'race_number': 1,
+            'description': '戸田競艇場 2024-06-17 第1レース'
+        },
+        {
+            'date': date(2024, 6, 18),
+            'stadium': StadiumTelCode.EDOGAWA,
+            'race_number': 1,
+            'description': '江戸川競艇場 2024-06-18 第1レース'
+        },
+        {
+            'date': date(2024, 6, 19),
+            'stadium': StadiumTelCode.KIRYU,
+            'race_number': 1,
+            'description': '桐生競艇場 2024-06-19 第1レース（未来）'
+        },
+        {
+            'date': date(2024, 6, 20),
+            'stadium': StadiumTelCode.TODA,
+            'race_number': 1,
+            'description': '戸田競艇場 2024-06-20 第1レース（未来）'
+        },
     ]
     
     successful_fetches = []
