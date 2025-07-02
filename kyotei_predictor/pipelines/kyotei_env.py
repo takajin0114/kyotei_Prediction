@@ -3,46 +3,59 @@ import numpy as np
 import json
 from itertools import permutations
 from typing import Tuple
+import glob
+import random
+import os
 
 class KyoteiEnv(gym.Env):
     """
-    競艇レース用の強化学習環境（雛形）。
-    状態・行動・報酬設計は今後拡張予定。
+    競艇レース用の強化学習環境（3連単・損益ベース）。
+    resetでレースデータ・oddsデータ・正解着順をセットし、stepでactionに対しrewardを返す。
+    1レース1エピソードの簡易実装。
     """
     metadata = {"render_modes": ["human"]}
 
-    def __init__(self, config=None):
+    def __init__(self, race_data_path=None, odds_data_path=None, bet_amount=100):
         super().__init__()
-        self.config = config or {}
-        # 状態空間: 仮に6艇の簡易数値ベクトル
-        self.observation_space = gym.spaces.Box(low=0, high=1, shape=(6,), dtype=np.float32)
-        # 行動空間: 仮に6艇のうち1つを選ぶ（単勝予想の例）
-        self.action_space = gym.spaces.Discrete(6)
+        self.race_data_path = race_data_path
+        self.odds_data_path = odds_data_path
+        self.bet_amount = bet_amount
+        self.observation_space = gym.spaces.Box(low=0, high=1, shape=(192,), dtype=np.float32)
+        self.action_space = gym.spaces.Discrete(120)
         self.state = None
-        self.current_step = 0
-        self.max_steps = self.config.get('max_steps', 10)
+        self.terminated = False
+        self.odds_data = []  # 必ずリストで初期化
+        self.arrival_tuple = (0,0,0)  # 必ずタプルで初期化
 
     def reset(self, *, seed=None, options=None):
         super().reset(seed=seed)
-        self.current_step = 0
-        # 状態をランダム初期化（今後: レースデータから生成）
-        self.state = np.random.rand(6).astype(np.float32)
+        # レースデータ・oddsデータ読み込み
+        assert self.race_data_path and self.odds_data_path, "race_data_path, odds_data_pathを指定してください"
+        with open(self.race_data_path, encoding='utf-8') as f:
+            race = json.load(f)
+        with open(self.odds_data_path, encoding='utf-8') as f:
+            odds = json.load(f)
+        self.odds_data = odds['odds_data']
+        # 正解着順（1-3着）
+        records = sorted(race['race_records'], key=lambda x: x['arrival'])
+        self.arrival_tuple = tuple(r['pit_number'] for r in records[:3])
+        # 状態ベクトル生成
+        self.state = vectorize_race_state(self.race_data_path, self.odds_data_path)
+        self.terminated = False
         info = {}
         return self.state, info
 
     def step(self, action):
-        # ダミー報酬: actionが0なら+1, それ以外は0
-        reward = 1.0 if action == 0 else 0.0
-        self.current_step += 1
-        terminated = self.current_step >= self.max_steps
+        assert not self.terminated, "エピソードはすでに終了しています。resetしてください。"
+        # 報酬計算
+        reward = calc_trifecta_reward(action, self.arrival_tuple, self.odds_data, self.bet_amount)
+        self.terminated = True  # 1レース1stepで終了
         truncated = False
-        info = {}
-        # 状態遷移（今後: レース進行に応じて更新）
-        self.state = np.random.rand(6).astype(np.float32)
-        return self.state, reward, terminated, truncated, info
+        info = {"arrival": self.arrival_tuple}
+        return self.state, reward, self.terminated, truncated, info
 
     def render(self, mode="human"):
-        print(f"Step: {self.current_step}, State: {self.state}")
+        print(f"State: {self.state}")
 
     def close(self):
         pass
@@ -62,7 +75,24 @@ def vectorize_race_state(race_data_path, odds_data_path):
     # 2. 各艇ごとの特徴量ベクトル
     rating_map = {'A1': [1,0,0,0], 'A2': [0,1,0,0], 'B1': [0,0,1,0], 'B2': [0,0,0,1]}
     boats = []
-    for entry in race['race_entries']:
+    
+    # race_entriesがある場合はそれを使用、ない場合はrace_recordsから基本情報を構築
+    if 'race_entries' in race:
+        entries = race['race_entries']
+    else:
+        # race_recordsから基本情報を構築（エントリーデータがない場合のフォールバック）
+        entries = []
+        for record in race['race_records']:
+            entry = {
+                'pit_number': record['pit_number'],
+                'racer': {'current_rating': 'B1'},  # デフォルト
+                'performance': {'rate_in_all_stadium': 5.0, 'rate_in_event_going_stadium': 5.0},  # デフォルト
+                'boat': {'quinella_rate': 50.0, 'trio_rate': 50.0},  # デフォルト
+                'motor': {'quinella_rate': 50.0, 'trio_rate': 50.0}  # デフォルト
+            }
+            entries.append(entry)
+    
+    for entry in entries:
         pit = (entry['pit_number'] - 1) / 5  # 1-6→0-1
         rating = rating_map.get(entry['racer']['current_rating'], [0,0,0,0])
         perf_all = entry['performance']['rate_in_all_stadium'] / 10 if entry['performance']['rate_in_all_stadium'] else 0
@@ -104,4 +134,116 @@ def action_to_trifecta(action: int) -> Tuple[int, int, int]:
 
 def trifecta_to_action(trifecta: Tuple[int, int, int]) -> int:
     """(1着,2着,3着)の買い目タプル→action(0-119)"""
-    return TRIFECTA_MAP[trifecta] 
+    return TRIFECTA_MAP[trifecta]
+
+def calc_trifecta_reward(action: int, arrival_tuple: Tuple[int,int,int], odds_data: list, bet_amount: int = 100) -> float:
+    """
+    action（0-119）, 着順タプル, oddsデータ, 賭け金を受け取り、損益rewardを返す。
+    的中時: 払戻金-賭け金, 不的中時: -賭け金
+    """
+    trifecta = action_to_trifecta(action)
+    # 的中判定
+    is_win = trifecta == arrival_tuple
+    # オッズ検索
+    odds_map = {tuple(o['betting_numbers']): o['ratio'] for o in odds_data}
+    odds = odds_map.get(trifecta, 0)
+    payout = odds * bet_amount if is_win else 0
+    reward = payout - bet_amount
+    return reward 
+
+class KyoteiEnvManager(gym.Env):
+    """
+    複数レースデータを使ったエピソード切替用ラッパー。
+    dataディレクトリからrace_data/odds_dataのペア一覧を作成し、resetごとにランダムなレースを選択してKyoteiEnvを初期化する。
+    gym.Envを継承してstable-baselines3との互換性を確保。
+    """
+    metadata = {"render_modes": ["human"]}
+    
+    def __init__(self, data_dir="../data", bet_amount=100):
+        super().__init__()
+        self.data_dir = data_dir
+        self.bet_amount = bet_amount
+        self.pairs = self._find_race_odds_pairs()
+        self.env = None
+
+    def _find_race_odds_pairs(self):
+        race_files = glob.glob(os.path.join(self.data_dir, "race_data_*.json"))
+        odds_files = glob.glob(os.path.join(self.data_dir, "odds_data_*.json"))
+        
+        # キー: (date, stadium, race_number)
+        def parse_key(path, prefix):
+            fname = os.path.basename(path)
+            parts = fname.replace(prefix, "").replace(".json", "").split("_")
+            
+            # 日付部分を統合（例: 2024-06-15 → 20240615）
+            if len(parts) >= 3:
+                # 日付部分を統合
+                date_parts = parts[0:3]  # 年-月-日
+                date = "".join(date_parts).replace("-", "")
+                
+                # スタジアムとレース番号
+                if len(parts) >= 5:
+                    stadium = parts[3]
+                    rno = parts[4]
+                elif len(parts) >= 4:
+                    stadium = parts[3]
+                    rno = "1"
+                else:
+                    stadium = "UNKNOWN"
+                    rno = "1"
+            else:
+                date = parts[0] if parts else "UNKNOWN"
+                stadium = parts[1] if len(parts) > 1 else "UNKNOWN"
+                rno = parts[2] if len(parts) > 2 else "1"
+            
+            rno = rno.replace('R', '')  # 'R2'→'2' のようにRを除去
+            try:
+                rno_int = int(rno)
+            except ValueError:
+                rno_int = 1  # デフォルト値
+            
+            return (date, stadium, rno_int)
+        
+        race_map = {parse_key(f, "race_data_"): f for f in race_files}
+        odds_map = {parse_key(f, "odds_data_"): f for f in odds_files}
+        
+        # ペアが揃っているものだけ
+        keys = set(race_map.keys()) & set(odds_map.keys())
+        pairs = [(race_map[k], odds_map[k]) for k in sorted(keys)]
+        
+        return pairs
+
+    def reset(self, *, seed=None, options=None):
+        super().reset(seed=seed)
+        # ランダムに1レース選択
+        race_path, odds_path = random.choice(self.pairs)
+        self.env = KyoteiEnv(race_data_path=race_path, odds_data_path=odds_path, bet_amount=self.bet_amount)
+        return self.env.reset()
+
+    def step(self, action):
+        if self.env is None:
+            raise RuntimeError("envが初期化されていません。reset()を先に呼んでください。")
+        return self.env.step(action)
+    
+    def render(self, mode="human"):
+        if self.env is not None:
+            return self.env.render(mode)
+        return None
+    
+    def close(self):
+        if self.env is not None:
+            self.env.close()
+
+    @property
+    def action_space(self):
+        if self.env is not None:
+            return self.env.action_space
+        # デフォルトのaction_spaceを返す（初期化前）
+        return gym.spaces.Discrete(120)
+
+    @property
+    def observation_space(self):
+        if self.env is not None:
+            return self.env.observation_space
+        # デフォルトのobservation_spaceを返す（初期化前）
+        return gym.spaces.Box(low=0, high=1, shape=(192,), dtype=np.float32) 

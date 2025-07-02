@@ -1,6 +1,14 @@
 Flask==3.1.1
 pandas==2.2.3
-numpy==2.2.6
+numpy
 requests==2.32.3
 python-dateutil==2.9.0.post0
-metaboatrace.scrapers==3.3.1Flask-Caching
+metaboatrace.scrapers==3.3.1
+Flask-Caching
+
+# --- RL/強化学習関連 ---
+gymnasium==0.29.1
+stable-baselines3==2.2.1
+torch==2.7.1
+optuna==3.4.0
+mlflow==2.8.1
