@@ -20,7 +20,7 @@ class KyoteiEnv(gym.Env):
         self.race_data_path = race_data_path
         self.odds_data_path = odds_data_path
         self.bet_amount = bet_amount
-        self.observation_space = gym.spaces.Box(low=0, high=1, shape=(179,), dtype=np.float32)
+        self.observation_space = gym.spaces.Box(low=0, high=1, shape=(192,), dtype=np.float32)
         self.action_space = gym.spaces.Discrete(120)
         self.state = None
         self.terminated = False
@@ -75,7 +75,24 @@ def vectorize_race_state(race_data_path, odds_data_path):
     # 2. 各艇ごとの特徴量ベクトル
     rating_map = {'A1': [1,0,0,0], 'A2': [0,1,0,0], 'B1': [0,0,1,0], 'B2': [0,0,0,1]}
     boats = []
-    for entry in race['race_entries']:
+    
+    # race_entriesがある場合はそれを使用、ない場合はrace_recordsから基本情報を構築
+    if 'race_entries' in race:
+        entries = race['race_entries']
+    else:
+        # race_recordsから基本情報を構築（エントリーデータがない場合のフォールバック）
+        entries = []
+        for record in race['race_records']:
+            entry = {
+                'pit_number': record['pit_number'],
+                'racer': {'current_rating': 'B1'},  # デフォルト
+                'performance': {'rate_in_all_stadium': 5.0, 'rate_in_event_going_stadium': 5.0},  # デフォルト
+                'boat': {'quinella_rate': 50.0, 'trio_rate': 50.0},  # デフォルト
+                'motor': {'quinella_rate': 50.0, 'trio_rate': 50.0}  # デフォルト
+            }
+            entries.append(entry)
+    
+    for entry in entries:
         pit = (entry['pit_number'] - 1) / 5  # 1-6→0-1
         rating = rating_map.get(entry['racer']['current_rating'], [0,0,0,0])
         perf_all = entry['performance']['rate_in_all_stadium'] / 10 if entry['performance']['rate_in_all_stadium'] else 0
@@ -148,21 +165,49 @@ class KyoteiEnvManager:
     def _find_race_odds_pairs(self):
         race_files = glob.glob(os.path.join(self.data_dir, "race_data_*.json"))
         odds_files = glob.glob(os.path.join(self.data_dir, "odds_data_*.json"))
+        
         # キー: (date, stadium, race_number)
         def parse_key(path, prefix):
             fname = os.path.basename(path)
             parts = fname.replace(prefix, "").replace(".json", "").split("_")
-            if len(parts) == 3:
-                date, stadium, rno = parts
+            
+            # 日付部分を統合（例: 2024-06-15 → 20240615）
+            if len(parts) >= 3:
+                # 日付部分を統合
+                date_parts = parts[0:3]  # 年-月-日
+                date = "".join(date_parts).replace("-", "")
+                
+                # スタジアムとレース番号
+                if len(parts) >= 5:
+                    stadium = parts[3]
+                    rno = parts[4]
+                elif len(parts) >= 4:
+                    stadium = parts[3]
+                    rno = "1"
+                else:
+                    stadium = "UNKNOWN"
+                    rno = "1"
             else:
-                date, stadium, rno = parts[0], parts[1], parts[2]
+                date = parts[0] if parts else "UNKNOWN"
+                stadium = parts[1] if len(parts) > 1 else "UNKNOWN"
+                rno = parts[2] if len(parts) > 2 else "1"
+            
             rno = rno.replace('R', '')  # 'R2'→'2' のようにRを除去
-            return (date, stadium, int(rno))
+            try:
+                rno_int = int(rno)
+            except ValueError:
+                rno_int = 1  # デフォルト値
+            
+            return (date, stadium, rno_int)
+        
         race_map = {parse_key(f, "race_data_"): f for f in race_files}
         odds_map = {parse_key(f, "odds_data_"): f for f in odds_files}
+        
         # ペアが揃っているものだけ
         keys = set(race_map.keys()) & set(odds_map.keys())
-        return [(race_map[k], odds_map[k]) for k in sorted(keys)]
+        pairs = [(race_map[k], odds_map[k]) for k in sorted(keys)]
+        
+        return pairs
 
     def reset(self):
         # ランダムに1レース選択
@@ -187,4 +232,4 @@ class KyoteiEnvManager:
         if self.env is not None:
             return self.env.observation_space
         # デフォルトのobservation_spaceを返す（初期化前）
-        return gym.spaces.Box(low=0, high=1, shape=(179,), dtype=np.float32) 
+        return gym.spaces.Box(low=0, high=1, shape=(192,), dtype=np.float32) 
