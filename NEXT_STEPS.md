@@ -1,80 +1,73 @@
-# 今後のタスク・TODO一覧（kyotei_Prediction）
+# 今後のタスク詳細（2025-07-04時点）
 
-## 【現状・進捗まとめ】
-- A. ディレクトリ・コード整理・README/設計書最新化は完了（2025-07-04時点）
-  - data/ ディレクトリの results/・logs/ 新設、sample/統合方針・命名規則統一
-  - tools/ 配下は fetch, batch, analysis, viz, ai, common で用途別に整理
-  - pipelines/READMEに機能分割・サンプルフロー追記
-  - common/READMEに共通処理集約・運用ルール明記
-  - fetch/README, integration_design.mdにAPI/CLI/バッチの統一方針を反映
-- ルートREADMEを全体のハブとして再構成、各設計書・サブREADME・タスク一覧へのリンクを明記
-- integration_design.md, prediction_algorithm_design.md, site_analysis.md, web_app_requirements.md など設計書の冒頭に役割・関連ドキュメント・最終更新日を追加
-- サブディレクトリREADMEも役割・使い方・設計書リンクを明記し最新化
+## 1. 直近の優先タスク（B-1, B-2, C-1）
 
----
+### B-1: 3連単確率計算アルゴリズムの本実装
+- [ ] `pipelines/`配下に`trifecta_probability.py`（仮）を新設し、120通りの3連単組み合わせ確率計算をクラス化
+- [ ] `prediction_algorithm_design.md`の設計方針に沿い、選手・機材・オッズ・コース特性を重み付け
+- [ ] テスト用サンプルデータ（`data/sample/`）で自動テスト（`tests/ai/`）を作成
+- [ ] 実装例・利用例を`pipelines/README.md`に追記
 
-## A. ディレクトリ・コード整理・リファクタリング（完了）
-- [x] データディレクトリのraw/processed/results/logs分割（`data/`の整理）
-- [x] `tools/`配下の用途別サブディレクトリ化（fetch, batch, analysis, viz等の明確化）
-- [x] `pipelines/`の機能分割・README追加
-- [x] 共通処理（会場マッピング・定数・ユーティリティ）の集約
-- [x] API/CLI/バッチの引数・出力・エラー処理統一
+### B-2: 機材データ重視ロジックの強化
+- [ ] `prediction_engine.py`の`_equipment_focused_algorithm`をリファクタし、ボート・モーター成績の閾値・ボーナス加算ロジックを明示化
+- [ ] テストケース追加（高性能機材・低性能機材の極端例も含む）
+- [ ] サンプルデータでの特徴分析・可視化（`tools/analysis/`）
 
-## B. 機能追加・強化（次作業）
-- [ ] **B-1: 3連単確率計算の予測アルゴリズム実装**（prediction_algorithm_design.md・pipelines/に反映）
-- [ ] 機材データ重視の予測ロジック強化
-- [ ] 選手の調子・競艇場特性・リアルタイムオッズの考慮
-- [x] B-4: データベース連携（SQLite等で過去データ蓄積・バルクインポート・fetch_all_races, fetch_results_by_race等のAPI実装・設計書/README反映）
-    - pipelines/db_integration.py新設、サンプルデータ一括DB化、クエリAPI実装
-    - pipelines/README.md・prediction_algorithm_design.mdに運用例・API例を反映
-    - テスト・利用例も順次追加中
-- [x] B-5: 統計分析機能の追加（コース別勝率・平均タイム集計・可視化API・設計書/README反映）
-    - tools/analysis/race_stats.pyに集計・可視化API実装
-    - pipelines/README.md・prediction_algorithm_design.mdに運用例・設計方針を反映
-    - 欠損値除外・matplotlib可視化も対応
-
-## C. Webアプリ・UI/UX
-- [ ] HTMLテンプレート・JavaScript機能の拡充
-- [ ] レスポンシブデザイン対応
-- [ ] エラーハンドリング・ユーザー体験向上
-- [ ] 予測履歴・分析タブの実装
-
-## D. テスト・運用
-- [ ] テスト自動化・カバレッジ向上
-- [ ] CI/CD整備
-- [ ] ドキュメントの多言語化・自動生成
-- [ ] 不要ファイル・大容量ファイルの整理
-
-## E. データ取得・分析
-- [ ] metaboatrace.scrapers等の既存ライブラリ活用・検証
-- [ ] 独自スクレイピング機能の段階的実装
-- [ ] データ取得効率化（並列化・レート制限・欠損検出）
+### C-1: Webアプリ「履歴」「分析」タブの実装
+- [ ] `templates/index.html`に新タブ追加（履歴・分析）
+- [ ] Flaskルーティング・API（`/api/predictions_history`, `/api/analysis`等）を`app.py`に追加
+- [ ] 履歴データはDBまたは`predictions.json`から取得
+- [ ] 分析タブは`tools/analysis/race_stats.py`の可視化APIを呼び出し
 
 ---
 
-### 優先度・推奨アクション（短期）
-1. B-1: 3連単確率計算の予測アルゴリズム実装
-2. 機材データ重視の予測ロジック強化
-3. Webアプリの履歴・分析タブ実装
-4. テスト自動化・CI/CD
-5. データ取得効率化
+## 2. データベース・統計分析の拡張
+
+### DBスキーマ・API拡張
+- [ ] `pipelines/db_integration.py`に「予測結果」「学習ログ」「特徴量」テーブル追加
+- [ ] Webアプリからの履歴検索・分析APIを拡張
+- [ ] DBスキーマ・運用ルールを`integration_design.md`・`pipelines/README.md`に反映
+
+### 統計分析・可視化
+- [ ] `tools/analysis/race_stats.py`に「コース別・選手別・機材別」集計APIを追加
+- [ ] 欠損値・異常値の自動検出・レポート生成
+- [ ] matplotlib/plotlyによるグラフ出力例を`README.md`に追記
 
 ---
 
-#### 直近の具体的タスク例
-- [ ] **B-1: 3連単確率計算の予測アルゴリズム実装**（prediction_algorithm_design.md・pipelines/に反映）
-- [ ] 機材データ重視の予測ロジック強化
-- [ ] Webアプリの「履歴」「分析」タブの実装
-- [ ] 既存データ取得スクリプトのリファクタ・効率化
-- [ ] テスト自動化（pytest等）
+## 3. テスト・CI/CD・運用
+
+- [ ] pytestによる自動テストカバレッジ向上（`tests/`配下を拡充）
+- [ ] GitHub Actions等によるCI/CDパイプライン整備
+- [ ] ドキュメント自動生成（Sphinx/Markdown）・多言語化
+- [ ] 不要ファイル・大容量ファイルの整理・.gitignoreの見直し
 
 ---
 
-## 次のタスク候補
-- B-6: 機械学習・ディープラーニングモデルの本格導入
-- B-7: 大量データによる重み最適化・相性分析・季節補正など
-- C: WebアプリUI/UX強化
-- D: テスト自動化・CI/CD
-- E: データ取得効率化
+## 4. データ取得・バッチ処理
 
-（ご要望・優先タスクがあればご指示ください） 
+- [ ] `tools/fetch/`・`tools/batch/`の既存スクリプトをリファクタ
+- [ ] metaboatrace.scrapers等の外部ライブラリ検証・導入
+- [ ] 独自スクレイピング機能の段階的実装（HTML構造解析・レート制限・エラー処理）
+- [ ] 並列化・効率化（multiprocessing/threading/asyncio等）
+
+---
+
+## 5. 中長期拡張・研究開発
+
+- [ ] 機械学習・ディープラーニングモデルの本格導入（特徴量設計・重み最適化・Optuna活用）
+- [ ] 選手間の相性・季節補正・コース適性の高度分析
+- [ ] WebアプリUI/UX強化（レスポンシブ・アクセシビリティ・エラーハンドリング）
+- [ ] 予測精度の自動評価・改善サイクルの構築
+
+---
+
+## 6. ドキュメント・進捗管理
+
+- [ ] 各設計書（`integration_design.md`, `prediction_algorithm_design.md`, `site_analysis.md`, `web_app_requirements.md`）の最新化
+- [ ] サブディレクトリREADMEの運用例・API例・設計方針の追記
+- [ ] 本`NEXT_STEPS.md`の定期更新・進捗チェック
+
+---
+
+### ※ 各タスクの詳細・進捗・優先度は本ファイルおよび`README.md`・設計書に随時反映してください。 
