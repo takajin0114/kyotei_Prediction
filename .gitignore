@@ -119,3 +119,29 @@ Thumbs.db
 kyotei_predictor/logs/*.log
 kyotei_predictor/__pycache__/
 *.pyc
+
+# --- kyotei_predictorプロジェクト固有の除外 ---
+# 大容量データ・成果物
+kyotei_predictor/data/raw/
+kyotei_predictor/data/backup/
+kyotei_predictor/data/temp/
+kyotei_predictor/data/processed/
+kyotei_predictor/outputs/
+kyotei_predictor/optuna_logs/
+kyotei_predictor/optuna_models/
+kyotei_predictor/optuna_tensorboard/
+kyotei_predictor/optuna_studies/
+kyotei_predictor/optuna_results/
+
+# サンプル・README・テンプレートは除外しない
+!kyotei_predictor/data/README.md
+!kyotei_predictor/data/raw/README.md
+!kyotei_predictor/data/backup/README.md
+!kyotei_predictor/data/temp/README.md
+!kyotei_predictor/data/processed/README.md
+!kyotei_predictor/outputs/README.md
+!kyotei_predictor/optuna_logs/README.md
+!kyotei_predictor/optuna_models/README.md
+!kyotei_predictor/optuna_tensorboard/README.md
+!kyotei_predictor/optuna_studies/README.md
+!kyotei_predictor/optuna_results/README.md

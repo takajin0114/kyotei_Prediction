@@ -66,10 +66,29 @@ env = KyoteiEnv(featured)
 
 ## 3連単確率計算パイプライン（B-1対応）
 - 予測アルゴリズムで算出した各艇のスコアから、全120通りの3連単組み合わせの確率を計算
-- `kyotei_predictor/prediction_engine.py` の `calculate_trifecta_probabilities`・`get_top_trifecta_recommendations` を利用
+- `kyotei_predictor/pipelines/trifecta_probability.py` の `TrifectaProbabilityCalculator` クラスを利用
+- 既存の `kyotei_predictor/prediction_engine.py` の `calculate_trifecta_probabilities`・`get_top_trifecta_recommendations` も利用可能
 - テスト例: `tests/ai/test_trifecta_probability.py` で自動検証・オッズ比較も可能
 
-### サンプルフロー
+### サンプルフロー（直接利用）
+```python
+from kyotei_predictor.pipelines.trifecta_probability import TrifectaProbabilityCalculator
+# 各艇の予測スコア・勝率リスト（例）
+predictions = [
+    {'pit_number': 1, 'win_probability': 30.0},
+    {'pit_number': 2, 'win_probability': 20.0},
+    {'pit_number': 3, 'win_probability': 18.0},
+    {'pit_number': 4, 'win_probability': 12.0},
+    {'pit_number': 5, 'win_probability': 10.0},
+    {'pit_number': 6, 'win_probability': 10.0},
+]
+calculator = TrifectaProbabilityCalculator()
+trifecta_probs = calculator.calculate(predictions)
+for combo in trifecta_probs[:5]:
+    print(combo)
+```
+
+### サンプルフロー（PredictionEngine経由）
 ```python
 from kyotei_predictor.prediction_engine import PredictionEngine
 engine = PredictionEngine()
@@ -81,6 +100,33 @@ print(result['top_combinations'])
 ```
 - サンプルデータ: `data/raw/complete_race_data_*.json` など
 - 実際のオッズ比較: `odds_data_*.json` も活用可 
+
+### サンプルフロー（コース特性・オッズ補正込み）
+```python
+from kyotei_predictor.pipelines.trifecta_probability import TrifectaProbabilityCalculator
+# コース特性・オッズ補正を含むサンプルデータ
+predictions = [
+    {'pit_number': 1, 'rate_in_all_stadium': 6.5, 'rate_in_event_going_stadium': 7.0, 'current_rating': 'A1', 'boat_quinella_rate': 44.0, 'motor_quinella_rate': 38.0, 'course_bias': 0.5, 'odds_bias': 0.1},
+    {'pit_number': 2, 'rate_in_all_stadium': 5.8, 'rate_in_event_going_stadium': 6.2, 'current_rating': 'A2', 'boat_quinella_rate': 41.0, 'motor_quinella_rate': 35.0, 'course_bias': 0.3, 'odds_bias': 0.2},
+    {'pit_number': 3, 'rate_in_all_stadium': 5.2, 'rate_in_event_going_stadium': 5.5, 'current_rating': 'B1', 'boat_quinella_rate': 38.0, 'motor_quinella_rate': 32.0, 'course_bias': 0.2, 'odds_bias': 0.3},
+    {'pit_number': 4, 'rate_in_all_stadium': 4.9, 'rate_in_event_going_stadium': 5.0, 'current_rating': 'B1', 'boat_quinella_rate': 36.0, 'motor_quinella_rate': 30.0, 'course_bias': 0.1, 'odds_bias': 0.4},
+    {'pit_number': 5, 'rate_in_all_stadium': 4.5, 'rate_in_event_going_stadium': 4.8, 'current_rating': 'B2', 'boat_quinella_rate': 33.0, 'motor_quinella_rate': 28.0, 'course_bias': 0.0, 'odds_bias': 0.5},
+    {'pit_number': 6, 'rate_in_all_stadium': 4.2, 'rate_in_event_going_stadium': 4.5, 'current_rating': 'B2', 'boat_quinella_rate': 30.0, 'motor_quinella_rate': 25.0, 'course_bias': -0.1, 'odds_bias': 0.6},
+]
+weights = {
+    'all_stadium_rate': 0.2,
+    'event_going_rate': 0.2,
+    'rating': 0.1,
+    'boat_quinella_rate': 0.2,
+    'motor_quinella_rate': 0.2,
+    'course_bias': 0.15,
+    'odds_bias': 0.15,
+}
+calculator = TrifectaProbabilityCalculator(weights=weights)
+trifecta_probs = calculator.calculate(predictions)
+for combo in trifecta_probs[:5]:
+    print(combo)
+```
 
 ---
 
