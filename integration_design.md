@@ -1,6 +1,6 @@
 # 競艇予測Webアプリケーション - 統合設計書
 
-**最終更新日: 2025-07-03**
+**最終更新日: 2025-07-04**
 
 ---
 
@@ -15,6 +15,15 @@
 - [prediction_algorithm_design.md](prediction_algorithm_design.md)（予測アルゴリズム設計）
 - [site_analysis.md](site_analysis.md)（データ取得元サイト分析）
 - [web_app_requirements.md](web_app_requirements.md)（Webアプリ要件・UI設計）
+
+---
+
+## API/CLI/バッチの標準化方針
+- すべてのCLIツール・バッチはargparse等で引数指定を統一
+- 出力ファイル・標準出力・エラー処理の仕様を統一
+- 例外発生時は明確なエラーメッセージ＋exit codeで終了
+- ログ・リトライ処理はtools/common/の共通機能を活用
+- API関数はdocstringで引数・戻り値・例外を明記し、importしやすい設計に
 
 ---
 
