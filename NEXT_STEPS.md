@@ -1,14 +1,28 @@
 # 今後のタスク・TODO一覧（kyotei_Prediction）
 
-## A. ディレクトリ・コード整理・リファクタリング
-- [ ] データディレクトリのraw/processed/results/logs分割（`data/`の整理）
-- [ ] `tools/`配下の用途別サブディレクトリ化（fetch, batch, analysis, viz等の明確化）
-- [ ] `pipelines/`の機能分割・README追加
-- [ ] 共通処理（会場マッピング・定数・ユーティリティ）の集約
-- [ ] API/CLI/バッチの引数・出力・エラー処理統一
+## 【現状・進捗まとめ】
+- A. ディレクトリ・コード整理・README/設計書最新化は完了（2025-07-04時点）
+  - data/ ディレクトリの results/・logs/ 新設、sample/統合方針・命名規則統一
+  - tools/ 配下は fetch, batch, analysis, viz, ai, common で用途別に整理
+  - pipelines/READMEに機能分割・サンプルフロー追記
+  - common/READMEに共通処理集約・運用ルール明記
+  - fetch/README, integration_design.mdにAPI/CLI/バッチの統一方針を反映
+- ルートREADMEを全体のハブとして再構成、各設計書・サブREADME・タスク一覧へのリンクを明記
+- integration_design.md, prediction_algorithm_design.md, site_analysis.md, web_app_requirements.md など設計書の冒頭に役割・関連ドキュメント・最終更新日を追加
+- サブディレクトリREADMEも役割・使い方・設計書リンクを明記し最新化
 
-## B. 機能追加・強化
-- [ ] 予測アルゴリズムの中級・上級化（機材重視、3連単確率計算、総合評価など）
+---
+
+## A. ディレクトリ・コード整理・リファクタリング（完了）
+- [x] データディレクトリのraw/processed/results/logs分割（`data/`の整理）
+- [x] `tools/`配下の用途別サブディレクトリ化（fetch, batch, analysis, viz等の明確化）
+- [x] `pipelines/`の機能分割・README追加
+- [x] 共通処理（会場マッピング・定数・ユーティリティ）の集約
+- [x] API/CLI/バッチの引数・出力・エラー処理統一
+
+## B. 機能追加・強化（次作業）
+- [ ] **B-1: 3連単確率計算の予測アルゴリズム実装**（prediction_algorithm_design.md・pipelines/に反映）
+- [ ] 機材データ重視の予測ロジック強化
 - [ ] 選手の調子・競艇場特性・リアルタイムオッズの考慮
 - [ ] データベース連携（SQLite等で過去データ蓄積）
 - [ ] 統計分析機能の追加
@@ -35,19 +49,17 @@
 ---
 
 ### 優先度・推奨アクション（短期）
-1. ディレクトリ・コード整理（A）
-2. Webアプリの基本動作・UI/UX強化（C）
-3. データ取得・前処理パイプラインの自動化・効率化（E）
-4. 予測アルゴリズムの中級化・機能追加（B）
-5. テスト・ドキュメント整備（D）
+1. B-1: 3連単確率計算の予測アルゴリズム実装
+2. 機材データ重視の予測ロジック強化
+3. Webアプリの履歴・分析タブ実装
+4. テスト自動化・CI/CD
+5. データ取得効率化
 
 ---
 
 #### 直近の具体的タスク例
-- [ ] `data/`ディレクトリの整理・命名規則統一
-- [ ] `tools/`サブディレクトリのREADME・使い方追記
-- [ ] `pipelines/`のREADMEとサンプルフロー追加
+- [ ] **B-1: 3連単確率計算の予測アルゴリズム実装**（prediction_algorithm_design.md・pipelines/に反映）
+- [ ] 機材データ重視の予測ロジック強化
 - [ ] Webアプリの「履歴」「分析」タブの実装
 - [ ] 既存データ取得スクリプトのリファクタ・効率化
-- [ ] 予測アルゴリズムの「3連単確率計算」実装
 - [ ] テスト自動化（pytest等） 
