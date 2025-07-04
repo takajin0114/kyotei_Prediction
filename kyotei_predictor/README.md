@@ -1,3 +1,43 @@
+# kyotei_predictor サブシステム README
+
+**最終更新日: 2025-07-03**
+
+---
+
+## 本READMEの役割
+- サブシステム（kyotei_predictor/）の役割・API・予測精度・今後の予定を記載
+- ディレクトリ配下の主要機能・使い方・注意点を明確化
+- ルートREADMEや設計書、NEXT_STEPS.mdへのリンクを明記
+
+## 関連ドキュメント
+- [../README.md](../README.md)（全体概要・セットアップ・タスク入口）
+- [../NEXT_STEPS.md](../NEXT_STEPS.md)（今後のタスク・優先度・進捗管理）
+- [../integration_design.md](../integration_design.md)（統合設計・アーキテクチャ）
+- [../prediction_algorithm_design.md](../prediction_algorithm_design.md)（予測アルゴリズム設計）
+- [../site_analysis.md](../site_analysis.md)（データ取得元サイト分析）
+- [../web_app_requirements.md](../web_app_requirements.md)（Webアプリ要件・UI設計）
+
+---
+
+# dataディレクトリの構成・運用ルール（2025-07-03時点）
+- `raw/` : 取得したままの生データ
+- `processed/` : 前処理・特徴量エンジニアリング済みデータ
+- `results/` : 予測・分析・評価などの成果物（新設）
+- `logs/` : データ取得・処理・学習等のログファイル（新設）
+- `backup/` : バックアップ用データ
+- `temp/` : 一時ファイル
+- `sample/` : サンプルデータ（今後はraw/またはresults/へ統合・廃止予定）
+
+- ファイル命名規則: `race_data_YYYY-MM-DD_VENUE_RN.json` など。種別・日付・会場・レース番号で統一。
+- 生データは必ずraw/、前処理後はprocessed/、成果物はresults/、ログはlogs/へ保存。
+- サンプルデータは一時的にsample/に置くが、将来的にはraw/resultsへ統合。
+- 重要なデータはbackup/で世代管理。
+- 一時ファイルはtemp/で作業終了後にクリーンアップ。
+
+---
+
+# 以下、従来の内容（API・予測精度・今後の予定など）を現状維持・必要に応じて最新化
+
 # 競艇予測ツール - メインアプリケーション
 
 ## 📁 ディレクトリ構造
@@ -9,18 +49,38 @@ kyotei_predictor/
 ├── prediction_engine.py      # 予測エンジン
 ├── requirements.txt          # Python依存関係
 ├── README.md                # このファイル
-├── data/                    # データファイル
-│   ├── *.json              # レースデータ
-│   └── predictions.json    # 予想履歴
-├── tools/                   # ツール類
-│   ├── race_data_fetcher.py # データ取得
-│   ├── data_display.py     # データ表示
-│   ├── html_display.py     # HTML表示
-│   └── fetch_new_race.py   # 新規データ取得
-├── tests/                   # テストファイル
-│   ├── test_data_fetch.py  # データ取得テスト
-│   ├── simple_race_test.py # シンプルテスト
-│   └── test_multiple_races.py # 複数レーステスト
+├── data/                    # データファイル（整理済み）
+│   ├── raw/                # 生データ
+│   │   ├── race_data_*.json
+│   │   └── odds_data_*.json
+│   ├── processed/          # 処理済みデータ
+│   ├── backup/             # バックアップデータ
+│   └── temp/               # 一時データ
+├── tools/                   # ツール類（機能別に整理）
+│   ├── fetch/              # データ取得関連
+│   │   ├── race_data_fetcher.py
+│   │   └── odds_fetcher.py
+│   ├── batch/              # バッチ処理関連
+│   │   └── batch_fetch_all_venues.py
+│   ├── analysis/           # 分析関連
+│   │   └── odds_analysis.py
+│   ├── viz/                # 可視化関連
+│   │   ├── data_display.py
+│   │   └── html_display.py
+│   ├── ai/                 # AI/機械学習関連
+│   │   ├── optuna_optimizer.py
+│   │   └── rl_learn_sample.py
+│   └── common/             # 共通機能
+│       └── venue_mapping.py
+├── tests/                   # テストファイル（機能別に整理）
+│   ├── data/               # データ関連テスト
+│   │   ├── test_data_fetch.py
+│   │   ├── test_multiple_races.py
+│   │   └── simple_race_test.py
+│   └── ai/                 # AI関連テスト
+│       ├── test_kyotei_env.py
+│       ├── test_phase2_algorithms.py
+│       └── test_trifecta_probability.py
 ├── outputs/                 # 出力ファイル
 │   └── *.html              # HTML表示ファイル
 ├── logs/                    # ログファイル
@@ -50,36 +110,58 @@ http://localhost:12000
 
 ## 🧪 テスト実行
 
-### シンプル予測テスト
+### データ関連テスト
 ```bash
-python tests/simple_race_test.py
+python tests/data/simple_race_test.py
+python tests/data/test_multiple_races.py
+python tests/data/test_data_fetch.py
 ```
 
-### 複数レース検証
+### AI/機械学習関連テスト
 ```bash
-python tests/test_multiple_races.py
+python tests/ai/test_kyotei_env.py
+python tests/ai/test_phase2_algorithms.py
+python tests/ai/test_trifecta_probability.py
 ```
 
-### データ取得テスト
+### 全テスト実行
 ```bash
-python tests/test_data_fetch.py
+python -m pytest tests/
 ```
 
 ## 🔧 ツール使用方法
 
-### 新規レースデータ取得
+### データ取得
 ```bash
-python tools/fetch_new_race.py
+# 単一レースデータ取得
+python tools/fetch/race_data_fetcher.py
+
+# オッズデータ取得
+python tools/fetch/odds_fetcher.py
+
+# 全競艇場バッチ取得
+python tools/batch/batch_fetch_all_venues.py
 ```
 
-### データ表示
+### データ分析
 ```bash
-python tools/data_display.py data/race_data_*.json
+# オッズ分析
+python tools/analysis/odds_analysis.py
+
+# データ表示
+python tools/viz/data_display.py data/raw/race_data_*.json
+
+# HTML表示生成
+python tools/viz/html_display.py data/raw/race_data_*.json
 ```
 
-### HTML表示生成
+### AI/機械学習
 ```bash
-python tools/html_display.py data/race_data_*.json
+# Optuna最適化
+python tools/ai/optuna_optimizer.py
+
+# 強化学習サンプル
+python tools/ai/rl_learn_sample.py
 ```
 
 ## 📊 予測アルゴリズム
