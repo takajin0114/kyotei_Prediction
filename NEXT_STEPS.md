@@ -24,10 +24,14 @@
 - [ ] **B-1: 3連単確率計算の予測アルゴリズム実装**（prediction_algorithm_design.md・pipelines/に反映）
 - [ ] 機材データ重視の予測ロジック強化
 - [ ] 選手の調子・競艇場特性・リアルタイムオッズの考慮
-- [ ] データベース連携（SQLite等で過去データ蓄積）
-- [ ] 統計分析機能の追加
-- [ ] 機械学習・ディープラーニングモデルの本格導入
-- [ ] 大量データによる重み最適化・相性分析・季節補正など
+- [x] B-4: データベース連携（SQLite等で過去データ蓄積・バルクインポート・fetch_all_races, fetch_results_by_race等のAPI実装・設計書/README反映）
+    - pipelines/db_integration.py新設、サンプルデータ一括DB化、クエリAPI実装
+    - pipelines/README.md・prediction_algorithm_design.mdに運用例・API例を反映
+    - テスト・利用例も順次追加中
+- [x] B-5: 統計分析機能の追加（コース別勝率・平均タイム集計・可視化API・設計書/README反映）
+    - tools/analysis/race_stats.pyに集計・可視化API実装
+    - pipelines/README.md・prediction_algorithm_design.mdに運用例・設計方針を反映
+    - 欠損値除外・matplotlib可視化も対応
 
 ## C. Webアプリ・UI/UX
 - [ ] HTMLテンプレート・JavaScript機能の拡充
@@ -62,4 +66,15 @@
 - [ ] 機材データ重視の予測ロジック強化
 - [ ] Webアプリの「履歴」「分析」タブの実装
 - [ ] 既存データ取得スクリプトのリファクタ・効率化
-- [ ] テスト自動化（pytest等） 
+- [ ] テスト自動化（pytest等）
+
+---
+
+## 次のタスク候補
+- B-6: 機械学習・ディープラーニングモデルの本格導入
+- B-7: 大量データによる重み最適化・相性分析・季節補正など
+- C: WebアプリUI/UX強化
+- D: テスト自動化・CI/CD
+- E: データ取得効率化
+
+（ご要望・優先タスクがあればご指示ください） 
