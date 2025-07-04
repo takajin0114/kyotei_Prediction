@@ -376,6 +376,60 @@ if odds_data:
 - オッズ変動のリアルタイム反映・アラート機能
 - 天候・水面・時間帯など環境要因の多次元補正
 
+#### 3-5. データベース連携（SQLite等で過去データ蓄積・B-4対応）
+
+**目的**: 予測・学習・検証用の過去レースデータや予測結果をDB（例: SQLite）に蓄積し、再利用・分析・Webアプリ連携を容易にする
+
+- 実装候補: `sqlite3`/`SQLAlchemy`によるDB連携、`data/`配下のCSV/JSONからDBへのインポートスクリプト
+- 既存例: Optuna最適化は`optuna_studies/`にSQLite DBで保存済み
+- 今後: 予測履歴・レース結果・特徴量・オッズ・学習ログ等もDBで一元管理
+
+#### 設計・実装方針
+- **DBスキーマ例**: `races`（レース情報）、`racers`（選手）、`equipments`（機材）、`results`（着順・払戻）、`predictions`（予測結果）、`odds`（オッズ）など
+- **用途**: Webアプリの履歴表示・分析、学習データの効率的な抽出、統計分析・可視化
+- **実装例**: pipelines/やtools/に`db_integration.py`を新設し、CSV/JSON→DBインポート・クエリ・保存API（import_race_json_bulk, fetch_all_races, fetch_results_by_race等）を提供
+- **運用例**: サンプルデータを一括DB化し、Webアプリ・分析・学習で再利用。API例・利用例はpipelines/README.md参照
+- **拡張性**: テーブル拡張（選手・機材・オッズ等）、クエリAPI拡張、運用ルールはREADME・設計書にも反映
+
+#### サンプル実装方針
+```python
+import sqlite3
+conn = sqlite3.connect('data/kyotei_history.db')
+c = conn.cursor()
+c.execute('''CREATE TABLE IF NOT EXISTS races (race_id TEXT PRIMARY KEY, date TEXT, stadium TEXT, ...)''')
+# CSV/JSONからデータをINSERT
+c.execute('INSERT INTO races VALUES (?, ?, ...)', (race_id, date, stadium, ...))
+conn.commit()
+```
+
+#### 今後の拡張案
+- 予測結果・学習ログ・特徴量の自動蓄積
+- Webアプリからの履歴検索・分析API
+- DBを活用した統計分析・可視化・モデル評価
+- DBスキーマ・運用ルールはintegration_design.md等にも反映
+
+#### 3-6. 統計分析・可視化機能（B-5対応）
+
+**目的**: DBに蓄積したレース結果からコース別勝率・平均タイム等の統計を集計し、傾向分析・可視化・レポート作成に活用
+
+- 実装例: `tools/analysis/race_stats.py` に `calc_course_win_rate`, `calc_course_avg_time`, `plot_course_stats` を実装
+- サンプルフロー・利用例はpipelines/README.md参照
+- 今後: 選手・機材・オッズ等の分析指標・可視化も拡張予定
+
+#### 設計・実装方針
+- コース別1着率・平均タイムなどをDBから集計
+- 欠損値除外・分布可視化（matplotlib）
+- Webアプリ・レポート・分析APIで再利用可能な設計
+
+#### コード例（抜粋）
+```python
+from kyotei_predictor.pipelines.db_integration import KyoteiDB
+from kyotei_predictor.tools.analysis.race_stats import calc_course_win_rate, plot_course_stats
+with KyoteiDB() as db:
+    print(calc_course_win_rate(db))
+    plot_course_stats(db)
+```
+
 ---
 
 ## 🎯 実装計画

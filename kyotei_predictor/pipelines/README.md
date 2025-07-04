@@ -122,3 +122,43 @@ print(result['predictions'])
 ```
 - サンプルデータ: `data/raw/complete_race_data_*.json`, `odds_data_*.json` など
 - 拡張例: pipelines/feature_enhancer.pyで特徴量追加、PredictionEngineで補正ロジック拡張 
+
+---
+
+## データベース連携パイプライン（B-4対応・拡張）
+- 複数レースデータの一括インポート: `import_race_json_bulk(directory, db)`
+- 全レース一覧取得: `db.fetch_all_races()`
+- 特定レースの着順・タイム取得: `db.fetch_results_by_race(race_id)`
+
+### サンプルフロー
+```python
+from kyotei_predictor.pipelines.db_integration import KyoteiDB, import_race_json_bulk
+# DB作成・一括インポート
+with KyoteiDB() as db:
+    import_race_json_bulk('kyotei_predictor/data/raw', db)
+    all_races = db.fetch_all_races()
+    print(f"登録レース数: {len(all_races)}")
+    results = db.fetch_results_by_race('2024-06-06_KIRYU_R1')
+    for r in results:
+        print(r)
+```
+- 運用方針: サンプルデータ→DB一元化→Webアプリ・分析・学習で再利用
+- 今後: テーブル拡張（選手・機材・オッズ等）、クエリAPI拡張、運用ルールは設計書にも反映 
+
+---
+
+## 統計分析・可視化パイプライン（B-5対応）
+- DBからコース別勝率・平均タイムなどの統計を集計
+- `tools/analysis/race_stats.py` の `calc_course_win_rate`, `calc_course_avg_time`, `plot_course_stats` を利用
+
+### サンプルフロー
+```python
+from kyotei_predictor.pipelines.db_integration import KyoteiDB
+from kyotei_predictor.tools.analysis.race_stats import calc_course_win_rate, calc_course_avg_time, plot_course_stats
+with KyoteiDB() as db:
+    print('コース別勝率:', calc_course_win_rate(db))
+    print('コース別平均タイム:', calc_course_avg_time(db))
+    plot_course_stats(db)
+```
+- 運用方針: DB一元化データを活用し、分析・可視化・レポート作成に応用
+- 今後: 選手・機材・オッズ等の分析指標・可視化も拡張予定 
