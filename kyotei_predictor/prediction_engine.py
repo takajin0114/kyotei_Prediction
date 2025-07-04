@@ -21,6 +21,7 @@ import json
 import time
 from typing import Dict, List, Any, Optional, Tuple
 import logging
+from kyotei_predictor.pipelines.trifecta_probability import TrifectaProbabilityCalculator
 
 # ログ設定
 logging.basicConfig(level=logging.INFO)
@@ -694,44 +695,8 @@ class PredictionEngine:
         Returns:
             3連単確率リスト（確率順）
         """
-        import itertools
-        
-        # 各艇の勝率を取得
-        win_probabilities = self._calculate_win_probabilities(predictions)
-        pit_numbers = [pred['pit_number'] for pred in predictions]
-        
-        trifecta_combinations = []
-        
-        # 全ての3連単組み合わせを生成
-        for combination in itertools.permutations(pit_numbers, 3):
-            first, second, third = combination
-            
-            # 各艇のインデックスを取得
-            first_idx = pit_numbers.index(first)
-            second_idx = pit_numbers.index(second)
-            third_idx = pit_numbers.index(third)
-            
-            # 簡易確率計算（独立性を仮定）
-            # 実際にはより複雑な相関を考慮すべき
-            first_prob = win_probabilities[first_idx] / 100
-            second_prob = win_probabilities[second_idx] / 100 * 0.8  # 2着確率は1着より低い
-            third_prob = win_probabilities[third_idx] / 100 * 0.6   # 3着確率はさらに低い
-            
-            # 組み合わせ確率
-            combination_prob = first_prob * second_prob * third_prob
-            
-            trifecta_combinations.append({
-                'combination': f"{first}-{second}-{third}",
-                'pit_numbers': [first, second, third],
-                'probability': combination_prob,
-                'percentage': round(combination_prob * 100, 2),
-                'expected_odds': round(1 / combination_prob, 1) if combination_prob > 0 else 999.9
-            })
-        
-        # 確率順でソート
-        trifecta_combinations.sort(key=lambda x: x['probability'], reverse=True)
-        
-        return trifecta_combinations
+        calculator = TrifectaProbabilityCalculator()
+        return calculator.calculate(predictions)
     
     def get_top_trifecta_recommendations(self, race_data: Dict[str, Any], 
                                        algorithm: str = 'comprehensive',
