@@ -1,5 +1,34 @@
 # 競艇予測Webアプリケーション - 統合設計書
 
+**最終更新日: 2025-07-04**
+
+---
+
+## 本ドキュメントの役割
+- システム全体の統合設計・アーキテクチャ・開発フローを記載
+- 各機能の連携・開発方針・成功基準を明確化
+- 詳細なアルゴリズム・Web要件・タスクは他設計書・NEXT_STEPS.md参照
+
+## 関連ドキュメント
+- [README.md](README.md)（全体概要・セットアップ・タスク入口）
+- [NEXT_STEPS.md](NEXT_STEPS.md)（今後のタスク・優先度・進捗管理）
+- [prediction_algorithm_design.md](prediction_algorithm_design.md)（予測アルゴリズム設計）
+- [site_analysis.md](site_analysis.md)（データ取得元サイト分析）
+- [web_app_requirements.md](web_app_requirements.md)（Webアプリ要件・UI設計）
+
+---
+
+## API/CLI/バッチの標準化方針
+- すべてのCLIツール・バッチはargparse等で引数指定を統一
+- 出力ファイル・標準出力・エラー処理の仕様を統一
+- 例外発生時は明確なエラーメッセージ＋exit codeで終了
+- ログ・リトライ処理はtools/common/の共通機能を活用
+- API関数はdocstringで引数・戻り値・例外を明記し、importしやすい設計に
+
+---
+
+# 以下、従来の設計書内容（現状維持・必要に応じて最新化）
+
 ## 📋 設計概要
 
 ### 目的

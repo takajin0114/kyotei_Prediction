@@ -1,5 +1,25 @@
 # 競艇予測アルゴリズム設計書
 
+**最終更新日: 2025-07-03**
+
+---
+
+## 本ドキュメントの役割
+- 予測アルゴリズムの設計・拡張ロードマップを記載
+- データ項目・アルゴリズム仕様・段階的な実装計画を明確化
+- システム全体設計やタスクはREADME・integration_design.md・NEXT_STEPS.md参照
+
+## 関連ドキュメント
+- [README.md](README.md)（全体概要・セットアップ・タスク入口）
+- [NEXT_STEPS.md](NEXT_STEPS.md)（今後のタスク・優先度・進捗管理）
+- [integration_design.md](integration_design.md)（統合設計・アーキテクチャ）
+- [site_analysis.md](site_analysis.md)（データ取得元サイト分析）
+- [web_app_requirements.md](web_app_requirements.md)（Webアプリ要件・UI設計）
+
+---
+
+# 以下、従来の設計書内容（現状維持・必要に応じて最新化）
+
 ## 📋 概要
 
 競艇予測Webアプリケーションにおける予測アルゴリズムの設計仕様書。
@@ -121,67 +141,87 @@
 - ✅ バランスの取れた重み配分
 - ❌ 天候・コース条件は未考慮
 
-#### 2-2. 機材重視アルゴリズム
+#### 2-2. 機材重視アルゴリズム（現状実装・設計方針）
+
 **目的**: ボート・モーター成績を重視した評価
 
+- 実装箇所: `kyotei_predictor/prediction_engine.py` の `_equipment_focused_algorithm`
+- テスト: `tests/ai/test_phase2_algorithms.py` で自動テスト・特徴分析も実施
+- サンプルデータ: `data/raw/complete_race_data_*.json` など
+
+#### 実装方針
+- 機材成績（ボート2連率・モーター2連率）を重視（合計70%）
+- 選手成績（全国勝率・当地勝率）は30%程度に抑え、級別ボーナスも軽微に加算
+- 高性能機材（ボート2連率>40またはモーター2連率>35）にはボーナス加算も可能
+- スコアは正規化し、全艇の予測順位・勝率に反映
+
+#### コード例（抜粋）
 ```python
-選手スコア = 全国勝率 × 0.4 + 当地勝率 × 0.3 + 級別補正 × 0.1
-機材スコア = (ボート2連率 × 0.1 + モーター2連率 × 0.1) / 100
-
-# 機材成績を重視した総合評価
-機材重視スコア = 選手スコア + 機材スコア
-
-# 機材ボーナス（特に良い機材の場合）
-if ボート2連率 > 40 or モーター2連率 > 35:
-    機材ボーナス = 0.1
-else:
-    機材ボーナス = 0
-
-最終スコア = 機材重視スコア + 機材ボーナス
+# PredictionEngine._equipment_focused_algorithm より
+boat_rate = performance.get('boat_quinella_rate', 0) / 100
+motor_rate = performance.get('motor_quinella_rate', 0) / 100
+all_stadium_rate = performance.get('rate_in_all_stadium', 0)
+local_rate = performance.get('rate_in_event_going_stadium', 0)
+rating = racer.get('current_rating', 'B2')
+equipment_score = (boat_rate * 0.4 + motor_rate * 0.3)  # 機材70%
+racer_score = (all_stadium_rate * 0.15 + local_rate * 0.15) / 10  # 選手30%
+rating_bonus = self.rating_coefficients.get(rating, 1.0) * 0.1
+# 総合スコア
+total_score = equipment_score + racer_score + rating_bonus
 ```
 
-**特徴**:
+#### 特徴
 - ✅ 機材成績の影響を明確に評価
-- ✅ 高性能機材のボーナス評価
+- ✅ 高性能機材のボーナス評価も可能
 - ✅ 事前に取得可能なデータのみ使用
+- ✅ テスト・サンプルデータ・設計書と連携
+- ⚠️ 選手の調子や環境要因は未考慮（今後拡張）
 
-#### 2-3. 3連単確率計算アルゴリズム
+#### 今後の拡張案
+- 機材の直近成績や交換履歴も考慮
+- 機材・選手の相性分析
+- 環境要因（天候・コース）との連動評価
+
+#### 2-3. 3連単確率計算アルゴリズム（現状実装・設計方針）
+
 **目的**: 各艇のスコアから3連単の確率を算出し、投資判断を支援
 
+- 実装箇所: `kyotei_predictor/prediction_engine.py` の `calculate_trifecta_probabilities` および `get_top_trifecta_recommendations`
+- テスト: `tests/ai/test_trifecta_probability.py` で自動テスト・オッズ比較も実施
+- サンプルデータ: `data/raw/complete_race_data_*.json`, `odds_data_*.json`
+
+#### 実装方針
+- 各艇の勝率（スコア）を正規化し、6艇の全3連単組み合わせ（6P3=120通り）について独立確率の積で算出
+- 2着・3着の確率は1着より低くなるよう補正（例: 2着0.8倍, 3着0.6倍）
+- 組み合わせごとに確率・期待オッズを算出し、確率順でソート
+- 上位N件を推奨買い目として出力
+- 実際のオッズデータと比較し、投資価値分析も可能
+
+#### コード例（抜粋）
 ```python
-def calculate_trifecta_probabilities(individual_scores):
-    """
-    各艇のスコアから3連単の確率を計算
-    
-    Args:
-        individual_scores: 各艇の予測スコア [score1, score2, ..., score6]
-    
-    Returns:
-        trifecta_probabilities: 3連単の確率辞書
-    """
-    
-    # 1. 各艇の勝率を正規化
-    win_probabilities = normalize_to_probabilities(individual_scores)
-    
-    # 2. 3連単の全組み合わせ (6P3 = 120通り)
-    trifecta_combinations = generate_trifecta_combinations()
-    
-    # 3. 各組み合わせの確率を計算
-    trifecta_probs = {}
-    for combo in trifecta_combinations:
-        # 1着確率 × 2着確率 × 3着確率
-        prob = (win_probabilities[combo[0]-1] * 
-                win_probabilities[combo[1]-1] * 
-                win_probabilities[combo[2]-1])
-        trifecta_probs[f"{combo[0]}-{combo[1]}-{combo[2]}"] = prob
-    
-    return trifecta_probs
+# PredictionEngine.calculate_trifecta_probabilities より
+for combination in itertools.permutations(pit_numbers, 3):
+    first, second, third = combination
+    first_idx = pit_numbers.index(first)
+    second_idx = pit_numbers.index(second)
+    third_idx = pit_numbers.index(third)
+    first_prob = win_probabilities[first_idx] / 100
+    second_prob = win_probabilities[second_idx] / 100 * 0.8
+    third_prob = win_probabilities[third_idx] / 100 * 0.6
+    combination_prob = first_prob * second_prob * third_prob
+    # ...
 ```
 
-**特徴**:
+#### 特徴
 - ✅ 120通りの3連単組み合わせを網羅
-- ✅ オッズとの比較による投資価値分析
-- ✅ 実際の舟券購入判断に直結
+- ✅ オッズとの比較による投資価値分析が可能
+- ✅ テスト・サンプルデータ・設計書と連携
+- ⚠️ 独立性仮定のため、今後は艇間相関や着順依存性も考慮予定
+
+#### 今後の拡張案
+- 着順依存性・艇間相関を考慮した確率モデル
+- 機械学習・ベイズ推定による3連単確率の高度化
+- 実際のオッズ・配当履歴との比較による最適化
 
 ---
 
@@ -295,6 +335,100 @@ def calculate_investment_value(trifecta_probabilities, odds_data):
 - ✅ リスク・リターンの定量評価
 - ✅ 実際の舟券購入戦略に直結
 
+#### 3-4. 選手の調子・競艇場特性・リアルタイムオッズ考慮（設計・拡張方針）
+
+**目的**: 予測精度向上のため、直近成績・会場特性・リアルタイムオッズをスコアに反映
+
+- 実装候補: `pipelines/feature_enhancer.py` でrecent_form（最近の調子）など特徴量生成例あり
+- データ取得: `tools/fetch/odds_fetcher.py` でオッズデータ取得例あり
+- 分析・比較: `tools/analysis/odds_analysis.py` でオッズと結果の比較分析例あり
+
+#### 設計・実装方針
+- **選手の調子**: 直近10レースの勝率や連対率、スタートタイミング、最近の着順推移などを特徴量化し、スコアに加算
+- **競艇場特性**: 会場ごとのコース有利性（例: 1コース勝率）、季節・天候・水面特性を補正値として加算
+- **リアルタイムオッズ**: 取得したオッズデータを人気度・期待値計算に活用し、投資判断やスコア調整に反映
+- **拡張性**: pipelines/feature_enhancer.pyで特徴量追加、PredictionEngineで補正ロジック追加、tests/ai/で検証
+
+#### コード例（イメージ）
+```python
+# 選手の調子
+recent_form = np.log1p(recent_wins / (recent_races + 1))  # pipelines/feature_enhancer.py参照
+score += recent_form * 0.2  # 調子補正
+
+# 競艇場特性
+venue_bias = venue_stats.get('course1_win_rate', 0.5) * 0.1
+score += venue_bias
+
+# リアルタイムオッズ
+if odds_data:
+    popularity = odds_data.get('popularity_rank', 0)
+    score += (1 - popularity / 120) * 0.05  # 人気度補正
+```
+
+#### 特徴
+- ✅ 直近成績・会場特性・オッズを複合的に考慮
+- ✅ pipelines/feature_enhancer.py等で特徴量拡張が容易
+- ✅ 投資価値分析・期待値計算にも応用可能
+- ⚠️ データ取得・前処理・補正ロジックの設計が重要
+
+#### 今後の拡張案
+- 選手の調子・会場特性の自動学習・重み最適化
+- オッズ変動のリアルタイム反映・アラート機能
+- 天候・水面・時間帯など環境要因の多次元補正
+
+#### 3-5. データベース連携（SQLite等で過去データ蓄積・B-4対応）
+
+**目的**: 予測・学習・検証用の過去レースデータや予測結果をDB（例: SQLite）に蓄積し、再利用・分析・Webアプリ連携を容易にする
+
+- 実装候補: `sqlite3`/`SQLAlchemy`によるDB連携、`data/`配下のCSV/JSONからDBへのインポートスクリプト
+- 既存例: Optuna最適化は`optuna_studies/`にSQLite DBで保存済み
+- 今後: 予測履歴・レース結果・特徴量・オッズ・学習ログ等もDBで一元管理
+
+#### 設計・実装方針
+- **DBスキーマ例**: `races`（レース情報）、`racers`（選手）、`equipments`（機材）、`results`（着順・払戻）、`predictions`（予測結果）、`odds`（オッズ）など
+- **用途**: Webアプリの履歴表示・分析、学習データの効率的な抽出、統計分析・可視化
+- **実装例**: pipelines/やtools/に`db_integration.py`を新設し、CSV/JSON→DBインポート・クエリ・保存API（import_race_json_bulk, fetch_all_races, fetch_results_by_race等）を提供
+- **運用例**: サンプルデータを一括DB化し、Webアプリ・分析・学習で再利用。API例・利用例はpipelines/README.md参照
+- **拡張性**: テーブル拡張（選手・機材・オッズ等）、クエリAPI拡張、運用ルールはREADME・設計書にも反映
+
+#### サンプル実装方針
+```python
+import sqlite3
+conn = sqlite3.connect('data/kyotei_history.db')
+c = conn.cursor()
+c.execute('''CREATE TABLE IF NOT EXISTS races (race_id TEXT PRIMARY KEY, date TEXT, stadium TEXT, ...)''')
+# CSV/JSONからデータをINSERT
+c.execute('INSERT INTO races VALUES (?, ?, ...)', (race_id, date, stadium, ...))
+conn.commit()
+```
+
+#### 今後の拡張案
+- 予測結果・学習ログ・特徴量の自動蓄積
+- Webアプリからの履歴検索・分析API
+- DBを活用した統計分析・可視化・モデル評価
+- DBスキーマ・運用ルールはintegration_design.md等にも反映
+
+#### 3-6. 統計分析・可視化機能（B-5対応）
+
+**目的**: DBに蓄積したレース結果からコース別勝率・平均タイム等の統計を集計し、傾向分析・可視化・レポート作成に活用
+
+- 実装例: `tools/analysis/race_stats.py` に `calc_course_win_rate`, `calc_course_avg_time`, `plot_course_stats` を実装
+- サンプルフロー・利用例はpipelines/README.md参照
+- 今後: 選手・機材・オッズ等の分析指標・可視化も拡張予定
+
+#### 設計・実装方針
+- コース別1着率・平均タイムなどをDBから集計
+- 欠損値除外・分布可視化（matplotlib）
+- Webアプリ・レポート・分析APIで再利用可能な設計
+
+#### コード例（抜粋）
+```python
+from kyotei_predictor.pipelines.db_integration import KyoteiDB
+from kyotei_predictor.tools.analysis.race_stats import calc_course_win_rate, plot_course_stats
+with KyoteiDB() as db:
+    print(calc_course_win_rate(db))
+    plot_course_stats(db)
+```
 
 ---
 
