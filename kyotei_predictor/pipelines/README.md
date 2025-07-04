@@ -60,4 +60,65 @@ env = KyoteiEnv(featured)
 - 中間生成物は data/processed/ へ保存
 - パイプラインの自動化は今後 scripts/ や workflow/ で管理予定
 - テストコードは tests/ 配下に設置
-- 用途別にスクリプトを整理し、READMEも随時更新 
+- 用途別にスクリプトを整理し、READMEも随時更新
+
+---
+
+## 3連単確率計算パイプライン（B-1対応）
+- 予測アルゴリズムで算出した各艇のスコアから、全120通りの3連単組み合わせの確率を計算
+- `kyotei_predictor/prediction_engine.py` の `calculate_trifecta_probabilities`・`get_top_trifecta_recommendations` を利用
+- テスト例: `tests/ai/test_trifecta_probability.py` で自動検証・オッズ比較も可能
+
+### サンプルフロー
+```python
+from kyotei_predictor.prediction_engine import PredictionEngine
+engine = PredictionEngine()
+# race_data: 予測用データ（dict形式）
+trifecta_probs = engine.calculate_trifecta_probabilities(predictions)
+# または
+result = engine.get_top_trifecta_recommendations(race_data, algorithm='comprehensive', top_n=10)
+print(result['top_combinations'])
+```
+- サンプルデータ: `data/raw/complete_race_data_*.json` など
+- 実際のオッズ比較: `odds_data_*.json` も活用可 
+
+---
+
+## 機材重視アルゴリズムパイプライン（B-2対応）
+- ボート・モーター成績を重視した予測（equipment_focusedアルゴリズム）
+- `kyotei_predictor/prediction_engine.py` の `predict(..., algorithm='equipment_focused')` を利用
+- テスト例: `tests/ai/test_phase2_algorithms.py` で自動検証・特徴分析も可能
+
+### サンプルフロー
+```python
+from kyotei_predictor.prediction_engine import PredictionEngine
+engine = PredictionEngine()
+# race_data: 予測用データ（dict形式）
+result = engine.predict(race_data, algorithm='equipment_focused')
+print(result['predictions'])
+```
+- サンプルデータ: `data/raw/complete_race_data_*.json` など
+- 他アルゴリズムとの比較: `test_phase2_algorithms.py` で一括検証可 
+
+---
+
+## 選手の調子・競艇場特性・リアルタイムオッズ考慮パイプライン（B-3対応）
+- 直近成績（recent_form）、会場特性（venue_bias）、リアルタイムオッズ（popularity, odds_data）を特徴量・補正値としてスコアに加算
+- `pipelines/feature_enhancer.py` でrecent_form等の特徴量生成例あり
+- `tools/fetch/odds_fetcher.py` でオッズデータ取得、`tools/analysis/odds_analysis.py` でオッズ比較分析
+- PredictionEngineで補正ロジック追加・テストで検証可能
+
+### サンプルフロー
+```python
+from kyotei_predictor.pipelines.feature_enhancer import FeatureEnhancer
+from kyotei_predictor.prediction_engine import PredictionEngine
+# DataFrameにrecent_form等の特徴量を追加
+enhancer = FeatureEnhancer()
+df = enhancer.enhance(df, auto_correct=True)
+# PredictionEngineで補正ロジックを追加して予測
+engine = PredictionEngine()
+result = engine.predict(race_data, algorithm='comprehensive', options={'use_recent_form': True, 'use_venue_bias': True, 'use_odds': True})
+print(result['predictions'])
+```
+- サンプルデータ: `data/raw/complete_race_data_*.json`, `odds_data_*.json` など
+- 拡張例: pipelines/feature_enhancer.pyで特徴量追加、PredictionEngineで補正ロジック拡張 
