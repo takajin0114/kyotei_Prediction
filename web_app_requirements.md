@@ -1,3 +1,25 @@
+# Webアプリ要件・UI設計
+
+**最終更新日: 2025-07-03**
+
+---
+
+## 本ドキュメントの役割
+- Webアプリの要件・UI設計・API設計・テスト計画を記載
+- 段階的な実装・拡張方針を明確化
+- システム全体設計やタスクはREADME・integration_design.md・NEXT_STEPS.md参照
+
+## 関連ドキュメント
+- [README.md](README.md)（全体概要・セットアップ・タスク入口）
+- [NEXT_STEPS.md](NEXT_STEPS.md)（今後のタスク・優先度・進捗管理）
+- [integration_design.md](integration_design.md)（統合設計・アーキテクチャ）
+- [prediction_algorithm_design.md](prediction_algorithm_design.md)（予測アルゴリズム設計）
+- [site_analysis.md](site_analysis.md)（データ取得元サイト分析）
+
+---
+
+# 以下、従来の設計書内容（現状維持・必要に応じて最新化）
+
 # 競艇予測Webアプリケーション - 要件定義書
 
 ## 📋 プロジェクト概要
