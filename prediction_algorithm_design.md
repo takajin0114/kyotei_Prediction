@@ -1,5 +1,25 @@
 # 競艇予測アルゴリズム設計書
 
+**最終更新日: 2025-07-03**
+
+---
+
+## 本ドキュメントの役割
+- 予測アルゴリズムの設計・拡張ロードマップを記載
+- データ項目・アルゴリズム仕様・段階的な実装計画を明確化
+- システム全体設計やタスクはREADME・integration_design.md・NEXT_STEPS.md参照
+
+## 関連ドキュメント
+- [README.md](README.md)（全体概要・セットアップ・タスク入口）
+- [NEXT_STEPS.md](NEXT_STEPS.md)（今後のタスク・優先度・進捗管理）
+- [integration_design.md](integration_design.md)（統合設計・アーキテクチャ）
+- [site_analysis.md](site_analysis.md)（データ取得元サイト分析）
+- [web_app_requirements.md](web_app_requirements.md)（Webアプリ要件・UI設計）
+
+---
+
+# 以下、従来の設計書内容（現状維持・必要に応じて最新化）
+
 ## 📋 概要
 
 競艇予測Webアプリケーションにおける予測アルゴリズムの設計仕様書。
