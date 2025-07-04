@@ -67,41 +67,6 @@ kyotei_Prediction/
 
 ## 6. API・Webアプリ
 
-- `app.py`：Flaskアプリ本体
-- `templates/`, `static/`：UI/UX
-- `prediction_engine.py`：予測ロジック
-- `data_integration.py`：データ統合
-- APIエンドポイント：`/api/racers`, `/api/race_conditions`, `/api/predict`, `/api/save_prediction`, `/api/predictions_history` など
-
----
-
-## 7. 開発・運用フロー
-
-1. **セットアップ**
-    - `pip install -r requirements.txt`
-    - `python app.py` でWeb起動
-2. **データ取得**
-    - `python tools/batch_fetch_all_venues.py` で全会場データ収集
-3. **AI学習・最適化**
-    - `python tools/optuna_optimizer.py` で最適化
-    - `python tools/rl_learn_sample.py` でRL学習
-4. **テスト**
-    - `pytest`/`python tests/xxx.py`
-5. **Web利用**
-    - ブラウザで http://localhost:12000
-
----
-
-## 8. 今後のロードマップ
-
-- [ ] データディレクトリのraw/processed/results/logs分割
-- [ ] tools/配下の用途別サブディレクトリ化（fetch, batch, analysis, viz等）
-- [ ] pipelines/の機能分割・README追加
-- [ ] テスト自動化・カバレッジ向上
-- [ ] API/CLI/バッチの引数・出力・エラー処理統一
-- [ ] ドキュメントの多言語化・自動生成
-
----
 
 ## 9. リファクタリング方針
 
