@@ -1,0 +1,106 @@
+{
+  "timestamp": "2025-07-02T18:36:47.946357",
+  "best_params": {
+    "learning_rate": 0.006123113529223386,
+    "n_steps": 1873,
+    "batch_size": 153,
+    "n_epochs": 20,
+    "gamma": 0.9644188704552019,
+    "gae_lambda": 0.9395571331934328,
+    "clip_range": 0.12157500869603223,
+    "clip_range_vf": 0.2411331129638492,
+    "ent_coef": 0.026468483262524312,
+    "vf_coef": 0.2211761972599034,
+    "max_grad_norm": 1.0528431134264233
+  },
+  "best_value": 2860.0,
+  "optimization_config": {
+    "n_trials": 50,
+    "timeout": 3600,
+    "direction": "maximize",
+    "metric": "mean_reward",
+    "eval_freq": 1000,
+    "n_eval_episodes": 10,
+    "total_timesteps": 10000
+  },
+  "param_ranges": {
+    "learning_rate": {
+      "type": "float",
+      "range": [
+        1e-05,
+        0.01
+      ],
+      "log": true
+    },
+    "n_steps": {
+      "type": "int",
+      "range": [
+        64,
+        2048
+      ]
+    },
+    "batch_size": {
+      "type": "int",
+      "range": [
+        32,
+        256
+      ]
+    },
+    "n_epochs": {
+      "type": "int",
+      "range": [
+        1,
+        20
+      ]
+    },
+    "gamma": {
+      "type": "float",
+      "range": [
+        0.8,
+        0.999
+      ]
+    },
+    "gae_lambda": {
+      "type": "float",
+      "range": [
+        0.8,
+        0.999
+      ]
+    },
+    "clip_range": {
+      "type": "float",
+      "range": [
+        0.1,
+        0.4
+      ]
+    },
+    "clip_range_vf": {
+      "type": "float",
+      "range": [
+        0.1,
+        0.4
+      ]
+    },
+    "ent_coef": {
+      "type": "float",
+      "range": [
+        0.0,
+        0.1
+      ]
+    },
+    "vf_coef": {
+      "type": "float",
+      "range": [
+        0.1,
+        1.0
+      ]
+    },
+    "max_grad_norm": {
+      "type": "float",
+      "range": [
+        0.1,
+        2.0
+      ]
+    }
+  }
+}

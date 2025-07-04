@@ -167,8 +167,12 @@ class KyoteiEnvManager(gym.Env):
         self.env = None
 
     def _find_race_odds_pairs(self):
+        print("[DEBUG] data_dir:", self.data_dir)
+        print("[DEBUG] abspath(data_dir):", os.path.abspath(self.data_dir))
         race_files = glob.glob(os.path.join(self.data_dir, "race_data_*.json"))
         odds_files = glob.glob(os.path.join(self.data_dir, "odds_data_*.json"))
+        print("[DEBUG] race_files:", race_files)
+        print("[DEBUG] odds_files:", odds_files)
         
         # キー: (date, stadium, race_number)
         def parse_key(path, prefix):
@@ -207,10 +211,14 @@ class KyoteiEnvManager(gym.Env):
         race_map = {parse_key(f, "race_data_"): f for f in race_files}
         odds_map = {parse_key(f, "odds_data_"): f for f in odds_files}
         
+        # デバッグ出力
+        print("[DEBUG] race_map.keys():", list(race_map.keys()))
+        print("[DEBUG] odds_map.keys():", list(odds_map.keys()))
         # ペアが揃っているものだけ
         keys = set(race_map.keys()) & set(odds_map.keys())
+        print("[DEBUG] ペアが揃ったkeys:", list(keys))
         pairs = [(race_map[k], odds_map[k]) for k in sorted(keys)]
-        
+        print("[DEBUG] ペアリスト:", pairs)
         return pairs
 
     def reset(self, *, seed=None, options=None):
