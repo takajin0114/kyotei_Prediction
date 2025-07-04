@@ -8,13 +8,15 @@ from datetime import timedelta
 project_root = Path(__file__).parent
 sys.path.append(str(project_root))
 sys.path.append(str(project_root / "tools"))
+sys.path.append(str(project_root / "tools" / "fetch"))
+sys.path.append(str(project_root / "tools" / "viz"))
 
 from flask import Flask, render_template, request, jsonify
 from flask_caching import Cache
 import json
 import os
-from race_data_fetcher import fetch_race_entry_data
-from html_display import generate_html_display as generate_race_html
+from tools.fetch.race_data_fetcher import fetch_race_entry_data
+from tools.viz.html_display import generate_html_display as generate_race_html
 from errors import APIError, register_error_handlers
 
 app = Flask(__name__)
