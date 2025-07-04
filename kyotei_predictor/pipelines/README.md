@@ -1,6 +1,6 @@
 # pipelines ディレクトリ README
 
-**最終更新日: 2025-07-03**
+**最終更新日: 2025-07-04**
 
 ---
 
@@ -17,29 +17,47 @@
 
 ---
 
-# 以下、従来の内容（パイプラインの説明・使い方など）を現状維持・必要に応じて最新化
+## 構成・機能分割方針
+- 前処理（data_preprocessor.py）・特徴量生成（feature_enhancer.py）・AI学習環境（kyotei_env.py）など、用途別にスクリプトを整理
+- 今後は「データ検証」「パイプライン自動化」「追加特徴量」なども用途別に追加
+- 共通処理は tools/common/ へ集約
 
-# pipelines ディレクトリ
-
-データ前処理・特徴量生成・AI学習環境など、データ処理パイプラインを構成するスクリプト群を管理します。
+---
 
 ## 📁 主なスクリプト
 - `data_preprocessor.py` : データ前処理・クリーニング
 - `feature_enhancer.py` : 特徴量エンジニアリング
 - `kyotei_env.py` : 強化学習用環境クラス
 
-## 🚀 運用方針
+---
+
+## 📝 サンプル処理フロー
+```python
+# 1. 生データの前処理
+from pipelines.data_preprocessor import preprocess_raw_data
+cleaned = preprocess_raw_data('data/raw/race_data_20250701_KIRYU_R1.json')
+
+# 2. 特徴量エンジニアリング
+from pipelines.feature_enhancer import add_features
+featured = add_features(cleaned)
+
+# 3. AI学習環境の構築
+from pipelines.kyotei_env import KyoteiEnv
+env = KyoteiEnv(featured)
+```
+
+---
+
+## 運用方針
 - データ取得後、raw/→processed/への変換処理を担当
 - AI学習・推論用のデータセット生成
 - 新規パイプラインは本ディレクトリに追加
 - 共通処理は tools/common/ へ集約
 
-## 📝 典型的な処理フロー
-1. `data_preprocessor.py` で生データをクリーニング
-2. `feature_enhancer.py` で特徴量追加
-3. `kyotei_env.py` でAI学習環境を構築
+---
 
-## 🔧 備考
+## 備考
 - 中間生成物は data/processed/ へ保存
 - パイプラインの自動化は今後 scripts/ や workflow/ で管理予定
-- テストコードは tests/ 配下に設置 
+- テストコードは tests/ 配下に設置
+- 用途別にスクリプトを整理し、READMEも随時更新 
