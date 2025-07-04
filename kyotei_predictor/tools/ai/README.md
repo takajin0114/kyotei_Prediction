@@ -1,23 +1,44 @@
-# AI & Machine Learning Tools README
+# ai ディレクトリ README
 
-**最終更新日: 2025-07-03**
+**最終更新日: 2025-07-04**
 
 ---
 
 ## 本READMEの役割
-- AI・強化学習・Optuna最適化の技術仕様・使い方・最適化目標を記載
-- サンプル実行方法・設計書へのリンクを明記
-- ルートREADMEやNEXT_STEPS.mdへのリンクも記載
+- AI・強化学習・Optuna最適化ツールの役割・使い方・運用ルールを記載
+- 主要スクリプトの説明・設計書へのリンクを明記
+- ルートREADMEやtools/README、NEXT_STEPS.mdへのリンクも記載
 
 ## 関連ドキュメント
 - [../../../README.md](../../../README.md)（全体概要・セットアップ・タスク入口）
+- [../README.md](../README.md)（tools全体の運用ルール）
 - [../../../NEXT_STEPS.md](../../../NEXT_STEPS.md)（今後のタスク・優先度・進捗管理）
 - [../../../integration_design.md](../../../integration_design.md)（統合設計・アーキテクチャ）
 - [../../../prediction_algorithm_design.md](../../../prediction_algorithm_design.md)（予測アルゴリズム設計）
 
 ---
 
-# 以下、従来の内容（AI・強化学習・Optuna最適化の説明・使い方など）を現状維持・必要に応じて最新化
+## 役割・用途
+- 強化学習（PPO等）・Optunaによるハイパーパラメータ最適化
+- AI学習・評価・可視化
+- モデル・ログ・結果はoptuna_models/、optuna_logs/、optuna_results/等に保存
+
+---
+
+## 主要スクリプト
+- `optuna_optimizer.py` : Optuna最適化
+- `rl_learn_sample.py` : RL学習サンプル
+
+---
+
+## 運用ルール
+- 学習・最適化の成果物は所定のディレクトリに保存
+- パラメータ・設定はconfig/で一元管理
+- 不要な一時ファイルは随時削除
+
+---
+
+# 以下、従来の内容（使い方・注意点など）を現状維持・必要に応じて最新化
 
 # AI & Machine Learning Tools
 

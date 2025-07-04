@@ -1,11 +1,11 @@
 # tools ディレクトリ README
 
-**最終更新日: 2025-07-03**
+**最終更新日: 2025-07-04**
 
 ---
 
 ## 本READMEの役割
-- tools/配下の各種ツール群（fetch, batch, analysis, viz, ai, common）の役割・使い方を記載
+- tools/配下の各種ツール群（fetch, batch, analysis, viz, ai, common）の役割・使い方・運用ルールを記載
 - サブディレクトリごとの説明・設計書へのリンクを明記
 - ルートREADMEやNEXT_STEPS.mdへのリンクも記載
 
@@ -16,6 +16,33 @@
 - [../../prediction_algorithm_design.md](../../prediction_algorithm_design.md)（予測アルゴリズム設計）
 - [../../site_analysis.md](../../site_analysis.md)（データ取得元サイト分析）
 - [../../web_app_requirements.md](../../web_app_requirements.md)（Webアプリ要件・UI設計）
+
+---
+
+## サブディレクトリ構成と役割
+
+- `fetch/` : データ取得ツール（公式サイトからのスクレイピング、API取得など）
+- `batch/` : バッチ処理ツール（大量データの自動収集・スケジュール取得など）
+- `analysis/` : データ分析・検証ツール（オッズ分析、データ検証、バッチ結果チェックなど）
+- `viz/` : 可視化・表示ツール（データ・学習結果のグラフ化、HTML表示など）
+- `ai/` : AI・強化学習・Optuna最適化ツール（学習・最適化・評価・可視化など）
+- `common/` : 共通ユーティリティ・会場マッピング・設定管理
+
+---
+
+## 運用ルール・整理方針
+- 各サブディレクトリのREADMEに用途・使い方・注意点を明記
+- 共通処理・定数・マッピングはcommon/に集約
+- 不要なファイルや重複は定期的に整理・削除
+- 新規ツールは用途に応じて適切なサブディレクトリに追加
+- ルートREADMEや設計書との整合性を保つ
+
+---
+
+## 不要・重複ファイルの確認
+- 現状、fetch/batch/analysis/viz/ai/common 以外の用途外ファイル・重複はありません
+- __pycache__/はPythonのキャッシュであり、.gitignore対象です
+- 不要なファイルが発生した場合は随時整理してください
 
 ---
 
