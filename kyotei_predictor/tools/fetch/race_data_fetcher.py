@@ -108,7 +108,13 @@ def fetch_race_entry_data(race_date, stadium_code, race_number):
         return result
         
     except Exception as e:
-        print(f"❌ エラー: {e}")
+        import traceback
+        # レース中止の場合は特別処理
+        if "RaceCanceled" in str(type(e)):
+            print(f"❌ レース中止: {race_date} {stadium_code.name} 第{race_number}レース")
+            return None
+        print(f"❌ エラー: {type(e).__name__}: {e}")
+        print(f"❌ 詳細: {traceback.format_exc()}")
         return None
 
 def fetch_race_result_data(race_date, stadium_code, race_number):
@@ -186,7 +192,13 @@ def fetch_race_result_data(race_date, stadium_code, race_number):
         return result
         
     except Exception as e:
-        print(f"❌ エラー: {e}")
+        import traceback
+        # レース中止の場合は特別処理
+        if "RaceCanceled" in str(type(e)):
+            print(f"❌ レース中止: {race_date} {stadium_code.name} 第{race_number}レース")
+            return None
+        print(f"❌ エラー: {type(e).__name__}: {e}")
+        print(f"❌ 詳細: {traceback.format_exc()}")
         return None
 
 def fetch_complete_race_data(race_date, stadium_code, race_number):
