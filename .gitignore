@@ -133,6 +133,10 @@ kyotei_predictor/optuna_tensorboard/
 kyotei_predictor/optuna_studies/
 kyotei_predictor/optuna_results/
 
+# データファイル（JSON）を除外
+kyotei_predictor/data/*.json
+complete_race_data_*.json
+
 # サンプル・README・テンプレートは除外しない
 !kyotei_predictor/data/README.md
 !kyotei_predictor/data/raw/README.md
