@@ -1,6 +1,6 @@
 # batch ディレクトリ README
 
-**最終更新日: 2025-07-04**
+**最終更新日: 2025-07-06**
 
 ---
 
@@ -46,7 +46,9 @@
 
 - `batch_data_fetcher.py` - 基本バッチデータ取得
 - `batch_fetch_by_schedule.py` - スケジュールベースバッチ取得
-- `batch_fetch_all_venues.py` - 全会場バッチ取得
+- `batch_fetch_all_venues.py` - 全会場バッチ取得（従来版）
+- `batch_fetch_all_venues_parallel.py` - 全会場バッチ取得（並列版・推奨）
+- `fast_future_entries_fetcher.py` - 高速未来レース取得
 
 ## 🚀 使用方法
 
@@ -60,9 +62,22 @@ python batch_data_fetcher.py
 python batch_fetch_by_schedule.py
 ```
 
-### 全会場バッチ取得
+### 全会場バッチ取得（並列版・推奨）
 ```bash
-python batch_fetch_all_venues.py
+# 仮想環境の有効化（必須）
+venv311\Scripts\activate
+
+# PYTHONPATH設定とバッチ実行
+$env:PYTHONPATH = "D:\git\kyotei_Prediction"; python kyotei_predictor/tools/batch/batch_fetch_all_venues_parallel.py
+```
+
+### 全会場バッチ取得（従来版）
+```bash
+# 仮想環境の有効化（必須）
+venv311\Scripts\activate
+
+# PYTHONPATH設定とバッチ実行
+$env:PYTHONPATH = "D:\git\kyotei_Prediction"; python kyotei_predictor/tools/batch/batch_fetch_all_venues.py
 ```
 
 ## 📊 取得対象
@@ -86,6 +101,12 @@ python batch_fetch_all_venues.py
 - **既存ファイルスキップ**: 重複取得を回避
 - **レート制限対応**: 適切な間隔でのリクエスト制御
 - **エラーハンドリング**: 例外処理・ログ出力
+- **並列処理**: ThreadPoolExecutorによる高速化
+
+### 実行環境設定
+- **仮想環境**: venv311の有効化が必須
+- **PYTHONPATH**: モジュール解決のため設定が必要
+- **実行場所**: プロジェクトルートディレクトリから実行
 
 ### 出力形式
 - JSON形式で`data/`ディレクトリに保存
@@ -126,9 +147,17 @@ python batch_fetch_all_venues.py
 
 **使用方法:**
 ```bash
-cd kyotei_predictor/tools/batch
-python batch_fetch_all_venues_parallel.py
+# 仮想環境の有効化（必須）
+venv311\Scripts\activate
+
+# PYTHONPATH設定とバッチ実行
+$env:PYTHONPATH = "D:\git\kyotei_Prediction"; python kyotei_predictor/tools/batch/batch_fetch_all_venues_parallel.py
 ```
+
+**注意事項:**
+- 必ず仮想環境（venv311）を有効化してから実行
+- PYTHONPATHの設定が必要（モジュール解決のため）
+- プロジェクトルートディレクトリから実行
 
 **性能:**
 - 1日分の処理時間: 約1-2分（従来9分から大幅短縮）
@@ -143,8 +172,11 @@ python batch_fetch_all_venues_parallel.py
 
 **使用方法:**
 ```bash
-cd kyotei_predictor/tools/batch
-python fast_future_entries_fetcher.py
+# 仮想環境の有効化（必須）
+venv311\Scripts\activate
+
+# PYTHONPATH設定とバッチ実行
+$env:PYTHONPATH = "D:\git\kyotei_Prediction"; python kyotei_predictor/tools/batch/fast_future_entries_fetcher.py
 ```
 
 ### 3. `batch_fetch_all_venues.py` - 従来版バッチフェッチ
@@ -153,6 +185,15 @@ python fast_future_entries_fetcher.py
 - シーケンシャル処理
 - 安定性重視
 - デバッグ用
+
+**使用方法:**
+```bash
+# 仮想環境の有効化（必須）
+venv311\Scripts\activate
+
+# PYTHONPATH設定とバッチ実行
+$env:PYTHONPATH = "D:\git\kyotei_Prediction"; python kyotei_predictor/tools/batch/batch_fetch_all_venues.py
+```
 
 ## エラーハンドリング改善（最新版）
 
