@@ -92,7 +92,9 @@ def fetch_race_data_parallel(day, stadium, race_no, rate_limit_seconds=1, max_re
         'race_success': False,
         'odds_success': False,
         'race_file': race_fname,
-        'odds_file': odds_fname
+        'odds_file': odds_fname,
+        'race_error': None,
+        'odds_error': None
     }
     
     # race_data取得
@@ -108,10 +110,29 @@ def fetch_race_data_parallel(day, stadium, race_no, rate_limit_seconds=1, max_re
                     break
                 else:
                     retry_count += 1
+                    if retry_count < max_retries:
+                        print(f"    ⚠️  R{race_no}: レースデータ取得失敗（リトライ {retry_count}/{max_retries}）")
+            except ValueError as e:
+                # 選手名解析エラーの場合は特別処理
+                if "not enough values to unpack" in str(e):
+                    result['race_error'] = f"選手名解析エラー: {e}"
+                    print(f"    ⚠️  R{race_no}: 選手名解析エラー - スキップ")
+                    break
+                else:
+                    retry_count += 1
+                    result['race_error'] = str(e)
+                    if retry_count < max_retries:
+                        print(f"    ⚠️  R{race_no}: ValueError - リトライ {retry_count}/{max_retries}")
+                        time.sleep(5)
             except Exception as e:
                 retry_count += 1
+                result['race_error'] = str(e)
                 if retry_count < max_retries:
-                    time.sleep(5)  # リトライ前の待機
+                    print(f"    ⚠️  R{race_no}: {type(e).__name__} - リトライ {retry_count}/{max_retries}")
+                    time.sleep(5)
+        
+        if not result['race_success']:
+            print(f"    ❌ R{race_no}: レースデータ取得失敗（{result['race_error']}）")
         
         time.sleep(rate_limit_seconds)  # レート制限対策
     else:
@@ -130,10 +151,17 @@ def fetch_race_data_parallel(day, stadium, race_no, rate_limit_seconds=1, max_re
                     break
                 else:
                     retry_count += 1
+                    if retry_count < max_retries:
+                        print(f"    ⚠️  R{race_no}: オッズデータ取得失敗（リトライ {retry_count}/{max_retries}）")
             except Exception as e:
                 retry_count += 1
+                result['odds_error'] = str(e)
                 if retry_count < max_retries:
-                    time.sleep(5)  # リトライ前の待機
+                    print(f"    ⚠️  R{race_no}: オッズ取得エラー - リトライ {retry_count}/{max_retries}")
+                    time.sleep(5)
+        
+        if not result['odds_success']:
+            print(f"    ❌ R{race_no}: オッズデータ取得失敗（{result['odds_error']}）")
         
         time.sleep(rate_limit_seconds)  # レート制限対策
     else:
@@ -246,7 +274,18 @@ def main():
     print(f"対象会場: {len(stadiums)}会場")
     print(f"総リクエスト数: レース{total_races}件, オッズ{total_odds}件")
     print(f"成功数: レース{success_races}件, オッズ{success_odds}件")
-    print(f"成功率: レース{success_races/total_races*100:.1f}%, オッズ{success_odds/total_odds*100:.1f}%" if total_races > 0 and total_odds > 0 else "成功率: 計算不可")
+    if total_races > 0 and total_odds > 0:
+        print(f"成功率: レース{success_races/total_races*100:.1f}%, オッズ{success_odds/total_odds*100:.1f}%")
+        print(f"失敗数: レース{total_races-success_races}件, オッズ{total_odds-success_odds}件")
+    else:
+        print("成功率: 計算不可")
+    
+    # エラー統計
+    print(f"\n📊 エラーハンドリング改善:")
+    print(f"  - 選手名解析エラー: 自動スキップ処理")
+    print(f"  - レース中止: 自動検出・スキップ")
+    print(f"  - ネットワークエラー: 最大{MAX_RETRIES}回リトライ")
+    print(f"  - レート制限: {RATE_LIMIT_SECONDS}秒間隔")
 
     end_time = datetime.now()
     print(f"バッチ処理終了: {end_time}")
