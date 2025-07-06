@@ -1,7 +1,7 @@
 # 競艇予測システム ドキュメント
 
 **最終更新日**: 2025-07-06  
-**バージョン**: 1.1
+**バージョン**: 1.2
 
 ---
 
@@ -13,15 +13,17 @@
   - [prediction_algorithm_design.md](prediction_algorithm_design.md)（設計方針）
   - **成果**: 実際結果順位を70位台→43位に改善（約40%向上）
 
-### 🔄 現在進行中
-- **B-2: 機材データ重視ロジックの強化**
+- **B-2: 機材データ重視ロジックの強化**（完了）
   - [prediction_algorithm_design.md](prediction_algorithm_design.md)
   - [kyotei_predictor/prediction_engine.py](../kyotei_predictor/prediction_engine.py)
+  - **成果**: 実際結果を1位に予測成功（43位→1位、大幅改善）
 
-### ⏳ 次回予定
+### 🔄 現在進行中
 - **C-1: Webアプリ「履歴」「分析」タブの実装**
   - [web_app_requirements.md](web_app_requirements.md)
   - [integration_design.md](integration_design.md)
+
+### ⏳ 次回予定
 - **D: データ取得・バッチ処理のリファクタ・効率化**
   - [site_analysis.md](site_analysis.md)
   - [kyotei_predictor/tools/fetch/](../kyotei_predictor/tools/fetch/)
@@ -45,10 +47,18 @@
 - **性能**: 実際結果順位 43位（改善前: 70位台）
 - **課題**: 上位10位以内への到達は未達成
 
+### 機材重視ロジック強化（B-2）
+- **強化内容**:
+  - 機材相性マトリックスの導入
+  - 時系列分析機能の追加
+  - 組み合わせ効果の考慮
+  - 選手適応性スコアの導入
+- **性能**: 実際結果を**1位**に予測成功（43位→1位）
+- **予測精度**: 17.50%の確率で的中
+
 ### 次のステップ
-1. **機材データ重視ロジックの強化**（B-2）
-2. **Webアプリ機能拡張**（C-1）
-3. **データ処理効率化**（D）
+1. **Webアプリ機能拡張**（C-1）
+2. **データ処理効率化**（D）
 
 ---
 
@@ -62,6 +72,7 @@
 
 ### 詳細計画・結果
 - [TRIFECTA_IMPROVEMENT_PLAN.md](TRIFECTA_IMPROVEMENT_PLAN.md) - 3連単確率計算改善計画・結果
+- [EQUIPMENT_ENHANCEMENT_PLAN.md](EQUIPMENT_ENHANCEMENT_PLAN.md) - 機材重視ロジック強化計画・結果
 
 ### プロジェクト管理
 - [NEXT_STEPS.md](../NEXT_STEPS.md) - 全体の進行計画
@@ -91,15 +102,14 @@
 ### 完了済み機能
 - ✅ 基本予測エンジン
 - ✅ 3連単確率計算（改善済み）
+- ✅ 機材重視アルゴリズム（強化済み）
 - ✅ データ取得・処理パイプライン
 - ✅ Webアプリ基本機能
 
 ### 開発中機能
-- 🔄 機材重視アルゴリズム強化
-- 🔄 テストケース拡充
+- 🔄 Webアプリ履歴・分析タブ
 
 ### 予定機能
-- ⏳ Webアプリ履歴・分析タブ
 - ⏳ 機械学習モデル導入
 - ⏳ 統計的検証システム
 
@@ -127,6 +137,9 @@ python kyotei_predictor/tests/ai/test_trifecta_probability.py
 
 # パラメータスイープテスト
 python kyotei_predictor/tests/ai/test_trifecta_probability.py --sweep
+
+# 強化版機材重視アルゴリズムテスト
+python kyotei_predictor/tests/ai/test_equipment_focused_enhanced.py
 ```
 
 ### Webアプリ起動
@@ -143,7 +156,7 @@ python kyotei_predictor/app.py
 
 ### ドキュメント更新
 - 最終更新: 2025-07-06
-- 次回更新予定: 機材重視ロジック強化完了後
+- 次回更新予定: Webアプリ機能拡張完了後
 
 ---
 
