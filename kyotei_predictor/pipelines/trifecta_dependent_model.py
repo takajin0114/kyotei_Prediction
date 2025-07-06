@@ -38,78 +38,54 @@ class TrifectaDependentModel:
         # 艇間相関マトリックス（初期値）
         self.correlation_matrix = None
         
-    def calculate_dependent_probabilities(self, race_data: Dict[str, Any], 
-                                        algorithm: str = 'equipment_focused') -> Dict[str, Any]:
+    def calculate_dependent_probabilities(self, race_data: Dict[str, Any], algorithm: str = 'equipment_focused') -> Dict[str, Any]:
         """
-        着順依存性を考慮した3連単確率を計算
-        
-        Args:
-            race_data: レースデータ
-            algorithm: 使用するアルゴリズム
-        
-        Returns:
-            着順依存性を考慮した3連単確率
+        着順依存性を考慮した3連単確率を計算（学習済み条件付き確率を利用）
         """
         print(f"🎯 着順依存性を考慮した3連単確率計算開始: {algorithm}アルゴリズム")
-        
-        # 基本予測を取得
-        basic_predictions = self.engine.predict(race_data, algorithm=algorithm)
-        
-        # 艇数
-        num_boats = len(basic_predictions['predictions'])
-        
-        # 着順依存性を考慮した確率計算
+        if not hasattr(self, 'conditional_probs'):
+            print("⚠️ 事前学習が必要です。learn_conditional_probabilities()を先に実行してください。")
+            return {}
+        num_boats = 6  # 通常6艇
         dependent_probabilities = {}
-        
-        # 全組み合わせを生成
         all_combinations = list(itertools.permutations(range(1, num_boats + 1), 3))
-        
         for combo in all_combinations:
-            combination_str = f"{combo[0]}-{combo[1]}-{combo[2]}"
-            
-            # 1着確率
-            p1 = self._get_boat_probability(basic_predictions, combo[0], 1)
-            
-            # 2着確率（1着が決まった後の条件付き確率）
-            p2_given_1 = self._get_conditional_probability(basic_predictions, combo[1], [combo[0]], 2)
-            
-            # 3着確率（1着、2着が決まった後の条件付き確率）
-            p3_given_12 = self._get_conditional_probability(basic_predictions, combo[2], [combo[0], combo[1]], 3)
-            
-            # 着順依存性を考慮した確率
-            dependent_prob = p1 * p2_given_1 * p3_given_12
-            
-            # 艇間相関を考慮した調整
-            correlation_adjustment = self._calculate_correlation_adjustment(combo)
-            adjusted_prob = dependent_prob * correlation_adjustment
-            
-            dependent_probabilities[combination_str] = {
-                'combination': combination_str,
-                'probability': adjusted_prob,
-                'percentage': adjusted_prob * 100,
+            b1, b2, b3 = combo
+            # 条件付き確率を利用
+            p1 = self.conditional_probs['first'].get(b1, 1/num_boats)
+            p2 = self.conditional_probs['second_given_first'].get(b1, {}).get(b2, 1/(num_boats-1))
+            p3 = self.conditional_probs['third_given_first_second'].get((b1, b2), {}).get(b3, 1/(num_boats-2))
+            # 艇間相関補正
+            adj1 = self.conditional_probs['adjacent'].get(f"{b1}-{b2}", 1/30)
+            adj2 = self.conditional_probs['adjacent'].get(f"{b2}-{b3}", 1/30)
+            course_pattern = 'inner' if b1 <= 3 and b2 <= 3 and b3 <= 3 else 'outer' if b1 >= 4 and b2 >= 4 and b3 >= 4 else 'mixed'
+            course_adj = self.conditional_probs['course'].get(course_pattern, 1/3)
+            prob = p1 * p2 * p3 * adj1 * adj2 * course_adj
+            dependent_probabilities[f"{b1}-{b2}-{b3}"] = {
+                'combination': f"{b1}-{b2}-{b3}",
+                'probability': prob,
+                'percentage': prob * 100,
                 'p1': p1,
-                'p2_given_1': p2_given_1,
-                'p3_given_12': p3_given_12,
-                'correlation_adjustment': correlation_adjustment,
-                'expected_odds': self._calculate_expected_odds(adjusted_prob)
+                'p2_given_1': p2,
+                'p3_given_12': p3,
+                'adj1': adj1,
+                'adj2': adj2,
+                'course_adj': course_adj,
+                'expected_odds': self._calculate_expected_odds(prob)
             }
-        
-        # 確率の正規化
+        # 正規化
         total_prob = sum(prob['probability'] for prob in dependent_probabilities.values())
         if total_prob > 0:
             for combo in dependent_probabilities.values():
                 combo['probability'] /= total_prob
                 combo['percentage'] = combo['probability'] * 100
-        
-        # 結果をソート
         sorted_combinations = sorted(
             dependent_probabilities.values(),
             key=lambda x: x['probability'],
             reverse=True
         )
-        
         return {
-            'race_info': basic_predictions['race_info'],
+            'race_info': {'note': 'dependent model, conditional probs'},
             'algorithm': algorithm,
             'model_type': 'dependent_trifecta',
             'total_combinations': len(sorted_combinations),
@@ -220,6 +196,73 @@ class TrifectaDependentModel:
                 'low': len([p for p in probabilities if p < 0.005])
             }
         }
+    
+    def learn_conditional_probabilities(self, data_dir: Optional[str] = None, max_files: int = 1000) -> Dict[str, Any]:
+        """
+        過去データから条件付き確率分布と艇間相関パターンを学習
+        """
+        print("📚 条件付き確率・艇間相関の学習開始...")
+        if data_dir is None:
+            data_dir = os.path.join(os.path.dirname(__file__), '..', 'data')
+        race_files = [f for f in os.listdir(data_dir) if f.startswith('race_data_') and f.endswith('.json')]
+        
+        # 統計カウント
+        first_counts = {}  # 1着
+        second_given_first = {}  # 2着|1着
+        third_given_first_second = {}  # 3着|1着,2着
+        adjacent_counts = {}  # 隣接艇
+        course_patterns = {'inner': 0, 'outer': 0, 'mixed': 0}
+        total = 0
+        
+        for race_file in race_files[:max_files]:
+            try:
+                with open(os.path.join(data_dir, race_file), 'r', encoding='utf-8') as f:
+                    race_data = json.load(f)
+                actual = self._extract_actual_result(race_data)
+                if not actual:
+                    continue
+                b1, b2, b3 = [int(x) for x in actual.split('-')]
+                # 1着
+                first_counts[b1] = first_counts.get(b1, 0) + 1
+                # 2着|1着
+                if b1 not in second_given_first:
+                    second_given_first[b1] = {}
+                second_given_first[b1][b2] = second_given_first[b1].get(b2, 0) + 1
+                # 3着|1着,2着
+                key = (b1, b2)
+                if key not in third_given_first_second:
+                    third_given_first_second[key] = {}
+                third_given_first_second[key][b3] = third_given_first_second[key].get(b3, 0) + 1
+                # 隣接艇
+                for i in range(2):
+                    pair = f"{[b1, b2, b3][i]}-{[b1, b2, b3][i+1]}"
+                    adjacent_counts[pair] = adjacent_counts.get(pair, 0) + 1
+                # コースパターン
+                if b1 <= 3 and b2 <= 3 and b3 <= 3:
+                    course_patterns['inner'] += 1
+                elif b1 >= 4 and b2 >= 4 and b3 >= 4:
+                    course_patterns['outer'] += 1
+                else:
+                    course_patterns['mixed'] += 1
+                total += 1
+            except Exception as e:
+                print(f"⚠️ 学習データエラー: {race_file} - {e}")
+                continue
+        # 正規化
+        first_probs = {k: v/total for k, v in first_counts.items()}
+        second_probs = {k: {kk: vv/sum(vv for vv in v.values()) for kk, vv in v.items()} for k, v in second_given_first.items()}
+        third_probs = {k: {kk: vv/sum(vv for vv in v.values()) for kk, vv in v.items()} for k, v in third_given_first_second.items()}
+        adjacent_probs = {k: v/sum(adjacent_counts.values()) for k, v in adjacent_counts.items()}
+        course_probs = {k: v/total for k, v in course_patterns.items()}
+        self.conditional_probs = {
+            'first': first_probs,
+            'second_given_first': second_probs,
+            'third_given_first_second': third_probs,
+            'adjacent': adjacent_probs,
+            'course': course_probs
+        }
+        print(f"✅ 条件付き確率・相関学習完了: {total}レース")
+        return self.conditional_probs
     
     def learn_from_historical_data(self, data_dir: Optional[str] = None) -> Dict[str, Any]:
         """過去データから艇間相関を学習"""
@@ -371,12 +414,11 @@ def main():
     args = parser.parse_args()
     
     model = TrifectaDependentModel()
-    
-    # 過去データから学習
-    if args.learn:
-        learning_result = model.learn_from_historical_data()
-        print(f"📚 学習結果: {learning_result['processed_races']}レースを処理")
-    
+
+    # 条件付き確率・艇間相関の学習（常に実行）
+    print("\n=== 条件付き確率・艇間相関の学習 ===")
+    model.learn_conditional_probabilities()
+
     # レースデータ読み込み
     with open(args.race_file, 'r', encoding='utf-8') as f:
         race_data = json.load(f)
@@ -386,13 +428,16 @@ def main():
     
     # 結果表示
     print(f"\n🎯 着順依存性を考慮した3連単予測結果:")
-    print(f"  - 最有力組み合わせ: {result['summary']['most_likely']['combination']}")
-    print(f"  - 最有力確率: {result['summary']['most_likely']['percentage']:.4f}%")
-    print(f"  - 平均確率: {result['summary']['average_probability']:.6f}")
-    print(f"  - 確率標準偏差: {result['summary']['std_probability']:.6f}")
-    
+    summary = result.get('summary', {})
+    if summary and 'most_likely' in summary:
+        print(f"  - 最有力組み合わせ: {summary['most_likely']['combination']}")
+        print(f"  - 最有力確率: {summary['most_likely']['percentage']:.4f}%")
+        print(f"  - 平均確率: {summary['average_probability']:.6f}")
+        print(f"  - 確率標準偏差: {summary['std_probability']:.6f}")
+    else:
+        print("  - summary情報がありません")
     print(f"\n📊 上位10位の組み合わせ:")
-    for i, combo in enumerate(result['top_combinations'][:10], 1):
+    for i, combo in enumerate(result.get('top_combinations', [])[:10], 1):
         print(f"{i:2d}位: {combo['combination']} - {combo['percentage']:.4f}% (期待オッズ: {combo['expected_odds']:.1f}倍)")
     
     # モデル保存
