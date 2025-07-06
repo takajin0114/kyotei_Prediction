@@ -12,6 +12,7 @@ trifecta_probability.py
 
 import itertools
 from typing import List, Dict, Any, Optional
+import numpy as np
 
 class TrifectaProbabilityCalculator:
     """
@@ -34,16 +35,20 @@ class TrifectaProbabilityCalculator:
         'B2': 0.9
     }
 
-    def __init__(self, second_weight: float = 0.8, third_weight: float = 0.6, weights: Optional[dict] = None):
+    def __init__(self, second_weight: float = 0.8, third_weight: float = 0.6, weights: Optional[dict] = None, normalization: str = 'minmax', temperature: float = 1.0):
         """
         Args:
             second_weight: 2着艇の確率重み（デフォルト0.8）
             third_weight: 3着艇の確率重み（デフォルト0.6）
             weights: 特徴量ごとの重みdict（未指定時はDEFAULT_WEIGHTS）
+            normalization: 'minmax' or 'softmax'
+            temperature: softmaxの温度パラメータ（デフォルト1.0、1.0未満で分布が鋭くなる）
         """
         self.second_weight = second_weight
         self.third_weight = third_weight
         self.weights = weights or self.DEFAULT_WEIGHTS.copy()
+        self.normalization = normalization
+        self.temperature = temperature
 
     def calculate(self, predictions: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """
@@ -71,12 +76,18 @@ class TrifectaProbabilityCalculator:
             score += pred.get('course_bias', 0) * self.weights.get('course_bias', 0)
             score += pred.get('odds_bias', 0) * self.weights.get('odds_bias', 0)
             scores.append(score)
-        # 2. スコア正規化（0-1→100%）
-        min_score = min(scores)
-        max_score = max(scores)
-        norm_scores = [((s - min_score) / (max_score - min_score) if max_score > min_score else 1.0) for s in scores]
-        total = sum(norm_scores)
-        win_probabilities = [(s / total * 100) if total > 0 else 100.0 / len(norm_scores) for s in norm_scores]
+        # 2. スコア正規化
+        if self.normalization == 'softmax':
+            temp = self.temperature if self.temperature > 0 else 1.0
+            exp_scores = np.exp((np.array(scores) - np.max(scores)) / temp)
+            norm_scores = exp_scores / np.sum(exp_scores)
+            win_probabilities = norm_scores * 100
+        else:  # minmax
+            min_score = min(scores)
+            max_score = max(scores)
+            norm_scores = [((s - min_score) / (max_score - min_score) if max_score > min_score else 1.0) for s in scores]
+            total = sum(norm_scores)
+            win_probabilities = [(s / total * 100) if total > 0 else 100.0 / len(norm_scores) for s in norm_scores]
         # 3. pit_numberリスト
         pit_numbers = [pred.get('pit_number') for pred in predictions]
         # 4. 3連単確率計算

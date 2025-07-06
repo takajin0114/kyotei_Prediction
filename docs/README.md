@@ -1,34 +1,149 @@
 # 競艇予測システム ドキュメント
 
 **最終更新日**: 2025-07-06  
-**バージョン**: 1.0
+**バージョン**: 1.1
 
 ---
 
-## 📚 ドキュメント構成
+## 🚩 進行中タスク（2025-07-06時点）
 
-### **🎯 プロジェクト概要**
-- [README.md](../README.md) - プロジェクト全体概要・セットアップ・クイックスタート
-- [NEXT_STEPS.md](../NEXT_STEPS.md) - 今後のタスク・進捗管理・優先度
-- [CHANGELOG.md](../CHANGELOG.md) - 変更履歴・リリースノート
-- [PERFORMANCE_IMPROVEMENTS.md](../PERFORMANCE_IMPROVEMENTS.md) - 性能改善記録
+### ✅ 完了済み
+- **B-1: 3連単確率計算アルゴリズムのテスト・改善**（Phase 1, 2完了）
+  - [TRIFECTA_IMPROVEMENT_PLAN.md](TRIFECTA_IMPROVEMENT_PLAN.md)（詳細計画・結果）
+  - [prediction_algorithm_design.md](prediction_algorithm_design.md)（設計方針）
+  - **成果**: 実際結果順位を70位台→43位に改善（約40%向上）
 
-### **🏗️ 設計書・仕様書**
-- [integration_design.md](integration_design.md) - システム統合設計・アーキテクチャ
-- [prediction_algorithm_design.md](prediction_algorithm_design.md) - 予測アルゴリズム設計・実装方針
-- [web_app_requirements.md](web_app_requirements.md) - Webアプリケーション要件・UI設計
-- [site_analysis.md](site_analysis.md) - データ取得元サイト分析・スクレイピング仕様
+### 🔄 現在進行中
+- **B-2: 機材データ重視ロジックの強化**
+  - [prediction_algorithm_design.md](prediction_algorithm_design.md)
+  - [kyotei_predictor/prediction_engine.py](../kyotei_predictor/prediction_engine.py)
 
-### **🔧 機能別ドキュメント**
-- [kyotei_predictor/README.md](../kyotei_predictor/README.md) - メインアプリケーション概要
-- [kyotei_predictor/tools/README.md](../kyotei_predictor/tools/README.md) - ツール群概要
-- [kyotei_predictor/tests/README.md](../kyotei_predictor/tests/README.md) - テスト概要
+### ⏳ 次回予定
+- **C-1: Webアプリ「履歴」「分析」タブの実装**
+  - [web_app_requirements.md](web_app_requirements.md)
+  - [integration_design.md](integration_design.md)
+- **D: データ取得・バッチ処理のリファクタ・効率化**
+  - [site_analysis.md](site_analysis.md)
+  - [kyotei_predictor/tools/fetch/](../kyotei_predictor/tools/fetch/)
+  - [kyotei_predictor/tools/batch/](../kyotei_predictor/tools/batch/)
 
-### **📊 詳細仕様**
-- [kyotei_predictor/tools/batch/README.md](../kyotei_predictor/tools/batch/README.md) - バッチ処理詳細
-- [kyotei_predictor/tools/fetch/README.md](../kyotei_predictor/tools/fetch/README.md) - データ取得詳細
-- [kyotei_predictor/tools/analysis/README.md](../kyotei_predictor/tools/analysis/README.md) - 分析ツール詳細
-- [kyotei_predictor/pipelines/README.md](../kyotei_predictor/pipelines/README.md) - パイプライン詳細
+### 📋 中長期・運用タスク（今回は未対応）
+- **E: 中長期拡張計画**
+  - [NEXT_STEPS.md](../NEXT_STEPS.md)参照
+- **F: ドキュメント管理・運用**
+  - [NEXT_STEPS.md](../NEXT_STEPS.md)参照
+
+---
+
+## 📊 最新の改善結果
+
+### 3連単確率計算アルゴリズム（B-1）
+- **最良設定**:
+  - 正規化: softmax (temperature=0.1)
+  - 重み: 機材重視（boat_quinella_rate: 0.35, motor_quinella_rate: 0.35）
+  - 2着重み: 0.8, 3着重み: 0.5
+- **性能**: 実際結果順位 43位（改善前: 70位台）
+- **課題**: 上位10位以内への到達は未達成
+
+### 次のステップ
+1. **機材データ重視ロジックの強化**（B-2）
+2. **Webアプリ機能拡張**（C-1）
+3. **データ処理効率化**（D）
+
+---
+
+## 📁 ドキュメント構成
+
+### 設計書
+- [integration_design.md](integration_design.md) - システム統合設計
+- [prediction_algorithm_design.md](prediction_algorithm_design.md) - 予測アルゴリズム設計
+- [web_app_requirements.md](web_app_requirements.md) - Webアプリ要件定義
+- [site_analysis.md](site_analysis.md) - サイト分析・データ取得設計
+
+### 詳細計画・結果
+- [TRIFECTA_IMPROVEMENT_PLAN.md](TRIFECTA_IMPROVEMENT_PLAN.md) - 3連単確率計算改善計画・結果
+
+### プロジェクト管理
+- [NEXT_STEPS.md](../NEXT_STEPS.md) - 全体の進行計画
+
+---
+
+## 🔧 技術スタック
+
+### バックエンド
+- **Python 3.11**
+- **Flask** - Webアプリケーション
+- **NumPy/Pandas** - データ処理
+- **Scikit-learn** - 機械学習（予定）
+
+### フロントエンド
+- **HTML/CSS/JavaScript** - Webインターフェース
+- **Chart.js** - データ可視化
+
+### データ処理
+- **JSON** - データ形式
+- **SQLite** - データベース（予定）
+
+---
+
+## 📈 開発状況
+
+### 完了済み機能
+- ✅ 基本予測エンジン
+- ✅ 3連単確率計算（改善済み）
+- ✅ データ取得・処理パイプライン
+- ✅ Webアプリ基本機能
+
+### 開発中機能
+- 🔄 機材重視アルゴリズム強化
+- 🔄 テストケース拡充
+
+### 予定機能
+- ⏳ Webアプリ履歴・分析タブ
+- ⏳ 機械学習モデル導入
+- ⏳ 統計的検証システム
+
+---
+
+## 🚀 セットアップ・実行
+
+### 環境構築
+```bash
+# 仮想環境作成・有効化
+python -m venv venv311
+venv311\Scripts\activate
+
+# 依存関係インストール
+pip install -r requirements.txt
+
+# 環境変数設定
+$env:PYTHONPATH = "D:\git\kyotei_Prediction"
+```
+
+### テスト実行
+```bash
+# 3連単確率計算テスト
+python kyotei_predictor/tests/ai/test_trifecta_probability.py
+
+# パラメータスイープテスト
+python kyotei_predictor/tests/ai/test_trifecta_probability.py --sweep
+```
+
+### Webアプリ起動
+```bash
+python kyotei_predictor/app.py
+```
+
+---
+
+## 📞 サポート・連絡
+
+### 開発者
+- 競艇予測システム開発チーム
+
+### ドキュメント更新
+- 最終更新: 2025-07-06
+- 次回更新予定: 機材重視ロジック強化完了後
 
 ---
 
