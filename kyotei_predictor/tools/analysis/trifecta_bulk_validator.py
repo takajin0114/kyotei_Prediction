@@ -19,24 +19,34 @@ def bulk_validate(data_dir: str, max_races: int = 1000, output_dir: str = 'kyote
             race_data = json.load(f)
         pred = model.calculate_dependent_probabilities(race_data)
         actual = model._extract_actual_result(race_data)
+        # 全組合せpredictionsリストを作成
+        predictions = [
+            {
+                'combination': c['combination'],
+                'probability': c['probability'],
+                'hit': (c['combination'] == actual)
+            }
+            for c in pred['top_combinations']
+        ]
         results.append({
             'file': race_file,
-            'actual_result': actual,
-            'top_prediction': pred['top_combinations'][0]['combination'] if pred['top_combinations'] else None,
-            'top_probability': pred['top_combinations'][0]['probability'] if pred['top_combinations'] else None,
-            'top10': [c['combination'] for c in pred['top_combinations'][:10]],
-            'actual_in_top10': actual in [c['combination'] for c in pred['top_combinations'][:10]],
-            'actual_rank': next((i+1 for i, c in enumerate(pred['top_combinations']) if c['combination'] == actual), None)
+            'predictions': predictions
         })
         if i % 100 == 0:
             print(f"...{i}レース処理")
     # 集計
     total = len(results)
-    hit1 = sum(1 for r in results if r['actual_rank'] == 1)
-    hit3 = sum(1 for r in results if r['actual_rank'] and r['actual_rank'] <= 3)
-    hit5 = sum(1 for r in results if r['actual_rank'] and r['actual_rank'] <= 5)
-    hit10 = sum(1 for r in results if r['actual_rank'] and r['actual_rank'] <= 10)
-    avg_rank = sum(r['actual_rank'] for r in results if r['actual_rank']) / total
+    try:
+        hit1 = sum(1 for r in results if r.get('actual_rank') == 1)
+        hit2 = sum(1 for r in results if r.get('actual_rank') == 2)
+        hit3 = sum(1 for r in results if r.get('actual_rank') == 3)
+        hit5 = sum(1 for r in results if r.get('actual_rank') and r.get('actual_rank') <= 5)
+        hit10 = sum(1 for r in results if r.get('actual_rank') and r.get('actual_rank') <= 10)
+        avg_rank_list = [r.get('actual_rank') for r in results if r.get('actual_rank') is not None]
+        avg_rank = sum(avg_rank_list) / len(avg_rank_list) if avg_rank_list else None
+        print(f"1着的中: {hit1}件, 2着的中: {hit2}件, 3着的中: {hit3}件, 5着以内: {hit5}件, 10着以内: {hit10}件, 平均順位: {avg_rank}")
+    except Exception as e:
+        print(f"[WARN] サマリー集計時にエラー: {e} (一部データにactual_rank欠損)")
     report = {
         'total': total,
         'hit1': hit1,
