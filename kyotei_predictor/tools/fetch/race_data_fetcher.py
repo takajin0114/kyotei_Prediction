@@ -14,6 +14,7 @@ from io import StringIO
 import json
 import re
 from typing import List, Optional, Any, Union
+import os
 
 def safe_extract_racers(html_file) -> List[Any]:
     """
@@ -402,7 +403,7 @@ def main():
             print(f"  {method_name} {numbers}: {payoff['amount']:,}円")
         
         # JSONファイルに保存
-        output_file = f"complete_race_data_{test_date.strftime('%Y%m%d')}_{stadium.name}_R{race_num}.json"
+        output_file = os.path.join("kyotei_predictor", "data", "raw", f"complete_race_data_{test_date.strftime('%Y%m%d')}_{stadium.name}_R{race_num}.json")
         with open(output_file, 'w', encoding='utf-8') as f:
             json.dump(complete_data, f, ensure_ascii=False, indent=2)
         

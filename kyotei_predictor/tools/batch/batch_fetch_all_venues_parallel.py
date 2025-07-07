@@ -82,8 +82,8 @@ def fetch_race_data_parallel(day, stadium, race_no, rate_limit_seconds=1, max_re
     ymd = day.strftime('%Y-%m-%d')
     race_fname = f"race_data_{ymd}_{stadium.name}_R{race_no}.json"
     odds_fname = f"odds_data_{ymd}_{stadium.name}_R{race_no}.json"
-    race_fpath = os.path.join("kyotei_predictor", "data", race_fname)
-    odds_fpath = os.path.join("kyotei_predictor", "data", odds_fname)
+    race_fpath = os.path.join("kyotei_predictor", "data", "raw", race_fname)
+    odds_fpath = os.path.join("kyotei_predictor", "data", "raw", odds_fname)
     
     result = {
         'stadium': stadium.name,

@@ -135,8 +135,8 @@ def main():
                 # ファイル名生成
                 race_fname = f"race_data_{ymd}_{stadium.name}_R{race_no}.json"
                 odds_fname = f"odds_data_{ymd}_{stadium.name}_R{race_no}.json"
-                race_fpath = os.path.join("kyotei_predictor", "data", race_fname)
-                odds_fpath = os.path.join("kyotei_predictor", "data", odds_fname)
+                race_fpath = os.path.join("kyotei_predictor", "data", "raw", race_fname)
+                odds_fpath = os.path.join("kyotei_predictor", "data", "raw", odds_fname)
                 
                 print(f"    R{race_no}: ", end="")
                 

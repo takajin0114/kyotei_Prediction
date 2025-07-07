@@ -15,6 +15,7 @@ from io import StringIO
 import json
 import argparse
 import sys
+import os
 
 def fetch_trifecta_odds(race_date, stadium_code, race_number):
     """
@@ -116,14 +117,10 @@ def fetch_odds_for_race(race_date_str, stadium_name, race_number):
         if odds_data:
             # ファイル保存
             filename = f"odds_data_{race_date_str}_{stadium_name}_R{race_number}.json"
-            filepath = f"kyotei_predictor/data/{filename}"
-            
-            try:
-                with open(filepath, 'w', encoding='utf-8') as f:
-                    json.dump(odds_data, f, ensure_ascii=False, indent=2, default=str)
-                print(f"💾 ファイル保存: {filename}")
-            except Exception as e:
-                print(f"❌ ファイル保存エラー: {e}")
+            filepath = os.path.join("kyotei_predictor", "data", "raw", filename)
+            with open(filepath, "w", encoding="utf-8") as f:
+                json.dump(odds_data, f, ensure_ascii=False, indent=2, default=str)
+            print(f"💾 ファイル保存: {filename}")
             
             # オッズ分析
             analyze_odds_data(odds_data)
