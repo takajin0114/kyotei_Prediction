@@ -44,34 +44,16 @@
 
 ## 📁 ファイル構成
 
-- `batch_data_fetcher.py` - 基本バッチデータ取得
-- `batch_fetch_by_schedule.py` - スケジュールベースバッチ取得
-- `batch_fetch_all_venues.py` - 全会場バッチ取得（従来版）
-- `batch_fetch_all_venues_parallel.py` - 全会場バッチ取得（並列版・推奨）
+
+- `batch_fetch_all_venues.py` - 全会場バッチ取得
 - `fast_future_entries_fetcher.py` - 高速未来レース取得
+- `retry_missing_races.py` - 欠損レース再取得
 
 ## 🚀 使用方法
 
-### 基本バッチ取得
-```bash
-python batch_data_fetcher.py
-```
 
-### スケジュールベース取得（推奨）
-```bash
-python batch_fetch_by_schedule.py
-```
 
-### 全会場バッチ取得（並列版・推奨）
-```bash
-# 仮想環境の有効化（必須）
-venv311\Scripts\activate
-
-# PYTHONPATH設定とバッチ実行
-$env:PYTHONPATH = "D:\git\kyotei_Prediction"; python kyotei_predictor/tools/batch/batch_fetch_all_venues_parallel.py
-```
-
-### 全会場バッチ取得（従来版）
+### 全会場バッチ取得
 ```bash
 # 仮想環境の有効化（必須）
 venv311\Scripts\activate
@@ -79,6 +61,8 @@ venv311\Scripts\activate
 # PYTHONPATH設定とバッチ実行
 $env:PYTHONPATH = "D:\git\kyotei_Prediction"; python kyotei_predictor/tools/batch/batch_fetch_all_venues.py
 ```
+
+
 
 ## 📊 取得対象
 
@@ -130,7 +114,7 @@ $env:PYTHONPATH = "D:\git\kyotei_Prediction"; python kyotei_predictor/tools/batc
 
 ## ツール一覧
 
-### 1. `batch_fetch_all_venues_parallel.py` - 完全並列版バッチフェッチ
+### 1. `batch_fetch_all_venues.py` - 完全並列版バッチフェッチ
 
 **特徴:**
 - 全24会場のデータを並列処理で高速取得
@@ -140,7 +124,8 @@ $env:PYTHONPATH = "D:\git\kyotei_Prediction"; python kyotei_predictor/tools/batc
 
 **エラーハンドリング:**
 - ✅ 選手名解析エラー: 自動スキップ処理
-- ✅ レース中止: 自動検出・スキップ
+- ✅ レース中止: 自動検出・専用ファイル作成・再取得防止
+- ✅ データ未公開: 自動検出・専用ファイル作成・再取得防止
 - ✅ ネットワークエラー: 最大3回リトライ
 - ✅ レート制限: 1秒間隔
 - ✅ データ整合性チェック: 不足データの自動補完
@@ -151,7 +136,7 @@ $env:PYTHONPATH = "D:\git\kyotei_Prediction"; python kyotei_predictor/tools/batc
 venv311\Scripts\activate
 
 # PYTHONPATH設定とバッチ実行
-$env:PYTHONPATH = "D:\git\kyotei_Prediction"; python kyotei_predictor/tools/batch/batch_fetch_all_venues_parallel.py
+$env:PYTHONPATH = "D:\git\kyotei_Prediction"; python kyotei_predictor/tools/batch/batch_fetch_all_venues.py
 ```
 
 **注意事項:**
@@ -179,12 +164,12 @@ venv311\Scripts\activate
 $env:PYTHONPATH = "D:\git\kyotei_Prediction"; python kyotei_predictor/tools/batch/fast_future_entries_fetcher.py
 ```
 
-### 3. `batch_fetch_all_venues.py` - 従来版バッチフェッチ
+### 3. `retry_missing_races.py` - 欠損レース再取得
 
 **特徴:**
-- シーケンシャル処理
-- 安定性重視
-- デバッグ用
+- 既存データから欠損レースを自動検出
+- 不足しているレースデータのみを再取得
+- 効率的なデータ補完
 
 **使用方法:**
 ```bash
@@ -192,8 +177,10 @@ $env:PYTHONPATH = "D:\git\kyotei_Prediction"; python kyotei_predictor/tools/batc
 venv311\Scripts\activate
 
 # PYTHONPATH設定とバッチ実行
-$env:PYTHONPATH = "D:\git\kyotei_Prediction"; python kyotei_predictor/tools/batch/batch_fetch_all_venues.py
+$env:PYTHONPATH = "D:\git\kyotei_Prediction"; python kyotei_predictor/tools/batch/retry_missing_races.py
 ```
+
+
 
 ## エラーハンドリング改善（最新版）
 
@@ -221,7 +208,7 @@ ValueError: not enough values to unpack (expected 2, got 1)
 
 3. **エラー分類と処理**
    - 選手名解析エラー: 即座にスキップ
-   - レース中止: 自動検出・スキップ
+   - レース中止: 自動検出・専用ファイル作成・再取得防止
    - ネットワークエラー: リトライ処理
 
 ### 改善されたエラーハンドリング
@@ -233,6 +220,26 @@ except ValueError as e:
         result['race_error'] = f"選手名解析エラー: {e}"
         print(f"    ⚠️  R{race_no}: 選手名解析エラー - スキップ")
         break  # リトライせずにスキップ
+
+# レース中止の特別処理
+except Exception as e:
+    if "RaceCanceled" in str(type(e)):
+        # レース中止専用ファイルを作成
+        canceled_data = {
+            "status": "canceled",
+            "race_info": {
+                "date": ymd,
+                "stadium": stadium.name,
+                "race_number": race_no,
+                "title": f"{stadium.name} 第{race_no}レース"
+            },
+            "canceled_at": datetime.now().isoformat(),
+            "reason": "レース中止"
+        }
+        with open(canceled_fpath, 'w', encoding='utf-8') as f:
+            json.dump(canceled_data, f, ensure_ascii=False, indent=2)
+        print(f"    ⏭️  R{race_no}: レース中止 - 専用ファイル作成")
+        break  # リトライせずにスキップ
 ```
 
 ### データ品質の向上
@@ -240,6 +247,60 @@ except ValueError as e:
 - **部分的なデータ取得**: 一部のデータが取得できなくても処理継続
 - **エラー情報の記録**: どのようなエラーが発生したかを詳細に記録
 - **統計情報の改善**: 成功・失敗の詳細な分析
+- **レース中止の永続化**: レース中止を専用ファイルで記録し、再取得を防止
+
+## レース中止・データ未公開対応機能
+
+### 概要
+レース中止やデータ未公開の場合の適切な処理を実装しました。
+
+### 動作仕様
+
+#### レース中止の処理
+1. **レース中止検出**: `RaceCanceled`例外を検出した場合
+2. **専用ファイル作成**: レース中止情報を含むJSONファイルを作成
+3. **再取得防止**: 次回バッチ実行時に専用ファイルが存在する場合はスキップ
+4. **統計への反映**: レース中止は成功としてカウント（永続的な中止として扱う）
+
+#### データ未公開の処理
+1. **データ未公開検出**: `DataNotFound`例外を検出した場合
+2. **一時的エラーとして扱う**: リトライ回数内で再試行
+3. **次回実行時に再試行**: データ公開後に取得可能
+4. **専用ファイルは作成しない**: 永続的にスキップしない
+
+### ファイル形式
+
+#### レース中止の場合
+```json
+{
+  "status": "canceled",
+  "race_info": {
+    "date": "2025-07-01",
+    "stadium": "KIRYU",
+    "race_number": 1,
+    "title": "KIRYU 第1レース"
+  },
+  "canceled_at": "2025-07-06T10:30:00",
+  "reason": "レース中止"
+}
+```
+
+#### データ未公開の場合
+```json
+// データ未公開の場合は専用ファイルを作成しません
+// 次回実行時に再試行されます
+```
+
+### 表示例
+```
+    R1: ⏭️ レース中止済み - スキップ
+    R2: ✅race ✅odds
+    R3: ⏭️ レース中止 - 専用ファイル作成
+    R4: ⚠️ データ未公開 - リトライ 1/3
+    R4: ⚠️ データ未公開 - リトライ 2/3
+    R4: ⏭️ データ未公開 - 次回実行時に再試行
+    結果: レース10/12, オッズ12/12, 中止2件
+```
 
 ## 設定パラメータ
 
@@ -294,7 +355,7 @@ kyotei_predictor/data/odds_data_YYYY-MM-DD_VENUE_RN.json
 
 📊 エラーハンドリング改善:
   - 選手名解析エラー: 自動スキップ処理
-  - レース中止: 自動検出・スキップ
+  - レース中止: 自動検出・専用ファイル作成・再取得防止
   - ネットワークエラー: 最大3回リトライ
   - レート制限: 1秒間隔
 ```
