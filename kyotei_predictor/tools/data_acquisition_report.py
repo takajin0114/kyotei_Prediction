@@ -2,6 +2,7 @@ import os
 import re
 import collections
 from datetime import datetime
+import csv
 
 RAW_DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'raw')
 RACE_FILE_PATTERN = re.compile(r"race_data_(\d{4}-\d{2}-\d{2})_([A-Z0-9]+)_R(\d{1,2})\.json")
@@ -56,6 +57,16 @@ def print_report(report):
     print("\n--- 集計完了 ---\n")
 
 
+def save_report_csv(report, csv_path):
+    with open(csv_path, 'w', newline='', encoding='utf-8') as f:
+        writer = csv.writer(f)
+        writer.writerow(['date', 'venue', 'race_no'])
+        for date in sorted(report.keys()):
+            for venue in sorted(report[date].keys()):
+                for race_no in sorted(report[date][venue]):
+                    writer.writerow([date, venue, race_no])
+
+
 def main():
     if not os.path.exists(RAW_DATA_DIR):
         print(f"データディレクトリが存在しません: {RAW_DATA_DIR}")
@@ -64,8 +75,13 @@ def main():
     if not race_info:
         print("race_data_*.json ファイルが見つかりません。")
         return
+    print(f"[INFO] 検出ファイル数: {len(race_info)}")
     report = build_report(race_info)
     print_report(report)
+    # CSV出力
+    csv_path = os.path.join(RAW_DATA_DIR, 'race_data_coverage_report.csv')
+    save_report_csv(report, csv_path)
+    print(f"[INFO] 進捗レポートCSVを出力: {csv_path}")
 
 if __name__ == "__main__":
     main() 
