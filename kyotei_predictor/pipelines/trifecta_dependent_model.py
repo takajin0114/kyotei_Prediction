@@ -213,6 +213,7 @@ class TrifectaDependentModel:
         adjacent_counts = {}  # 隣接艇
         course_patterns = {'inner': 0, 'outer': 0, 'mixed': 0}
         total = 0
+        valid_race_files = 0
         
         for race_file in race_files[:max_files]:
             try:
@@ -221,6 +222,7 @@ class TrifectaDependentModel:
                 actual = self._extract_actual_result(race_data)
                 if not actual:
                     continue
+                valid_race_files += 1
                 b1, b2, b3 = [int(x) for x in actual.split('-')]
                 # 1着
                 first_counts[b1] = first_counts.get(b1, 0) + 1
@@ -262,6 +264,7 @@ class TrifectaDependentModel:
             'course': course_probs
         }
         print(f"✅ 条件付き確率・相関学習完了: {total}レース")
+        print(f"有効なレースデータ件数: {valid_race_files}")
         return self.conditional_probs
     
     def learn_from_historical_data(self, data_dir: Optional[str] = None) -> Dict[str, Any]:
@@ -417,9 +420,14 @@ def main():
 
     # 条件付き確率・艇間相関の学習（常に実行）
     print("\n=== 条件付き確率・艇間相関の学習 ===")
-    model.learn_conditional_probabilities()
+    if os.path.isdir(args.race_file):
+        model.learn_conditional_probabilities(data_dir=args.race_file)
+        # ディレクトリ指定時は学習のみで終了
+        return
+    else:
+        model.learn_conditional_probabilities()
 
-    # レースデータ読み込み
+    # レースデータ読み込み（ファイル指定時のみ）
     with open(args.race_file, 'r', encoding='utf-8') as f:
         race_data = json.load(f)
     
