@@ -28,9 +28,18 @@ def bulk_validate(data_dir: str, max_races: int = 1000, output_dir: str = 'kyote
             }
             for c in pred['top_combinations']
         ]
+        # actual_rankを計算
+        actual_rank = None
+        if actual:
+            for idx, c in enumerate(pred['top_combinations']):
+                if c['combination'] == actual:
+                    actual_rank = idx + 1
+                    break
         results.append({
             'file': race_file,
-            'predictions': predictions
+            'predictions': predictions,
+            'actual': actual,
+            'actual_rank': actual_rank
         })
         if i % 100 == 0:
             print(f"...{i}レース処理")
@@ -38,13 +47,12 @@ def bulk_validate(data_dir: str, max_races: int = 1000, output_dir: str = 'kyote
     total = len(results)
     try:
         hit1 = sum(1 for r in results if r.get('actual_rank') == 1)
-        hit2 = sum(1 for r in results if r.get('actual_rank') == 2)
-        hit3 = sum(1 for r in results if r.get('actual_rank') == 3)
+        hit3 = sum(1 for r in results if r.get('actual_rank') and r.get('actual_rank') <= 3)
         hit5 = sum(1 for r in results if r.get('actual_rank') and r.get('actual_rank') <= 5)
         hit10 = sum(1 for r in results if r.get('actual_rank') and r.get('actual_rank') <= 10)
         avg_rank_list = [r.get('actual_rank') for r in results if r.get('actual_rank') is not None]
         avg_rank = sum(avg_rank_list) / len(avg_rank_list) if avg_rank_list else None
-        print(f"1着的中: {hit1}件, 2着的中: {hit2}件, 3着的中: {hit3}件, 5着以内: {hit5}件, 10着以内: {hit10}件, 平均順位: {avg_rank}")
+        print(f"1着的中: {hit1}件, 3着以内的中: {hit3}件, 5着以内: {hit5}件, 10着以内: {hit10}件, 平均順位: {avg_rank}")
     except Exception as e:
         print(f"[WARN] サマリー集計時にエラー: {e} (一部データにactual_rank欠損)")
     report = {
