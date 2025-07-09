@@ -1,8 +1,20 @@
 # プロジェクト構造詳細
 
+> **注記**: 本ドキュメントはdocs/配下に集約予定です。最新の参照は[README.md](README.md)・[docs/README.md](docs/README.md)から行ってください。
+
 ## 概要
 
 競艇予測システムのプロジェクト構造と各コンポーネントの役割を詳細に説明します。
+
+## ドキュメント索引・参照ガイド
+- [README.md](README.md) - 全体概要・索引
+- [docs/README.md](docs/README.md) - ドキュメント全体ガイド
+- [docs/integration_design.md](docs/integration_design.md) - システム統合設計
+- [docs/DEVELOPMENT_ROADMAP.md](docs/DEVELOPMENT_ROADMAP.md) - 開発ロードマップ
+
+---
+
+# 以下、従来の内容（構造詳細）は現状維持
 
 ## ディレクトリ構造
 

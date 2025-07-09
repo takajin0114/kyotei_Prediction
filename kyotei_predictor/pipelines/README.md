@@ -1,19 +1,25 @@
 # pipelines ディレクトリ README
 
-**最終更新日: 2025-07-04**
+> **注記**: 詳細な設計・運用ルールはdocs/配下に集約しています。全体像・詳細は[../../README.md](../../README.md)・[../../docs/README.md](../../docs/README.md)・各設計書を参照してください。
+
+## 概要
+- データ前処理・特徴量生成・AI学習環境などパイプラインの概要を記載
+- 詳細な設計・運用ルールは[../../docs/integration_design.md](../../docs/integration_design.md)等を参照
+
+## 主なスクリプト
+- `data_preprocessor.py` : データ前処理・クリーニング
+- `feature_enhancer.py` : 特徴量エンジニアリング
+- `kyotei_env.py` : 強化学習用環境クラス
+
+## 参照先
+- [../../README.md](../../README.md) - プロジェクト全体概要
+- [../../docs/README.md](../../docs/README.md) - ドキュメント全体ガイド
+- [../../docs/integration_design.md](../../docs/integration_design.md) - システム統合設計
+- [../../docs/DEVELOPMENT_ROADMAP.md](../../docs/DEVELOPMENT_ROADMAP.md) - 開発ロードマップ
 
 ---
 
-## 本READMEの役割
-- データ前処理・特徴量生成・AI学習環境などパイプラインの役割・使い方を記載
-- 典型的な処理フロー・設計書へのリンクを明記
-- ルートREADMEやNEXT_STEPS.mdへのリンクも記載
-
-## 関連ドキュメント
-- [../../README.md](../../README.md)（全体概要・セットアップ・タスク入口）
-- [../../NEXT_STEPS.md](../../NEXT_STEPS.md)（今後のタスク・優先度・進捗管理）
-- [../../integration_design.md](../../integration_design.md)（統合設計・アーキテクチャ）
-- [../../prediction_algorithm_design.md](../../prediction_algorithm_design.md)（予測アルゴリズム設計）
+# 以下、従来の内容（構成・サンプルフロー等）は現状維持
 
 ---
 
