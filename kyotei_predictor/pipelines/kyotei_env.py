@@ -37,7 +37,9 @@ class KyoteiEnv(gym.Env):
             odds = json.load(f)
         self.odds_data = odds['odds_data']
         # 正解着順（1-3着）
-        records = sorted(race['race_records'], key=lambda x: x['arrival'])
+        # arrivalがNoneのレコードを除外
+        valid_records = [r for r in race['race_records'] if r.get('arrival') is not None]
+        records = sorted(valid_records, key=lambda x: x['arrival'])
         self.arrival_tuple = tuple(r['pit_number'] for r in records[:3])
         # 状態ベクトル生成
         self.state = vectorize_race_state(self.race_data_path, self.odds_data_path)
@@ -95,12 +97,13 @@ def vectorize_race_state(race_data_path, odds_data_path):
     for entry in entries:
         pit = (entry['pit_number'] - 1) / 5  # 1-6→0-1
         rating = rating_map.get(entry['racer']['current_rating'], [0,0,0,0])
-        perf_all = entry['performance']['rate_in_all_stadium'] / 10 if entry['performance']['rate_in_all_stadium'] else 0
-        perf_local = entry['performance']['rate_in_event_going_stadium'] / 10 if entry['performance']['rate_in_event_going_stadium'] else 0
-        boat2 = entry['boat']['quinella_rate'] / 100 if entry['boat']['quinella_rate'] else 0
-        boat3 = entry['boat']['trio_rate'] / 100 if entry['boat']['trio_rate'] else 0
-        motor2 = entry['motor']['quinella_rate'] / 100 if entry['motor']['quinella_rate'] else 0
-        motor3 = entry['motor']['trio_rate'] / 100 if entry['motor']['trio_rate'] else 0
+        # None/NaNチェックとfillna(0)を追加
+        perf_all = entry['performance']['rate_in_all_stadium'] / 10 if entry['performance']['rate_in_all_stadium'] is not None else 0
+        perf_local = entry['performance']['rate_in_event_going_stadium'] / 10 if entry['performance']['rate_in_event_going_stadium'] is not None else 0
+        boat2 = entry['boat']['quinella_rate'] / 100 if entry['boat']['quinella_rate'] is not None else 0
+        boat3 = entry['boat']['trio_rate'] / 100 if entry['boat']['trio_rate'] is not None else 0
+        motor2 = entry['motor']['quinella_rate'] / 100 if entry['motor']['quinella_rate'] is not None else 0
+        motor3 = entry['motor']['trio_rate'] / 100 if entry['motor']['trio_rate'] is not None else 0
         vec = [pit] + rating + [perf_all, perf_local, boat2, boat3, motor2, motor3]
         boats.append(vec)
     boats = np.array(boats)  # shape: (6, 特徴量数)
@@ -109,7 +112,7 @@ def vectorize_race_state(race_data_path, odds_data_path):
     stadiums = ['KIRYU','TODA','EDOGAWA']  # 必要に応じて拡張
     stadium_onehot = [1 if race['race_info']['stadium']==s else 0 for s in stadiums]
     race_num = (race['race_info']['race_number']-1)/11
-    laps = (race['race_info']['number_of_laps']-1)/4 if 'number_of_laps' in race['race_info'] else 0
+    laps = (race['race_info']['number_of_laps']-1)/4 if 'number_of_laps' in race['race_info'] and race['race_info']['number_of_laps'] is not None else 0
     is_fixed = 1 if race['race_info'].get('is_course_fixed') else 0
     race_feat = stadium_onehot + [race_num, laps, is_fixed]
 
@@ -117,8 +120,14 @@ def vectorize_race_state(race_data_path, odds_data_path):
     trifecta_list = list(permutations(range(1,7), 3))  # 1-indexed
     odds_map = {tuple(o['betting_numbers']): o['ratio'] for o in odds['odds_data']}
     odds_vec = [np.log(odds_map.get(t, 1)+1) for t in trifecta_list]  # log(odds+1)
+    # None/NaNチェックを追加
+    odds_vec = [o if o is not None and not np.isnan(o) else 0 for o in odds_vec]
     odds_min, odds_max = min(odds_vec), max(odds_vec)
-    odds_vec = [(o-odds_min)/(odds_max-odds_min) if odds_max>odds_min else 0 for o in odds_vec]
+    # ゼロ除算を防ぐ
+    if odds_max > odds_min:
+        odds_vec = [(o-odds_min)/(odds_max-odds_min) for o in odds_vec]
+    else:
+        odds_vec = [0 for o in odds_vec]
 
     # 5. 結合
     state_vec = np.concatenate([boats.flatten(), race_feat, odds_vec])

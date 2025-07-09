@@ -31,6 +31,7 @@ def safe_extract_racers(html_file) -> List[Any]:
     except ValueError as e:
         if "not enough values to unpack" in str(e):
             print(f"⚠️  選手名解析エラー: 名前の形式が予期しない形式です - {e}")
+            print(f"⚠️  選手名文字列: {getattr(e, 'args', [''])[0]}")
             print("⚠️  選手データの取得をスキップします")
             return []
         else:

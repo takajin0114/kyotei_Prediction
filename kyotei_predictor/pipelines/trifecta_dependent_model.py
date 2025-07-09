@@ -197,15 +197,19 @@ class TrifectaDependentModel:
             }
         }
     
-    def learn_conditional_probabilities(self, data_dir: Optional[str] = None, max_files: int = 1000) -> Dict[str, Any]:
+    def learn_conditional_probabilities(self, data_dir: Optional[str] = None, max_files: int = 1000, existing_model_path: Optional[str] = None, file_list: Optional[list] = None) -> Dict[str, Any]:
         """
         過去データから条件付き確率分布と艇間相関パターンを学習
+        既存モデルファイルがあれば統計値を加算してインクリメンタル学習
         """
         print("📚 条件付き確率・艇間相関の学習開始...")
         if data_dir is None:
             data_dir = os.path.join(os.path.dirname(__file__), '..', 'data')
-        race_files = [f for f in os.listdir(data_dir) if f.startswith('race_data_') and f.endswith('.json')]
-        
+        if file_list is not None:
+            race_files = file_list
+        else:
+            race_files = [f for f in os.listdir(data_dir) if f.startswith('race_data_') and f.endswith('.json')]
+
         # 統計カウント
         first_counts = {}  # 1着
         second_given_first = {}  # 2着|1着
@@ -214,7 +218,20 @@ class TrifectaDependentModel:
         course_patterns = {'inner': 0, 'outer': 0, 'mixed': 0}
         total = 0
         valid_race_files = 0
-        
+
+        # 既存モデルファイルから統計値を復元
+        if existing_model_path and os.path.isfile(existing_model_path):
+            with open(existing_model_path, 'r', encoding='utf-8') as f:
+                model_data = json.load(f)
+            stats = model_data.get('stats', {})
+            first_counts.update(stats.get('first_counts', {}))
+            second_given_first.update(stats.get('second_given_first', {}))
+            third_given_first_second.update(stats.get('third_given_first_second', {}))
+            adjacent_counts.update(stats.get('adjacent_counts', {}))
+            course_patterns.update(stats.get('course_patterns', {}))
+            total = stats.get('total', 0)
+            print(f"既存モデル統計値を加算: {existing_model_path}")
+
         for race_file in race_files[:max_files]:
             try:
                 with open(os.path.join(data_dir, race_file), 'r', encoding='utf-8') as f:
@@ -231,7 +248,7 @@ class TrifectaDependentModel:
                     second_given_first[b1] = {}
                 second_given_first[b1][b2] = second_given_first[b1].get(b2, 0) + 1
                 # 3着|1着,2着
-                key = (b1, b2)
+                key = f"{b1}-{b2}"
                 if key not in third_given_first_second:
                     third_given_first_second[key] = {}
                 third_given_first_second[key][b3] = third_given_first_second[key].get(b3, 0) + 1
@@ -262,6 +279,15 @@ class TrifectaDependentModel:
             'third_given_first_second': third_probs,
             'adjacent': adjacent_probs,
             'course': course_probs
+        }
+        # 統計値も保存用に保持
+        self._stats = {
+            'first_counts': first_counts,
+            'second_given_first': second_given_first,
+            'third_given_first_second': third_given_first_second,
+            'adjacent_counts': adjacent_counts,
+            'course_patterns': course_patterns,
+            'total': total
         }
         print(f"✅ 条件付き確率・相関学習完了: {total}レース")
         print(f"有効なレースデータ件数: {valid_race_files}")
@@ -384,25 +410,21 @@ class TrifectaDependentModel:
         print(f"  - コースパターン: {correlation_data['course_patterns']}")
     
     def save_model(self, output_dir: Optional[str] = None) -> str:
-        """モデルを保存"""
+        """モデルを保存（統計値も含む）"""
         if output_dir is None:
             output_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'outputs')
-        
         os.makedirs(output_dir, exist_ok=True)
-        
         model_data = {
             'model_type': 'trifecta_dependent',
-            'position_weights': self.position_weights,
-            'correlation_matrix': self.correlation_matrix,
-            'created_timestamp': datetime.now().isoformat()
+            'position_weights': getattr(self, 'position_weights', None),
+            'correlation_matrix': getattr(self, 'correlation_matrix', None),
+            'created_timestamp': datetime.now().isoformat(),
+            'stats': getattr(self, '_stats', {})
         }
-        
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         model_file = os.path.join(output_dir, f'trifecta_dependent_model_{timestamp}.json')
-        
         with open(model_file, 'w', encoding='utf-8') as f:
             json.dump(model_data, f, ensure_ascii=False, indent=2)
-        
         print(f"💾 モデル保存完了: {model_file}")
         return model_file
 
@@ -414,18 +436,27 @@ def main():
     parser.add_argument('--race_file', type=str, required=True, help='レースデータファイル')
     parser.add_argument('--learn', action='store_true', help='過去データから学習')
     parser.add_argument('--algorithm', type=str, default='equipment_focused', help='使用アルゴリズム')
+    parser.add_argument('--existing-model', type=str, default=None, help='既存モデルファイル（インクリメンタル学習用）')
+    parser.add_argument('--file-list', type=str, default=None, help='学習に使うファイル名リスト（1行1ファイル）')
+    parser.add_argument('--max-files', type=int, default=1000, help='学習に使う最大ファイル数')
     args = parser.parse_args()
     
     model = TrifectaDependentModel()
 
+    # ファイルリスト指定時はリストからファイル名を取得
+    file_list = None
+    if args.file_list:
+        with open(args.file_list, 'r', encoding='utf-8') as f:
+            file_list = [line.strip() for line in f if line.strip()]
+
     # 条件付き確率・艇間相関の学習（常に実行）
     print("\n=== 条件付き確率・艇間相関の学習 ===")
     if os.path.isdir(args.race_file):
-        model.learn_conditional_probabilities(data_dir=args.race_file)
-        # ディレクトリ指定時は学習のみで終了
+        model.learn_conditional_probabilities(data_dir=args.race_file, max_files=args.max_files, existing_model_path=args.existing_model, file_list=file_list)
+        model.save_model()
         return
     else:
-        model.learn_conditional_probabilities()
+        model.learn_conditional_probabilities(existing_model_path=args.existing_model, file_list=file_list, max_files=args.max_files)
 
     # レースデータ読み込み（ファイル指定時のみ）
     with open(args.race_file, 'r', encoding='utf-8') as f:
