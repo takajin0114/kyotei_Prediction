@@ -16,6 +16,7 @@ from kyotei_predictor.tools.fetch.race_data_fetcher import fetch_complete_race_d
 from kyotei_predictor.tools.fetch.odds_fetcher import fetch_trifecta_odds
 from metaboatrace.scrapers.official.website.v1707.pages.monthly_schedule_page.location import create_monthly_schedule_page_url
 from metaboatrace.scrapers.official.website.v1707.pages.monthly_schedule_page.scraping import extract_events
+import argparse
 
 def get_event_days_for_stadium(stadium: StadiumTelCode, start_date: date, end_date: date):
     """1会場の開催日を取得（高速化版）"""
@@ -294,29 +295,48 @@ def get_all_stadiums():
     return list(StadiumTelCode)
 
 def main():
+    parser = argparse.ArgumentParser(description="全会場バッチデータ取得（完全並列版）")
+    parser.add_argument('--start-date', type=str, required=True, help='取得開始日 (YYYY-MM-DD)')
+    parser.add_argument('--end-date', type=str, required=True, help='取得終了日 (YYYY-MM-DD)')
+    parser.add_argument('--stadiums', type=str, required=True, help='対象会場名（カンマ区切り, 例: KIRYU,EDOGAWA）')
+    args = parser.parse_args()
+
+    try:
+        start_date = datetime.strptime(args.start_date, '%Y-%m-%d').date()
+        end_date = datetime.strptime(args.end_date, '%Y-%m-%d').date()
+    except Exception:
+        print('日付形式はYYYY-MM-DDで指定してください')
+        sys.exit(1)
+    if start_date > end_date:
+        print('開始日は終了日以前で指定してください')
+        sys.exit(1)
+
+    # 会場名リストを取得
+    all_stadiums = {s.name: s for s in get_all_stadiums()}
+    if args.stadiums.strip().upper() == 'ALL':
+        stadiums = list(all_stadiums.values())
+    else:
+        stadium_names = [s.strip().upper() for s in args.stadiums.split(',') if s.strip()]
+        invalid = [s for s in stadium_names if s not in all_stadiums]
+        if invalid:
+            print(f'不正な会場名: {invalid}. 有効な会場名: {list(all_stadiums.keys())}')
+            sys.exit(1)
+        stadiums = [all_stadiums[s] for s in stadium_names]
+
     start_time = datetime.now()
     print(f"バッチ処理開始: {start_time}")
-    
-    # 設定
-    end_date = date.today()
-    start_date = end_date - timedelta(days=30)  # 直近30日
     race_numbers = range(1, 13)
-    stadiums = get_all_stadiums()
-    
     # 高速化設定
-    RATE_LIMIT_SECONDS = 1  # レート制限
-    MAX_RETRIES = 3  # エラー時のリトライ回数
-    SCHEDULE_WORKERS = 8  # 開催日取得の並列数
-    RACE_WORKERS = 6  # レース取得の並列数（1日12レースを6並列）
-    
-    print(f"全24会場バッチフェッチ開始（完全並列版）")
+    RATE_LIMIT_SECONDS = 1
+    MAX_RETRIES = 3
+    SCHEDULE_WORKERS = 8
+    RACE_WORKERS = 6
+    print(f"全{len(stadiums)}会場バッチフェッチ開始（完全並列版）")
     print(f"期間: {start_date} 〜 {end_date}")
     print(f"対象会場数: {len(stadiums)}")
     print(f"レート制限: {RATE_LIMIT_SECONDS}秒")
     print(f"開催日取得並列数: {SCHEDULE_WORKERS}")
     print(f"レース取得並列数: {RACE_WORKERS}")
-    
-    # 開催日リスト取得（並列処理）
     all_event_days = get_all_event_days_parallel(stadiums, start_date, end_date, SCHEDULE_WORKERS)
     
     # 統計情報
