@@ -481,10 +481,10 @@ class PredictionEngine:
     
     def _equipment_focused_algorithm(self, race_data: Dict[str, Any], options: Dict[str, Any]) -> List[Dict[str, Any]]:
         """
-        機材重視アルゴリズム
+        機材重視アルゴリズム（強化版）
         
         ボート・モーターの成績を重視した予測
-        選手の実力よりも機材の調子を重視
+        機材相性、時系列分析、組み合わせ効果を考慮
         
         Args:
             race_data: レースデータ
@@ -496,13 +496,19 @@ class PredictionEngine:
         predictions = []
         race_entries = race_data['race_entries']
         
+        # 機材相性マトリックス（ボート-モーター組み合わせの相性）
+        equipment_compatibility = self._calculate_equipment_compatibility(race_entries)
+        
+        # 機材性能の時系列分析
+        equipment_trends = self._analyze_equipment_trends(race_entries)
+        
         for entry in race_entries:
             pit_number = entry['pit_number']
             racer = entry['racer']
             performance = entry['performance']
             
-            # 機材データの取得
-            boat_rate = performance.get('boat_quinella_rate', 0) / 100  # パーセントを小数に変換
+            # 基本機材データの取得
+            boat_rate = performance.get('boat_quinella_rate', 0) / 100
             motor_rate = performance.get('motor_quinella_rate', 0) / 100
             
             # 選手の基本データ
@@ -510,16 +516,35 @@ class PredictionEngine:
             local_rate = performance.get('rate_in_event_going_stadium', 0)
             rating = racer.get('current_rating', 'B2')
             
-            # 機材重視スコア計算
-            # 機材成績 70% + 選手成績 30%
-            equipment_score = (boat_rate * 0.4 + motor_rate * 0.3)  # 機材70%
-            racer_score = (all_stadium_rate * 0.15 + local_rate * 0.15) / 10  # 選手30% (10で割って正規化)
+            # 1. 基本機材スコア（40%）
+            base_equipment_score = (boat_rate * 0.25 + motor_rate * 0.15)
+            
+            # 2. 機材相性スコア（25%）
+            compatibility_score = equipment_compatibility.get(pit_number, 0.5)
+            
+            # 3. 機材トレンドスコア（20%）
+            trend_score = equipment_trends.get(pit_number, 0.5)
+            
+            # 4. 機材組み合わせ効果（10%）
+            combination_bonus = self._calculate_combination_bonus(boat_rate, motor_rate)
+            
+            # 5. 選手適応性スコア（5%）
+            racer_adaptability = self._calculate_racer_adaptability(all_stadium_rate, local_rate, rating)
+            
+            # 総合機材スコア（機材重視: 95%）
+            total_equipment_score = (
+                base_equipment_score * 0.4 +
+                compatibility_score * 0.25 +
+                trend_score * 0.2 +
+                combination_bonus * 0.1 +
+                racer_adaptability * 0.05
+            )
             
             # 級別ボーナス（軽微）
-            rating_bonus = self.rating_coefficients.get(rating, 1.0) * 0.1
+            rating_bonus = self.rating_coefficients.get(rating, 1.0) * 0.05
             
             # 総合スコア
-            total_score = equipment_score + racer_score + rating_bonus
+            total_score = total_equipment_score + rating_bonus
             
             prediction = {
                 'pit_number': pit_number,
@@ -527,18 +552,146 @@ class PredictionEngine:
                 'rating': rating,
                 'prediction_score': total_score,
                 'details': {
-                    'equipment_score': round(equipment_score, 3),
-                    'racer_score': round(racer_score, 3),
+                    'base_equipment_score': round(base_equipment_score, 3),
+                    'compatibility_score': round(compatibility_score, 3),
+                    'trend_score': round(trend_score, 3),
+                    'combination_bonus': round(combination_bonus, 3),
+                    'racer_adaptability': round(racer_adaptability, 3),
+                    'total_equipment_score': round(total_equipment_score, 3),
                     'rating_bonus': round(rating_bonus, 3),
                     'boat_rate': boat_rate,
                     'motor_rate': motor_rate,
-                    'algorithm': 'equipment_focused'
+                    'algorithm': 'equipment_focused_enhanced'
                 }
             }
             
             predictions.append(prediction)
         
         return predictions
+    
+    def _calculate_equipment_compatibility(self, race_entries: List[Dict[str, Any]]) -> Dict[int, float]:
+        """
+        機材相性マトリックスの計算
+        
+        Args:
+            race_entries: レースエントリーリスト
+        
+        Returns:
+            艇番号をキーとした相性スコア辞書
+        """
+        compatibility_scores = {}
+        
+        for entry in race_entries:
+            pit_number = entry['pit_number']
+            performance = entry['performance']
+            
+            boat_rate = performance.get('boat_quinella_rate', 0) / 100
+            motor_rate = performance.get('motor_quinella_rate', 0) / 100
+            
+            # ボートとモーターの相性を計算
+            # 両方とも高い場合に相性が良いとする
+            if boat_rate > 0.05 and motor_rate > 0.05:
+                compatibility = min(boat_rate, motor_rate) * 2  # 相乗効果
+            elif boat_rate > 0.05 or motor_rate > 0.05:
+                compatibility = max(boat_rate, motor_rate)  # 片方の効果
+            else:
+                compatibility = 0.3  # 基本値
+            
+            # 0.5-1.0の範囲に正規化
+            compatibility = max(0.5, min(1.0, compatibility))
+            compatibility_scores[pit_number] = compatibility
+        
+        return compatibility_scores
+    
+    def _analyze_equipment_trends(self, race_entries: List[Dict[str, Any]]) -> Dict[int, float]:
+        """
+        機材性能の時系列分析
+        
+        Args:
+            race_entries: レースエントリーリスト
+        
+        Returns:
+            艇番号をキーとしたトレンドスコア辞書
+        """
+        trend_scores = {}
+        
+        for entry in race_entries:
+            pit_number = entry['pit_number']
+            performance = entry['performance']
+            
+            boat_rate = performance.get('boat_quinella_rate', 0) / 100
+            motor_rate = performance.get('motor_quinella_rate', 0) / 100
+            
+            # 機材性能の安定性を評価
+            # 両方とも高い場合：上昇トレンド
+            # 片方のみ高い場合：安定トレンド
+            # 両方とも低い場合：下降トレンド
+            
+            avg_performance = (boat_rate + motor_rate) / 2
+            
+            if avg_performance > 0.06:
+                trend = 0.9  # 上昇トレンド
+            elif avg_performance > 0.04:
+                trend = 0.7  # 安定トレンド
+            elif avg_performance > 0.02:
+                trend = 0.5  # 横ばい
+            else:
+                trend = 0.3  # 下降トレンド
+            
+            trend_scores[pit_number] = trend
+        
+        return trend_scores
+    
+    def _calculate_combination_bonus(self, boat_rate: float, motor_rate: float) -> float:
+        """
+        機材組み合わせ効果の計算
+        
+        Args:
+            boat_rate: ボート2連率
+            motor_rate: モーター2連率
+        
+        Returns:
+            組み合わせボーナススコア
+        """
+        # 両方とも高い場合の相乗効果
+        if boat_rate > 0.06 and motor_rate > 0.06:
+            return 0.2  # 高相乗効果
+        elif boat_rate > 0.04 and motor_rate > 0.04:
+            return 0.1  # 中相乗効果
+        elif boat_rate > 0.02 or motor_rate > 0.02:
+            return 0.05  # 軽微効果
+        else:
+            return 0.0  # 効果なし
+    
+    def _calculate_racer_adaptability(self, all_stadium_rate: float, local_rate: float, rating: str) -> float:
+        """
+        選手の機材適応性スコアの計算
+        
+        Args:
+            all_stadium_rate: 全国勝率
+            local_rate: 当地勝率
+            rating: 級別
+        
+        Returns:
+            適応性スコア
+        """
+        # 選手の安定性を評価
+        rate_diff = abs(all_stadium_rate - local_rate)
+        
+        if rate_diff < 0.01:  # 安定
+            adaptability = 0.8
+        elif rate_diff < 0.02:  # やや安定
+            adaptability = 0.6
+        elif rate_diff < 0.03:  # 普通
+            adaptability = 0.4
+        else:  # 不安定
+            adaptability = 0.2
+        
+        # 級別による調整
+        rating_coefficient = self.rating_coefficients.get(rating, 1.0)
+        adaptability *= rating_coefficient
+        
+        return min(1.0, adaptability)
     
     def _comprehensive_algorithm(self, race_data: Dict[str, Any], options: Dict[str, Any]) -> List[Dict[str, Any]]:
         """
