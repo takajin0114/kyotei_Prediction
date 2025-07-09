@@ -36,9 +36,22 @@ class KyoteiEnv(gym.Env):
         with open(self.odds_data_path, encoding='utf-8') as f:
             odds = json.load(f)
         self.odds_data = odds['odds_data']
-        # 正解着順（1-3着）
-        records = sorted(race['race_records'], key=lambda x: x['arrival'])
+        
+        # 正解着順（1-3着）の品質チェック
+        valid_records = [r for r in race['race_records'] if r.get('arrival') is not None]
+        if len(valid_records) < 3:
+            print(f"[WARNING] Skipping race with insufficient valid records: {len(valid_records)} < 3")
+            # 不完全なデータの場合は例外を発生させてスキップ
+            raise ValueError(f"Insufficient valid records: {len(valid_records)} < 3")
+        
+        records = sorted(valid_records, key=lambda x: x['arrival'])
         self.arrival_tuple = tuple(r['pit_number'] for r in records[:3])
+        
+        # 着順タプルの妥当性チェック
+        if len(self.arrival_tuple) != 3:
+            print(f"[WARNING] Skipping race with invalid arrival_tuple: {self.arrival_tuple}")
+            raise ValueError(f"Invalid arrival_tuple: {self.arrival_tuple}, length: {len(self.arrival_tuple)}")
+        
         # 状態ベクトル生成
         self.state = vectorize_race_state(self.race_data_path, self.odds_data_path)
         self.terminated = False
@@ -95,12 +108,13 @@ def vectorize_race_state(race_data_path, odds_data_path):
     for entry in entries:
         pit = (entry['pit_number'] - 1) / 5  # 1-6→0-1
         rating = rating_map.get(entry['racer']['current_rating'], [0,0,0,0])
-        perf_all = entry['performance']['rate_in_all_stadium'] / 10 if entry['performance']['rate_in_all_stadium'] else 0
-        perf_local = entry['performance']['rate_in_event_going_stadium'] / 10 if entry['performance']['rate_in_event_going_stadium'] else 0
-        boat2 = entry['boat']['quinella_rate'] / 100 if entry['boat']['quinella_rate'] else 0
-        boat3 = entry['boat']['trio_rate'] / 100 if entry['boat']['trio_rate'] else 0
-        motor2 = entry['motor']['quinella_rate'] / 100 if entry['motor']['quinella_rate'] else 0
-        motor3 = entry['motor']['trio_rate'] / 100 if entry['motor']['trio_rate'] else 0
+        # None/NaNチェックとfillna(0)を追加
+        perf_all = entry['performance']['rate_in_all_stadium'] / 10 if entry['performance']['rate_in_all_stadium'] is not None else 0
+        perf_local = entry['performance']['rate_in_event_going_stadium'] / 10 if entry['performance']['rate_in_event_going_stadium'] is not None else 0
+        boat2 = entry['boat']['quinella_rate'] / 100 if entry['boat']['quinella_rate'] is not None else 0
+        boat3 = entry['boat']['trio_rate'] / 100 if entry['boat']['trio_rate'] is not None else 0
+        motor2 = entry['motor']['quinella_rate'] / 100 if entry['motor']['quinella_rate'] is not None else 0
+        motor3 = entry['motor']['trio_rate'] / 100 if entry['motor']['trio_rate'] is not None else 0
         vec = [pit] + rating + [perf_all, perf_local, boat2, boat3, motor2, motor3]
         boats.append(vec)
     boats = np.array(boats)  # shape: (6, 特徴量数)
@@ -109,7 +123,7 @@ def vectorize_race_state(race_data_path, odds_data_path):
     stadiums = ['KIRYU','TODA','EDOGAWA']  # 必要に応じて拡張
     stadium_onehot = [1 if race['race_info']['stadium']==s else 0 for s in stadiums]
     race_num = (race['race_info']['race_number']-1)/11
-    laps = (race['race_info']['number_of_laps']-1)/4 if 'number_of_laps' in race['race_info'] else 0
+    laps = (race['race_info']['number_of_laps']-1)/4 if 'number_of_laps' in race['race_info'] and race['race_info']['number_of_laps'] is not None else 0
     is_fixed = 1 if race['race_info'].get('is_course_fixed') else 0
     race_feat = stadium_onehot + [race_num, laps, is_fixed]
 
@@ -117,8 +131,14 @@ def vectorize_race_state(race_data_path, odds_data_path):
     trifecta_list = list(permutations(range(1,7), 3))  # 1-indexed
     odds_map = {tuple(o['betting_numbers']): o['ratio'] for o in odds['odds_data']}
     odds_vec = [np.log(odds_map.get(t, 1)+1) for t in trifecta_list]  # log(odds+1)
+    # None/NaNチェックを追加
+    odds_vec = [o if o is not None and not np.isnan(o) else 0 for o in odds_vec]
     odds_min, odds_max = min(odds_vec), max(odds_vec)
-    odds_vec = [(o-odds_min)/(odds_max-odds_min) if odds_max>odds_min else 0 for o in odds_vec]
+    # ゼロ除算を防ぐ
+    if odds_max > odds_min:
+        odds_vec = [(o-odds_min)/(odds_max-odds_min) for o in odds_vec]
+    else:
+        odds_vec = [0 for o in odds_vec]
 
     # 5. 結合
     state_vec = np.concatenate([boats.flatten(), race_feat, odds_vec])
@@ -138,18 +158,46 @@ def trifecta_to_action(trifecta: Tuple[int, int, int]) -> int:
 
 def calc_trifecta_reward(action: int, arrival_tuple: Tuple[int,int,int], odds_data: list, bet_amount: int = 100) -> float:
     """
-    action（0-119）, 着順タプル, oddsデータ, 賭け金を受け取り、損益rewardを返す。
-    的中時: 払戻金-賭け金, 不的中時: -賭け金
+    action（0-119）, 着順タプル, oddsデータ, 賭け金を受け取り、段階的報酬を返す。
+    
+    段階的報酬設計:
+    - 的中時: 払戻金-賭け金
+    - 2着的中時: -10（1着、2着が正解）
+    - 1着的中時: -50（1着のみ正解）
+    - 不的中時: -100（全く的中なし）
     """
+    # 着順タプルの妥当性チェック
+    if len(arrival_tuple) != 3:
+        print(f"[WARNING] Invalid arrival_tuple: {arrival_tuple}, length: {len(arrival_tuple)}")
+        return -100  # 不正な着順の場合は最大ペナルティ
+    
     trifecta = action_to_trifecta(action)
+    
     # 的中判定
     is_win = trifecta == arrival_tuple
-    # オッズ検索
-    odds_map = {tuple(o['betting_numbers']): o['ratio'] for o in odds_data}
-    odds = odds_map.get(trifecta, 0)
-    payout = odds * bet_amount if is_win else 0
-    reward = payout - bet_amount
-    return reward 
+    
+    if is_win:
+        # 的中時: 払戻金-賭け金
+        odds_map = {tuple(o['betting_numbers']): o['ratio'] for o in odds_data}
+        odds = odds_map.get(trifecta, 0)
+        payout = odds * bet_amount
+        reward = payout - bet_amount
+    else:
+        # 部分的中の判定
+        first_hit = trifecta[0] == arrival_tuple[0]  # 1着的中
+        second_hit = trifecta[1] == arrival_tuple[1]  # 2着的中
+        
+        if first_hit and second_hit:
+            # 2着的中: 1着、2着が正解
+            reward = -10
+        elif first_hit:
+            # 1着的中: 1着のみ正解
+            reward = -50
+        else:
+            # 不的中: 全く的中なし
+            reward = -100
+    
+    return reward
 
 class KyoteiEnvManager(gym.Env):
     """
@@ -223,10 +271,29 @@ class KyoteiEnvManager(gym.Env):
 
     def reset(self, *, seed=None, options=None):
         super().reset(seed=seed)
-        # ランダムに1レース選択
+        # 有効なレースが見つかるまで試行
+        max_attempts = 10
+        for attempt in range(max_attempts):
+            try:
+                # ランダムに1レース選択
+                race_path, odds_path = random.choice(self.pairs)
+                self.env = KyoteiEnv(race_data_path=race_path, odds_data_path=odds_path, bet_amount=self.bet_amount)
+                return self.env.reset()
+            except ValueError as e:
+                print(f"[INFO] Attempt {attempt + 1}: Skipping invalid race data: {e}")
+                if attempt == max_attempts - 1:
+                    # 最後の試行でも失敗した場合は、デフォルトの着順で強制実行
+                    print("[WARNING] All attempts failed, using fallback data")
+                    self.env = KyoteiEnv(race_data_path=race_path, odds_data_path=odds_path, bet_amount=self.bet_amount)
+                    # 強制的にデフォルト値を設定
+                    self.env.arrival_tuple = (1, 2, 3)
+                    return self.env.state, {}
+        
+        # 万が一の場合のフォールバック
         race_path, odds_path = random.choice(self.pairs)
         self.env = KyoteiEnv(race_data_path=race_path, odds_data_path=odds_path, bet_amount=self.bet_amount)
-        return self.env.reset()
+        self.env.arrival_tuple = (1, 2, 3)
+        return self.env.state, {}
 
     def step(self, action):
         if self.env is None:

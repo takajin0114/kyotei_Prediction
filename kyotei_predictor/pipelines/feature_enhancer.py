@@ -1,4 +1,3 @@
-
 import pandas as pd
 import numpy as np
 import logging
@@ -32,10 +31,6 @@ class FeatureEnhancer:
             'stability': {
                 'formula': lambda x: x['win_rate'] / (x['local_win_rate'] + 0.01),
                 'description': '安定性指標（全国勝率/当地勝率）'
-            },
-            'recent_form': {
-                'formula': lambda x: np.log1p(x['recent_wins'] / (x['recent_races'] + 1)),
-                'description': '最近の調子（直近10レース勝率）'
             }
         }
 
@@ -50,11 +45,17 @@ class FeatureEnhancer:
                 # 自動修正処理
                 df['win_rate'] = df['win_rate'].clip(0, 100)
                 df['motor_win_rate'] = df['motor_win_rate'].clip(0, 100)
-                df['recent_wins'] = df[['recent_wins', 'recent_races']].min(axis=1)
                 self.logger.warning("異常値を自動修正しました")
             else:
                 self._validate_input(df)
                 
+            # 既存の特徴量も含めて全て欠損値を0で埋める
+            for col in df.columns:
+                if df[col].dtype.kind in 'biufc':  # 数値型
+                    df[col] = df[col].fillna(0)
+                else:
+                    df[col] = df[col].fillna('')
+
             # 基本特徴量の計算
             for feature, config in self.feature_config.items():
                 try:
@@ -63,7 +64,35 @@ class FeatureEnhancer:
                     self.logger.error(f"特徴量計算エラー: {e}")
                     
             # 交互作用特徴量
-            df['win_motor_synergy'] = df['win_rate'] * df['motor_win_rate']
+            df['win_motor_synergy'] = (df['win_rate'].fillna(0).astype(float)) * (df['motor_win_rate'].fillna(0).astype(float))
+            # 級別×モーター性能（A1=3, A2=2, B1=1, B2=0でエンコード）
+            class_map = {'A1': 3, 'A2': 2, 'B1': 1, 'B2': 0}
+            df['boat_class_code'] = df['boat_class'].map(class_map).fillna(0).astype(int)
+            df['class_motor_interaction'] = df['boat_class_code'] * df['motor_win_rate'].fillna(0).astype(float)
+            # 勝率×天候（天候をone-hotエンコードして掛け算）
+            for weather in ['晴', '曇', '雨', '雪', '霧', '不明']:
+                col = f'win_rate_weather_{weather}'
+                df[col] = df['win_rate'].fillna(0).astype(float) * (df['weather_condition'].fillna('') == weather).astype(int)
+            # モーター性能×ボート性能
+            if 'boat_win_rate' in df.columns:
+                df['motor_boat_synergy'] = df['motor_win_rate'].fillna(0).astype(float) * df['boat_win_rate'].fillna(0).astype(float)
+            # 荒天リスクフラグ（風速>5m/s or 波高>10cm）
+            if 'wind_speed' in df.columns:
+                wind = df['wind_speed'].fillna(0).astype(float)
+            else:
+                wind = pd.Series(0, index=df.index)
+            if 'wave_height' in df.columns:
+                wave = df['wave_height'].fillna(0).astype(float)
+            else:
+                wave = pd.Series(0, index=df.index)
+            df['rough_weather_flag'] = ((wind > 5) | (wave > 10)).astype(int)
+            
+            # 欠損値チェック: 1つでもNaN/Noneが残っていれば全カラムの欠損数をprintし、エラーで停止
+            nulls = df.isnull().sum()
+            if nulls.sum() > 0:
+                print('【欠損値検出】各カラムの欠損数:')
+                print(nulls[nulls > 0])
+                raise ValueError('特徴量生成後に欠損値が残っています。該当カラムを確認してください。')
             
             return df
             
@@ -74,23 +103,13 @@ class FeatureEnhancer:
     def _validate_input(self, df):
         """異常値チェック"""
         # 勝率の範囲検証 (0-100%)
-        # 勝率の範囲検証
         invalid_win_rates = df[(df['win_rate'] < 0) | (df['win_rate'] > 100)]['win_rate']
         if not invalid_win_rates.empty:
             raise ValueError(f"異常値: 勝率値 {invalid_win_rates.values} が0-100%の範囲外です")
-            
         # モーター勝率の範囲検証
         invalid_motor_rates = df[(df['motor_win_rate'] < 0) | (df['motor_win_rate'] > 100)]['motor_win_rate']
         if not invalid_motor_rates.empty:
             raise ValueError(f"異常値: モーター勝率 {invalid_motor_rates.values} が0-100%の範囲外です")
-            
-        # 最近のレース数整合性
-        invalid_races = df[df['recent_wins'] > df['recent_races']][['recent_wins', 'recent_races']]
-        if not invalid_races.empty:
-            raise ValueError(
-                f"異常値: 勝利数がレース数を超えています\n"
-                f"問題データ:\n{invalid_races.to_string()}"
-            )
 
     def get_feature_descriptions(self):
         """特徴量の説明を取得"""
