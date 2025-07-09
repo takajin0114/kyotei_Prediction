@@ -12,6 +12,95 @@ import requests
 import time
 from io import StringIO
 import json
+import re
+from typing import List, Optional, Any, Union
+
+def safe_extract_racers(html_file) -> List[Any]:
+    """
+    選手データを安全に抽出する関数（エラーハンドリング付き）
+    
+    Args:
+        html_file: HTMLファイルオブジェクト
+    
+    Returns:
+        list: 選手データのリスト（エラーが発生した場合は空のリスト）
+    """
+    try:
+        return entry_scraping.extract_racers(html_file)
+    except ValueError as e:
+        if "not enough values to unpack" in str(e):
+            print(f"⚠️  選手名解析エラー: 名前の形式が予期しない形式です - {e}")
+            print("⚠️  選手データの取得をスキップします")
+            return []
+        else:
+            raise e
+    except Exception as e:
+        print(f"⚠️  選手データ抽出エラー: {e}")
+        return []
+
+def safe_extract_race_entries(html_file) -> List[Any]:
+    """
+    レース出走データを安全に抽出する関数（エラーハンドリング付き）
+    
+    Args:
+        html_file: HTMLファイルオブジェクト
+    
+    Returns:
+        list: レース出走データのリスト（エラーが発生した場合は空のリスト）
+    """
+    try:
+        return entry_scraping.extract_race_entries(html_file)
+    except Exception as e:
+        print(f"⚠️  レース出走データ抽出エラー: {e}")
+        return []
+
+def safe_extract_racer_performances(html_file) -> List[Any]:
+    """
+    選手成績データを安全に抽出する関数（エラーハンドリング付き）
+    
+    Args:
+        html_file: HTMLファイルオブジェクト
+    
+    Returns:
+        list: 選手成績データのリスト（エラーが発生した場合は空のリスト）
+    """
+    try:
+        return entry_scraping.extract_racer_performances(html_file)
+    except Exception as e:
+        print(f"⚠️  選手成績データ抽出エラー: {e}")
+        return []
+
+def safe_extract_boat_performances(html_file) -> List[Any]:
+    """
+    ボート成績データを安全に抽出する関数（エラーハンドリング付き）
+    
+    Args:
+        html_file: HTMLファイルオブジェクト
+    
+    Returns:
+        list: ボート成績データのリスト（エラーが発生した場合は空のリスト）
+    """
+    try:
+        return entry_scraping.extract_boat_performances(html_file)
+    except Exception as e:
+        print(f"⚠️  ボート成績データ抽出エラー: {e}")
+        return []
+
+def safe_extract_motor_performances(html_file) -> List[Any]:
+    """
+    モーター成績データを安全に抽出する関数（エラーハンドリング付き）
+    
+    Args:
+        html_file: HTMLファイルオブジェクト
+    
+    Returns:
+        list: モーター成績データのリスト（エラーが発生した場合は空のリスト）
+    """
+    try:
+        return entry_scraping.extract_motor_performances(html_file)
+    except Exception as e:
+        print(f"⚠️  モーター成績データ抽出エラー: {e}")
+        return []
 
 def fetch_race_entry_data(race_date, stadium_code, race_number):
     """
@@ -49,15 +138,41 @@ def fetch_race_entry_data(race_date, stadium_code, race_number):
         
         race_information = entry_scraping.extract_race_information(html_file)
         html_file.seek(0)
-        race_entries = entry_scraping.extract_race_entries(html_file)
+        
+        # 安全なデータ抽出
+        race_entries = safe_extract_race_entries(html_file)
         html_file.seek(0)
-        racers = entry_scraping.extract_racers(html_file)
+        racers = safe_extract_racers(html_file)
         html_file.seek(0)
-        racer_performances = entry_scraping.extract_racer_performances(html_file)
+        racer_performances = safe_extract_racer_performances(html_file)
         html_file.seek(0)
-        boat_performances = entry_scraping.extract_boat_performances(html_file)
+        boat_performances = safe_extract_boat_performances(html_file)
         html_file.seek(0)
-        motor_performances = entry_scraping.extract_motor_performances(html_file)
+        motor_performances = safe_extract_motor_performances(html_file)
+        
+        # データの整合性チェック
+        if not race_entries:
+            print("❌ レース出走データが取得できませんでした")
+            return None
+        
+        # 各データの長さを揃える（不足している場合は空のデータで補完）
+        max_length = len(race_entries)
+        
+        if len(racers) < max_length:
+            print(f"⚠️  選手データが不足しています（{len(racers)}/{max_length}）")
+            racers.extend([None] * (max_length - len(racers)))
+        
+        if len(racer_performances) < max_length:
+            print(f"⚠️  選手成績データが不足しています（{len(racer_performances)}/{max_length}）")
+            racer_performances.extend([None] * (max_length - len(racer_performances)))
+        
+        if len(boat_performances) < max_length:
+            print(f"⚠️  ボート成績データが不足しています（{len(boat_performances)}/{max_length}）")
+            boat_performances.extend([None] * (max_length - len(boat_performances)))
+        
+        if len(motor_performances) < max_length:
+            print(f"⚠️  モーター成績データが不足しています（{len(motor_performances)}/{max_length}）")
+            motor_performances.extend([None] * (max_length - len(motor_performances)))
         
         # データを辞書形式に変換
         result = {
@@ -71,44 +186,56 @@ def fetch_race_entry_data(race_date, stadium_code, race_number):
                 "number_of_laps": race_information.number_of_laps,
                 "is_course_fixed": race_information.is_course_fixed
             },
-            "race_entries": [
-                {
-                    "pit_number": entry.pit_number,
-                    "racer": {
-                        "name": f"{racer.last_name} {racer.first_name}",
-                        "registration_number": racer.registration_number,
-                        "current_rating": racer.current_rating.name if racer.current_rating else None,
-                        "branch": racer.branch,
-                        "born_prefecture": racer.born_prefecture,
-                        "birth_date": racer.birth_date.isoformat() if racer.birth_date else None,
-                        "height": racer.height,
-                        "gender": racer.gender.name if racer.gender else None
-                    },
-                    "performance": {
-                        "rate_in_all_stadium": racer_perf.rate_in_all_stadium,
-                        "rate_in_event_going_stadium": racer_perf.rate_in_event_going_stadium
-                    },
-                    "boat": {
-                        "number": boat_perf.number,
-                        "quinella_rate": boat_perf.quinella_rate,
-                        "trio_rate": boat_perf.trio_rate
-                    },
-                    "motor": {
-                        "number": motor_perf.number,
-                        "quinella_rate": motor_perf.quinella_rate,
-                        "trio_rate": motor_perf.trio_rate
-                    }
-                }
-                for entry, racer, racer_perf, boat_perf, motor_perf in 
-                zip(race_entries, racers, racer_performances, boat_performances, motor_performances)
-            ]
+            "race_entries": []
         }
+        
+        # 各艇のデータを安全に処理
+        for i, entry in enumerate(race_entries):
+            racer = racers[i] if i < len(racers) else None
+            racer_perf = racer_performances[i] if i < len(racer_performances) else None
+            boat_perf = boat_performances[i] if i < len(boat_performances) else None
+            motor_perf = motor_performances[i] if i < len(motor_performances) else None
+            
+            entry_data = {
+                "pit_number": entry.pit_number,
+                "racer": {
+                    "name": f"{racer.last_name} {racer.first_name}" if racer else "不明",
+                    "registration_number": racer.registration_number if racer else None,
+                    "current_rating": racer.current_rating.name if racer and racer.current_rating else None,
+                    "branch": racer.branch if racer else None,
+                    "born_prefecture": racer.born_prefecture if racer else None,
+                    "birth_date": racer.birth_date.isoformat() if racer and racer.birth_date else None,
+                    "height": racer.height if racer else None,
+                    "gender": racer.gender.name if racer and racer.gender else None
+                },
+                "performance": {
+                    "rate_in_all_stadium": racer_perf.rate_in_all_stadium if racer_perf else None,
+                    "rate_in_event_going_stadium": racer_perf.rate_in_event_going_stadium if racer_perf else None
+                },
+                "boat": {
+                    "number": boat_perf.number if boat_perf else None,
+                    "quinella_rate": boat_perf.quinella_rate if boat_perf else None,
+                    "trio_rate": boat_perf.trio_rate if boat_perf else None
+                },
+                "motor": {
+                    "number": motor_perf.number if motor_perf else None,
+                    "quinella_rate": motor_perf.quinella_rate if motor_perf else None,
+                    "trio_rate": motor_perf.trio_rate if motor_perf else None
+                }
+            }
+            result["race_entries"].append(entry_data)
         
         print(f"✅ 出走表データ取得成功: {len(race_entries)}艇")
         return result
         
     except Exception as e:
-        print(f"❌ エラー: {e}")
+        import traceback
+        # レース中止の場合は特別処理
+        if "RaceCanceled" in str(type(e)):
+            print(f"❌ レース中止: {race_date} {stadium_code.name} 第{race_number}レース")
+            return None
+        print(f"❌ エラー: {type(e).__name__}: {e}")
+        print(f"❌ 詳細: {traceback.format_exc()}")
         return None
 
 def fetch_race_result_data(race_date, stadium_code, race_number):
@@ -186,7 +313,13 @@ def fetch_race_result_data(race_date, stadium_code, race_number):
         return result
         
     except Exception as e:
-        print(f"❌ エラー: {e}")
+        import traceback
+        # レース中止の場合は特別処理
+        if "RaceCanceled" in str(type(e)):
+            print(f"❌ レース中止: {race_date} {stadium_code.name} 第{race_number}レース")
+            return None
+        print(f"❌ エラー: {type(e).__name__}: {e}")
+        print(f"❌ 詳細: {traceback.format_exc()}")
         return None
 
 def fetch_complete_race_data(race_date, stadium_code, race_number):
