@@ -1,5 +1,16 @@
 # リファクタリング完了報告書
 
+> **注記**: 本ドキュメントはdocs/配下に集約予定です。最新の参照は[README.md](README.md)・[docs/README.md](docs/README.md)から行ってください。
+
+## ドキュメント索引・参照ガイド
+- [README.md](README.md) - 全体概要・索引
+- [docs/README.md](docs/README.md) - ドキュメント全体ガイド
+- [docs/DEVELOPMENT_ROADMAP.md](docs/DEVELOPMENT_ROADMAP.md) - 開発ロードマップ
+
+---
+
+# 以下、従来の内容（リファクタ完了報告）は現状維持
+
 **作成日**: 2025-07-06  
 **対象**: kyotei_Prediction リポジトリ全体  
 **ステータス**: ✅ 完了

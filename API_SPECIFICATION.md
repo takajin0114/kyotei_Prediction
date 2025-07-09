@@ -1,5 +1,17 @@
 # API仕様書
 
+> **注記**: 本ドキュメントはdocs/配下に集約予定です。最新の参照は[README.md](README.md)・[docs/README.md](docs/README.md)から行ってください。
+
+## ドキュメント索引・参照ガイド
+- [README.md](README.md) - 全体概要・索引
+- [docs/README.md](docs/README.md) - ドキュメント全体ガイド
+- [docs/web_app_requirements.md](docs/web_app_requirements.md) - Webアプリ要件
+- [docs/integration_design.md](docs/integration_design.md) - システム統合設計
+
+---
+
+# 以下、従来のAPI仕様内容は現状維持
+
 **作成日**: 2025-07-06  
 **バージョン**: Phase 3  
 **対象**: kyotei_Prediction システム全体
