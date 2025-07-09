@@ -44,6 +44,16 @@
 - __pycache__/はPythonのキャッシュであり、.gitignore対象です
 - 不要なファイルが発生した場合は随時整理してください
 
+## batchディレクトリの主要スクリプト
+- batch_fetch_all_venues.py : 全会場バッチ取得（標準・並列版）
+- fast_future_entries_fetcher.py : 高速未来レース取得
+- retry_missing_races.py : 欠損レース再取得
+
+## 運用ルール
+- 既存ファイルの重複取得を避ける
+- レート制限・エラーハンドリングを徹底
+- 不要な一時ファイルは随時削除
+
 ---
 
 # 以下、従来の内容（各サブディレクトリの説明・使い方など）を現状維持・必要に応じて最新化
@@ -116,4 +126,49 @@ python tools/ai/rl_learn_sample.py
 - 各ツールは独立して動作するよう設計
 - 共通処理は`common/`に集約
 - 引数・出力・エラー処理は統一
-- ログ・進捗表示は標準化 
+- ログ・進捗表示は標準化
+
+## batch_fetch_all_venues.py の使い方（2024年7月更新）
+
+全会場・全レースのデータを並列で取得するバッチです。
+
+### 実行例
+
+```sh
+python -m kyotei_predictor.tools.batch.batch_fetch_all_venues --start-date 2024-06-01 --end-date 2024-06-30 --stadiums KIRYU,EDOGAWA
+```
+
+- `--start-date` : 取得開始日（YYYY-MM-DD, 必須）
+- `--end-date`   : 取得終了日（YYYY-MM-DD, 必須）
+- `--stadiums`   : 対象会場名（カンマ区切り, 必須, 例: KIRYU,EDOGAWA,...）
+
+会場名は大文字で指定してください。
+
+**全会場を指定したい場合は `--stadiums ALL` でOKです。**
+
+```sh
+python -m kyotei_predictor.tools.batch.batch_fetch_all_venues --start-date 2024-06-01 --end-date 2024-06-30 --stadiums ALL
+```
+
+引数が未指定の場合はエラーとなり、バッチは実行されません。
+
+### 選手名解析エラーの最新対応方針（2024/07/08）
+
+- 選手名が「姓 名」形式でsplitできない場合（ValueError発生時）は、
+  - 姓 = フルネーム、名 = 空文字 として暫定的に処理します。
+  - さらに、そのフルネームを `error_racer_names.log` に追記し、後から調査できるようにします。
+- エラー発生時は標準出力にも該当選手名文字列を出力し、即時デバッグ可能としています。
+- これにより、データ欠損を最小限に抑えつつ、想定外のデータ形式も記録・追跡できます。
+
+#### 実装例（抜粋）
+```python
+try:
+    racer_last_name, racer_first_name = re.split(r"[　 ]+", racer_full_name)
+except ValueError:
+    with open("error_racer_names.log", "a", encoding="utf-8") as logf:
+        logf.write(f"[extract_racers] Unexpected name format: '{racer_full_name}'\n")
+    racer_last_name = racer_full_name
+    racer_first_name = ""
+```
+
+- 詳細は `kyotei_predictor/tools/fetch/race_data_fetcher.py` および metaboatrace側 `extract_racers` 実装を参照。 

@@ -1,4 +1,3 @@
-
 import pandas as pd
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.pipeline import Pipeline
@@ -35,15 +34,17 @@ class DataPreprocessor:
         return self.preprocessor.fit_transform(features)
 
     def _create_base_features(self, race_data):
-        """競艇データから基本特徴量を抽出"""
+        """競艇データから基本特徴量を抽出（存在する情報のみ）"""
         features = []
         for entry in race_data['race_entries']:
             features.append({
-                'win_rate': entry.get('rate_in_all_stadium', 0),
-                'local_win_rate': entry.get('rate_in_event_going_stadium', 0),
-                'motor_win_rate': entry.get('motor_quinella_rate', 0),
-                'boat_class': entry.get('current_rating', 'B1'),
-                'weather_condition': race_data['weather_condition'].get('weather', 'FINE')
+                'win_rate': entry.get('performance', {}).get('rate_in_all_stadium', 0),
+                'local_win_rate': entry.get('performance', {}).get('rate_in_event_going_stadium', 0),
+                'motor_win_rate': entry.get('motor', {}).get('quinella_rate', 0),
+                'boat_class': entry.get('racer', {}).get('current_rating', 'B1'),
+                'weather_condition': race_data.get('weather_condition', {}).get('weather', 'FINE'),
+                # 今後拡張例: 'boat_quinella_rate': entry.get('boat', {}).get('quinella_rate', 0),
+                #           'start_time': ...
             })
         return pd.DataFrame(features)
 

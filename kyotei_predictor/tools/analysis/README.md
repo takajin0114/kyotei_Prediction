@@ -124,3 +124,29 @@ python tools/analysis/odds_analysis.py data/raw/odds_data_*.json
 ## 備考
 - データ検証・バッチ検証系のスクリプトはここに集約
 - 分析・可視化系は `viz/` も参照 
+
+---
+
+## Phase 4-1: 期待値閾値最適化 分析スクリプト設計
+
+### 目的
+- 投資判断の期待値閾値を最適化し、リスク・リターンのバランスを最大化する
+
+### 入力
+- 予測確率付き3連単組み合わせデータ（outputs/trifecta_dependent_bulk_results_*.json等）
+- 実際のオッズデータ（outputs/real_odds_investment_results_*.json等）
+
+### 出力
+- 閾値ごとの投資件数・的中率・回収率・リスク指標（最大ドローダウン等）
+- 最適閾値とそのパフォーマンス指標
+- 戦略ごとの比較表・グラフ
+
+### 評価指標
+- 的中率、回収率、最大ドローダウン、シャープレシオ
+
+### 実装方針
+- kyotei_predictor/utils/common.py の calculate_expected_value, is_profitable を利用
+- 閾値を0.8～2.0でグリッドサーチし、各閾値でのパフォーマンスを集計
+- 保守的（期待値>1.5）、バランス（>1.2）、積極的（>1.0）など複数戦略で比較
+- 結果をCSV/グラフで出力
+- 新規スクリプト名例: expected_value_threshold_optimizer.py 
