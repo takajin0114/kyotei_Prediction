@@ -17,33 +17,27 @@
 
 ---
 
-# ディレクトリ構成（現状と今後の方針）
+# ディレクトリ構成・運用ルール（2025-07-08時点）
 
-- `raw/` : 取得したままの生データ（JSON, CSV等）
+- `raw/` : 取得したままの生データ（race_data_*.json, odds_data_*.json など）
 - `processed/` : 前処理・特徴量エンジニアリング済みデータ
-- `results/` : 予測・分析・評価などの成果物（新設予定）
-- `logs/` : データ取得・処理・学習等のログファイル（新設予定）
-- `backup/` : バックアップ用データ（定期保存・世代管理）
-- `temp/` : 一時ファイル・作業用データ
-- `sample/` : サンプルデータ（今後はraw/またはresults/へ統合・廃止予定）
+- `results/` : 予測・分析・評価結果
+- `logs/` : ログファイル
+- `backup/` : バックアップ用データ
+- `temp/` : 一時ファイル
+- `sample/` : サンプルデータ（今後はraw/またはresults/へ統合予定）
 
----
+## 命名規則
+- `race_data_YYYY-MM-DD_VENUE_RN.json` など。種別・日付・会場・レース番号で統一。
 
-# 運用ルール・命名規則
+## 保存方針
+- 生データは必ずraw/、前処理後はprocessed/、成果物はresults/、ログはlogs/へ保存。
+- サンプルデータは一時的にsample/に置くが、将来的にはraw/resultsへ統合。
+- 重要なデータはbackup/で世代管理。
+- 一時ファイルはtemp/で作業終了後にクリーンアップ。
 
-- データ種別・日付・会場・レース番号等でファイル命名
-  - 例: `race_data_YYYY-MM-DD_VENUE_RN.json`, `odds_data_YYYY-MM-DD_VENUE_RN.json`, `complete_race_data_YYYYMMDD_VENUE_RN.json`
-- 生データは必ず`raw/`に保存し、前処理後は`processed/`へ
-- 予測・分析・評価結果は`results/`へ（今後新設）
-- ログファイルは`logs/`へ（今後新設）
-- サンプルデータは`sample/`に一時的に置くが、将来的にはraw/resultsへ統合
-- 重要なデータは`backup/`で世代管理
-- 一時ファイルは`temp/`で作業終了後にクリーンアップ
-
----
-
-# 今後のTODO
-- `results/`・`logs/`ディレクトリの新設と運用開始
-- `sample/`の廃止・統合（必要に応じてraw/resultsへ移動）
+## 今後のTODO
+- results/やlogs/ディレクトリの新設・運用開始
+- sample/の廃止・統合（必要に応じてraw/resultsへ移動）
 - 既存ファイルの命名規則統一・整理
 - READMEの随時更新 

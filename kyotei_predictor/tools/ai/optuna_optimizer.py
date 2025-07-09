@@ -9,6 +9,8 @@ from stable_baselines3 import PPO
 from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.callbacks import EvalCallback
 from kyotei_predictor.pipelines.kyotei_env import KyoteiEnvManager
+import glob
+import traceback
 
 class KyoteiOptunaOptimizer:
     """
@@ -42,13 +44,13 @@ class KyoteiOptunaOptimizer:
             'max_grad_norm': {'type': 'float', 'range': (0.1, 2.0)}
         }
         self.optimization_config = {
-            'n_trials': 50,
-            'timeout': 3600,
+            'n_trials': 3,  # 3試行で学習
+            'timeout': 1800,  # 30分に延長
             'direction': 'maximize',
             'metric': 'mean_reward',
-            'eval_freq': 1000,
-            'n_eval_episodes': 10,
-            'total_timesteps': 10000
+            'eval_freq': 200,  # 評価頻度を調整
+            'n_eval_episodes': 5,  # 評価エピソード数を増加
+            'total_timesteps': 5000  # 学習時間を大幅増加
         }
 
     def create_study(self) -> optuna.Study:
@@ -88,7 +90,13 @@ class KyoteiOptunaOptimizer:
         try:
             params = self.suggest_hyperparameters(trial)
             self.logger.info(f"試行 {trial.number}: パラメータ = {params}")
+            
+            # データペアの詳細情報をprint
             env = KyoteiEnvManager(data_dir=self.data_dir)
+            self.logger.info(f"データペア数: {len(env.pairs)}")
+            if env.pairs:
+                self.logger.info(f"サンプルペア: {env.pairs[0]}")
+            
             if not env.pairs:
                 self.logger.error(f"データペアが存在しません。data_dir: {self.data_dir}")
                 return -1000.0
@@ -114,6 +122,70 @@ class KyoteiOptunaOptimizer:
                 tensorboard_log=f"./optuna_tensorboard/trial_{trial.number}/",
                 **params
             )
+            # 学習開始前にデータの欠損値状況を詳細チェック
+            self.logger.info("=== 学習前データチェック ===")
+            try:
+                obs = env.reset()
+                if isinstance(obs, (list, tuple)):
+                    obs = obs[0]  # DummyVecEnvの場合
+                if hasattr(obs, 'shape'):
+                    self.logger.info(f"初期観測データ形状: {obs.shape}")
+                    if hasattr(obs, 'dtype'):
+                        self.logger.info(f"データ型: {obs.dtype}")
+                else:
+                    self.logger.info(f"観測データ型: {type(obs)}")
+                
+                # step()関数を1回実行してデータチェック
+                self.logger.info("=== step()関数テスト ===")
+                action = np.array([0])  # DummyVecEnv用にnumpy配列で渡す
+                step_result = env.step(action)
+                
+                # step()の戻り値を詳細にprint
+                self.logger.info(f"step_result の型: {type(step_result)}")
+                self.logger.info(f"step_result の値: {step_result}")
+                
+                # DummyVecEnvの場合、step_resultは(obs, reward, done, info)のタプル
+                if isinstance(step_result, (list, tuple)):
+                    self.logger.info(f"step_result の長さ: {len(step_result)}")
+                    for i, item in enumerate(step_result):
+                        self.logger.info(f"step_result[{i}] の型: {type(item)}, 値: {item}")
+                    
+                    # アンパックを試行
+                    try:
+                        if len(step_result) == 4:
+                            obs, reward, done, info = step_result
+                            self.logger.info(f"アンパック成功 - obs: {type(obs)}, reward: {type(reward)}, done: {type(done)}")
+                            self.logger.info(f"obs: {obs}")
+                            self.logger.info(f"reward: {reward}")
+                            self.logger.info(f"done: {done}")
+                            self.logger.info(f"info: {info}")
+                        else:
+                            self.logger.error(f"予期しないstep_resultの長さ: {len(step_result)}")
+                    except Exception as unpack_error:
+                        self.logger.error(f"アンパックエラー: {unpack_error}")
+                        self.logger.error(f"step_result の詳細: {step_result}")
+                else:
+                    self.logger.error(f"予期しないstep_resultの型: {type(step_result)}")
+                    self.logger.error(f"step_result の詳細: {step_result}")
+                
+                # None/NaNチェック
+                if obs is None:
+                    self.logger.error("観測データがNone")
+                elif hasattr(obs, 'dtype') and obs.dtype.kind in 'biufc':
+                    if np.isnan(obs).any():
+                        self.logger.error("観測データにNaNが含まれています")
+                    else:
+                        self.logger.info("観測データは正常")
+                
+                if reward is None:
+                    self.logger.error("報酬がNone")
+                elif isinstance(reward, (int, float)) and np.isnan(reward):
+                    self.logger.error("報酬がNaN")
+                else:
+                    self.logger.info(f"報酬は正常: {reward}")
+                    
+            except Exception as e:
+                self.logger.error(f"データチェックエラー: {e}")
             try:
                 model.learn(
                     total_timesteps=self.optimization_config['total_timesteps'],
@@ -121,6 +193,8 @@ class KyoteiOptunaOptimizer:
                 )
             except Exception as e:
                 self.logger.error(f"学習中にエラー: {e}")
+                traceback.print_exc()
+                trial.set_user_attr("error", str(e))
                 return -1000.0
             try:
                 mean_reward = self._evaluate_model(model, eval_env)
@@ -186,10 +260,21 @@ class KyoteiOptunaOptimizer:
             json.dump(results, f, indent=2)
         self.logger.info("最適化結果を保存しました")
 
+def check_data_pairs(data_dir, min_pairs=10):
+    race_files = glob.glob(os.path.join(data_dir, 'race_data_*.json'))
+    odds_files = glob.glob(os.path.join(data_dir, 'odds_data_*.json'))
+    race_keys = set(os.path.basename(f).replace('race_data_', '').replace('.json', '') for f in race_files)
+    odds_keys = set(os.path.basename(f).replace('odds_data_', '').replace('.json', '') for f in odds_files)
+    pairs = race_keys & odds_keys
+    if len(pairs) < min_pairs:
+        print(f"[ERROR] {data_dir} に有効なデータペア（race_data/odds_data）が{min_pairs}組未満です。\nペア数: {len(pairs)}\nデータ取得・配置を確認してください。")
+        exit(1)
+
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data_dir', type=str, default="kyotei_predictor/data", help='データディレクトリ')
+    parser.add_argument('--data_dir', type=str, default="kyotei_predictor/data/raw", help='データディレクトリ')
     args = parser.parse_args()
+    check_data_pairs(args.data_dir, min_pairs=1)  # 最小限のテスト用
     optimizer = KyoteiOptunaOptimizer(data_dir=args.data_dir)
     results = optimizer.run_optimization()
     print("\n" + "="*50)
