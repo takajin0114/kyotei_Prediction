@@ -4,11 +4,11 @@
 """
 import os
 import json
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from datetime import datetime
 from kyotei_predictor.pipelines.trifecta_dependent_model import TrifectaDependentModel
 
-def bulk_validate(data_dir: str, max_races: int = 1000, output_dir: str = 'kyotei_predictor/outputs'):
+def bulk_validate(data_dir: str, max_races: int = 1000, output_dir: str = 'kyotei_predictor/outputs', output_miss_sample: Optional[str] = None):
     model = TrifectaDependentModel()
     print("=== 条件付き確率・艇間相関の学習 ===")
     model.learn_conditional_probabilities(data_dir=data_dir, max_files=max_races)
@@ -75,14 +75,21 @@ def bulk_validate(data_dir: str, max_races: int = 1000, output_dir: str = 'kyote
         json.dump(results, f, ensure_ascii=False, indent=2)
     with open(os.path.join(output_dir, f'trifecta_dependent_bulk_report_{timestamp}.json'), 'w', encoding='utf-8') as f:
         json.dump(report, f, ensure_ascii=False, indent=2)
+    # 失敗サンプル出力
+    if output_miss_sample:
+        miss_samples = [r for r in results if r.get('actual_rank') is None or r.get('actual_rank') != 1]
+        with open(output_miss_sample, 'w', encoding='utf-8') as f:
+            json.dump(miss_samples, f, ensure_ascii=False, indent=2)
+        print(f"失敗サンプル {len(miss_samples)}件を {output_miss_sample} に保存しました")
 
 def main():
     import argparse
     parser = argparse.ArgumentParser(description='着順依存型3連単モデル大量検証')
     parser.add_argument('--data_dir', type=str, default='kyotei_predictor/data', help='データディレクトリ')
     parser.add_argument('--max_races', type=int, default=1000, help='最大レース数')
+    parser.add_argument('--output_miss_sample', type=str, default=None, help='失敗サンプル出力ファイルパス（例: outputs/miss_samples.json）')
     args = parser.parse_args()
-    bulk_validate(args.data_dir, args.max_races)
+    bulk_validate(args.data_dir, args.max_races, output_miss_sample=args.output_miss_sample)
 
 if __name__ == '__main__':
     main() 
