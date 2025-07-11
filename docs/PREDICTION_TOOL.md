@@ -1,79 +1,66 @@
-# 予想ツール（Prediction Tool）
+# 予測ツール・Web表示機能 本格運用フロー（2024年7月時点）
 
 ## 概要
+- 全会場・全期間の予測バッチ運用とWeb可視化の本格運用設計
+- outputs/predictions_YYYY-MM-DD.jsonの一括出力・保存・Web反映
+- 運用手順・自動化・エラー耐性・進捗監視・ドキュメント反映まで一連の流れを整理
 
-- 競艇レースの3連単予測と購入方法提案を自動化するツールです。
-- 強化学習モデル（PPO）を用いて、各レースの上位20組の3連単組み合わせとその確率・期待値を出力します。
-- 購入方法（流し・ボックス等）の提案も自動生成します。
-- バッチスケジューラ（scheduled_data_maintenance.py）から自動実行・日次運用が可能です。
+## 本格運用：要件整理・運用フロー設計（2024年7月）
 
-## 主な機能
+### 目的
+- 全会場・全期間の予測を自動化し、outputs/predictions_YYYY-MM-DD.jsonを日次で生成・保存
+- 予測結果をWebで即時可視化し、運用・分析・意思決定に活用
 
-- レース前データ取得（race_data, odds_data）
-- 3連単上位20組の予測・確率・期待値計算
-- 購入方法（流し・ボックス等）の提案
-- JSON形式での予測結果保存
-- Web表示用データ生成（今後拡張予定）
+### 運用フロー（推奨）
+1. **データ取得バッチ（run_data_maintenance.py）を全会場・全期間で実行**
+   - 欠損再取得・品質チェックも同時実行
+2. **取得データに対して予測ツール（prediction_tool.py）を一括実行**
+   - 全日・全会場分のoutputs/predictions_YYYY-MM-DD.jsonを生成
+   - バッチ化・スケジューラ化で自動運用
+3. **Web表示機能で最新・過去の予測結果を可視化**
+   - predictions.htmlでoutputs/predictions_YYYY-MM-DD.jsonを読み込み
+   - 日付・会場・レース番号等で絞り込み・検索・分析
+4. **運用状況・エラー・進捗を定期監視**
+   - ログ・ファイル生成状況・Web表示の動作確認
+5. **運用履歴・改善点・トラブル事例をドキュメントに反映**
 
-## 実行方法
+### 出力・可視化要件
+- outputs/predictions_YYYY-MM-DD.jsonを日次・全会場分保存
+- ファイル命名規則・保存先・世代管理を明確化
+- Web表示は最新・過去データを切替可能に
+- 予測内容（3連単上位20組・購入提案・確率・期待値等）を分かりやすく表示
+- ソート・フィルタ・検索・レスポンシブ対応
 
-### 単体実行
-```sh
-python -m kyotei_predictor.tools.prediction_tool --predict-date 2025-07-07 --venues KIRYU,TODA
-```
-- `--predict-date` : 予測対象日（YYYY-MM-DD）
-- `--venues` : 対象会場（カンマ区切り、省略時は全会場）
-- `--model-path` : 任意、モデルファイルパス
-- `--output-dir` : 任意、出力先ディレクトリ
+### 出力ファイル命名規則・保存運用ルール（2024年7月時点追記）
+- 予測結果はデフォルトで `outputs/` ディレクトリに保存される。
+- ファイル名は `predictions_YYYY-MM-DD.json`（例: predictions_2025-07-07.json）で日付ごとに保存。
+- 最新の予測結果は `predictions_latest.json` として同じディレクトリにコピーされる（Windowsではシンボリックリンクの代わりにコピー）。
+- コマンドライン引数 `--output-dir` で出力先ディレクトリを変更可能。
+- 日付ごとにファイルが分かれて保存されるため、世代管理（履歴保存）は自動的に実現されている。
+- `predictions_latest.json` は常に最新の予測結果で上書きされる。
+- 古いファイルの整理やバックアップは必要に応じて手動または運用バッチで対応。
 
-### バッチスケジューラからの自動実行
-```sh
-python -m kyotei_predictor.tools.scheduled_data_maintenance --run-now
-```
-- 日次バッチの一部として、前日データ取得・品質チェック・当日予測を一括実行します。
+### 注意点・運用上のポイント
+- バッチ・予測・Web表示の自動化・定期実行を徹底
+- 進捗・エラーは標準出力・ログ・Webで逐次監視
+- 欠損再取得・品質チェックは必ずデータ取得と同範囲で実施
+- 予測ツール・Web表示の仕様変更時はドキュメントも必ず更新
 
-### 予測のみ実行
-```sh
-python -m kyotei_predictor.tools.scheduled_data_maintenance --prediction-only --predict-date 2025-07-07 --venues KIRYU
-```
+### 本番運用バッチ設計・自動化フロー（2024年7月時点追記）
+- scheduled_data_maintenance.pyで日次・全会場一括の予測バッチ運用が可能。
+- 予測ツール（prediction_tool.py）は直接クラス呼び出しで実行され、outputs/predictions_YYYY-MM-DD.jsonとして保存。
+- エラー耐性（try/except・ログ出力・アラート通知）、進捗監視（レース単位ログ）、履歴記録（outputs/scheduled_maintenance_history.json）を実装済み。
+- コマンドライン引数で即時実行（--run-now）、スケジューラー起動（--schedule）、予測のみ実行（--prediction-only）、会場・日付指定も可能。
+- 現状は「1日分・全会場一括」だが、日付範囲一括や部分リトライ等の拡張も今後対応可能な設計。
 
-## 出力例
-
-- `outputs/predictions_2025-07-07.json` に保存されます。
-- 構造例：
-```json
-{
-  "prediction_date": "2025-07-07",
-  "generated_at": "2025-07-11T20:29:19.011Z",
-  "model_info": { ... },
-  "execution_summary": { ... },
-  "predictions": [
-    {
-      "venue": "KIRYU",
-      "race_number": 1,
-      "race_time": "12:34",
-      "top_20_combinations": [
-        {"combination": "1-2-3", "probability": 0.12, "expected_value": 3.5, "rank": 1},
-        ...
-      ],
-      "purchase_suggestions": [
-        {"type": "box", "description": "1-2-3 ボックス", ...},
-        ...
-      ],
-      "risk_level": "medium"
-    },
-    ...
-  ],
-  "venue_summaries": [ ... ]
-}
-```
-
-## 今後の展望
-- Web表示用のHTML/JSテンプレートの追加
-- 予測結果の可視化・分析機能の拡充
-- モデルの自動更新・精度向上
-- 購入提案ロジックの高度化
+### Web表示機能の本格運用設計・運用フロー（2024年7月時点追記）
+- predictions.htmlでoutputs/predictions_latest.json（または日付指定json）をfetchで自動取得し、Webに反映する設計。
+- 日付・会場・レース番号等での絞り込み・検索・ソート機能をJSで実装可能。
+- サマリー（実行日・モデル情報・会場別集計）、リスクレベル、購入提案（流し・ボックス等）を分かりやすく表示。
+- レスポンシブデザインでPC/スマホ両対応。
+- 運用手順：outputs/配下に最新ファイル（predictions_latest.json）を配置すればWeb表示が自動更新。過去データもファイル名指定で切替可能。
+- 今後の拡張：UI/UX向上、外部API連携、Webダッシュボード化等も設計上対応可能。
 
 ---
 
-詳細は `kyotei_predictor/tools/prediction_tool.py` および `scheduled_data_maintenance.py` を参照してください。 
+この設計方針に基づき、次は「outputs/predictions_YYYY-MM-DD.jsonの全期間・全会場分の出力・保存運用設計」に進みます。 
