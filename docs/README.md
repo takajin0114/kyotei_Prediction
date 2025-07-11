@@ -1,66 +1,81 @@
-# docs ディレクトリ README
+# kyotei_Prediction プロジェクト ドキュメント
 
-**最終更新日**: 2025-07-11  
-**バージョン**: 1.5
+このディレクトリには、kyotei_Predictionプロジェクトの各種ドキュメントが含まれています。
 
----
+## 📁 ドキュメント構成
 
-## 📚 ドキュメント全体の使い方・参照ガイド
+### 🔄 運用・ステータス・TODO
+- **[README.md](README.md)** - このファイル（ドキュメント構成の説明）
+- **[CURRENT_STATUS_SUMMARY.md](CURRENT_STATUS_SUMMARY.md)** - プロジェクト全体の現在の状況サマリー
+- **[NEXT_STEPS.md](NEXT_STEPS.md)** - 次のステップと優先タスク
+- **[IMMEDIATE_ACTION_PLAN.md](IMMEDIATE_ACTION_PLAN.md)** - 直近の具体的な行動計画
+- **[BATCH_SYSTEM_CURRENT_STATUS.md](BATCH_SYSTEM_CURRENT_STATUS.md)** - バッチシステムの現在の状況と実行状況
+- **[SCHEDULED_MAINTENANCE_GUIDE.md](SCHEDULED_MAINTENANCE_GUIDE.md)** - 一括バッチスケジューラ化運用ガイド
+- **[PREDICTION_TOOL_ROADMAP.md](PREDICTION_TOOL_ROADMAP.md)** - 予想ツール運用ロードマップ
 
-- 本ディレクトリは、競艇予測システムの設計・運用・API仕様・開発計画など横断的な内容を集約
-- ルート[README.md](../README.md)・[../kyotei_predictor/pipelines/README.md](../kyotei_predictor/pipelines/README.md)と連携し、全体像・参照フロー・索引を明記
-- 各ディレクトリREADMEは用途・使い方・参照先中心、詳細設計・運用ルールはdocs/配下に集約
+### 🏗️ 設計・開発
+- **[DEVELOPMENT_ROADMAP.md](DEVELOPMENT_ROADMAP.md)** - 開発ロードマップとフェーズ別計画
+- **[PHASE2_DETAILED_TASKS.md](PHASE2_DETAILED_TASKS.md)** - フェーズ2の詳細タスク
+- **[integration_design.md](integration_design.md)** - システム統合設計
+- **[prediction_algorithm_design.md](prediction_algorithm_design.md)** - 予測アルゴリズム設計
+- **[web_app_requirements.md](web_app_requirements.md)** - Webアプリケーション要件
 
----
+### 📊 分析・改善
+- **[data_acquisition.md](data_acquisition.md)** - データ取得システムの仕様と運用
+- **[site_analysis.md](site_analysis.md)** - サイト分析とデータ構造
 
-## 🧭 参照フロー・索引
-- [../README.md](../README.md)（全体概要・セットアップ・索引）
-- [integration_design.md](integration_design.md)（システム全体設計・運用ルール）
-- [data_acquisition.md](data_acquisition.md)（データ取得運用・手順）
-- [BATCH_SYSTEM_CURRENT_STATUS.md](BATCH_SYSTEM_CURRENT_STATUS.md)（バッチシステム現状・最新修正）
-- [CURRENT_STATUS_SUMMARY.md](CURRENT_STATUS_SUMMARY.md)（現在状況サマリー・最新）
-- [../kyotei_predictor/data/README.md](../kyotei_predictor/data/README.md)（データ保存・命名規則）
-- [DEVELOPMENT_ROADMAP.md](DEVELOPMENT_ROADMAP.md)（長期計画・課題・進行中タスク）
-- [../kyotei_predictor/tools/README.md](../kyotei_predictor/tools/README.md)（ツール運用・バッチ・分析）
-- [../kyotei_predictor/pipelines/README.md](../kyotei_predictor/pipelines/README.md)（パイプライン運用・分析）
+## 📋 ドキュメント更新ガイドライン
 
----
+### 新規ドキュメント作成時
+1. **適切なカテゴリに分類**：上記の3つのカテゴリのいずれかに分類
+2. **命名規則**：`UPPER_CASE_WITH_UNDERSCORES.md` または `lower_case_with_underscores.md`
+3. **README.md更新**：新規ドキュメントを適切なカテゴリに追加
 
-## 📁 ドキュメント構成・索引
+### ドキュメント削除時
+1. **README.md更新**：削除されたドキュメントをリストから削除
+2. **関連性確認**：他のドキュメントからの参照がないか確認
 
-### 設計・運用ドキュメント
-- [integration_design.md](integration_design.md) - システム統合設計・運用ルール
-- [prediction_algorithm_design.md](prediction_algorithm_design.md) - 予測アルゴリズム設計
-- [web_app_requirements.md](web_app_requirements.md) - Webアプリ要件定義
-- [site_analysis.md](site_analysis.md) - サイト分析・データ取得設計
-- [data_acquisition.md](data_acquisition.md) - データ取得運用・手順
-- [BATCH_SYSTEM_CURRENT_STATUS.md](BATCH_SYSTEM_CURRENT_STATUS.md) - バッチシステム現状・最新修正
-- [CURRENT_STATUS_SUMMARY.md](CURRENT_STATUS_SUMMARY.md) - 現在状況サマリー（最新）
-- [TRIFECTA_IMPROVEMENT_PLAN.md](TRIFECTA_IMPROVEMENT_PLAN.md) - 3連単確率計算改善計画・結果
-- [EQUIPMENT_ENHANCEMENT_PLAN.md](EQUIPMENT_ENHANCEMENT_PLAN.md) - 機材重視ロジック強化計画・結果
-- [GRADUATED_REWARD_IMPLEMENTATION.md](GRADUATED_REWARD_IMPLEMENTATION.md) - 段階的報酬設計・実装
-- [EV_THRESHOLD_OPTIMIZATION.md](EV_THRESHOLD_OPTIMIZATION.md) - 期待値閾値最適化
-- [LEARNING_DEBUGGING_PLAN.md](LEARNING_DEBUGGING_PLAN.md) - 学習デバッグ計画
-- [LEARNING_DEBUGGING_RESULTS.md](LEARNING_DEBUGGING_RESULTS.md) - 学習デバッグ結果
-- [WEB_APP_ENHANCEMENT_PLAN.md](WEB_APP_ENHANCEMENT_PLAN.md) - Webアプリ拡張計画
-- [DEVELOPMENT_ROADMAP.md](DEVELOPMENT_ROADMAP.md) - 開発ロードマップ・今後の計画
-- [NEXT_STEPS.md](NEXT_STEPS.md) - 直近のTODO・優先度・進捗
+### 定期的な整理
+- **月次レビュー**：古いドキュメントや重複の確認
+- **アーカイブ**：完了したプロジェクトや古い計画は適切にアーカイブ
+- **最新性維持**：現在の状況を反映したドキュメントの更新
 
-### その他
-- [../API_SPECIFICATION.md](../API_SPECIFICATION.md) - API仕様書
-- [../PROJECT_STRUCTURE.md](../PROJECT_STRUCTURE.md) - プロジェクト構造詳細
-- [../REFACTORING_PLAN.md](../REFACTORING_PLAN.md) - リファクタリング計画
-- [../REFACTORING_COMPLETE_REPORT.md](../REFACTORING_COMPLETE_REPORT.md) - リファクタリング完了報告
-- [../PHASE3_COMPLETE_REPORT.md](../PHASE3_COMPLETE_REPORT.md) - フェーズ完了報告
+## 🔍 ドキュメント検索
 
----
+### 運用関連
+- 現在の状況確認 → `CURRENT_STATUS_SUMMARY.md`
+- 次のタスク確認 → `NEXT_STEPS.md`
+- 直近の行動計画 → `IMMEDIATE_ACTION_PLAN.md`
+- バッチ実行状況 → `BATCH_SYSTEM_CURRENT_STATUS.md`
+- スケジューラ化運用 → `SCHEDULED_MAINTENANCE_GUIDE.md`
+- 予想ツール運用 → `PREDICTION_TOOL_ROADMAP.md`
 
-## 📝 整理・集約方針
-- 設計・運用・API仕様など横断的な内容はdocs/配下に集約
-- 各ディレクトリREADMEは用途・使い方・参照先中心に簡潔化
-- 進行中タスク・今後の計画はREADMEまたはDEVELOPMENT_ROADMAP.mdに一本化
-- 古い/重複するドキュメントは随時統合・削除
+### 開発関連
+- 全体計画確認 → `DEVELOPMENT_ROADMAP.md`
+- 詳細タスク確認 → `PHASE2_DETAILED_TASKS.md`
+- システム設計確認 → `integration_design.md`
 
----
+### 分析関連
+- データ取得仕様 → `data_acquisition.md`
+- サイト構造確認 → `site_analysis.md`
 
-# 以下、従来の内容（進行中タスク・運用ルール等）は現状維持・必要に応じて最新化 
+## 📝 運用方針（2025-07-11更新）
+
+- **一括バッチ（run_data_maintenance.py）のスケジューラ化を推奨**
+  - データ取得・欠損再取得・品質チェックを一括で自動実行
+  - 品質チェック単体のスケジューラ化は行わず、バッチ完了後に自動実行される形を推奨
+- **予想ツールとしての運用を目指す**
+  - 深夜一括実行で前日データ取得・当日予測を自動化
+  - **3連単の予測確率を上位20組出力**
+  - **購入方法の提案機能を提供**
+  - 予測結果をJSON形式で保存・Web表示
+- スケジューラ設定例や運用手順は [SCHEDULED_MAINTENANCE_GUIDE.md](SCHEDULED_MAINTENANCE_GUIDE.md) を参照
+- 予想ツールの詳細は [PREDICTION_TOOL_ROADMAP.md](PREDICTION_TOOL_ROADMAP.md) を参照
+- 直近の具体的な行動計画は [IMMEDIATE_ACTION_PLAN.md](IMMEDIATE_ACTION_PLAN.md) を参照
+
+## 📝 更新履歴
+
+- **2025-07-11**: 直近の具体的な行動計画追加、予想ツール運用ロードマップ追加、スケジューラ化運用ガイド追加
+- **2025-01-XX**: ドキュメント整理完了、不要ファイル削除
+- **2025-01-XX**: カテゴリ別整理、README.md更新
+- **2025-01-XX**: バッチシステム関連ドキュメント追加 
