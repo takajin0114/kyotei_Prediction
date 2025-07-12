@@ -6,6 +6,7 @@ from kyotei_predictor.tools.fetch.odds_fetcher import fetch_trifecta_odds
 from kyotei_predictor.tools.common.venue_mapping import VENUE_MAPPING
 from metaboatrace.models.stadium import StadiumTelCode
 from datetime import datetime
+import argparse
 
 RAW_DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), '..', 'data', 'raw')
 RACE_FILE_PATTERN = re.compile(r"race_data_(\d{4}-\d{2}-\d{2})_([A-Z0-9]+)_R(\d{1,2})\.json")
@@ -62,9 +63,24 @@ def create_canceled_file(date_str, venue, race_no):
     print(f"  ✅ レース中止ファイル作成: {canceled_fname}")
 
 def main():
+    parser = argparse.ArgumentParser(description="欠損レース自動再取得バッチ（日付範囲指定対応）")
+    parser.add_argument('--start-date', type=str, help='取得開始日 (YYYY-MM-DD)', default=None)
+    parser.add_argument('--end-date', type=str, help='取得終了日 (YYYY-MM-DD)', default=None)
+    args = parser.parse_args()
+    
+    start_date = None
+    end_date = None
+    if args.start_date:
+        start_date = datetime.strptime(args.start_date, "%Y-%m-%d").date()
+    if args.end_date:
+        end_date = datetime.strptime(args.end_date, "%Y-%m-%d").date()
+
     print(f"[INFO] 欠損レース自動再取得バッチ開始")
     existing = collect_existing_races(RAW_DATA_DIR)
     missing = collect_missing_races(existing)
+    # 日付範囲でフィルタ
+    if start_date and end_date:
+        missing = [m for m in missing if start_date <= datetime.strptime(m[0], "%Y-%m-%d").date() <= end_date]
     print(f"[INFO] 欠損レース数: {len(missing)}")
     for date, venue, race_no in missing:
         # venue(str)→StadiumTelCode変換
