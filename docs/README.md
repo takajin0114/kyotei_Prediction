@@ -1,81 +1,72 @@
-# kyotei_Prediction プロジェクト ドキュメント
+# kyotei_Prediction プロジェクト
 
-このディレクトリには、kyotei_Predictionプロジェクトの各種ドキュメントが含まれています。
+競艇レースの予測システムを構築するプロジェクトです。
 
-## 📁 ドキュメント構成
+## 📋 プロジェクト概要
 
-### 🔄 運用・ステータス・TODO
-- **[README.md](README.md)** - このファイル（ドキュメント構成の説明）
-- **[CURRENT_STATUS_SUMMARY.md](CURRENT_STATUS_SUMMARY.md)** - プロジェクト全体の現在の状況サマリー
-- **[NEXT_STEPS.md](NEXT_STEPS.md)** - 次のステップと優先タスク
-- **[IMMEDIATE_ACTION_PLAN.md](IMMEDIATE_ACTION_PLAN.md)** - 直近の具体的な行動計画
-- **[BATCH_SYSTEM_CURRENT_STATUS.md](BATCH_SYSTEM_CURRENT_STATUS.md)** - バッチシステムの現在の状況と実行状況
-- **[SCHEDULED_MAINTENANCE_GUIDE.md](SCHEDULED_MAINTENANCE_GUIDE.md)** - 一括バッチスケジューラ化運用ガイド
-- **[PREDICTION_TOOL_ROADMAP.md](PREDICTION_TOOL_ROADMAP.md)** - 予想ツール運用ロードマップ
+- **目的**: 競艇レースの3連単予測システムの構築・運用
+- **現在の状況**: 予想ツールとしての実装完了、Web表示機能実装中
+- **最終目標**: 深夜自動実行による完全自動化システム
 
-### 🏗️ 設計・開発
-- **[DEVELOPMENT_ROADMAP.md](DEVELOPMENT_ROADMAP.md)** - 開発ロードマップとフェーズ別計画
-- **[PHASE2_DETAILED_TASKS.md](PHASE2_DETAILED_TASKS.md)** - フェーズ2の詳細タスク
-- **[integration_design.md](integration_design.md)** - システム統合設計
-- **[prediction_algorithm_design.md](prediction_algorithm_design.md)** - 予測アルゴリズム設計
-- **[web_app_requirements.md](web_app_requirements.md)** - Webアプリケーション要件
+## 🎯 主要機能
 
-### 📊 分析・改善
-- **[data_acquisition.md](data_acquisition.md)** - データ取得システムの仕様と運用
-- **[site_analysis.md](site_analysis.md)** - サイト分析とデータ構造
+### ✅ 実装完了
+- **データ取得システム**: バッチ処理による自動データ取得
+- **予想ツール**: 3連単予測、購入方法提案、JSON保存機能
+- **モデル開発**: PPOモデル、Optuna最適化、特徴量分析
+- **品質管理**: 自動品質チェック、異常検知
 
-## 📋 ドキュメント更新ガイドライン
+### 🔄 実装中
+- **Web表示機能**: 静的HTMLでの予測結果表示
 
-### 新規ドキュメント作成時
-1. **適切なカテゴリに分類**：上記の3つのカテゴリのいずれかに分類
-2. **命名規則**：`UPPER_CASE_WITH_UNDERSCORES.md` または `lower_case_with_underscores.md`
-3. **README.md更新**：新規ドキュメントを適切なカテゴリに追加
+### 📋 計画中
+- **深夜自動実行**: スケジューラ設定、運用監視
 
-### ドキュメント削除時
-1. **README.md更新**：削除されたドキュメントをリストから削除
-2. **関連性確認**：他のドキュメントからの参照がないか確認
+## 📚 主要ドキュメント
 
-### 定期的な整理
-- **月次レビュー**：古いドキュメントや重複の確認
-- **アーカイブ**：完了したプロジェクトや古い計画は適切にアーカイブ
-- **最新性維持**：現在の状況を反映したドキュメントの更新
+### 現在の状況
+- [CURRENT_STATUS_SUMMARY.md](CURRENT_STATUS_SUMMARY.md) - プロジェクト全体の現在の状況サマリー
+- [NEXT_STEPS.md](NEXT_STEPS.md) - 直近のTODO・優先度・進捗
 
-## 🔍 ドキュメント検索
+### 予想ツール
+- [PREDICTION_TOOL_ROADMAP.md](PREDICTION_TOOL_ROADMAP.md) - 予想ツール運用ロードマップ
+- [PREDICTION_TOOL_IMPLEMENTATION_TASKS.md](PREDICTION_TOOL_IMPLEMENTATION_TASKS.md) - 実装タスク詳細
 
-### 運用関連
-- 現在の状況確認 → `CURRENT_STATUS_SUMMARY.md`
-- 次のタスク確認 → `NEXT_STEPS.md`
-- 直近の行動計画 → `IMMEDIATE_ACTION_PLAN.md`
-- バッチ実行状況 → `BATCH_SYSTEM_CURRENT_STATUS.md`
-- スケジューラ化運用 → `SCHEDULED_MAINTENANCE_GUIDE.md`
-- 予想ツール運用 → `PREDICTION_TOOL_ROADMAP.md`
+### システム・運用
+- [BATCH_SYSTEM_CURRENT_STATUS.md](BATCH_SYSTEM_CURRENT_STATUS.md) - バッチシステム状況
+- [SCHEDULED_MAINTENANCE_GUIDE.md](SCHEDULED_MAINTENANCE_GUIDE.md) - スケジューラ化運用
+- [DEVELOPMENT_ROADMAP.md](DEVELOPMENT_ROADMAP.md) - 開発ロードマップ
 
-### 開発関連
-- 全体計画確認 → `DEVELOPMENT_ROADMAP.md`
-- 詳細タスク確認 → `PHASE2_DETAILED_TASKS.md`
-- システム設計確認 → `integration_design.md`
+### 技術仕様
+- [data_acquisition.md](data_acquisition.md) - データ取得仕様
+- [site_analysis.md](site_analysis.md) - サイト分析
 
-### 分析関連
-- データ取得仕様 → `data_acquisition.md`
-- サイト構造確認 → `site_analysis.md`
+## 🚀 クイックスタート
 
-## 📝 運用方針（2025-07-11更新）
+### 予想ツールの実行
+```bash
+# 完全統合実行
+python -m kyotei_predictor.tools.prediction_tool --date 2024-07-12
 
-- **一括バッチ（run_data_maintenance.py）のスケジューラ化を推奨**
-  - データ取得・欠損再取得・品質チェックを一括で自動実行
-  - 品質チェック単体のスケジューラ化は行わず、バッチ完了後に自動実行される形を推奨
-- **予想ツールとしての運用を目指す**
-  - 深夜一括実行で前日データ取得・当日予測を自動化
-  - **3連単の予測確率を上位20組出力**
-  - **購入方法の提案機能を提供**
-  - 予測結果をJSON形式で保存・Web表示
-- スケジューラ設定例や運用手順は [SCHEDULED_MAINTENANCE_GUIDE.md](SCHEDULED_MAINTENANCE_GUIDE.md) を参照
-- 予想ツールの詳細は [PREDICTION_TOOL_ROADMAP.md](PREDICTION_TOOL_ROADMAP.md) を参照
-- 直近の具体的な行動計画は [IMMEDIATE_ACTION_PLAN.md](IMMEDIATE_ACTION_PLAN.md) を参照
+# 特定会場のみ実行
+python -m kyotei_predictor.tools.prediction_tool --date 2024-07-12 --venues KIRYU TAMAGAWA
+```
+
+### データ取得の実行
+```bash
+# 一括データ取得
+python -m kyotei_predictor.tools.run_data_maintenance
+```
+
+## 📊 最新の進捗（2025-07-13）
+
+- ✅ **予想ツール実装完了**: 統合実行フロー、3連単予測、購入方法提案、JSON保存機能
+- ✅ **テスト成功**: TAMAGAWA会場12レースでの予測成功確認
+- 🔄 **Web表示機能実装中**: 静的HTMLファイルでの予測結果表示
+- 🔄 **2024年3月データ取得進行中**: 8並列処理で安定実行中
 
 ## 📝 更新履歴
 
-- **2025-07-11**: 直近の具体的な行動計画追加、予想ツール運用ロードマップ追加、スケジューラ化運用ガイド追加
-- **2025-01-XX**: ドキュメント整理完了、不要ファイル削除
-- **2025-01-XX**: カテゴリ別整理、README.md更新
-- **2025-01-XX**: バッチシステム関連ドキュメント追加 
+- **2025-07-13**: 予想ツール実装完了、テスト成功確認
+- **2025-07-11**: 予想ツール仕様確定、購入方法提案機能追加
+- **2025-01-XX**: バッチシステム改善、進捗表示修正 

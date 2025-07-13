@@ -12,8 +12,10 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from data_integration import DataIntegration
-from prediction_engine import PredictionEngine
+from kyotei_predictor.data_integration import DataIntegration
+from kyotei_predictor.prediction_engine import PredictionEngine
+# from kyotei_predictor.race_data_fetcher import load_race_data, convert_to_integration_format, analyze_prediction_accuracy, test_race_prediction, main
+
 
 def load_race_data(filename):
     """

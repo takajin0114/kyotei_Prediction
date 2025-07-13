@@ -30,3 +30,35 @@
 
 ## 更新履歴
 - 2025-07-09: 現状設計・運用ルール・索引・成果・課題・TODOを追記
+
+---
+
+## モデルAPI・クラス・関数仕様（API_SPECIFICATION.mdより集約）
+
+### TrifectaDependentModel
+- ファイル: `kyotei_predictor/pipelines/trifecta_dependent_model.py`
+- 着順依存性・艇間相関を考慮した3連単確率予測モデル
+
+#### 主要メソッド
+- `learn_conditional_probabilities(data_dir: str, max_files: int = 1000) -> None`
+  - 条件付き確率・艇間相関を学習
+- `calculate_dependent_probabilities(race_data: Dict[str, Any]) -> Dict[str, Any]`
+  - 着順依存型3連単確率を計算
+- `save_model(file_path: str) -> bool`
+  - 学習済みモデルを保存
+- `load_model(file_path: str) -> bool`
+  - 学習済みモデルを読み込み
+
+### 共通ユーティリティAPI（KyoteiUtils）
+- ファイル: `kyotei_predictor/utils/common.py`
+- 主要メソッド:
+  - `load_json_file(file_path: str) -> Dict[str, Any]`
+  - `save_json_file(data: Dict[str, Any], file_path: str) -> bool`
+  - `extract_race_result(race_data: Dict[str, Any]) -> Optional[Tuple[int, int, int]]`
+  - `calculate_expected_value(probability: float, odds: float) -> float`
+  - `is_profitable(expected_value: float, threshold: float = 1.0) -> bool`
+  - `normalize_probabilities(probabilities: List[float]) -> List[float]`
+  - `softmax(x: List[float], temperature: float = 1.0) -> List[float]`
+  - `get_ranking_distribution(predictions: List[Dict[str, Any]], actual_result: Tuple[int, int, int]) -> Dict[str, Any]`
+  - `calculate_hit_rates(results: List[Dict[str, Any]]) -> Dict[str, float]`
+  - `validate_race_data(race_data: Dict[str, Any]) -> bool`

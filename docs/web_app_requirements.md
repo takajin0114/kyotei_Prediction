@@ -28,3 +28,10 @@
 
 ## 更新履歴
 - 2025-07-09: 現状要件・運用ルール・索引・成果・課題・TODOを追記
+
+---
+
+## Webアプリ・API設計（API_SPECIFICATION.mdより集約）
+
+- WebアプリはFlaskベースで、予測モデルAPI・分析APIと連携
+- API仕様・エンドポイント設計はintegration_design.md・prediction_algorithm_design.mdも参照

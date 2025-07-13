@@ -90,12 +90,12 @@ AMAGASAKI: 16日分の開催日
 
 #### 1. 親バッチ（一括実行）
 ```sh
-python -m kyotei_predictor.tools.batch.run_data_maintenance --start-date 2024-02-01 --end-date 2024-02-29 --stadiums ALL --schedule-workers 8 --race-workers 16
+python -m kyotei_predictor.tools.batch.run_data_maintenance --start-date 2024-02-01 --end-date 2024-02-29 --stadiums ALL --schedule-workers 8 --race-workers 8
 ```
 
 #### 2. 子バッチ（単体実行）
 ```sh
-python -m kyotei_predictor.tools.batch.batch_fetch_all_venues --start-date 2024-07-11 --end-date 2024-07-11 --stadiums KIRYU --race-workers 16 --is-child
+python -m kyotei_predictor.tools.batch.batch_fetch_all_venues --start-date 2024-07-11 --end-date 2024-07-11 --stadiums KIRYU --race-workers 8 --is-child
 ```
 
 #### 3. 欠損データ再取得

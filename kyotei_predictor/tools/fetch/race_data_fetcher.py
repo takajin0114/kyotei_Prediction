@@ -154,26 +154,26 @@ def fetch_race_entry_data(race_date, stadium_code, race_number):
         
         # データの整合性チェック
         if not race_entries:
-            print("❌ レース出走データが取得できませんでした")
+            print("レース出走データが取得できませんでした")
             return None
         
         # 各データの長さを揃える（不足している場合は空のデータで補完）
         max_length = len(race_entries)
         
         if len(racers) < max_length:
-            print(f"⚠️  選手データが不足しています（{len(racers)}/{max_length}）")
+            print(f"選手データが不足しています（{len(racers)}/{max_length}）")
             racers.extend([None] * (max_length - len(racers)))
         
         if len(racer_performances) < max_length:
-            print(f"⚠️  選手成績データが不足しています（{len(racer_performances)}/{max_length}）")
+            print(f"選手成績データが不足しています（{len(racer_performances)}/{max_length}）")
             racer_performances.extend([None] * (max_length - len(racer_performances)))
         
         if len(boat_performances) < max_length:
-            print(f"⚠️  ボート成績データが不足しています（{len(boat_performances)}/{max_length}）")
+            print(f"ボート成績データが不足しています（{len(boat_performances)}/{max_length}）")
             boat_performances.extend([None] * (max_length - len(boat_performances)))
         
         if len(motor_performances) < max_length:
-            print(f"⚠️  モーター成績データが不足しています（{len(motor_performances)}/{max_length}）")
+            print(f"モーター成績データが不足しています（{len(motor_performances)}/{max_length}）")
             motor_performances.extend([None] * (max_length - len(motor_performances)))
         
         # データを辞書形式に変換
@@ -227,17 +227,17 @@ def fetch_race_entry_data(race_date, stadium_code, race_number):
             }
             result["race_entries"].append(entry_data)
         
-        print(f"✅ 出走表データ取得成功: {len(race_entries)}艇")
+        print(f"出走表データ取得成功: {len(race_entries)}艇")
         return result
         
     except Exception as e:
         import traceback
         # レース中止の場合は特別処理
         if "RaceCanceled" in str(type(e)):
-            print(f"❌ レース中止: {race_date} {stadium_code.name} 第{race_number}レース")
+            print(f"レース中止: {race_date} {stadium_code.name} 第{race_number}レース")
             return None
-        print(f"❌ エラー: {type(e).__name__}: {e}")
-        print(f"❌ 詳細: {traceback.format_exc()}")
+        print(f"エラー: {type(e).__name__}: {e}")
+        print(f"詳細: {traceback.format_exc()}")
         return None
 
 def fetch_race_result_data(race_date, stadium_code, race_number):
@@ -311,17 +311,17 @@ def fetch_race_result_data(race_date, stadium_code, race_number):
             ]
         }
         
-        print(f"✅ レース結果データ取得成功: {len(race_records)}艇, 払戻{len(payoffs)}件")
+        print(f"レース結果データ取得成功: {len(result['race_records'])}艇, 払戻{len(result['payoffs'])}件")
         return result
         
     except Exception as e:
         import traceback
         # レース中止の場合は特別処理
         if "RaceCanceled" in str(type(e)):
-            print(f"❌ レース中止: {race_date} {stadium_code.name} 第{race_number}レース")
+            print(f"レース中止: {race_date} {stadium_code.name} 第{race_number}レース")
             return None
-        print(f"❌ エラー: {type(e).__name__}: {e}")
-        print(f"❌ 詳細: {traceback.format_exc()}")
+        print(f"エラー: {type(e).__name__}: {e}")
+        print(f"詳細: {traceback.format_exc()}")
         return None
 
 def fetch_complete_race_data(race_date, stadium_code, race_number):
@@ -336,18 +336,22 @@ def fetch_complete_race_data(race_date, stadium_code, race_number):
     Returns:
         dict: 完全なレースデータ
     """
-    print(f"🏁 完全レースデータ取得: {race_date} {stadium_code.name} 第{race_number}レース")
+    print(f"完全レースデータ取得: {race_date} {stadium_code.name} 第{race_number}レース")
     print("=" * 60)
     
     # 出走表データ取得
     entry_data = fetch_race_entry_data(race_date, stadium_code, race_number)
     if not entry_data:
-        return None
+        # レース中止の場合は例外を再発生
+        from metaboatrace.scrapers.official.website.exceptions import RaceCanceled
+        raise RaceCanceled(f"レース中止: {race_date} {stadium_code.name} 第{race_number}レース")
     
     # レース結果データ取得
     result_data = fetch_race_result_data(race_date, stadium_code, race_number)
     if not result_data:
-        return None
+        # レース中止の場合は例外を再発生
+        from metaboatrace.scrapers.official.website.exceptions import RaceCanceled
+        raise RaceCanceled(f"レース中止: {race_date} {stadium_code.name} 第{race_number}レース")
     
     # データを統合
     complete_data = {
@@ -359,7 +363,7 @@ def fetch_complete_race_data(race_date, stadium_code, race_number):
 
 def main():
     """メイン実行関数"""
-    print("🏁 競艇完全データ取得テスト")
+    print("競艇完全データ取得テスト")
     print("=" * 50)
     
     # テスト条件
@@ -372,27 +376,27 @@ def main():
     
     if complete_data:
         # 結果表示
-        print(f"\n📊 取得結果サマリー:")
+        print(f"\n取得結果サマリー:")
         print(f"  日付: {complete_data['race_info']['date']}")
         print(f"  競艇場: {complete_data['race_info']['stadium']}")
         print(f"  レース: {complete_data['race_info']['title']}")
         print(f"  締切時刻: {complete_data['race_info']['deadline_at']}")
         
-        print(f"\n🚤 出走表:")
+        print(f"\n出走表:")
         for entry in complete_data['race_entries']:
             print(f"  {entry['pit_number']}号艇: {entry['racer']['name']} ({entry['racer']['current_rating']})")
             print(f"    全国勝率: {entry['performance']['rate_in_all_stadium']}")
         
-        print(f"\n🏁 レース結果:")
+        print(f"\nレース結果:")
         sorted_records = sorted(complete_data['race_records'], key=lambda x: x['arrival'])
         for record in sorted_records:
             print(f"  {record['arrival']}着: {record['pit_number']}号艇 (ST:{record['start_time']})")
         
-        print(f"\n🌤️ 天候:")
+        print(f"\n天候:")
         weather = complete_data['weather_condition']
         print(f"  {weather['weather']}, 風速{weather['wind_velocity']}m/s, 気温{weather['air_temperature']}℃")
         
-        print(f"\n💰 払戻:")
+        print(f"\n払戻:")
         for payoff in complete_data['payoffs']:
             method_name = {
                 'TRIFECTA': '3連単',
@@ -408,11 +412,11 @@ def main():
         with open(output_file, 'w', encoding='utf-8') as f:
             json.dump(complete_data, f, ensure_ascii=False, indent=2)
         
-        print(f"\n💾 完全データを保存しました: {output_file}")
-        print("\n✅ 出走表 + レース結果の完全データ取得に成功しました！")
+        print(f"\n完全データを保存しました: {output_file}")
+        print("\n出走表 + レース結果の完全データ取得に成功しました！")
     
     else:
-        print("\n❌ データ取得に失敗しました。")
+        print("\nデータ取得に失敗しました。")
 
 if __name__ == "__main__":
     main()
