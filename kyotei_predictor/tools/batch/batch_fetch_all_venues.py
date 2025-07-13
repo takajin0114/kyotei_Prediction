@@ -12,6 +12,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import requests
 from io import StringIO
 from metaboatrace.models.stadium import StadiumTelCode
+from metaboatrace.scrapers.official.website.exceptions import RaceCanceled, DataNotFound
 from kyotei_predictor.tools.fetch.race_data_fetcher import fetch_complete_race_data
 from kyotei_predictor.tools.fetch.odds_fetcher import fetch_trifecta_odds
 from metaboatrace.scrapers.official.website.v1707.pages.monthly_schedule_page.location import create_monthly_schedule_page_url
@@ -143,45 +144,42 @@ def fetch_race_data_parallel(day, stadium, race_no, rate_limit_seconds=1, max_re
                     if retry_count < max_retries:
                         print(f"    R{race_no}: ValueError - リトライ {retry_count}/{max_retries}")
                         time.sleep(5)
-            except Exception as e:
+            except RaceCanceled as e:
                 # レース中止の場合は特別処理
-                if "RaceCanceled" in str(type(e)):
-                    # レース中止ファイルを作成
-                    canceled_data = {
-                        "status": "canceled",
-                        "race_info": {
-                            "date": ymd,
-                            "stadium": stadium.name,
-                            "race_number": race_no,
-                            "title": f"{stadium.name} 第{race_no}レース"
-                        },
-                        "canceled_at": datetime.now().isoformat(),
-                        "reason": "レース中止"
-                    }
-                    with open(canceled_fpath, 'w', encoding='utf-8') as f:
-                        json.dump(canceled_data, f, ensure_ascii=False, indent=2)
-                    result['canceled'] = True
-                    result['race_success'] = True  # 中止として成功扱い
-                    result['odds_success'] = True  # 中止として成功扱い
-                    print(f"    R{race_no}: レース中止 - 専用ファイル作成")
-                    break
+                canceled_data = {
+                    "status": "canceled",
+                    "race_info": {
+                        "date": ymd,
+                        "stadium": stadium.name,
+                        "race_number": race_no,
+                        "title": f"{stadium.name} 第{race_no}レース"
+                    },
+                    "canceled_at": datetime.now().isoformat(),
+                    "reason": "レース中止"
+                }
+                with open(canceled_fpath, 'w', encoding='utf-8') as f:
+                    json.dump(canceled_data, f, ensure_ascii=False, indent=2)
+                result['canceled'] = True
+                result['race_success'] = True  # 中止として成功扱い
+                result['odds_success'] = True  # 中止として成功扱い
+                print(f"    R{race_no}: レース中止 - 専用ファイル作成、オッズ取得をスキップ")
+                break
+            except DataNotFound as e:
                 # データ未公開の場合は特別処理
-                elif "DataNotFound" in str(type(e)):
-                    # データ未公開は一時的なエラーとして扱い、リトライを継続
-                    retry_count += 1
-                    result['race_error'] = f"データ未公開: {e}"
-                    if retry_count < max_retries:
-                        print(f"    R{race_no}: データ未公開 - リトライ {retry_count}/{max_retries}")
-                        time.sleep(5)
-                    else:
-                        print(f"    R{race_no}: データ未公開 - 次回実行時に再試行")
-                    continue
+                retry_count += 1
+                result['race_error'] = f"データ未公開: {e}"
+                if retry_count < max_retries:
+                    print(f"    R{race_no}: データ未公開 - リトライ {retry_count}/{max_retries}")
+                    time.sleep(5)
                 else:
-                    retry_count += 1
-                    result['race_error'] = str(e)
-                    if retry_count < max_retries:
-                        print(f"    R{race_no}: {type(e).__name__} - リトライ {retry_count}/{max_retries}")
-                        time.sleep(5)
+                    print(f"    R{race_no}: データ未公開 - 次回実行時に再試行")
+                continue
+            except Exception as e:
+                retry_count += 1
+                result['race_error'] = str(e)
+                if retry_count < max_retries:
+                    print(f"    R{race_no}: {type(e).__name__} - リトライ {retry_count}/{max_retries}")
+                    time.sleep(5)
         
         if not result['race_success'] and not result['canceled']:
             print(f"    R{race_no}: レースデータ取得失敗（{result['race_error']}）")
@@ -191,7 +189,11 @@ def fetch_race_data_parallel(day, stadium, race_no, rate_limit_seconds=1, max_re
         result['race_success'] = True  # 既存ファイルあり
     
     # odds_data取得（レース中止でない場合のみ）
-    if not result['canceled'] and not os.path.exists(odds_fpath):
+    if result['canceled']:
+        # レース中止の場合はオッズ取得を完全にスキップ
+        result['odds_success'] = True  # 中止として成功扱い
+        print(f"    R{race_no}: レース中止のためオッズ取得をスキップ")
+    elif not os.path.exists(odds_fpath):
         retry_count = 0
         while retry_count < max_retries:
             try:
@@ -205,53 +207,48 @@ def fetch_race_data_parallel(day, stadium, race_no, rate_limit_seconds=1, max_re
                     retry_count += 1
                     if retry_count < max_retries:
                         print(f"    R{race_no}: オッズデータ取得失敗（リトライ {retry_count}/{max_retries}）")
-            except Exception as e:
+            except RaceCanceled as e:
                 # レース中止の場合は特別処理
-                if "RaceCanceled" in str(type(e)):
-                    # レース中止ファイルを作成（まだ作成されていない場合）
-                    if not result['canceled']:
-                        canceled_data = {
-                            "status": "canceled",
-                            "race_info": {
-                                "date": ymd,
-                                "stadium": stadium.name,
-                                "race_number": race_no,
-                                "title": f"{stadium.name} 第{race_no}レース"
-                            },
-                            "canceled_at": datetime.now().isoformat(),
-                            "reason": "レース中止（オッズ取得時）"
-                        }
-                        with open(canceled_fpath, 'w', encoding='utf-8') as f:
-                            json.dump(canceled_data, f, ensure_ascii=False, indent=2)
-                        result['canceled'] = True
-                        result['race_success'] = True  # 中止として成功扱い
-                        result['odds_success'] = True  # 中止として成功扱い
-                        print(f"    R{race_no}: レース中止（オッズ取得時） - 専用ファイル作成")
-                        break
+                if not result['canceled']:
+                    canceled_data = {
+                        "status": "canceled",
+                        "race_info": {
+                            "date": ymd,
+                            "stadium": stadium.name,
+                            "race_number": race_no,
+                            "title": f"{stadium.name} 第{race_no}レース"
+                        },
+                        "canceled_at": datetime.now().isoformat(),
+                        "reason": "レース中止（オッズ取得時）"
+                    }
+                    with open(canceled_fpath, 'w', encoding='utf-8') as f:
+                        json.dump(canceled_data, f, ensure_ascii=False, indent=2)
+                    result['canceled'] = True
+                    result['race_success'] = True  # 中止として成功扱い
+                    result['odds_success'] = True  # 中止として成功扱い
+                    print(f"    R{race_no}: レース中止（オッズ取得時） - 専用ファイル作成")
+                    break
+            except DataNotFound as e:
                 # データ未公開の場合は特別処理
-                elif "DataNotFound" in str(type(e)):
-                    # データ未公開は一時的なエラーとして扱い、リトライを継続
-                    retry_count += 1
-                    result['odds_error'] = f"データ未公開: {e}"
-                    if retry_count < max_retries:
-                        print(f"    R{race_no}: データ未公開（オッズ取得時） - リトライ {retry_count}/{max_retries}")
-                        time.sleep(5)
-                    else:
-                        print(f"    R{race_no}: データ未公開（オッズ取得時） - 次回実行時に再試行")
-                    continue
+                retry_count += 1
+                result['odds_error'] = f"データ未公開: {e}"
+                if retry_count < max_retries:
+                    print(f"    R{race_no}: データ未公開（オッズ取得時） - リトライ {retry_count}/{max_retries}")
+                    time.sleep(5)
                 else:
-                    retry_count += 1
-                    result['odds_error'] = str(e)
-                    if retry_count < max_retries:
-                        print(f"    R{race_no}: オッズ取得エラー - リトライ {retry_count}/{max_retries}")
-                        time.sleep(5)
+                    print(f"    R{race_no}: データ未公開（オッズ取得時） - 次回実行時に再試行")
+                continue
+            except Exception as e:
+                retry_count += 1
+                result['odds_error'] = str(e)
+                if retry_count < max_retries:
+                    print(f"    R{race_no}: オッズ取得エラー - リトライ {retry_count}/{max_retries}")
+                    time.sleep(5)
         
         if not result['odds_success'] and not result['canceled']:
             print(f"    R{race_no}: オッズデータ取得失敗（{result['odds_error']}）")
         
         time.sleep(rate_limit_seconds)  # レート制限対策
-    elif result['canceled']:
-        result['odds_success'] = True  # 中止として成功扱い
     else:
         result['odds_success'] = True  # 既存ファイルあり
     
@@ -325,7 +322,7 @@ def main():
         import os
         import platform
         if platform.system() == "Windows":
-            cmdline = f"run_data_maintenance --start-date {sys.argv[sys.argv.index('--start-date')+1]}"
+            cmdline = f"batch_fetch_all_venues --start-date {sys.argv[sys.argv.index('--start-date')+1]}"
             import subprocess
             result = subprocess.run(f'wmic process where "CommandLine like \'%{cmdline}%\'" get ProcessId,CommandLine /FORMAT:LIST', shell=True, capture_output=True, text=True)
             lines = [l for l in result.stdout.splitlines() if l.strip() and 'wmic' not in l and str(os.getpid()) not in l]
@@ -340,7 +337,7 @@ def main():
     parser.add_argument('--end-date', type=str, required=True, help='取得終了日 (YYYY-MM-DD)')
     parser.add_argument('--stadiums', type=str, required=True, help='対象会場名（カンマ区切り, 例: KIRYU,EDOGAWA）')
     parser.add_argument('--schedule-workers', type=int, default=8, help='開催日取得の並列数（デフォルト: 8）')
-    parser.add_argument('--race-workers', type=int, default=6, help='レース取得の並列数（デフォルト: 6）')
+    parser.add_argument('--race-workers', type=int, default=8, help='レース取得の並列数（デフォルト: 8）')
     parser.add_argument('--is-child', action='store_true', help='サブプロセス起動時の多重起動判定除外用フラグ')
     args = parser.parse_args()
 
