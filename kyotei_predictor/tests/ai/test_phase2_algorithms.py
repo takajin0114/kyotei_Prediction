@@ -12,7 +12,7 @@ import json
 # パス設定
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
-from prediction_engine import PredictionEngine
+from kyotei_predictor.prediction_engine import PredictionEngine
 
 def load_race_data(filename):
     """レースデータを読み込み"""

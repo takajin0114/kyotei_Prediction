@@ -11,8 +11,9 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from data_integration import DataIntegration
-from prediction_engine import PredictionEngine
+from kyotei_predictor.data_integration import DataIntegration
+from kyotei_predictor.prediction_engine import PredictionEngine
+# from kyotei_predictor.race_data_fetcher import load_race_data
 
 def load_and_test_race(filename, description):
     """
