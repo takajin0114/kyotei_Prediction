@@ -1,0 +1,1106 @@
+#!/usr/bin/env python3
+"""
+予想ツール - 3連単予測・購入方法提案機能
+
+機能:
+1. レース前データ取得
+2. 3連単予測実行（上位20組）
+3. 購入方法の提案生成
+4. JSON形式での結果保存
+5. Web表示用データ生成
+
+使用方法:
+    python -m kyotei_predictor.tools.prediction_tool --predict-date 2024-07-12
+    python -m kyotei_predictor.tools.prediction_tool --predict-date 2024-07-12 --venues KIRYU,TODA
+"""
+
+import os
+import sys
+import json
+import argparse
+import logging
+import numpy as np
+from datetime import datetime, timedelta, date
+from pathlib import Path
+from typing import Dict, List, Optional, Tuple, Union
+from itertools import permutations
+import torch
+import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import cast
+
+# プロジェクトルートの設定
+PROJECT_ROOT = Path(__file__).parent.parent.parent
+sys.path.append(str(PROJECT_ROOT))
+
+from stable_baselines3 import PPO
+from kyotei_predictor.pipelines.kyotei_env import vectorize_race_state, action_to_trifecta
+from metaboatrace.models.stadium import StadiumTelCode
+from kyotei_predictor.tools.fetch.race_data_fetcher import fetch_race_entry_data
+from kyotei_predictor.tools.fetch.odds_fetcher import fetch_trifecta_odds
+from metaboatrace.scrapers.official.website.v1707.pages.monthly_schedule_page.location import create_monthly_schedule_page_url
+from metaboatrace.scrapers.official.website.v1707.pages.monthly_schedule_page.scraping import extract_events
+import requests
+from io import StringIO
+
+class PredictionTool:
+    """予想ツールのメインクラス"""
+    
+    def __init__(self, log_level=logging.INFO):
+        self.setup_logging(log_level)
+        self.model: Optional[PPO] = None
+        self.model_info = {}
+        
+    def setup_logging(self, log_level):
+        """ログ設定"""
+        log_file = PROJECT_ROOT / "kyotei_predictor" / "logs" / f"prediction_tool_{datetime.now().strftime('%Y%m%d')}.log"
+        log_file.parent.mkdir(exist_ok=True)
+        
+        logging.basicConfig(
+            level=log_level,
+            format='%(asctime)s - %(levelname)s - %(message)s',
+            handlers=[
+                logging.FileHandler(str(log_file), encoding='utf-8'),
+                logging.StreamHandler()
+            ]
+        )
+        self.logger = logging.getLogger(__name__)
+    
+    def load_model(self, model_path: Optional[Union[str, Path]] = None) -> bool:
+        """学習済みモデルの読み込み"""
+        try:
+            if not model_path:
+                # デフォルトで最新のベストモデルを使用
+                model_dir = PROJECT_ROOT / "optuna_models" / "graduated_reward_best"
+                model_path_obj = model_dir / "best_model.zip"
+                
+                if not model_path_obj.exists():
+                    # フォールバック: 最新のチェックポイント
+                    checkpoint_dir = PROJECT_ROOT / "optuna_models" / "graduated_reward_checkpoints"
+                    if checkpoint_dir.exists():
+                        checkpoints = list(checkpoint_dir.glob("*.zip"))
+                        if checkpoints:
+                            model_path_obj = max(checkpoints, key=lambda x: x.stat().st_mtime)
+            else:
+                model_path_obj = Path(model_path)
+            
+            if not model_path_obj.exists():
+                self.logger.error(f"モデルファイルが見つかりません: {model_path_obj}")
+                return False
+            
+            self.logger.info(f"モデルを読み込み中: {model_path_obj}")
+            self.model = PPO.load(str(model_path_obj))
+            
+            # モデル情報を記録
+            self.model_info = {
+                'model_path': str(model_path_obj),
+                'model_name': model_path_obj.stem,
+                'version': datetime.fromtimestamp(model_path_obj.stat().st_mtime).strftime('%Y-%m-%d'),
+                'training_data_until': self.get_training_data_date()
+            }
+            
+            self.logger.info("モデルの読み込みが完了しました")
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"モデル読み込みエラー: {e}")
+            return False
+    
+    def get_training_data_date(self) -> str:
+        """学習データの最終日を推定"""
+        # 実際の実装では、学習時に使用したデータの最終日を記録する
+        # ここでは簡易的に前日を返す
+        yesterday = datetime.now() - timedelta(days=1)
+        return yesterday.strftime('%Y-%m-%d')
+    
+    def get_all_stadiums(self) -> List[StadiumTelCode]:
+        """全24会場のStadiumTelCodeを返す"""
+        return [
+            StadiumTelCode.KIRYU,      # 01: 桐生
+            StadiumTelCode.TODA,       # 02: 戸田
+            StadiumTelCode.EDOGAWA,    # 03: 江戸川
+            StadiumTelCode.HEIWAJIMA,  # 04: 平和島
+            StadiumTelCode.TAMAGAWA,   # 05: 多摩川
+            StadiumTelCode.HAMANAKO,   # 06: 浜名湖
+            StadiumTelCode.GAMAGORI,   # 07: 蒲郡
+            StadiumTelCode.TOKONAME,   # 08: 常滑
+            StadiumTelCode.TSU,        # 09: 津
+            StadiumTelCode.MIKUNI,     # 10: 三国
+            StadiumTelCode.BIWAKO,     # 11: びわこ
+            StadiumTelCode.SUMINOE,    # 12: 住之江
+            StadiumTelCode.AMAGASAKI,  # 13: 尼崎
+            StadiumTelCode.NARUTO,     # 14: 鳴門
+            StadiumTelCode.MARUGAME,   # 15: 丸亀
+            StadiumTelCode.KOJIMA,     # 16: 児島
+            StadiumTelCode.MIYAJIMA,   # 17: 宮島
+            StadiumTelCode.TOKUYAMA,   # 18: 徳山
+            StadiumTelCode.SHIMONOSEKI, # 19: 下関
+            StadiumTelCode.WAKAMATSU,  # 20: 若松
+            StadiumTelCode.ASHIYA,     # 21: 芦屋
+            StadiumTelCode.FUKUOKA,    # 22: 福岡
+            StadiumTelCode.KARATSU,    # 23: 唐津
+            StadiumTelCode.OMURA,      # 24: 大村
+        ]
+    
+    def get_event_days_for_stadium(self, stadium: StadiumTelCode, target_date: date) -> List[date]:
+        """指定会場の指定日の開催日を取得"""
+        try:
+            url = create_monthly_schedule_page_url(target_date.year, target_date.month)
+            resp = requests.get(url)
+            resp.raise_for_status()
+            events = extract_events(StringIO(resp.text))
+            
+            event_days = []
+            for event in events:
+                if event.stadium_tel_code == stadium:
+                    for d in range(event.days):
+                        day = event.starts_on + timedelta(days=d)
+                        if day == target_date:
+                            event_days.append(day)
+            
+            return event_days
+        except Exception as e:
+            self.logger.warning(f"{stadium.name} {target_date} 開催日確認失敗: {e}")
+            return []
+    
+    def fetch_today_race_schedule(self, target_date: Optional[str] = None, venues: Optional[List[str]] = None) -> Dict[str, List[int]]:
+        """当日のレーススケジュールを取得（venues指定時はその会場のみ）"""
+        if not target_date:
+            target_date = datetime.now().strftime('%Y-%m-%d')
+        
+        target_date_obj = datetime.strptime(target_date, '%Y-%m-%d').date()
+        self.logger.info(f"レーススケジュール取得開始: {target_date}")
+        
+        all_stadiums = self.get_all_stadiums()
+        if venues:
+            self.logger.info(f'venues引数: {venues}')
+            stadiums = [s for s in all_stadiums if s.name in venues]
+            self.logger.info(f'抽出stadiums: {[s.name for s in stadiums]}')
+        else:
+            stadiums = all_stadiums
+        schedule = {}
+        
+        for stadium in stadiums:
+            event_days = self.get_event_days_for_stadium(stadium, target_date_obj)
+            if event_days:
+                # 開催日がある場合は1-12Rを想定
+                schedule[stadium.name] = list(range(1, 13))
+                self.logger.info(f"{stadium.name}: 開催日あり (1-12R)")
+            else:
+                schedule[stadium.name] = []
+                self.logger.info(f"{stadium.name}: 開催日なし")
+            time.sleep(0.5)  # レート制限
+        
+        self.logger.info(f"レーススケジュール取得完了: {len([s for s in schedule.values() if s])}会場で開催")
+        return schedule
+    
+    def fetch_today_race_entries(self, target_date: Optional[str] = None, venues: Optional[List[str]] = None) -> Dict[str, Dict]:
+        """当日の選手情報を取得"""
+        if not target_date:
+            target_date = datetime.now().strftime('%Y-%m-%d')
+        
+        self.logger.info(f"選手情報取得開始: {target_date}")
+        
+        # レーススケジュールを取得
+        schedule = self.fetch_today_race_schedule(target_date, venues)
+        
+        # 指定された会場のみフィルタ
+        if venues:
+            schedule = {k: v for k, v in schedule.items() if k in venues}
+        
+        target_date_obj = datetime.strptime(target_date, '%Y-%m-%d').date()
+        entries = {}
+        
+        # 並列処理で選手情報を取得
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            futures = []
+            
+            for stadium_name, race_numbers in schedule.items():
+                if not race_numbers:
+                    continue
+                
+                stadium = next((s for s in self.get_all_stadiums() if s.name == stadium_name), None)
+                if not stadium:
+                    continue
+                
+                for race_no in race_numbers:
+                    future = executor.submit(
+                        self._fetch_single_race_entry,
+                        target_date_obj, stadium, race_no
+                    )
+                    futures.append((f"{stadium_name}_{race_no}", future))
+            
+            # 結果を収集
+            for race_key, future in futures:
+                try:
+                    result = future.result()
+                    if result:
+                        entries[race_key] = result
+                        self.logger.info(f"選手情報取得成功: {race_key}")
+                    else:
+                        self.logger.warning(f"選手情報取得失敗: {race_key}")
+                except Exception as e:
+                    self.logger.error(f"選手情報取得エラー {race_key}: {e}")
+        
+        self.logger.info(f"選手情報取得完了: {len(entries)}レース")
+        return entries
+    
+    def _fetch_single_race_entry(self, target_date: date, stadium: StadiumTelCode, race_no: int) -> Optional[Dict]:
+        """単一レースの選手情報を取得"""
+        try:
+            entry_data = fetch_race_entry_data(target_date, stadium, race_no)
+            if entry_data:
+                return entry_data
+            else:
+                self.logger.warning(f"選手情報取得失敗: {stadium.name} R{race_no}")
+                return None
+        except Exception as e:
+            self.logger.error(f"選手情報取得エラー {stadium.name} R{race_no}: {e}")
+            return None
+    
+    def fetch_today_odds(self, target_date: Optional[str] = None, venues: Optional[List[str]] = None) -> Dict[str, Dict]:
+        """当日のオッズ情報を取得"""
+        if not target_date:
+            target_date = datetime.now().strftime('%Y-%m-%d')
+        
+        self.logger.info(f"オッズ情報取得開始: {target_date}")
+        
+        # レーススケジュールを取得
+        schedule = self.fetch_today_race_schedule(target_date, venues)
+        
+        # 指定された会場のみフィルタ
+        if venues:
+            schedule = {k: v for k, v in schedule.items() if k in venues}
+        
+        target_date_obj = datetime.strptime(target_date, '%Y-%m-%d').date()
+        odds = {}
+        
+        # 並列処理でオッズ情報を取得
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            futures = []
+            
+            for stadium_name, race_numbers in schedule.items():
+                if not race_numbers:
+                    continue
+                
+                stadium = next((s for s in self.get_all_stadiums() if s.name == stadium_name), None)
+                if not stadium:
+                    continue
+                
+                for race_no in race_numbers:
+                    future = executor.submit(
+                        self._fetch_single_race_odds,
+                        target_date_obj, stadium, race_no
+                    )
+                    futures.append((f"{stadium_name}_{race_no}", future))
+            
+            # 結果を収集
+            for race_key, future in futures:
+                try:
+                    result = future.result()
+                    if result:
+                        odds[race_key] = result
+                        self.logger.info(f"オッズ情報取得成功: {race_key}")
+                    else:
+                        self.logger.warning(f"オッズ情報取得失敗: {race_key}")
+                except Exception as e:
+                    self.logger.error(f"オッズ情報取得エラー {race_key}: {e}")
+        
+        self.logger.info(f"オッズ情報取得完了: {len(odds)}レース")
+        return odds
+    
+    def _fetch_single_race_odds(self, target_date: date, stadium: StadiumTelCode, race_no: int) -> Optional[Dict]:
+        """単一レースのオッズ情報を取得"""
+        try:
+            odds_data = fetch_trifecta_odds(target_date, stadium, race_no)
+            if odds_data:
+                return odds_data
+            else:
+                self.logger.warning(f"オッズ情報取得失敗: {stadium.name} R{race_no}")
+                return None
+        except Exception as e:
+            self.logger.error(f"オッズ情報取得エラー {stadium.name} R{race_no}: {e}")
+            return None
+    
+    def get_race_data_paths(self, predict_date: str, venues: Optional[List[str]] = None) -> List[Tuple[str, str, str, str]]:
+        """予測対象のレースデータパスを取得"""
+        race_data_dir = PROJECT_ROOT / "kyotei_predictor" / "data" / "raw"
+        
+        race_paths = []
+        
+        # 指定された会場または全会場
+        if not venues:
+            venues = ["KIRYU", "TODA", "EDOGAWA", "KORAKUEN", "HEIWAJIMA", "KAWASAKI", 
+                     "FUNEBASHI", "KASAMATSU", "HAMANAKO", "MIKUNIHARA", "TOKONAME", 
+                     "GAMAGORI", "TAMANO", "MIHARA", "YAMAGUCHI", "WAKAYAMA", 
+                     "AMAGASAKI", "NARUTO", "MARUGAME", "KOCHI", "TOKUSHIMA", 
+                     "IMABARI", "OGATA", "MIYAZAKI"]
+        
+        for venue in venues:
+            # レースデータファイルを検索
+            race_pattern = f"race_data_{predict_date}_{venue}_R*.json"
+            odds_pattern = f"odds_data_{predict_date}_{venue}_R*.json"
+            
+            race_files = list(race_data_dir.glob(race_pattern))
+            odds_files = list(race_data_dir.glob(odds_pattern))
+            
+            # レース番号でマッチング
+            for race_file in race_files:
+                # ファイル名からレース番号を抽出
+                filename = race_file.name
+                if "_R" in filename:
+                    race_number = filename.split("_R")[-1].replace(".json", "")
+                    
+                    # 対応するオッズファイルを検索
+                    odds_file = race_data_dir / f"odds_data_{predict_date}_{venue}_R{race_number}.json"
+                    
+                    if odds_file.exists():
+                        race_paths.append((venue, race_number, str(race_file), str(odds_file)))
+        
+        self.logger.info(f"予測対象レース数: {len(race_paths)}")
+        return race_paths
+    
+    def predict_trifecta_probabilities(self, race_data_path: str, odds_data_path: str) -> List[Dict]:
+        """3連単の予測確率を計算（上位20組）"""
+        try:
+            # 状態ベクトルを生成
+            state = vectorize_race_state(race_data_path, odds_data_path)
+            # torch.Tensorに変換
+            state_tensor = torch.tensor(state, dtype=torch.float32).unsqueeze(0)  # shape: (1, n_features)
+            # モデルで予測
+            action_probs = self.model.policy.get_distribution(state_tensor).distribution.probs.detach().cpu().numpy()[0]
+            
+            # 3連単の組み合わせリスト（120通り）
+            trifecta_list = list(permutations(range(1, 7), 3))
+            
+            # 確率と組み合わせをペアにしてソート
+            probability_combinations = []
+            for i, prob in enumerate(action_probs):
+                trifecta = trifecta_list[i]
+                combination_str = f"{trifecta[0]}-{trifecta[1]}-{trifecta[2]}"
+                probability_combinations.append({
+                    'combination': combination_str,
+                    'probability': float(prob),
+                    'expected_value': self.calculate_expected_value(trifecta, odds_data_path),
+                    'rank': 0
+                })
+            
+            # 確率でソート（降順）
+            probability_combinations.sort(key=lambda x: x['probability'], reverse=True)
+            
+            # 上位20組を取得し、ランクを設定
+            top_20 = probability_combinations[:20]
+            for i, item in enumerate(top_20):
+                item['rank'] = i + 1
+            
+            return top_20
+            
+        except Exception as e:
+            self.logger.error(f"予測エラー: {e}")
+            return []
+    
+    def calculate_expected_value(self, trifecta: Tuple[int, int, int], odds_data_path: str) -> float:
+        """期待値を計算"""
+        try:
+            with open(odds_data_path, 'r', encoding='utf-8') as f:
+                odds_data = json.load(f)
+            
+            odds_map = {tuple(o['betting_numbers']): o['ratio'] for o in odds_data['odds_data']}
+            odds = odds_map.get(trifecta, 0)
+            
+            # 期待値 = 確率 × オッズ - 1
+            # 確率は上位20組の確率を使用するため、ここでは簡易計算
+            return odds * 0.05 - 1  # 仮の確率0.05を使用
+            
+        except Exception as e:
+            self.logger.warning(f"期待値計算エラー: {e}")
+            return 0.0
+    
+    def generate_purchase_suggestions(self, top_20_combinations: List[Dict]) -> List[Dict]:
+        """購入方法の提案を生成"""
+        suggestions = []
+        
+        # 1. 流し買い（Nagashi）の提案
+        nagashi_suggestions = self.generate_nagashi_suggestions(top_20_combinations)
+        suggestions.extend(nagashi_suggestions)
+        
+        # 2. 流し買い（Wheel）の提案
+        wheel_suggestions = self.generate_wheel_suggestions(top_20_combinations)
+        suggestions.extend(wheel_suggestions)
+        
+        # 3. ボックス買いの提案
+        box_suggestions = self.generate_box_suggestions(top_20_combinations)
+        suggestions.extend(box_suggestions)
+        
+        # 期待値でソート
+        suggestions.sort(key=lambda x: x['expected_return'], reverse=True)
+        
+        return suggestions[:5]  # 上位5件を返す
+    
+    def generate_nagashi_suggestions(self, combinations: List[Dict]) -> List[Dict]:
+        """流し買い（同じ1-2着で3着を流す）の提案"""
+        suggestions = []
+        
+        # 1-2着の組み合わせをグループ化
+        first_second_groups = {}
+        for combo in combinations:
+            first, second, third = combo['combination'].split('-')
+            key = f"{first}-{second}"
+            if key not in first_second_groups:
+                first_second_groups[key] = []
+            first_second_groups[key].append(combo)
+        
+        # 上位の1-2着組み合わせで流し買いを提案
+        for key, group in first_second_groups.items():
+            if len(group) >= 3:  # 3つ以上の組み合わせがある場合
+                total_prob = sum(c['probability'] for c in group[:4])  # 上位4つ
+                total_cost = 400  # 流し買いのコスト
+                expected_return = total_prob * 1000  # 仮の計算
+                
+                suggestions.append({
+                    'type': 'nagashi',
+                    'description': f"{key}-流し",
+                    'combinations': [c['combination'] for c in group[:4]],
+                    'total_probability': total_prob,
+                    'total_cost': total_cost,
+                    'expected_return': expected_return
+                })
+        
+        return suggestions
+    
+    def generate_wheel_suggestions(self, combinations: List[Dict]) -> List[Dict]:
+        """流し買い（同じ1着で2-3着を流す）の提案"""
+        suggestions = []
+        
+        # 1着でグループ化
+        first_groups = {}
+        for combo in combinations:
+            first, second, third = combo['combination'].split('-')
+            if first not in first_groups:
+                first_groups[first] = []
+            first_groups[first].append(combo)
+        
+        # 上位の1着で流し買いを提案
+        for first, group in first_groups.items():
+            if len(group) >= 3:  # 3つ以上の組み合わせがある場合
+                total_prob = sum(c['probability'] for c in group[:4])  # 上位4つ
+                total_cost = 400  # 流し買いのコスト
+                expected_return = total_prob * 1000  # 仮の計算
+                
+                suggestions.append({
+                    'type': 'wheel',
+                    'description': f"{first}-流し",
+                    'combinations': [c['combination'] for c in group[:4]],
+                    'total_probability': total_prob,
+                    'total_cost': total_cost,
+                    'expected_return': expected_return
+                })
+        
+        return suggestions
+    
+    def generate_box_suggestions(self, combinations: List[Dict]) -> List[Dict]:
+        """ボックス買いの提案"""
+        suggestions = []
+        
+        # 上位の組み合わせでボックス買いを提案
+        for i, combo in enumerate(combinations[:3]):  # 上位3つ
+            first, second, third = combo['combination'].split('-')
+            
+            # 順列を生成
+            permutations_list = list(permutations([int(first), int(second), int(third)], 3))
+            box_combinations = [f"{p[0]}-{p[1]}-{p[2]}" for p in permutations_list]
+            
+            # 上位20組から該当する組み合わせを抽出
+            box_prob_combinations = [c for c in combinations if c['combination'] in box_combinations]
+            
+            if len(box_prob_combinations) >= 3:
+                total_prob = sum(c['probability'] for c in box_prob_combinations)
+                total_cost = 1200  # ボックス買いのコスト（6通り）
+                expected_return = total_prob * 1000  # 仮の計算
+                
+                suggestions.append({
+                    'type': 'box',
+                    'description': f"{combo['combination']} ボックス",
+                    'combinations': [c['combination'] for c in box_prob_combinations],
+                    'total_probability': total_prob,
+                    'total_cost': total_cost,
+                    'expected_return': expected_return
+                })
+        
+        return suggestions
+    
+    def predict_races(self, predict_date: str, venues: Optional[List[str]] = None) -> Optional[Dict]:
+        """全会場・全レースの予測を実行"""
+        try:
+            self.logger.info(f"予測開始: {predict_date}")
+            start_time = datetime.now()
+            
+            # モデル読み込み
+            if not self.load_model():
+                return None
+            
+            # レースデータパスを取得
+            race_paths = self.get_race_data_paths(predict_date, venues)
+            
+            if not race_paths:
+                self.logger.warning(f"予測対象のレースデータが見つかりません: {predict_date}")
+                return None
+            
+            # 各レースの予測を実行
+            predictions = []
+            successful_predictions = 0
+            
+            for venue, race_number, race_path, odds_path in race_paths:
+                try:
+                    self.logger.info(f"予測中: {venue} {race_number}")
+                    
+                    # 3連単予測
+                    top_20_combinations = self.predict_trifecta_probabilities(race_path, odds_path)
+                    
+                    if top_20_combinations:
+                        # 購入方法の提案
+                        purchase_suggestions = self.generate_purchase_suggestions(top_20_combinations)
+                        
+                        # 合計確率
+                        total_probability = sum(c['probability'] for c in top_20_combinations)
+                        
+                        # レース情報を取得
+                        with open(race_path, 'r', encoding='utf-8') as f:
+                            race_data = json.load(f)
+                        
+                        race_info = race_data.get('race_info', {})
+                        race_time = race_info.get('race_time', '09:00')
+                        
+                        prediction = {
+                            'venue': venue,
+                            'venue_code': self.get_venue_code(venue),
+                            'race_number': int(race_number),
+                            'race_time': race_time,
+                            'top_20_combinations': top_20_combinations,
+                            'total_probability': total_probability,
+                            'purchase_suggestions': purchase_suggestions,
+                            'risk_level': self.calculate_risk_level(total_probability)
+                        }
+                        
+                        predictions.append(prediction)
+                        successful_predictions += 1
+                    
+                except Exception as e:
+                    self.logger.error(f"レース予測エラー {venue} {race_number}: {e}")
+            
+            # 会場別サマリー
+            venue_summaries = self.generate_venue_summaries(predictions)
+            
+            # 実行結果
+            execution_time = (datetime.now() - start_time).total_seconds() / 60
+            
+            result = {
+                'prediction_date': predict_date,
+                'generated_at': datetime.now().isoformat(),
+                'model_info': self.model_info,
+                'execution_summary': {
+                    'total_venues': len(set(p['venue'] for p in predictions)),
+                    'total_races': len(predictions),
+                    'successful_predictions': successful_predictions,
+                    'execution_time_minutes': execution_time
+                },
+                'predictions': predictions,
+                'venue_summaries': venue_summaries
+            }
+            
+            self.logger.info(f"予測完了: {successful_predictions}レース, {execution_time:.1f}分")
+            return result
+            
+        except Exception as e:
+            self.logger.error(f"予測実行エラー: {e}")
+            return None
+    
+    def get_venue_code(self, venue: str) -> str:
+        """会場コードを取得"""
+        venue_codes = {
+            'KIRYU': '01', 'TODA': '02', 'EDOGAWA': '03', 'KORAKUEN': '04',
+            'HEIWAJIMA': '05', 'KAWASAKI': '06', 'FUNEBASHI': '07', 'KASAMATSU': '08',
+            'HAMANAKO': '09', 'MIKUNIHARA': '10', 'TOKONAME': '11', 'GAMAGORI': '12',
+            'TAMANO': '13', 'MIHARA': '14', 'YAMAGUCHI': '15', 'WAKAYAMA': '16',
+            'AMAGASAKI': '17', 'NARUTO': '18', 'MARUGAME': '19', 'KOCHI': '20',
+            'TOKUSHIMA': '21', 'IMABARI': '22', 'OGATA': '23', 'MIYAZAKI': '24'
+        }
+        return venue_codes.get(venue, '00')
+    
+    def calculate_risk_level(self, total_probability: float) -> str:
+        """リスクレベルを計算"""
+        if total_probability >= 0.8:
+            return 'low'
+        elif total_probability >= 0.6:
+            return 'medium'
+        else:
+            return 'high'
+    
+    def generate_venue_summaries(self, predictions: List[Dict]) -> List[Dict]:
+        """会場別サマリーを生成"""
+        venue_stats = {}
+        
+        for pred in predictions:
+            venue = pred['venue']
+            if venue not in venue_stats:
+                venue_stats[venue] = {
+                    'total_races': 0,
+                    'high_confidence_races': 0,
+                    'total_probability': 0,
+                    'total_expected_value': 0
+                }
+            
+            venue_stats[venue]['total_races'] += 1
+            venue_stats[venue]['total_probability'] += pred['total_probability']
+            
+            # 高信頼度レース（上位確率が0.08以上）
+            top_prob = pred['top_20_combinations'][0]['probability'] if pred['top_20_combinations'] else 0
+            if top_prob >= 0.08:
+                venue_stats[venue]['high_confidence_races'] += 1
+            
+            # 平均期待値
+            avg_expected_value = sum(c['expected_value'] for c in pred['top_20_combinations'][:5]) / 5
+            venue_stats[venue]['total_expected_value'] += avg_expected_value
+        
+        # サマリーを生成
+        summaries = []
+        for venue, stats in venue_stats.items():
+            summaries.append({
+                'venue': venue,
+                'total_races': stats['total_races'],
+                'high_confidence_races': stats['high_confidence_races'],
+                'average_top_probability': stats['total_probability'] / stats['total_races'],
+                'average_expected_value': stats['total_expected_value'] / stats['total_races']
+            })
+        
+        return summaries
+    
+    def save_prediction_result(self, result: Dict, output_dir: Optional[Union[str, Path]] = None) -> Optional[str]:
+        """予測結果をJSONファイルに保存"""
+        try:
+            if output_dir is None:
+                output_dir = PROJECT_ROOT / "outputs"
+            else:
+                output_dir = Path(output_dir)
+            output_dir.mkdir(exist_ok=True)
+            
+            # 日付別ファイル
+            date_str = result['prediction_date'].replace('-', '')
+            filename = f"predictions_{result['prediction_date']}.json"
+            filepath = output_dir / filename
+            
+            with open(filepath, 'w', encoding='utf-8') as f:
+                json.dump(result, f, ensure_ascii=False, indent=2)
+            
+            # 最新ファイルへのシンボリックリンク（Windowsではコピー）
+            latest_file = output_dir / "predictions_latest.json"
+            if latest_file.exists():
+                latest_file.unlink()
+            
+            # Windowsではシンボリックリンクの代わりにコピー
+            import shutil
+            shutil.copy2(filepath, latest_file)
+            
+            self.logger.info(f"予測結果を保存しました: {filepath}")
+            return str(filepath)
+            
+        except Exception as e:
+            self.logger.error(f"予測結果保存エラー: {e}")
+            return None
+
+    def run_complete_prediction(self, target_date: Optional[str] = None, venues: Optional[List[str]] = None, 
+                               fetch_data: bool = True, prediction_only: bool = False) -> Optional[Dict]:
+        """完全統合予測フロー"""
+        start_time = datetime.now()
+        
+        # target_dateの処理を統一
+        if not target_date:
+            target_date = datetime.now().strftime('%Y-%m-%d')
+        
+        self.logger.info(f"完全統合予測フロー開始: {target_date}")
+        self.logger.info(f"指定会場: {venues}")
+        
+        try:
+            # 1. 当日レーススケジュール取得
+            if fetch_data:
+                self.logger.info("=== ステップ1: レーススケジュール取得 ===")
+                schedule = self.fetch_today_race_schedule(target_date, venues)
+                if not any(schedule.values()):
+                    self.logger.warning("開催予定の会場がありません")
+                    return None
+            else:
+                self.logger.info("データ取得をスキップします")
+                schedule = {}
+            
+            # 2. 当日選手情報取得
+            if fetch_data:
+                self.logger.info("=== ステップ2: 選手情報取得 ===")
+                entries = self.fetch_today_race_entries(target_date, venues)
+                if not entries:
+                    self.logger.warning("選手情報が取得できませんでした")
+                    return None
+            else:
+                entries = {}
+            
+            # 3. 当日オッズ情報取得
+            if fetch_data:
+                self.logger.info("=== ステップ3: オッズ情報取得 ===")
+                odds = self.fetch_today_odds(target_date, venues)
+                if not odds:
+                    self.logger.warning("オッズ情報が取得できませんでした")
+                    return None
+            else:
+                odds = {}
+            
+            # 4. 3連単予測実行
+            self.logger.info("=== ステップ4: 3連単予測実行 ===")
+            if not self.load_model():
+                self.logger.error("モデルの読み込みに失敗しました")
+                return None
+            
+            predictions = []
+            successful_predictions = 0
+            
+            # 予測対象のレースを決定
+            if prediction_only:
+                # 予測のみの場合は既存データを使用
+                race_paths = self.get_race_data_paths(target_date, venues)
+                for venue, race_number, race_path, odds_path in race_paths:
+                    try:
+                        self.logger.info(f"予測中: {venue} {race_number}")
+                        
+                        # 3連単予測
+                        top_20_combinations = self.predict_trifecta_probabilities(race_path, odds_path)
+                        
+                        if top_20_combinations:
+                            # 購入方法の提案
+                            purchase_suggestions = self.generate_purchase_suggestions(top_20_combinations)
+                            
+                            # 合計確率
+                            total_probability = sum(c['probability'] for c in top_20_combinations)
+                            
+                            # レース情報を取得
+                            with open(race_path, 'r', encoding='utf-8') as f:
+                                race_data = json.load(f)
+                            
+                            race_info = race_data.get('race_info', {})
+                            race_time = race_info.get('race_time', '09:00')
+                            
+                            prediction = {
+                                'venue': venue,
+                                'venue_code': self.get_venue_code(venue),
+                                'race_number': int(race_number),
+                                'race_time': race_time,
+                                'top_20_combinations': top_20_combinations,
+                                'total_probability': total_probability,
+                                'purchase_suggestions': purchase_suggestions,
+                                'risk_level': self.calculate_risk_level(total_probability)
+                            }
+                            
+                            predictions.append(prediction)
+                            successful_predictions += 1
+                        
+                    except Exception as e:
+                        self.logger.error(f"レース予測エラー {venue} {race_number}: {e}")
+            else:
+                # 新規データでの予測
+                for race_key, entry_data in entries.items():
+                    try:
+                        venue, race_number = race_key.split('_')
+                        race_number = int(race_number)
+                        
+                        self.logger.info(f"予測中: {venue} {race_number}")
+                        
+                        # オッズデータを取得
+                        odds_data = odds.get(race_key)
+                        if not odds_data:
+                            self.logger.warning(f"オッズデータがありません: {race_key}")
+                            continue
+                        
+                        # 3連単予測（新規データ用）
+                        top_20_combinations = self.predict_trifecta_probabilities_from_data(entry_data, odds_data)
+                        
+                        if top_20_combinations:
+                            # 購入方法の提案
+                            purchase_suggestions = self.generate_purchase_suggestions(top_20_combinations)
+                            
+                            # 合計確率
+                            total_probability = sum(c['probability'] for c in top_20_combinations)
+                            
+                            # レース情報を取得
+                            race_info = entry_data.get('race_info', {})
+                            race_time = race_info.get('race_time', '09:00')
+                            
+                            prediction = {
+                                'venue': venue,
+                                'venue_code': self.get_venue_code(venue),
+                                'race_number': race_number,
+                                'race_time': race_time,
+                                'top_20_combinations': top_20_combinations,
+                                'total_probability': total_probability,
+                                'purchase_suggestions': purchase_suggestions,
+                                'risk_level': self.calculate_risk_level(total_probability)
+                            }
+                            
+                            predictions.append(prediction)
+                            successful_predictions += 1
+                        
+                    except Exception as e:
+                        self.logger.error(f"レース予測エラー {race_key}: {e}")
+            
+            # 5. 会場別サマリー
+            venue_summaries = self.generate_venue_summaries(predictions)
+            
+            # 6. 実行結果
+            execution_time = (datetime.now() - start_time).total_seconds() / 60
+            
+            result = {
+                'prediction_date': target_date,
+                'generated_at': datetime.now().isoformat(),
+                'model_info': self.model_info,
+                'execution_summary': {
+                    'total_venues': len(set(p['venue'] for p in predictions)),
+                    'total_races': len(predictions),
+                    'successful_predictions': successful_predictions,
+                    'execution_time_minutes': execution_time,
+                    'data_fetched': fetch_data,
+                    'prediction_only': prediction_only
+                },
+                'predictions': predictions,
+                'venue_summaries': venue_summaries
+            }
+            
+            self.logger.info(f"完全統合予測フロー完了: {successful_predictions}レース, {execution_time:.1f}分")
+            return result
+            
+        except Exception as e:
+            self.logger.error(f"完全統合予測フローエラー: {e}")
+            return None
+    
+    def predict_trifecta_probabilities_from_data(self, race_data: Dict, odds_data: Dict) -> List[Dict]:
+        """新規データから3連単の予測確率を計算（上位20組）"""
+        try:
+            # 状態ベクトルを生成（新規データ用）
+            state = self.vectorize_race_state_from_data(race_data, odds_data)
+            # torch.Tensorに変換
+            state_tensor = torch.tensor(state, dtype=torch.float32).unsqueeze(0)  # shape: (1, n_features)
+            # モデルで予測
+            if self.model is None or not hasattr(self.model, 'policy'):
+                self.logger.error("モデルがロードされていないか、policy属性がありません")
+                return []
+            policy = self.model.policy
+            get_dist = getattr(policy, 'get_distribution', None)
+            if get_dist is None:
+                self.logger.error("policyにget_distributionメソッドがありません")
+                return []
+            dist = get_dist(state_tensor)
+            distribution = getattr(dist, 'distribution', None)
+            if distribution is None or not hasattr(distribution, 'probs'):
+                self.logger.error("distributionにprobs属性がありません")
+                return []
+            action_probs = distribution.probs.detach().cpu().numpy()[0]
+            
+            # 3連単の組み合わせリスト（120通り）
+            trifecta_list = list(permutations(range(1, 7), 3))
+            
+            # 確率と組み合わせをペアにしてソート
+            probability_combinations = []
+            for i, prob in enumerate(action_probs):
+                trifecta = trifecta_list[i]
+                combination_str = f"{trifecta[0]}-{trifecta[1]}-{trifecta[2]}"
+                probability_combinations.append({
+                    'combination': combination_str,
+                    'probability': float(prob),
+                    'expected_value': self.calculate_expected_value_from_data(trifecta, odds_data),
+                    'rank': 0
+                })
+            
+            # 確率でソート（降順）
+            probability_combinations.sort(key=lambda x: x['probability'], reverse=True)
+            
+            # 上位20組を取得し、ランクを設定
+            top_20 = probability_combinations[:20]
+            for i, item in enumerate(top_20):
+                item['rank'] = i + 1
+            
+            return top_20
+            
+        except Exception as e:
+            self.logger.error(f"新規データ予測エラー: {e}")
+            return []
+    
+    def vectorize_race_state_from_data(self, race_data: Dict, odds_data: Dict) -> List[float]:
+        """新規データから状態ベクトルを生成（192次元）"""
+        try:
+            # 1. 各艇ごとの特徴量ベクトル（6艇 × 8特徴量 = 48次元）
+            rating_map = {'A1': [1,0,0,0], 'A2': [0,1,0,0], 'B1': [0,0,1,0], 'B2': [0,0,0,1]}
+            boats = []
+            
+            entries = race_data.get('race_entries', [])
+            for entry in entries:
+                pit = (entry['pit_number'] - 1) / 5  # 1-6→0-1
+                rating = rating_map.get(entry['racer']['current_rating'], [0,0,0,0])
+                
+                # None/NaNチェックとfillna(0)を追加
+                perf_all = entry['performance']['rate_in_all_stadium'] / 10 if entry['performance']['rate_in_all_stadium'] is not None else 0
+                perf_local = entry['performance']['rate_in_event_going_stadium'] / 10 if entry['performance']['rate_in_event_going_stadium'] is not None else 0
+                boat2 = entry['boat']['quinella_rate'] / 100 if entry['boat']['quinella_rate'] is not None else 0
+                boat3 = entry['boat']['trio_rate'] / 100 if entry['boat']['trio_rate'] is not None else 0
+                motor2 = entry['motor']['quinella_rate'] / 100 if entry['motor']['quinella_rate'] is not None else 0
+                motor3 = entry['motor']['trio_rate'] / 100 if entry['motor']['trio_rate'] is not None else 0
+                
+                # 正確に8次元のベクトルを作成
+                vec = [pit] + rating + [perf_all, perf_local, boat2, boat3, motor2, motor3]
+                # 次元チェック
+                if len(vec) != 8:
+                    self.logger.warning(f"艇特徴量次元エラー: {len(vec)} != 8, 艇{entry['pit_number']}")
+                    # 強制的に8次元に調整
+                    if len(vec) > 8:
+                        vec = vec[:8]
+                    else:
+                        vec = vec + [0.0] * (8 - len(vec))
+                boats.append(vec)
+            
+            # 6艇分のデータを確保（不足分はゼロで補完）
+            while len(boats) < 6:
+                boats.append([0.0] * 8)
+            boats = boats[:6]  # 最大6艇まで
+            boats = np.array(boats).flatten()  # shape: (48,)
+            self.logger.debug(f"boats次元: {len(boats)}")
+
+            # 2. レース全体特徴量（9次元に削減）
+            stadiums = ['KIRYU','TODA','EDOGAWA','HEIWAJIMA','TAMAGAWA','HAMANAKO','GAMAGORI','TOKONAME','TSU','MIKUNI','BIWAKO','SUMINOE','AMAGASAKI','NARUTO','MARUGAME','KOJIMA','MIYAJIMA','TOKUYAMA','SHIMONOSEKI','WAKAMATSU','ASHIYA','FUKUOKA','KARATSU','OMURA']
+            stadium_onehot = [1 if race_data['race_info']['stadium']==s else 0 for s in stadiums[:9]]  # 9会場のみ使用
+            race_num = (race_data['race_info']['race_number']-1)/11
+            laps = (race_data['race_info']['number_of_laps']-1)/4 if 'number_of_laps' in race_data['race_info'] and race_data['race_info']['number_of_laps'] is not None else 0
+            is_fixed = 1 if race_data['race_info'].get('is_course_fixed') else 0
+            race_feat = stadium_onehot + [race_num, laps, is_fixed]  # 9 + 3 = 12次元
+            self.logger.debug(f"race_feat次元: {len(race_feat)}")
+
+            # 3. オッズ特徴量（3連単120通り, log+minmax）
+            trifecta_list = list(permutations(range(1,7), 3))  # 1-indexed
+            odds_map = {tuple(o['betting_numbers']): o['ratio'] for o in odds_data.get('odds_data', [])}
+            odds_vec = [np.log(odds_map.get(t, 1)+1) for t in trifecta_list]  # log(odds+1)
+            # None/NaNチェックを追加
+            odds_vec = [o if o is not None and not np.isnan(o) else 0 for o in odds_vec]
+            odds_min, odds_max = min(odds_vec), max(odds_vec)
+            # ゼロ除算を防ぐ
+            if odds_max > odds_min:
+                odds_vec = [(o-odds_min)/(odds_max-odds_min) for o in odds_vec]
+            else:
+                odds_vec = [0 for o in odds_vec]
+            self.logger.debug(f"odds_vec次元: {len(odds_vec)}")
+
+            # 4. 結合（正確に192次元に調整）
+            # boats: 48次元, race_feat: 12次元, odds_vec: 120次元
+            # 合計: 48 + 12 + 120 = 180次元 → 192次元に調整
+            state_vec = np.concatenate([boats, race_feat, odds_vec])  # 48 + 12 + 120 = 180次元
+            self.logger.debug(f"結合後次元: {len(state_vec)}")
+            # 残り12次元をゼロで補完
+            state_vec = np.concatenate([state_vec, [0.0] * 12])
+            self.logger.debug(f"ゼロパディング後次元: {len(state_vec)}")
+            
+            # 次元チェック
+            if len(state_vec) != 192:
+                self.logger.error(f"状態ベクトル次元エラー: {len(state_vec)} != 192")
+                # 強制的に192次元に調整
+                if len(state_vec) > 192:
+                    state_vec = state_vec[:192]
+                else:
+                    state_vec = np.concatenate([state_vec, [0.0] * (192 - len(state_vec))])
+            
+            return state_vec.tolist()
+            
+        except Exception as e:
+            self.logger.error(f"状態ベクトル生成エラー: {e}")
+            # エラー時は192次元のゼロベクトルを返す
+            return [0.0] * 192
+    
+    def calculate_expected_value_from_data(self, trifecta: Tuple[int, int, int], odds_data: Dict) -> float:
+        """新規データから期待値を計算"""
+        try:
+            combination_str = f"{trifecta[0]}-{trifecta[1]}-{trifecta[2]}"
+            
+            # オッズデータから該当する組み合わせを検索
+            odds = 0
+            for odds_entry in odds_data.get('odds_data', []):
+                if odds_entry.get('combination') == combination_str:
+                    odds = odds_entry.get('ratio', 0)
+                    break
+            
+            # 期待値 = 確率 × オッズ - 1
+            # 確率は上位20組の確率を使用するため、ここでは簡易計算
+            return odds * 0.05 - 1  # 仮の確率0.05を使用
+            
+        except Exception as e:
+            self.logger.warning(f"期待値計算エラー: {e}")
+            return 0.0
+
+def main():
+    parser = argparse.ArgumentParser(description='予想ツール - 3連単予測・購入方法提案')
+    parser.add_argument('--predict-date', type=str, help='予測対象日 (YYYY-MM-DD)')
+    parser.add_argument('--venues', type=str, help='対象会場 (カンマ区切り)')
+    parser.add_argument('--model-path', type=str, help='モデルファイルパス')
+    parser.add_argument('--output-dir', type=str, help='出力ディレクトリ')
+    parser.add_argument('--verbose', action='store_true', help='詳細ログ出力')
+    
+    # 新規引数の追加
+    parser.add_argument('--fetch-data', action='store_true', help='当日データ取得を実行')
+    parser.add_argument('--prediction-only', action='store_true', help='予測のみ実行（既存データ使用）')
+    parser.add_argument('--risk-level', choices=['low', 'medium', 'high'], default='medium', help='リスクレベル')
+    parser.add_argument('--complete-flow', action='store_true', help='完全統合フローを実行')
+    
+    args = parser.parse_args()
+    
+    # ログレベル設定
+    log_level = logging.DEBUG if args.verbose else logging.INFO
+    
+    # 予想ツール初期化
+    tool = PredictionTool(log_level)
+    
+    # 会場リスト（正規化）
+    venues = None
+    if args.venues:
+        venues = [v.strip().upper() for v in args.venues.split(',')]
+        print(f'DEBUG: venues = {venues}')
+        tool.logger.info(f'指定会場: {venues}')
+    
+    # 実行モードの決定
+    if args.complete_flow:
+        # 完全統合フロー実行
+        print(f'DEBUG: calling run_complete_prediction with venues = {venues}')
+        result = tool.run_complete_prediction(
+            target_date=args.predict_date,
+            venues=venues,
+            fetch_data=args.fetch_data,
+            prediction_only=args.prediction_only
+        )
+    else:
+        # 従来の予測実行（--predict-dateが必須）
+        if not args.predict_date:
+            print("エラー: --predict-date が必要です")
+            return
+        
+        result = tool.predict_races(args.predict_date, venues)
+    
+    if result:
+        # 結果保存
+        output_path = tool.save_prediction_result(result, args.output_dir)
+        
+        if output_path:
+            print(f"\n=== 予測完了 ===")
+            print(f"予測日: {result['prediction_date']}")
+            print(f"対象レース数: {result['execution_summary']['total_races']}")
+            print(f"成功レース数: {result['execution_summary']['successful_predictions']}")
+            print(f"実行時間: {result['execution_summary']['execution_time_minutes']:.1f}分")
+            if 'data_fetched' in result['execution_summary']:
+                print(f"データ取得: {'あり' if result['execution_summary']['data_fetched'] else 'なし'}")
+                print(f"予測のみ: {'あり' if result['execution_summary']['prediction_only'] else 'なし'}")
+            print(f"結果ファイル: {output_path}")
+        else:
+            print("予測結果の保存に失敗しました")
+    else:
+        print("予測の実行に失敗しました")
+
+if __name__ == "__main__":
+    main() 

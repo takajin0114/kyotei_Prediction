@@ -14,7 +14,7 @@ from datetime import datetime
 # プロジェクトパスの追加
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from tools.optuna_optimizer import KyoteiOptunaOptimizer
+from kyotei_predictor.tools.ai.optuna_optimizer import KyoteiOptunaOptimizer
 
 def test_config_loading():
     """設定ファイルの読み込みテスト"""
