@@ -1,8 +1,23 @@
 # 競艇予測システム (Kyotei Predictor)
 
+> **注記**: 詳細な設計・運用ルールはdocs/配下に集約しています。全体像・詳細は[../README.md](../README.md)・[../docs/README.md](../docs/README.md)・各設計書を参照してください。
+
 ## 概要
 
 競艇レースの3連単予測を行う強化学習システムです。PPO（Proximal Policy Optimization）アルゴリズムと段階的報酬設計を使用して、的中率の向上を実現しています。
+
+## 主要ディレクトリ・参照先
+- [../README.md](../README.md) - プロジェクト全体概要・索引
+- [../docs/README.md](../docs/README.md) - ドキュメント全体ガイド
+- [../docs/integration_design.md](../docs/integration_design.md) - システム統合設計
+- [../docs/DEVELOPMENT_ROADMAP.md](../docs/DEVELOPMENT_ROADMAP.md) - 開発ロードマップ
+- [data/README.md](data/README.md) - データ運用ルール
+- [pipelines/README.md](pipelines/README.md) - パイプライン運用
+- [tools/README.md](tools/README.md) - ツール群運用
+
+---
+
+# 以下、従来の内容（構造・成果等）は現状維持
 
 ## 現在の成果
 

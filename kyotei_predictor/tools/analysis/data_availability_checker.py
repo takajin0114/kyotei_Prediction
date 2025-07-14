@@ -52,7 +52,7 @@ def check_data_availability():
         if file.startswith('race_data_') and file.endswith('.json'):
             race_files.append(os.path.join(data_dir, file))
     
-    print(f"📁 総レースデータファイル数: {len(race_files)}")
+    print(f"総レースデータファイル数: {len(race_files)}")
     print("=" * 60)
     
     # 着順情報が抽出できるレース数を確認
@@ -81,9 +81,12 @@ def check_data_availability():
             print(f"進捗: {i + 1}/{len(race_files)} レース処理済み")
     
     print("=" * 60)
-    print(f"✅ 着順情報抽出可能: {valid_races} レース")
-    print(f"❌ 着順情報抽出不可: {invalid_races} レース")
-    print(f"📊 利用率: {valid_races / len(race_files) * 100:.1f}%")
+    print(f"着順情報抽出可能: {valid_races} レース")
+    print(f"着順情報抽出不可: {invalid_races} レース")
+    if len(race_files) == 0:
+        print("利用率: データファイルがありません")
+        return
+    print(f"利用率: {valid_races / len(race_files) * 100:.1f}%")
     
     if error_details:
         print(f"\n📋 抽出不可レース詳細（最初の10件）:")

@@ -1,41 +1,70 @@
 
-# データ取得技術ドキュメント
+# データ取得バッチ運用・実行手順（2024年7月時点）
 
-## 📌 使用ライブラリ
-```python
-metaboatrace.scrapers==3.3.1  # 競艇データスクレイピング
-requests==2.31.0             # HTTP通信
-beautifulsoup4==4.12.2       # HTML解析
+## 概要
+- 競艇レースデータの一括取得・欠損再取得・品質チェックを自動化
+- 日付範囲・会場指定・並列数・進捗監視・エラー耐性を強化
+
+## 主な改善点（2024年7月）
+- 欠損再取得は「データ取得と同じ日付範囲のみ」対象に限定
+- 並列数デフォルト：会場8・レース16
+- 多重起動防止・進捗表示・エラー/中止レース自動判定
+- テスト運用時は短期間・単会場で検証、本番は全会場・長期間で一括実行
+
+## 実行例
+
+### テスト運用（KIRYU会場・2日間）
+```sh
+python -m kyotei_predictor.tools.batch.run_data_maintenance --start-date 2024-03-01 --end-date 2024-03-02 --stadiums KIRYU
+```
+- 欠損再取得も3/1,2のみ対象
+- データ取得・欠損再取得・品質チェックすべて正常完了
+
+### 本番運用（全会場・3,4月分）
+```sh
+python -m kyotei_predictor.tools.batch.run_data_maintenance --start-date 2024-03-01 --end-date 2024-04-30 --stadiums ALL
+```
+- 並列数デフォルト（会場8・レース16）が自動適用
+- 欠損再取得も3,4月分のみ対象
+- 進捗・エラーは標準出力・ログで逐次確認可能
+
+#### 実行ログ例（一部抜粋）
+```
+[CMD] python -u -m kyotei_predictor.tools.batch.batch_fetch_all_venues --start-date 2024-03-01 --end-date 2024-04-30 --stadiums ALL --schedule-workers 8 --race-workers 16 --is-child
+バッチ処理開始: 2025-07-11 22:14:10.365549
+全24会場バッチフェッチ開始（完全並列版）
+期間: 2024-03-01 〜 2024-04-30
+対象会場数: 24
+レート制限: 1秒
+開催日取得並列数: 8
+レース取得並列数: 16
+=== 全24会場 並列開催日取得開始 ===
+並列度: 8
+...
 ```
 
-## 🛠️ 主要クラス/機能
-### 1. RaceListScraper
-```python
-from metaboatrace.scrapers import RaceListScraper
-scraper = RaceListScraper()
-races = scraper.scrape(date="2024-06-15", stadium="桐生")
-```
-**取得データ**:
-- レース番号
-- 出走選手
-- 締切時刻
+## 運用指針・注意点
+- テスト時は短期間・単会場で動作確認→本番は全会場・長期間で一括実行
+- 欠損再取得は「指定範囲のみ」動作（過去の全欠損を再取得しない）
+- 進捗・エラーは標準出力・ログで逐次監視
+- 多重起動防止ロジックあり
+- 並列数は必要に応じて `--schedule-workers` `--race-workers` で上書き可
 
-### 2. RaceResultScraper
-```python
-from metaboatrace.scrapers import RaceResultScraper
-scraper = RaceResultScraper()
-results = scraper.scrape(date="2024-06-15", stadium="桐生", race_number=1)
-```
-**取得データ**:
-- 着順
-- スタートタイム
-- 払戻金
+## 一連の運用フロー・ノウハウ（2024年7月時点追記）
+1. データ取得バッチ（run_data_maintenance.py）で全会場・全期間のデータを一括取得
+2. 欠損再取得・品質チェックも同範囲で自動実行
+3. 予測ツール（prediction_tool.py）で全日・全会場分の予測をoutputs/predictions_YYYY-MM-DD.jsonとして保存
+4. Web表示機能（predictions.html）で最新・過去の予測結果を可視化
+5. 進捗・エラー・運用履歴は標準出力・ログ・outputs/scheduled_maintenance_history.jsonで逐次監視
+6. バッチ・予測・Web表示の仕様変更時は必ずドキュメントも更新
 
-## ⚠️ 注意事項
-1. アクセス間隔は5秒以上空ける
-2. 取得データは24時間以内に削除（規約準拠）
-3. エラー時は10分間リトライ待機
+### 運用履歴・改善点・トラブル事例
+- 欠損再取得が全期間対象になっていた問題を「指定範囲のみ」に修正
+- 多重起動防止・進捗表示・エラー耐性を強化
+- 品質チェックで「データ0件」時の0除算エラーを修正
+- scheduled_data_maintenance.pyで一括自動運用・履歴記録・アラート通知を実装
+- 予測ツール・Web表示機能の本格運用設計・運用フローをドキュメントに反映
 
-## 🔗 関連ファイル
-- `kyotei_predictor/race_data_fetcher.py`
-- `config/access_settings.yaml`
+---
+
+この運用・改善内容は今後も随時アップデート予定です。

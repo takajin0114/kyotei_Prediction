@@ -1,0 +1,23 @@
+{
+  "date": "2024-01-01",
+  "check_timestamp": "2025-07-11T14:51:32.092202",
+  "availability": {
+    "status": "no_data",
+    "message": "データディレクトリが存在しません: 2024-01-01"
+  },
+  "integrity": {
+    "status": "no_data",
+    "message": "データディレクトリが存在しません: 2024-01-01"
+  },
+  "anomalies": {
+    "status": "no_data",
+    "message": "データディレクトリが存在しません: 2024-01-01"
+  },
+  "summary": {
+    "overall_status": "excellent",
+    "total_issues": 0,
+    "recommendations": [
+      "データ品質は良好です"
+    ]
+  }
+}
