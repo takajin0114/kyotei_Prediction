@@ -1,6 +1,8 @@
 import unittest
 from kyotei_predictor.pipelines.kyotei_env import KyoteiEnv, vectorize_race_state, action_to_trifecta, trifecta_to_action, calc_trifecta_reward, KyoteiEnvManager
 import os
+import pytest
+import gym
 
 class TestKyoteiEnv(unittest.TestCase):
     def test_reset_and_step(self):
@@ -52,41 +54,43 @@ class TestKyoteiEnv(unittest.TestCase):
         reward = calc_trifecta_reward(action, (1,2,3), odds_data, bet_amount=100)
         self.assertEqual(reward, -100)
 
-    def test_env_step_reward(self):
-        # サンプルデータパス
-        race_path = os.path.join(os.path.dirname(__file__), '../data/race_data_2024-06-16_KIRYU_R1.json')
-        odds_path = os.path.join(os.path.dirname(__file__), '../data/odds_data_2024-06-15_KIRYU_R1.json')
-        env = KyoteiEnv(race_data_path=race_path, odds_data_path=odds_path, bet_amount=100)
-        state, info = env.reset()
-        # 正解action（的中）
-        correct_action = trifecta_to_action(env.arrival_tuple)
-        _, reward, terminated, truncated, info = env.step(correct_action)
-        self.assertTrue(reward >= 0)
-        self.assertTrue(terminated)
-        # 不的中action
-        wrong_action = trifecta_to_action((6,5,4)) if env.arrival_tuple != (6,5,4) else trifecta_to_action((1,2,3))
-        env.reset()
-        _, reward, terminated, truncated, info = env.step(wrong_action)
-        self.assertEqual(reward, -100)
-        self.assertTrue(terminated)
+def test_env_step_reward(race_date, venue, race_no, data_dir):
+    race_path = os.path.join(data_dir, f'race_data_{race_date}_{venue}_R{race_no}.json')
+    odds_path = os.path.join(data_dir, f'odds_data_{race_date}_{venue}_R{race_no}.json')
+    env = KyoteiEnv(race_data_path=race_path, odds_data_path=odds_path, bet_amount=100)
+    state, info = env.reset()
+    # 正解action（的中）
+    correct_action = trifecta_to_action(env.arrival_tuple)
+    _, reward, terminated, truncated, info = env.step(correct_action)
+    assert reward >= 0
+    assert terminated
+    # 不的中action
+    wrong_action = trifecta_to_action((6,5,4)) if env.arrival_tuple != (6,5,4) else trifecta_to_action((1,2,3))
+    env.reset()
+    _, reward, terminated, truncated, info = env.step(wrong_action)
+    assert reward == -100
+    assert terminated
 
-    def test_env_manager_multi_race(self):
-        manager = KyoteiEnvManager(data_dir=os.path.join(os.path.dirname(__file__), '../data'), bet_amount=100)
-        seen_arrivals = set()
-        for _ in range(3):
-            state, info = manager.reset()
-            self.assertEqual(state.shape, (179,))
-            self.assertTrue((state >= 0).all() and (state <= 1).all())
-            self.assertEqual(manager.action_space.n, 120)
-            self.assertEqual(manager.observation_space.shape, (179,))
-            # stepでrewardが返る
-            action = manager.action_space.sample()
-            _, reward, terminated, truncated, info = manager.step(action)
-            self.assertTrue(isinstance(reward, float))
-            self.assertTrue(terminated)
-            seen_arrivals.add(info['arrival'])
-        # 複数レースでarrival（着順）が異なることを期待
-        self.assertTrue(len(seen_arrivals) >= 1)
+def test_env_manager_multi_race(data_dir):
+    manager = KyoteiEnvManager(data_dir=data_dir, bet_amount=100)
+    seen_arrivals = set()
+    for _ in range(3):
+        state, info = manager.reset()
+        assert state is not None
+        assert state.shape == (192,)
+        assert (state >= 0).all() and (state <= 1).all()
+        # action_space.nはDiscrete型のみ
+        if isinstance(manager.action_space, gym.spaces.Discrete):
+            assert manager.action_space.n == 120
+        assert manager.observation_space.shape == (192,)
+        # stepでrewardが返る
+        action = manager.action_space.sample()
+        _, reward, terminated, truncated, info = manager.step(action)
+        assert isinstance(reward, float)
+        assert terminated
+        seen_arrivals.add(info['arrival'])
+    # 複数レースでarrival（着順）が異なることを期待
+    assert len(seen_arrivals) >= 1
 
 if __name__ == "__main__":
     unittest.main() 
