@@ -138,9 +138,13 @@ class TestWebDisplaySimple(unittest.TestCase):
                 timeout=5
             )
             self.assertEqual(response.status_code, 200)
-            self.assertIn("競艇予測結果表示", response.text)
+            # 明示的にUTF-8でデコード
+            content = response.content.decode('utf-8')
+            self.assertIn("競艇予測結果表示", content)
         except requests.exceptions.RequestException as e:
             self.fail(f"HTMLファイルにアクセスできません: {e}")
+        except UnicodeDecodeError as e:
+            self.fail(f"HTMLファイルのデコードに失敗: {e}")
     
     def test_json_data_accessible(self):
         """JSONデータがアクセス可能であることをテスト"""
