@@ -22,6 +22,13 @@ class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         # 静的ファイルのルートディレクトリを設定
         super().__init__(*args, directory=str(PROJECT_ROOT), **kwargs)
     
+    def guess_type(self, path):
+        """ファイルタイプを推測し、HTMLファイルにはcharset=UTF-8を追加"""
+        content_type = super().guess_type(path)
+        if content_type.startswith('text/html'):
+            return 'text/html; charset=utf-8'
+        return content_type
+    
     def end_headers(self):
         # CORSヘッダーを追加
         self.send_header('Access-Control-Allow-Origin', '*')
