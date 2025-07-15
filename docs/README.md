@@ -8,19 +8,7 @@
 - **現在の状況**: 予想ツールとしての実装完了、Web表示機能実装中
 - **最終目標**: 深夜自動実行による完全自動化システム
 
-## 🎯 主要機能
-
-### ✅ 実装完了
-- **データ取得システム**: バッチ処理による自動データ取得
-- **予想ツール**: 3連単予測、購入方法提案、JSON保存機能
-- **モデル開発**: PPOモデル、Optuna最適化、特徴量分析
-- **品質管理**: 自動品質チェック、異常検知
-
-### 🔄 実装中
-- **Web表示機能**: 静的HTMLでの予測結果表示
-
-### 📋 計画中
-- **深夜自動実行**: スケジューラ設定、運用監視
+> **詳細な現在の状況は [CURRENT_STATUS_SUMMARY.md](CURRENT_STATUS_SUMMARY.md) を参照してください**
 
 ## 📚 主要ドキュメント
 
@@ -30,7 +18,6 @@
 
 ### 予想ツール
 - [PREDICTION_TOOL_ROADMAP.md](PREDICTION_TOOL_ROADMAP.md) - 予想ツール運用ロードマップ
-- [PREDICTION_TOOL_IMPLEMENTATION_TASKS.md](PREDICTION_TOOL_IMPLEMENTATION_TASKS.md) - 実装タスク詳細
 
 ### システム・運用
 - [BATCH_SYSTEM_CURRENT_STATUS.md](BATCH_SYSTEM_CURRENT_STATUS.md) - バッチシステム状況
@@ -39,7 +26,6 @@
 
 ### 技術仕様
 - [data_acquisition.md](data_acquisition.md) - データ取得仕様
-- [site_analysis.md](site_analysis.md) - サイト分析
 
 ## 🚀 クイックスタート
 
@@ -59,6 +45,8 @@ python -m kyotei_predictor.tools.run_data_maintenance
 ```
 
 ## 📊 最新の進捗（2025-07-13）
+
+> **詳細な進捗・TODOは [NEXT_STEPS.md](NEXT_STEPS.md) を参照してください**
 
 - ✅ **予想ツール実装完了**: 統合実行フロー、3連単予測、購入方法提案、JSON保存機能
 - ✅ **テスト成功**: TAMAGAWA会場12レースでの予測成功確認
