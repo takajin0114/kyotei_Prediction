@@ -27,7 +27,7 @@ class KyoteiEnv(gym.Env):
         self.odds_data = []  # 必ずリストで初期化
         self.arrival_tuple = (0,0,0)  # 必ずタプルで初期化
 
-    def reset(self, *, seed=None, options=None):
+    def reset(self, *, seed=None, options=None) -> Tuple[np.ndarray | None, dict]:
         super().reset(seed=seed)
         # レースデータ・oddsデータ読み込み
         assert self.race_data_path and self.odds_data_path, "race_data_path, odds_data_pathを指定してください"
@@ -58,7 +58,7 @@ class KyoteiEnv(gym.Env):
         info = {}
         return self.state, info
 
-    def step(self, action):
+    def step(self, action: int) -> Tuple[np.ndarray | None, float, bool, bool, dict]:
         assert not self.terminated, "エピソードはすでに終了しています。resetしてください。"
         # 報酬計算
         reward = calc_trifecta_reward(action, self.arrival_tuple, self.odds_data, self.bet_amount)
@@ -67,14 +67,14 @@ class KyoteiEnv(gym.Env):
         info = {"arrival": self.arrival_tuple}
         return self.state, reward, self.terminated, truncated, info
 
-    def render(self, mode="human"):
+    def render(self, mode: str = "human") -> None:
         print(f"State: {self.state}")
 
-    def close(self):
+    def close(self) -> None:
         pass
 
 # --- サンプル: 1レース分の状態ベクトル生成関数 ---
-def vectorize_race_state(race_data_path, odds_data_path):
+def vectorize_race_state(race_data_path: str, odds_data_path: str) -> np.ndarray:
     """
     race_data/odds_dataのjsonから状態ベクトルを生成するサンプル関数。
     特徴量・前処理はrepo.mdの方針に従う。
@@ -207,14 +207,14 @@ class KyoteiEnvManager(gym.Env):
     """
     metadata = {"render_modes": ["human"]}
     
-    def __init__(self, data_dir="../data", bet_amount=100):
+    def __init__(self, data_dir: str = "../data", bet_amount: int = 100):
         super().__init__()
         self.data_dir = data_dir
         self.bet_amount = bet_amount
         self.pairs = self._find_race_odds_pairs()
         self.env = None
 
-    def _find_race_odds_pairs(self):
+    def _find_race_odds_pairs(self) -> list:
         print("[DEBUG] data_dir:", self.data_dir)
         print("[DEBUG] abspath(data_dir):", os.path.abspath(self.data_dir))
         race_files = glob.glob(os.path.join(self.data_dir, "race_data_*.json"))
@@ -269,7 +269,7 @@ class KyoteiEnvManager(gym.Env):
         print("[DEBUG] ペアリスト:", pairs)
         return pairs
 
-    def reset(self, *, seed=None, options=None):
+    def reset(self, *, seed=None, options=None) -> Tuple[np.ndarray | None, dict]:
         super().reset(seed=seed)
         # 有効なレースが見つかるまで試行
         max_attempts = 10
@@ -295,17 +295,17 @@ class KyoteiEnvManager(gym.Env):
         self.env.arrival_tuple = (1, 2, 3)
         return self.env.state, {}
 
-    def step(self, action):
+    def step(self, action: int) -> Tuple[np.ndarray | None, float, bool, bool, dict]:
         if self.env is None:
             raise RuntimeError("envが初期化されていません。reset()を先に呼んでください。")
         return self.env.step(action)
     
-    def render(self, mode="human"):
+    def render(self, mode: str = "human") -> None:
         if self.env is not None:
             return self.env.render(mode)
         return None
     
-    def close(self):
+    def close(self) -> None:
         if self.env is not None:
             self.env.close()
 
