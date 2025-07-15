@@ -143,6 +143,8 @@ outputs/
 ## 🎯 次のマイルストーン
 
 ### 短期目標（1-2週間）
+> **詳細なTODO・優先度は [NEXT_STEPS.md](NEXT_STEPS.md) を参照してください**
+
 1. **2024年3月データ取得完了**
    - 現在進行中のバッチ完了
    - データ品質チェック実行
@@ -175,6 +177,8 @@ outputs/
    - データ品質の維持
 
 ### 長期目標（3-6ヶ月）
+> **詳細な開発計画は [DEVELOPMENT_ROADMAP.md](DEVELOPMENT_ROADMAP.md) を参照してください**
+
 1. **ビジネス展開準備**
    - リアルタイム予測システム
    - 自動モデル更新
@@ -195,7 +199,6 @@ outputs/
 
 ### 分析・改善
 - [data_acquisition.md](data_acquisition.md) - データ取得仕様
-- [site_analysis.md](site_analysis.md) - サイト分析
 
 ---
 
