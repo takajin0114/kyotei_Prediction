@@ -9,7 +9,20 @@ import argparse
 import os
 
 
-def analyze_features(input_path, target_col=None, output_dir="outputs/feature_analysis"):
+def analyze_features(
+    input_path: str,
+    target_col: str | None = None,
+    output_dir: str = "outputs/feature_analysis"
+) -> None:
+    """
+    特徴量分布・相関・重要度分析を実行し、各種レポート・可視化を出力する。
+    Args:
+        input_path (str): 入力データ（CSV/JSONファイルパス）
+        target_col (str|None): 重要度分析用のターゲット列名（省略可）
+        output_dir (str): 出力ディレクトリ
+    Returns:
+        None
+    """
     os.makedirs(output_dir, exist_ok=True)
     # データ読み込み
     if input_path.endswith('.csv'):

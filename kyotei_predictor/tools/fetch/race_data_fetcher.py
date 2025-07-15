@@ -16,7 +16,7 @@ import re
 from typing import List, Optional, Any, Union
 import os
 
-def safe_extract_racers(html_file) -> List[Any]:
+def safe_extract_racers(html_file: StringIO) -> list[Any]:
     """
     選手データを安全に抽出する関数（エラーハンドリング付き）
     
@@ -40,7 +40,7 @@ def safe_extract_racers(html_file) -> List[Any]:
         print(f"⚠️  選手データ抽出エラー: {e}")
         return []
 
-def safe_extract_race_entries(html_file) -> List[Any]:
+def safe_extract_race_entries(html_file: StringIO) -> list[Any]:
     """
     レース出走データを安全に抽出する関数（エラーハンドリング付き）
     
@@ -56,7 +56,7 @@ def safe_extract_race_entries(html_file) -> List[Any]:
         print(f"⚠️  レース出走データ抽出エラー: {e}")
         return []
 
-def safe_extract_racer_performances(html_file) -> List[Any]:
+def safe_extract_racer_performances(html_file: StringIO) -> list[Any]:
     """
     選手成績データを安全に抽出する関数（エラーハンドリング付き）
     
@@ -72,7 +72,7 @@ def safe_extract_racer_performances(html_file) -> List[Any]:
         print(f"⚠️  選手成績データ抽出エラー: {e}")
         return []
 
-def safe_extract_boat_performances(html_file) -> List[Any]:
+def safe_extract_boat_performances(html_file: StringIO) -> list[Any]:
     """
     ボート成績データを安全に抽出する関数（エラーハンドリング付き）
     
@@ -88,7 +88,7 @@ def safe_extract_boat_performances(html_file) -> List[Any]:
         print(f"⚠️  ボート成績データ抽出エラー: {e}")
         return []
 
-def safe_extract_motor_performances(html_file) -> List[Any]:
+def safe_extract_motor_performances(html_file: StringIO) -> list[Any]:
     """
     モーター成績データを安全に抽出する関数（エラーハンドリング付き）
     
@@ -104,7 +104,11 @@ def safe_extract_motor_performances(html_file) -> List[Any]:
         print(f"⚠️  モーター成績データ抽出エラー: {e}")
         return []
 
-def fetch_race_entry_data(race_date, stadium_code, race_number):
+def fetch_race_entry_data(
+    race_date: date,
+    stadium_code: StadiumTelCode,
+    race_number: int
+) -> dict[str, Any] | None:
     """
     レース前情報（出走表）を取得する関数
     
@@ -246,7 +250,11 @@ def fetch_race_entry_data(race_date, stadium_code, race_number):
         print(f"詳細: {traceback.format_exc()}")
         return None
 
-def fetch_race_result_data(race_date, stadium_code, race_number):
+def fetch_race_result_data(
+    race_date: date,
+    stadium_code: StadiumTelCode,
+    race_number: int
+) -> dict[str, Any] | None:
     """
     レース結果を取得する関数
     
@@ -336,7 +344,11 @@ def fetch_race_result_data(race_date, stadium_code, race_number):
         print(f"詳細: {traceback.format_exc()}")
         return None
 
-def fetch_complete_race_data(race_date, stadium_code, race_number):
+def fetch_complete_race_data(
+    race_date: date,
+    stadium_code: StadiumTelCode,
+    race_number: int
+) -> dict[str, Any]:
     """
     1レースの完全なデータ（出走表 + 結果）を取得する関数
     
@@ -373,7 +385,7 @@ def fetch_complete_race_data(race_date, stadium_code, race_number):
     
     return complete_data
 
-def main():
+def main() -> None:
     """メイン実行関数"""
     print("競艇完全データ取得テスト")
     print("=" * 50)

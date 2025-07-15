@@ -39,13 +39,25 @@ class DataPreprocessor:
                 ('cat', categorical_transformer, categorical_features)
             ])
 
-    def fit_transform(self, raw_data):
-        """生データから特徴量を生成（1レース分）"""
+    def fit_transform(self, raw_data: dict) -> pd.DataFrame:
+        """
+        生データから特徴量を生成（1レース分）
+        Args:
+            raw_data (dict): レースデータの辞書
+        Returns:
+            pd.DataFrame: 特徴量データフレーム
+        """
         features = self._create_base_features(raw_data)
         return self.preprocessor.fit_transform(features)
 
-    def _create_base_features(self, race_data):
-        """競艇データから基本特徴量を抽出（存在する情報のみ）"""
+    def _create_base_features(self, race_data: dict) -> pd.DataFrame:
+        """
+        競艇データから基本特徴量を抽出（存在する情報のみ）
+        Args:
+            race_data (dict): レースデータの辞書
+        Returns:
+            pd.DataFrame: 特徴量データフレーム
+        """
         features = []
         for entry in race_data['race_entries']:
             features.append({
