@@ -1,0 +1,425 @@
+/* 競艇予測結果表示用CSS */
+
+:root {
+    /* 競艇らしい青系カラーパレット */
+    --primary-blue: #1e40af;
+    --secondary-blue: #3b82f6;
+    --light-blue: #dbeafe;
+    --accent-orange: #f59e0b;
+    --success-green: #10b981;
+    --warning-orange: #f59e0b;
+    --danger-red: #ef4444;
+    --gray-light: #f8fafc;
+    --gray-medium: #64748b;
+    --gray-dark: #334155;
+}
+
+body {
+    font-family: 'Segoe UI', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic UI', Meiryo, sans-serif;
+    background-color: var(--gray-light);
+    color: var(--gray-dark);
+}
+
+/* ナビゲーションバー */
+.navbar-brand {
+    font-weight: bold;
+    font-size: 1.25rem;
+}
+
+/* カードスタイル */
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    transition: box-shadow 0.3s ease;
+}
+
+.card:hover {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.card-header {
+    border-radius: 12px 12px 0 0 !important;
+    border-bottom: none;
+    font-weight: 600;
+}
+
+/* 会場セクション */
+.venue-section {
+    margin-bottom: 2rem;
+}
+
+.venue-header {
+    background: linear-gradient(135deg, var(--primary-blue), var(--secondary-blue));
+    color: white;
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+    margin-bottom: 1rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.venue-header h3 {
+    margin: 0;
+    font-weight: 600;
+}
+
+/* レースヘッダー */
+.race-header {
+    background: var(--light-blue);
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all 0.3s ease;
+    border-left: 4px solid var(--primary-blue);
+}
+
+.race-header:hover {
+    background: #bfdbfe;
+    transform: translateY(-1px);
+}
+
+.race-header .race-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.race-number {
+    font-weight: bold;
+    font-size: 1.1rem;
+    color: var(--primary-blue);
+}
+
+.race-time {
+    color: var(--gray-medium);
+    font-size: 0.9rem;
+}
+
+/* リスクレベル */
+.risk-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.risk-low {
+    background-color: var(--success-green);
+    color: white;
+}
+
+.risk-medium {
+    background-color: var(--warning-orange);
+    color: white;
+}
+
+.risk-high {
+    background-color: var(--danger-red);
+    color: white;
+}
+
+/* レース詳細 */
+.race-details {
+    display: none;
+    padding: 1.5rem;
+    background: white;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    border: 1px solid #e2e8f0;
+}
+
+.race-details.show {
+    display: block;
+}
+
+/* テーブルスタイル */
+.table {
+    margin-bottom: 1.5rem;
+}
+
+.table th {
+    background-color: var(--light-blue);
+    border-bottom: 2px solid var(--primary-blue);
+    font-weight: 600;
+    color: var(--primary-blue);
+    text-align: center;
+}
+
+.table td {
+    text-align: center;
+    vertical-align: middle;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+/* 確率バー */
+.probability-bar {
+    background-color: #e2e8f0;
+    border-radius: 10px;
+    height: 8px;
+    overflow: hidden;
+    margin-top: 0.25rem;
+}
+
+.probability-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--success-green), var(--accent-orange));
+    border-radius: 10px;
+    transition: width 0.3s ease;
+}
+
+/* 期待値表示 */
+.expected-value {
+    font-weight: 600;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
+
+.expected-value.positive {
+    background-color: #dcfce7;
+    color: var(--success-green);
+}
+
+.expected-value.negative {
+    background-color: #fee2e2;
+    color: var(--danger-red);
+}
+
+.expected-value.neutral {
+    background-color: #f1f5f9;
+    color: var(--gray-medium);
+}
+
+/* 購入提案カード */
+.purchase-suggestions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.suggestion-card {
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.suggestion-card:hover {
+    border-color: var(--primary-blue);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px -8px rgba(0, 0, 0, 0.1);
+}
+
+.suggestion-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary-blue), var(--secondary-blue));
+}
+
+.suggestion-type {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+}
+
+.suggestion-type.wheel {
+    background-color: #dbeafe;
+    color: var(--primary-blue);
+}
+
+.suggestion-type.box {
+    background-color: #fef3c7;
+    color: var(--accent-orange);
+}
+
+.suggestion-type.nagashi {
+    background-color: #dcfce7;
+    color: var(--success-green);
+}
+
+.suggestion-title {
+    font-weight: 600;
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    color: var(--gray-dark);
+}
+
+.suggestion-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.stat-item {
+    text-align: center;
+    padding: 0.5rem;
+    background-color: var(--gray-light);
+    border-radius: 6px;
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    color: var(--gray-medium);
+    margin-bottom: 0.25rem;
+}
+
+.stat-value {
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+/* 組み合わせリスト */
+.combinations-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.combination-tag {
+    background-color: var(--light-blue);
+    color: var(--primary-blue);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+/* フィルター */
+.form-select {
+    border-radius: 8px;
+    border: 2px solid #e2e8f0;
+    transition: border-color 0.3s ease;
+}
+
+.form-select:focus {
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 0.2rem rgba(30, 64, 175, 0.25);
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+    .race-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .race-header .race-info {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
+    }
+    
+    .purchase-suggestions {
+        grid-template-columns: 1fr;
+    }
+    
+    .suggestion-stats {
+        grid-template-columns: 1fr;
+    }
+    
+    .table-responsive {
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .container-fluid {
+        padding: 0.5rem;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+    
+    .venue-header {
+        padding: 0.75rem 1rem;
+    }
+    
+    .race-header {
+        padding: 0.75rem 1rem;
+    }
+    
+    .race-details {
+        padding: 1rem;
+    }
+}
+
+/* アニメーション */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease-out;
+}
+
+/* ローディング */
+.spinner-border {
+    width: 3rem;
+    height: 3rem;
+}
+
+/* エラーメッセージ */
+.alert {
+    border-radius: 8px;
+    border: none;
+}
+
+/* ランキングハイライト */
+.rank-1 {
+    background-color: #fef3c7;
+    border-left: 4px solid #f59e0b;
+}
+
+.rank-2 {
+    background-color: #f1f5f9;
+    border-left: 4px solid #64748b;
+}
+
+.rank-3 {
+    background-color: #fef2f2;
+    border-left: 4px solid #dc2626;
+}
+
+/* 確率の視覚的表現 */
+.probability-high {
+    color: var(--success-green);
+    font-weight: 600;
+}
+
+.probability-medium {
+    color: var(--warning-orange);
+    font-weight: 600;
+}
+
+.probability-low {
+    color: var(--gray-medium);
+    font-weight: 500;
+} 
