@@ -1,0 +1,1 @@
+print("[PRINT TEST] 標準出力は正常です") 

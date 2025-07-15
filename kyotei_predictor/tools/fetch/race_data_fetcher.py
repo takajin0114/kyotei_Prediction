@@ -230,6 +230,12 @@ def fetch_race_entry_data(race_date, stadium_code, race_number):
         print(f"出走表データ取得成功: {len(race_entries)}艇")
         return result
         
+    except requests.exceptions.RequestException as e:
+        print(f"[HTTPエラー] {e}")
+        if hasattr(e, 'response') and e.response is not None:
+            print(f"[HTTPステータス] {e.response.status_code}")
+            print(f"[レスポンス先頭500文字]\n{e.response.text[:500]}")
+        return None
     except Exception as e:
         import traceback
         # レース中止の場合は特別処理
@@ -314,6 +320,12 @@ def fetch_race_result_data(race_date, stadium_code, race_number):
         print(f"レース結果データ取得成功: {len(result['race_records'])}艇, 払戻{len(result['payoffs'])}件")
         return result
         
+    except requests.exceptions.RequestException as e:
+        print(f"[HTTPエラー] {e}")
+        if hasattr(e, 'response') and e.response is not None:
+            print(f"[HTTPステータス] {e.response.status_code}")
+            print(f"[レスポンス先頭500文字]\n{e.response.text[:500]}")
+        return None
     except Exception as e:
         import traceback
         # レース中止の場合は特別処理
@@ -419,4 +431,15 @@ def main():
         print("\nデータ取得に失敗しました。")
 
 if __name__ == "__main__":
-    main()
+    # テスト: 2024-01-04 KIRYU 第9レースのみ取得
+    from datetime import date
+    from metaboatrace.models.stadium import StadiumTelCode
+    test_date = date(2024, 1, 4)
+    stadium = StadiumTelCode.KIRYU
+    race_num = 9
+    print("[テスト実行] 2024-01-04 KIRYU 第9レース 完全データ取得")
+    complete_data = fetch_complete_race_data(test_date, stadium, race_num)
+    if complete_data:
+        print("[テスト結果] データ取得成功")
+    else:
+        print("[テスト結果] データ取得失敗")

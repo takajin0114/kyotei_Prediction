@@ -20,6 +20,7 @@ from metaboatrace.scrapers.official.website.v1707.pages.monthly_schedule_page.sc
 import argparse
 import threading
 import subprocess
+import atexit
 
 # グローバル進捗カウンタ
 progress_lock = threading.Lock()
@@ -124,6 +125,8 @@ def fetch_race_data_parallel(day, stadium, race_no, rate_limit_seconds=1, max_re
             try:
                 race_data = fetch_complete_race_data(day, stadium, race_no)
                 if race_data:
+                    # 保存先ディレクトリを作成
+                    os.makedirs(os.path.dirname(race_fpath), exist_ok=True)
                     with open(race_fpath, 'w', encoding='utf-8') as f:
                         json.dump(race_data, f, ensure_ascii=False, indent=2)
                     result['race_success'] = True
@@ -199,6 +202,8 @@ def fetch_race_data_parallel(day, stadium, race_no, rate_limit_seconds=1, max_re
             try:
                 odds_data = fetch_trifecta_odds(day, stadium, race_no)
                 if odds_data:
+                    # 保存先ディレクトリを作成
+                    os.makedirs(os.path.dirname(odds_fpath), exist_ok=True)
                     with open(odds_fpath, 'w', encoding='utf-8') as f:
                         json.dump(odds_data, f, ensure_ascii=False, indent=2)
                     result['odds_success'] = True
@@ -316,21 +321,28 @@ def get_all_stadiums():
 
 def main():
     global progress_total, progress_done
+    import os
+    import sys
+    import atexit
+    lockfile = 'batch_fetch_all_venues.lock'
     is_child = '--is-child' in sys.argv
     if not is_child:
-        # 多重起動チェックや進捗カウンタ初期化は親プロセスのみ
-        import os
-        import platform
-        if platform.system() == "Windows":
-            cmdline = f"batch_fetch_all_venues --start-date {sys.argv[sys.argv.index('--start-date')+1]}"
-            import subprocess
-            result = subprocess.run(f'wmic process where "CommandLine like \'%{cmdline}%\'" get ProcessId,CommandLine /FORMAT:LIST', shell=True, capture_output=True, text=True)
-            lines = [l for l in result.stdout.splitlines() if l.strip() and 'wmic' not in l and str(os.getpid()) not in l]
-            if len(lines) > 0:
-                print("[警告] すでに同じバッチが起動中です。多重起動は進捗表示が見えなくなる原因となります。", flush=True)
-                print("このウィンドウで進捗を見たい場合は、他のバッチを停止してから再実行してください。", flush=True)
-                sys.exit(1)
-        print("[INFO] このウィンドウで進捗がリアルタイム表示されます。", flush=True)
+        # ロックファイル方式で多重起動防止
+        if os.path.exists(lockfile):
+            print(f"[警告] すでにロックファイル {lockfile} が存在します。多重起動はできません。", flush=True)
+            print("このウィンドウで進捗を見たい場合は、他のバッチを停止してロックファイルを削除してから再実行してください。", flush=True)
+            sys.exit(1)
+        # ロックファイル作成（PIDと時刻を記録）
+        with open(lockfile, 'w') as f:
+            import datetime
+            f.write(f"pid={os.getpid()}\n")
+            f.write(f"start={datetime.datetime.now().isoformat()}\n")
+            f.write(f"cmd={' '.join(sys.argv)}\n")
+        def remove_lockfile():
+            if os.path.exists(lockfile):
+                os.remove(lockfile)
+        atexit.register(remove_lockfile)
+    print("[INFO] このウィンドウで進捗がリアルタイム表示されます。", flush=True)
     
     parser = argparse.ArgumentParser(description="全会場バッチデータ取得（完全並列版）")
     parser.add_argument('--start-date', type=str, required=True, help='取得開始日 (YYYY-MM-DD)')
