@@ -1,0 +1,373 @@
+/* システムステータスページ用CSS */
+
+:root {
+    --primary-color: #0d6efd;
+    --success-color: #198754;
+    --warning-color: #ffc107;
+    --danger-color: #dc3545;
+    --info-color: #0dcaf0;
+    --secondary-color: #6c757d;
+    --light-bg: #f8f9fa;
+    --border-color: #dee2e6;
+    --shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    --shadow-lg: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+body {
+    background-color: var(--light-bg);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* ナビゲーションバー */
+.navbar {
+    box-shadow: var(--shadow);
+}
+
+.navbar-brand {
+    font-weight: 600;
+}
+
+/* カードスタイル */
+.card {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    border-radius: 0.5rem;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg) !important;
+}
+
+.card-header {
+    border-bottom: 1px solid var(--border-color);
+    background-color: #fff !important;
+    border-radius: 0.5rem 0.5rem 0 0 !important;
+}
+
+.card-title {
+    font-weight: 600;
+    color: #495057;
+}
+
+/* ステータスカード */
+.status-card {
+    background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
+}
+
+.status-card .card-body {
+    padding: 1.5rem;
+}
+
+/* アイコンアニメーション */
+.fa-circle {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+/* プログレスバー */
+.progress {
+    height: 0.75rem;
+    border-radius: 0.375rem;
+    background-color: #e9ecef;
+}
+
+.progress-bar {
+    border-radius: 0.375rem;
+    transition: width 0.6s ease;
+}
+
+.progress-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+}
+
+.progress-detail {
+    font-size: 0.75rem;
+    color: var(--secondary-color);
+}
+
+/* エラーログ */
+.error-log-item {
+    padding: 0.75rem;
+    border-left: 3px solid var(--danger-color);
+    background-color: #fff;
+    margin-bottom: 0.5rem;
+    border-radius: 0.25rem;
+    transition: background-color 0.2s ease;
+}
+
+.error-log-item:hover {
+    background-color: #f8f9fa;
+}
+
+.error-log-time {
+    font-size: 0.75rem;
+    color: var(--secondary-color);
+}
+
+.error-log-message {
+    font-weight: 500;
+    color: #495057;
+}
+
+.error-log-type {
+    font-size: 0.75rem;
+    padding: 0.125rem 0.5rem;
+    border-radius: 0.25rem;
+    background-color: var(--danger-color);
+    color: white;
+}
+
+/* バッチ履歴 */
+.batch-history-item {
+    padding: 0.75rem;
+    border-left: 3px solid var(--info-color);
+    background-color: #fff;
+    margin-bottom: 0.5rem;
+    border-radius: 0.25rem;
+    transition: background-color 0.2s ease;
+}
+
+.batch-history-item:hover {
+    background-color: #f8f9fa;
+}
+
+.batch-history-time {
+    font-size: 0.75rem;
+    color: var(--secondary-color);
+}
+
+.batch-history-venue {
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+.batch-history-status {
+    font-size: 0.75rem;
+    padding: 0.125rem 0.5rem;
+    border-radius: 0.25rem;
+}
+
+.batch-history-status.success {
+    background-color: var(--success-color);
+    color: white;
+}
+
+.batch-history-status.error {
+    background-color: var(--danger-color);
+    color: white;
+}
+
+.batch-history-status.warning {
+    background-color: var(--warning-color);
+    color: #000;
+}
+
+/* モデル情報 */
+.model-info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.model-info-item:last-child {
+    border-bottom: none;
+}
+
+.model-info-label {
+    font-weight: 500;
+    color: #495057;
+}
+
+.model-info-value {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+/* データ品質 */
+.data-quality-item {
+    text-align: center;
+    padding: 1rem;
+}
+
+.data-quality-number {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+.data-quality-label {
+    font-size: 0.875rem;
+    color: var(--secondary-color);
+    margin-top: 0.25rem;
+}
+
+/* ボタン */
+.btn {
+    border-radius: 0.375rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow);
+}
+
+/* ローディングオーバーレイ */
+#loadingOverlay {
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+    .container-fluid {
+        padding: 1rem;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+    
+    .status-card .card-body {
+        padding: 1rem;
+    }
+    
+    .data-quality-number {
+        font-size: 1.5rem;
+    }
+    
+    .progress {
+        height: 0.5rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .navbar-brand {
+        font-size: 1rem;
+    }
+    
+    .h3 {
+        font-size: 1.5rem;
+    }
+    
+    .card-title {
+        font-size: 1rem;
+    }
+    
+    .btn {
+        font-size: 0.875rem;
+        padding: 0.375rem 0.75rem;
+    }
+}
+
+/* ダークモード対応（将来の拡張用） */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --light-bg: #212529;
+        --border-color: #495057;
+    }
+    
+    body {
+        background-color: var(--light-bg);
+        color: #f8f9fa;
+    }
+    
+    .card {
+        background-color: #343a40;
+        color: #f8f9fa;
+    }
+    
+    .card-header {
+        background-color: #495057 !important;
+        color: #f8f9fa;
+    }
+    
+    .card-title {
+        color: #f8f9fa;
+    }
+}
+
+/* アニメーション */
+.fade-in {
+    animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ステータスインジケーター */
+.status-indicator {
+    display: inline-block;
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 50%;
+    margin-right: 0.5rem;
+}
+
+.status-indicator.online {
+    background-color: var(--success-color);
+    box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.2);
+}
+
+.status-indicator.offline {
+    background-color: var(--danger-color);
+    box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.2);
+}
+
+.status-indicator.warning {
+    background-color: var(--warning-color);
+    box-shadow: 0 0 0 0.25rem rgba(255, 193, 7, 0.2);
+}
+
+/* ツールチップ */
+.tooltip-inner {
+    background-color: #495057;
+    border-radius: 0.25rem;
+}
+
+.tooltip.bs-tooltip-top .tooltip-arrow::before {
+    border-top-color: #495057;
+}
+
+/* スクロールバー */
+::-webkit-scrollbar {
+    width: 0.5rem;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 0.25rem;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 0.25rem;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+} 

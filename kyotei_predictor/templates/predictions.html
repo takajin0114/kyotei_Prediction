@@ -9,7 +9,7 @@
     <!-- Font Awesome for icons -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <!-- Custom CSS -->
-    <link href="/kyotei_predictor/static/css/predictions.css" rel="stylesheet">
+    <link href="/kyotei_predictor/static/css/predictions.css?v=20250716_3" rel="stylesheet">
 </head>
 <body>
     <!-- Header -->
@@ -78,23 +78,29 @@
                         </div>
                     </div>
 
-                    <!-- Venue Filter -->
+                    <!-- Search and Filter Section -->
                     <div class="row mb-3">
                         <div class="col-12">
                             <div class="card">
+                                <div class="card-header bg-light">
+                                    <h6 class="card-title mb-0">
+                                        <i class="fas fa-search me-2"></i>検索・フィルター
+                                    </h6>
+                                </div>
                                 <div class="card-body">
-                                    <div class="row align-items-center">
-                                        <div class="col-md-6">
+                                    <!-- Basic Search Row -->
+                                    <div class="row mb-3">
+                                        <div class="col-md-3">
                                             <label for="venue-filter" class="form-label">
-                                                <i class="fas fa-filter me-2"></i>会場フィルター
+                                                <i class="fas fa-map-marker-alt me-1"></i>会場名
                                             </label>
                                             <select class="form-select" id="venue-filter">
                                                 <option value="">全会場</option>
                                             </select>
                                         </div>
-                                        <div class="col-md-6">
+                                        <div class="col-md-3">
                                             <label for="risk-filter" class="form-label">
-                                                <i class="fas fa-shield-alt me-2"></i>リスクレベル
+                                                <i class="fas fa-shield-alt me-1"></i>リスクレベル
                                             </label>
                                             <select class="form-select" id="risk-filter">
                                                 <option value="">すべて</option>
@@ -102,6 +108,63 @@
                                                 <option value="MEDIUM">中リスク</option>
                                                 <option value="HIGH">高リスク</option>
                                             </select>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label for="race-number-filter" class="form-label">
+                                                <i class="fas fa-hashtag me-1"></i>レース番号
+                                            </label>
+                                            <input type="number" class="form-control" id="race-number-filter" min="1" max="12" placeholder="1-12">
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Filter Conditions Row -->
+                                    <div class="row mb-3">
+                                        <div class="col-md-12">
+                                            <label class="form-label">
+                                                <i class="fas fa-filter me-1"></i>フィルター条件
+                                            </label>
+                                            <div class="d-flex gap-3">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="hit-only-filter">
+                                                    <label class="form-check-label" for="hit-only-filter">
+                                                        的中のみ
+                                                    </label>
+                                                </div>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="high-expected-value-filter">
+                                                    <label class="form-check-label" for="high-expected-value-filter">
+                                                        高期待値のみ
+                                                    </label>
+                                                </div>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="odds-available-filter">
+                                                    <label class="form-check-label" for="odds-available-filter">
+                                                        オッズ取得済み
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Action Buttons Row -->
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <div class="d-flex gap-2">
+                                                <button class="btn btn-primary" id="search-button">
+                                                    <i class="fas fa-search me-1"></i>検索
+                                                </button>
+                                                <button class="btn btn-secondary" id="clear-search-button">
+                                                    <i class="fas fa-times me-1"></i>クリア
+                                                </button>
+                                                <button class="btn btn-outline-info" id="export-button">
+                                                    <i class="fas fa-download me-1"></i>エクスポート
+                                                </button>
+                                                <div class="ms-auto">
+                                                    <span class="text-muted small" id="search-result-count">
+                                                        検索結果: 0件
+                                                    </span>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -135,17 +198,21 @@
                         <span id="past-error-text">過去分予測データの取得に失敗しました</span>
                     </div>
 
-                    <!-- Date Selection -->
+                    <!-- Past Summary and Date Selection Section -->
                     <div class="row mb-4">
                         <div class="col-12">
                             <div class="card">
-                                <div class="card-header bg-secondary text-white">
+                                <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
                                     <h5 class="card-title mb-0">
-                                        <i class="fas fa-calendar me-2"></i>過去分予測データ選択
+                                        <i class="fas fa-calendar me-2"></i>過去分予測データ
                                     </h5>
+                                    <button type="button" class="btn btn-outline-light btn-sm" data-bs-toggle="modal" data-bs-target="#summaryHelpModal">
+                                        <i class="fas fa-question-circle me-1"></i>説明
+                                    </button>
                                 </div>
                                 <div class="card-body">
-                                    <div class="row align-items-center">
+                                    <!-- Date Selection Row -->
+                                    <div class="row mb-4">
                                         <div class="col-md-6">
                                             <label for="past-date-selector" class="form-label">
                                                 <i class="fas fa-calendar-day me-2"></i>予測日選択
@@ -158,46 +225,30 @@
                                             </button>
                                         </div>
                                     </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Past Predictions Content -->
-                    <div id="past-predictions-content" class="d-none">
-                        <!-- Past Summary Section -->
-                        <div class="row mb-4">
-                            <div class="col-12">
-                                <div class="card">
-                                    <div class="card-header bg-secondary text-white">
-                                        <h5 class="card-title mb-0">
-                                            <i class="fas fa-chart-line me-2"></i>過去分集計サマリー
-                                        </h5>
-                                    </div>
-                                    <div class="card-body" id="past-summary-section">
+                                    
+                                    <!-- Summary Section -->
+                                    <div id="past-summary-section" class="mb-4">
                                         <!-- 過去分の集計サマリーを表示 -->
                                     </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Past Venue Filter -->
-                        <div class="row mb-3">
-                            <div class="col-12">
-                                <div class="card">
-                                    <div class="card-body">
-                                        <div class="row align-items-center">
-                                            <div class="col-md-6">
+                                    
+                                    <!-- Search and Filter Section -->
+                                    <div class="border-top pt-4">
+                                        <h6 class="mb-3">
+                                            <i class="fas fa-search me-2"></i>検索・フィルター
+                                        </h6>
+                                        <!-- Basic Search Row -->
+                                        <div class="row mb-3">
+                                            <div class="col-md-4">
                                                 <label for="past-venue-filter" class="form-label">
-                                                    <i class="fas fa-filter me-2"></i>会場フィルター
+                                                    <i class="fas fa-map-marker-alt me-1"></i>会場名
                                                 </label>
                                                 <select class="form-select" id="past-venue-filter">
                                                     <option value="">全会場</option>
                                                 </select>
                                             </div>
-                                            <div class="col-md-6">
+                                            <div class="col-md-4">
                                                 <label for="past-risk-filter" class="form-label">
-                                                    <i class="fas fa-shield-alt me-2"></i>リスクレベル
+                                                    <i class="fas fa-shield-alt me-1"></i>リスクレベル
                                                 </label>
                                                 <select class="form-select" id="past-risk-filter">
                                                     <option value="">すべて</option>
@@ -206,12 +257,84 @@
                                                     <option value="HIGH">高リスク</option>
                                                 </select>
                                             </div>
+                                            <div class="col-md-4">
+                                                <label for="past-race-number-filter" class="form-label">
+                                                    <i class="fas fa-hashtag me-1"></i>レース番号
+                                                </label>
+                                                <input type="number" class="form-control" id="past-race-number-filter" min="1" max="12" placeholder="1-12">
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Advanced Search Row -->
+                                        <div class="row mb-3">
+                                            <div class="col-md-3">
+                                                <label for="past-boat-number-filter" class="form-label">
+                                                    <i class="fas fa-ship me-1"></i>艇番
+                                                </label>
+                                                <input type="text" class="form-control" id="past-boat-number-filter" placeholder="例: 1-2-3">
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label for="past-player-name-filter" class="form-label">
+                                                    <i class="fas fa-user me-1"></i>選手名
+                                                </label>
+                                                <input type="text" class="form-control" id="past-player-name-filter" placeholder="選手名を入力">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label">
+                                                    <i class="fas fa-filter me-1"></i>フィルター条件
+                                                </label>
+                                                <div class="d-flex gap-3">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" id="past-hit-only-filter">
+                                                        <label class="form-check-label" for="past-hit-only-filter">
+                                                            的中のみ
+                                                        </label>
+                                                    </div>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" id="past-high-expected-value-filter">
+                                                        <label class="form-check-label" for="past-high-expected-value-filter">
+                                                            高期待値のみ
+                                                        </label>
+                                                    </div>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" id="past-odds-available-filter">
+                                                        <label class="form-check-label" for="past-odds-available-filter">
+                                                            オッズ取得済み
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Action Buttons Row -->
+                                        <div class="row">
+                                            <div class="col-12">
+                                                <div class="d-flex gap-2">
+                                                    <button class="btn btn-primary" id="past-search-button">
+                                                        <i class="fas fa-search me-1"></i>検索
+                                                    </button>
+                                                    <button class="btn btn-secondary" id="past-clear-search-button">
+                                                        <i class="fas fa-times me-1"></i>クリア
+                                                    </button>
+                                                    <button class="btn btn-outline-info" id="past-export-button">
+                                                        <i class="fas fa-download me-1"></i>エクスポート
+                                                    </button>
+                                                    <div class="ms-auto">
+                                                        <span class="text-muted small" id="past-search-result-count">
+                                                            検索結果: 0件
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
+                    </div>
 
+                    <!-- Past Predictions Content -->
+                    <div id="past-predictions-content" class="d-none">
                         <!-- Past Venues Section -->
                         <div class="row">
                             <div class="col-12">
@@ -233,10 +356,79 @@
         </div>
     </div>
 
+    <!-- Summary Help Modal -->
+    <div class="modal fade" id="summaryHelpModal" tabindex="-1" aria-labelledby="summaryHelpModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="summaryHelpModalLabel">
+                        <i class="fas fa-info-circle me-2"></i>予測データ概要の説明
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-primary">基本情報</h6>
+                            <ul class="list-unstyled">
+                                <li class="mb-2">
+                                    <strong>対象会場数:</strong><br>
+                                    <small class="text-muted">この予測データに含まれるボートレース会場の数</small>
+                                </li>
+                                <li class="mb-2">
+                                    <strong>予測レース数:</strong><br>
+                                    <small class="text-muted">この予測データに含まれる全レースの数</small>
+                                </li>
+                                <li class="mb-2">
+                                    <strong>成功レース数:</strong><br>
+                                    <small class="text-muted">予測処理が正常に完了したレースの数</small>
+                                </li>
+                                <li class="mb-2">
+                                    <strong>実行時間(分):</strong><br>
+                                    <small class="text-muted">予測データ生成にかかった処理時間</small>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-primary">詳細情報</h6>
+                            <ul class="list-unstyled">
+                                <li class="mb-2">
+                                    <strong>予測日:</strong><br>
+                                    <small class="text-muted">このデータが対象とするレース開催日</small>
+                                </li>
+                                <li class="mb-2">
+                                    <strong>生成日時:</strong><br>
+                                    <small class="text-muted">この予測データが生成された日時</small>
+                                </li>
+                                <li class="mb-2">
+                                    <strong>モデル:</strong><br>
+                                    <small class="text-muted">使用した機械学習モデル名とバージョン</small>
+                                </li>
+                                <li class="mb-2">
+                                    <strong>学習データ:</strong><br>
+                                    <small class="text-muted">モデルが学習したデータの最終日付</small>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="alert alert-info">
+                        <i class="fas fa-lightbulb me-2"></i>
+                        <strong>注意:</strong> この概要は選択した日付の予測データファイル全体の情報を表示しています。
+                        過去の全予測結果の集計ではありません。
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">閉じる</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Custom JS -->
-    <script src="/kyotei_predictor/static/js/predictions.js"></script>
+    <script src="/kyotei_predictor/static/js/predictions.js?v=20250716_10"></script>
     <!-- Initialize PredictionsViewer -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {

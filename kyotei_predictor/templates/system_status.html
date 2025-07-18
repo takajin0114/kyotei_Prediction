@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>システムステータス - 競艇予測システム</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="/kyotei_predictor/static/css/system_status.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-tachometer-alt me-2"></i>
+                競艇予測システム - 管理画面
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/kyotei_predictor/templates/predictions.html">
+                    <i class="fas fa-chart-line me-1"></i>予測表示
+                </a>
+                <a class="nav-link active" href="#">
+                    <i class="fas fa-cogs me-1"></i>システム状況
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col">
+                <h1 class="h3">
+                    <i class="fas fa-tachometer-alt text-primary me-2"></i>
+                    システムステータス
+                </h1>
+                <p class="text-muted">システムの稼働状況・バッチ処理・エラー監視</p>
+            </div>
+            <div class="col-auto">
+                <button id="refreshBtn" class="btn btn-outline-primary">
+                    <i class="fas fa-sync-alt me-1"></i>更新
+                </button>
+                <span id="lastUpdate" class="text-muted ms-2">最終更新: --</span>
+            </div>
+        </div>
+
+        <!-- System Status Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0">
+                                <i id="systemStatusIcon" class="fas fa-circle text-success fa-2x"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h6 class="card-title mb-1">システム状態</h6>
+                                <h4 id="systemStatus" class="mb-0">稼働中</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-tasks text-info fa-2x"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h6 class="card-title mb-1">バッチ進捗</h6>
+                                <h4 id="batchProgress" class="mb-0">--</h4>
+                                <small class="text-muted" id="batchProgressDetail">--</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-exclamation-triangle text-warning fa-2x"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h6 class="card-title mb-1">エラー件数</h6>
+                                <h4 id="errorCount" class="mb-0">--</h4>
+                                <small class="text-muted">直近24時間</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-clock text-secondary fa-2x"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h6 class="card-title mb-1">最終実行</h6>
+                                <h4 id="lastExecution" class="mb-0">--</h4>
+                                <small class="text-muted" id="lastExecutionDetail">--</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Progress and Charts -->
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-chart-bar text-primary me-2"></i>
+                            バッチ処理進捗
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="progressChart" class="mb-3">
+                            <!-- Progress bars will be inserted here -->
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>会場別進捗</h6>
+                                <div id="venueProgress" class="small">
+                                    <!-- Venue progress will be inserted here -->
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>日別進捗</h6>
+                                <div id="dateProgress" class="small">
+                                    <!-- Date progress will be inserted here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-brain text-success me-2"></i>
+                            モデル情報
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="modelInfo">
+                            <!-- Model information will be inserted here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Error Logs and Batch History -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-exclamation-circle text-danger me-2"></i>
+                            エラーログ（直近10件）
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="errorLogs" class="small">
+                            <!-- Error logs will be inserted here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-history text-info me-2"></i>
+                            バッチ履歴（直近10件）
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="batchHistory" class="small">
+                            <!-- Batch history will be inserted here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Quality Summary -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-database text-warning me-2"></i>
+                            データ品質サマリー
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="dataQuality" class="row">
+                            <!-- Data quality information will be inserted here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="position-fixed top-0 start-0 w-100 h-100 bg-white bg-opacity-75 d-none" style="z-index: 9999;">
+        <div class="d-flex justify-content-center align-items-center h-100">
+            <div class="text-center">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">データを更新中...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JS -->
+    <script src="/kyotei_predictor/static/js/system_status.js"></script>
+</body>
+</html> 

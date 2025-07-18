@@ -11,6 +11,7 @@ class PredictionsViewer {
         this.filteredPastData = null;
         this.venues = new Set();
         this.pastVenues = new Set();
+        this.combinationSortStates = {}; // { '<venue>-<race_number>': { column: 'rank', order: 'asc' } }
         this.init();
     }
 
@@ -54,29 +55,102 @@ class PredictionsViewer {
         document.getElementById('past-tab').addEventListener('shown.bs.tab', (e) => {
             this.onPastTabShown();
         });
+
+        // Phase 4.1: 検索・フィルター機能のイベントリスナー
+        this.setupSearchEventListeners();
     }
 
     /**
-     * 過去分日付選択器の設定
+     * 検索・フィルター機能のイベントリスナー設定
+     */
+    setupSearchEventListeners() {
+        // 本日分検索・フィルター
+        document.getElementById('search-button').addEventListener('click', (e) => {
+            this.performSearch();
+        });
+
+        document.getElementById('clear-search-button').addEventListener('click', (e) => {
+            this.clearSearch();
+        });
+
+        document.getElementById('export-button').addEventListener('click', (e) => {
+            this.exportData();
+        });
+
+        // 過去分検索・フィルター
+        document.getElementById('past-search-button').addEventListener('click', (e) => {
+            this.performPastSearch();
+        });
+
+        document.getElementById('past-clear-search-button').addEventListener('click', (e) => {
+            this.clearPastSearch();
+        });
+
+        document.getElementById('past-export-button').addEventListener('click', (e) => {
+            this.exportPastData();
+        });
+
+        // Enterキーでの検索実行
+        const searchInputs = [
+            'date-filter', 'race-number-filter', 'boat-number-filter', 'player-name-filter',
+            'past-race-number-filter', 'past-boat-number-filter', 'past-player-name-filter'
+        ];
+
+        searchInputs.forEach(inputId => {
+            const element = document.getElementById(inputId);
+            if (element) {
+                element.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (inputId.startsWith('past-')) {
+                            this.performPastSearch();
+                        } else {
+                            this.performSearch();
+                        }
+                    }
+                });
+            }
+        });
+    }
+
+    /**
+     * 過去分日付選択の設定
      */
     setupPastDateSelector() {
         const dateSelector = document.getElementById('past-date-selector');
-        const today = new Date();
-        const maxDate = new Date(today.getTime() - (24 * 60 * 60 * 1000)); // 昨日まで
-        dateSelector.max = maxDate.toISOString().split('T')[0];
-        
-        // デフォルトで昨日の日付を設定
-        const yesterday = new Date(today.getTime() - (24 * 60 * 60 * 1000));
-        dateSelector.value = yesterday.toISOString().split('T')[0];
+        if (dateSelector) {
+            // アクセス日の前日をデフォルトに設定
+            const today = new Date();
+            const yesterday = new Date(today);
+            yesterday.setDate(today.getDate() - 1);
+            const yesterdayStr = yesterday.toISOString().split('T')[0];
+            dateSelector.value = yesterdayStr;
+            
+            // 日付変更時のイベントリスナー
+            dateSelector.addEventListener('change', (e) => {
+                const selectedDate = e.target.value;
+                if (selectedDate) {
+                    this.loadPastPredictions(selectedDate);
+                }
+            });
+        }
     }
 
     /**
-     * 過去分タブが表示された時の処理
+     * 過去分タブ表示時の処理
      */
     onPastTabShown() {
-        // 過去分データが読み込まれていない場合は、デフォルトで昨日のデータを読み込む
-        if (!this.pastData) {
-            this.loadPastPredictions();
+        console.log('過去分タブが表示されました');
+        const dateSelector = document.getElementById('past-date-selector');
+        if (dateSelector && dateSelector.value) {
+            this.loadPastPredictions(dateSelector.value);
+        } else {
+            // デフォルトで前日のデータを読み込み
+            const today = new Date();
+            const yesterday = new Date(today);
+            yesterday.setDate(today.getDate() - 1);
+            const yesterdayStr = yesterday.toISOString().split('T')[0];
+            this.loadPastPredictions(yesterdayStr);
         }
     }
 
@@ -121,42 +195,52 @@ class PredictionsViewer {
     /**
      * 過去分予測データの読み込み
      */
-    async loadPastPredictions() {
+    async loadPastPredictions(selectedDate = null) {
         try {
-            const selectedDate = document.getElementById('past-date-selector').value;
+            if (!selectedDate) {
+                const dateSelector = document.getElementById('past-date-selector');
+                selectedDate = dateSelector ? dateSelector.value : null;
+            }
+            
             if (!selectedDate) {
                 alert('日付を選択してください。');
                 return;
             }
 
-            console.log('loadPastPredictions: 開始', selectedDate);
             this.showPastLoading(true);
             this.showPastError(false);
+            this.showPastPredictionsContent(false);
 
             // 過去分データファイルのパスを構築
-            const fileName = `predictions_${selectedDate}.json`;
-            const response = await fetch(`/outputs/${fileName}`);
-            
+            const dateStr = selectedDate.replace(/-/g, '');
+            const dataUrl = `/outputs/predictions_${dateStr}.json`;
+
+            console.log('過去分データ読み込み開始:', dataUrl);
+
+            const response = await fetch(dataUrl);
             if (!response.ok) {
-                throw new Error(`過去分データが見つかりません: ${fileName}`);
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
 
-            this.pastData = await response.json();
-            console.log('loadPastPredictions: データ取得成功', this.pastData);
-            
-            this.filteredPastData = this.pastData;
+            const data = await response.json();
+            console.log('過去分データ取得成功:', data);
+
+            this.pastData = data;
+            this.filteredPastData = { ...data };
+
             this.extractPastVenues();
             this.setupPastFilters();
             this.renderPastPredictions();
-            this.showPastPredictionsContent(true);
+
             this.showPastLoading(false);
-            console.log('loadPastPredictions: 完了');
+            this.showPastPredictionsContent(true);
+
+            console.log('過去分データ読み込み完了');
 
         } catch (error) {
-            console.error('過去分予測データの読み込みに失敗:', error);
-            this.showPastError(true, error.message);
+            console.error('過去分データ読み込みエラー:', error);
             this.showPastLoading(false);
-            this.showPastPredictionsContent(false);
+            this.showPastError(true, `過去分予測データの取得に失敗しました: ${error.message}`);
         }
     }
 
@@ -211,7 +295,7 @@ class PredictionsViewer {
     }
 
     /**
-     * データのフィルタリング
+     * データのフィルタリング（基本フィルター）
      */
     filterData() {
         const venueFilter = document.getElementById('venue-filter').value;
@@ -227,10 +311,11 @@ class PredictionsViewer {
         };
 
         this.renderPredictions();
+        this.updateSearchResultCount();
     }
 
     /**
-     * 過去分データのフィルタリング
+     * 過去分データのフィルタリング（基本フィルター）
      */
     filterPastData() {
         const venueFilter = document.getElementById('past-venue-filter').value;
@@ -246,6 +331,314 @@ class PredictionsViewer {
         };
 
         this.renderPastPredictions();
+        this.updatePastSearchResultCount();
+    }
+
+    /**
+     * 高度な検索・フィルター機能
+     */
+    performSearch() {
+        if (!this.data) return;
+
+        const searchCriteria = this.getSearchCriteria();
+        const filteredPredictions = this.data.predictions.filter(prediction => {
+            return this.matchesSearchCriteria(prediction, searchCriteria);
+        });
+
+        this.filteredData = {
+            ...this.data,
+            predictions: filteredPredictions
+        };
+
+        this.renderPredictions();
+        this.updateSearchResultCount();
+        console.log('検索実行完了:', filteredPredictions.length, '件');
+    }
+
+    /**
+     * 過去分の高度な検索・フィルター機能
+     */
+    performPastSearch() {
+        if (!this.pastData) return;
+
+        const searchCriteria = this.getPastSearchCriteria();
+        const filteredPredictions = this.pastData.predictions.filter(prediction => {
+            return this.matchesPastSearchCriteria(prediction, searchCriteria);
+        });
+
+        this.filteredPastData = {
+            ...this.pastData,
+            predictions: filteredPredictions
+        };
+
+        this.renderPastPredictions();
+        this.updatePastSearchResultCount();
+        console.log('過去分検索実行完了:', filteredPredictions.length, '件');
+    }
+
+    /**
+     * 検索条件の取得
+     */
+    getSearchCriteria() {
+        return {
+            venue: document.getElementById('venue-filter').value,
+            riskLevel: document.getElementById('risk-filter').value,
+            raceNumber: document.getElementById('race-number-filter').value,
+            hitOnly: document.getElementById('hit-only-filter').checked,
+            highExpectedValue: document.getElementById('high-expected-value-filter').checked,
+            oddsAvailable: document.getElementById('odds-available-filter').checked
+        };
+    }
+
+    /**
+     * 過去分検索条件の取得
+     */
+    getPastSearchCriteria() {
+        return {
+            venue: document.getElementById('past-venue-filter').value,
+            riskLevel: document.getElementById('past-risk-filter').value,
+            raceNumber: document.getElementById('past-race-number-filter').value,
+            boatNumber: document.getElementById('past-boat-number-filter').value,
+            playerName: document.getElementById('past-player-name-filter').value,
+            hitOnly: document.getElementById('past-hit-only-filter').checked,
+            highExpectedValue: document.getElementById('past-high-expected-value-filter').checked,
+            oddsAvailable: document.getElementById('past-odds-available-filter').checked
+        };
+    }
+
+    /**
+     * 検索条件とのマッチング
+     */
+    matchesSearchCriteria(prediction, criteria) {
+        // 会場名フィルター
+        if (criteria.venue && prediction.venue !== criteria.venue) {
+            return false;
+        }
+
+        // リスクレベルフィルター
+        if (criteria.riskLevel && prediction.risk_level !== criteria.riskLevel) {
+            return false;
+        }
+
+        // レース番号フィルター
+        if (criteria.raceNumber) {
+            const raceNum = parseInt(criteria.raceNumber);
+            if (prediction.race_number !== raceNum) {
+                return false;
+            }
+        }
+
+        // 的中のみフィルター
+        if (criteria.hitOnly) {
+            // 的中判定は現在のデータ構造では実装困難のためスキップ
+            // TODO: 的中データが追加されたら実装
+        }
+
+        // 高期待値のみフィルター
+        if (criteria.highExpectedValue) {
+            const hasHighExpectedValue = prediction.top_20_combinations.some(combo => 
+                combo.expected_value >= 1.5
+            );
+            if (!hasHighExpectedValue) {
+                return false;
+            }
+        }
+
+        // オッズ取得済みフィルター
+        if (criteria.oddsAvailable) {
+            // オッズデータの存在確認は現在のデータ構造では実装困難のためスキップ
+            // TODO: オッズデータが追加されたら実装
+        }
+
+        return true;
+    }
+
+    /**
+     * 過去分検索条件とのマッチング
+     */
+    matchesPastSearchCriteria(prediction, criteria) {
+        // 会場名フィルター
+        if (criteria.venue && prediction.venue !== criteria.venue) {
+            return false;
+        }
+
+        // リスクレベルフィルター
+        if (criteria.riskLevel && prediction.risk_level !== criteria.riskLevel) {
+            return false;
+        }
+
+        // レース番号フィルター
+        if (criteria.raceNumber) {
+            const raceNum = parseInt(criteria.raceNumber);
+            if (prediction.race_number !== raceNum) {
+                return false;
+            }
+        }
+
+        // 艇番フィルター
+        if (criteria.boatNumber) {
+            const boatPattern = criteria.boatNumber.toLowerCase().replace(/\s+/g, '');
+            let found = false;
+            
+            // 各組み合わせをチェック
+            prediction.top_20_combinations.forEach(combo => {
+                const comboStr = combo.combination.toLowerCase();
+                if (comboStr.includes(boatPattern)) {
+                    found = true;
+                }
+            });
+            
+            if (!found) {
+                return false;
+            }
+        }
+
+        // 選手名フィルター
+        if (criteria.playerName) {
+            const playerPattern = criteria.playerName.toLowerCase();
+            // 選手名フィルタは現在のデータ構造では実装困難のためスキップ
+            // TODO: 選手名データが追加されたら実装
+        }
+
+        // 的中のみフィルター
+        if (criteria.hitOnly) {
+            // 的中判定は現在のデータ構造では実装困難のためスキップ
+            // TODO: 的中データが追加されたら実装
+        }
+
+        // 高期待値のみフィルター
+        if (criteria.highExpectedValue) {
+            const hasHighExpectedValue = prediction.top_20_combinations.some(combo => 
+                combo.expected_value >= 1.5
+            );
+            if (!hasHighExpectedValue) {
+                return false;
+            }
+        }
+
+        // オッズ取得済みフィルター
+        if (criteria.oddsAvailable) {
+            // オッズデータの存在確認は現在のデータ構造では実装困難のためスキップ
+            // TODO: オッズデータが追加されたら実装
+        }
+
+        return true;
+    }
+
+    /**
+     * 検索条件のクリア
+     */
+    clearSearch() {
+        document.getElementById('venue-filter').value = '';
+        document.getElementById('risk-filter').value = '';
+        document.getElementById('race-number-filter').value = '';
+        document.getElementById('hit-only-filter').checked = false;
+        document.getElementById('high-expected-value-filter').checked = false;
+        document.getElementById('odds-available-filter').checked = false;
+        
+        this.filteredData = this.data ? { ...this.data } : null;
+        this.renderPredictions();
+        this.updateSearchResultCount();
+    }
+
+    /**
+     * 過去分検索条件のクリア
+     */
+    clearPastSearch() {
+        document.getElementById('past-venue-filter').value = '';
+        document.getElementById('past-risk-filter').value = '';
+        document.getElementById('past-race-number-filter').value = '';
+        document.getElementById('past-boat-number-filter').value = '';
+        document.getElementById('past-player-name-filter').value = '';
+        document.getElementById('past-hit-only-filter').checked = false;
+        document.getElementById('past-high-expected-value-filter').checked = false;
+        document.getElementById('past-odds-available-filter').checked = false;
+        
+        this.filteredPastData = this.pastData ? { ...this.pastData } : null;
+        this.renderPastPredictions();
+        this.updatePastSearchResultCount();
+    }
+
+    /**
+     * 検索結果件数の更新
+     */
+    updateSearchResultCount() {
+        const countElement = document.getElementById('search-result-count');
+        if (countElement) {
+            const count = this.filteredData ? this.filteredData.predictions.length : 0;
+            countElement.textContent = `検索結果: ${count}件`;
+        }
+    }
+
+    /**
+     * 過去分検索結果件数の更新
+     */
+    updatePastSearchResultCount() {
+        const countElement = document.getElementById('past-search-result-count');
+        if (countElement) {
+            const count = this.filteredPastData ? this.filteredPastData.predictions.length : 0;
+            countElement.textContent = `検索結果: ${count}件`;
+        }
+    }
+
+    /**
+     * データエクスポート機能
+     */
+    exportData() {
+        if (!this.filteredData) {
+            alert('エクスポートするデータがありません。');
+            return;
+        }
+
+        const exportData = this.prepareExportData(this.filteredData);
+        this.downloadFile(exportData, 'predictions_export.json', 'application/json');
+    }
+
+    /**
+     * 過去分データエクスポート機能
+     */
+    exportPastData() {
+        if (!this.filteredPastData) {
+            alert('エクスポートするデータがありません。');
+            return;
+        }
+
+        const exportData = this.prepareExportData(this.filteredPastData);
+        this.downloadFile(exportData, 'past_predictions_export.json', 'application/json');
+    }
+
+    /**
+     * エクスポート用データの準備
+     */
+    prepareExportData(data) {
+        const exportData = {
+            export_info: {
+                exported_at: new Date().toISOString(),
+                total_predictions: data.predictions.length,
+                search_criteria: this.getSearchCriteria()
+            },
+            data: data
+        };
+
+        return exportData;
+    }
+
+    /**
+     * ファイルダウンロード機能
+     */
+    downloadFile(data, filename, contentType) {
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: contentType });
+        const url = URL.createObjectURL(blob);
+        
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        URL.revokeObjectURL(url);
+        console.log('エクスポート完了:', filename);
     }
 
     /**
@@ -425,10 +818,14 @@ class PredictionsViewer {
         });
 
         // 会場ごとにレンダリング
+        let allHtml = '';
         Object.keys(venueGroups).sort().forEach(venue => {
-            const venueSection = this.renderVenueSection(venue, venueGroups[venue]);
-            venuesSection.appendChild(venueSection);
+            const venueSectionHtml = this.renderVenueSection(venue, venueGroups[venue]);
+            allHtml += venueSectionHtml;
         });
+        
+        venuesSection.innerHTML = allHtml;
+        this.setupRaceHeaders();
     }
 
     /**
@@ -448,10 +845,14 @@ class PredictionsViewer {
         });
 
         // 会場ごとにレンダリング
+        let allHtml = '';
         Object.keys(venueGroups).sort().forEach(venue => {
-            const venueSection = this.renderVenueSection(venue, venueGroups[venue]);
-            venuesSection.appendChild(venueSection);
+            const venueSectionHtml = this.renderVenueSection(venue, venueGroups[venue]);
+            allHtml += venueSectionHtml;
         });
+        
+        venuesSection.innerHTML = allHtml;
+        this.setupPastRaceHeaders();
     }
 
     /**
@@ -511,7 +912,7 @@ class PredictionsViewer {
                             <i class="fas fa-list-ol me-2"></i>3連単上位20組 予測確率・期待値
                         </h5>
                         <div class="table-responsive">
-                            ${this.renderCombinationsTable(race.top_20_combinations)}
+                            ${this.renderCombinationsTable(race.top_20_combinations, race.venue, race.race_number)}
                         </div>
                     </div>
                 </div>
@@ -549,25 +950,56 @@ class PredictionsViewer {
     /**
      * 組み合わせテーブルの描画
      */
-    renderCombinationsTable(combinations) {
+    renderCombinationsTable(combinations, venue, raceNumber) {
+        const raceId = `${venue}-${raceNumber}`;
+        // デフォルトソート状態
+        if (!this.combinationSortStates[raceId]) {
+            this.combinationSortStates[raceId] = { column: 'rank', order: 'asc' };
+        }
+        const { column, order } = this.combinationSortStates[raceId];
+        // ソート処理
+        const sorted = [...combinations].sort((a, b) => {
+            let vA, vB;
+            switch (column) {
+                case 'rank':
+                    vA = a.rank; vB = b.rank; break;
+                case 'combination':
+                    vA = a.combination; vB = b.combination; break;
+                case 'probability':
+                    vA = a.probability; vB = b.probability; break;
+                case 'expected_value':
+                    vA = a.expected_value; vB = b.expected_value; break;
+                default:
+                    vA = a.rank; vB = b.rank;
+            }
+            if (typeof vA === 'string') {
+                return order === 'asc' ? vA.localeCompare(vB) : vB.localeCompare(vA);
+            } else {
+                return order === 'asc' ? vA - vB : vB - vA;
+            }
+        });
+        // ソートアイコン
+        const icon = (col) => {
+            if (column !== col) return '';
+            return order === 'asc' ? '<i class="fas fa-caret-up ms-1"></i>' : '<i class="fas fa-caret-down ms-1"></i>';
+        };
+        // テーブルHTML
         let html = `
-            <table class="table table-hover">
+            <table class="table table-hover combinations-table" data-race-id="${raceId}">
                 <thead>
                     <tr>
-                        <th>順位</th>
-                        <th>組み合わせ</th>
-                        <th>確率</th>
-                        <th>期待値</th>
+                        <th class="sortable" data-col="rank">順位${icon('rank')}</th>
+                        <th class="sortable" data-col="combination">組み合わせ${icon('combination')}</th>
+                        <th class="sortable" data-col="probability">確率${icon('probability')}</th>
+                        <th class="sortable" data-col="expected_value">期待値${icon('expected_value')}</th>
                     </tr>
                 </thead>
                 <tbody>
         `;
-
-        combinations.forEach(combination => {
+        sorted.forEach(combination => {
             const rankClass = this.getRankClass(combination.rank);
             const probabilityClass = this.getProbabilityClass(combination.probability);
             const expectedValueClass = this.getExpectedValueClass(combination.expected_value);
-
             html += `
                 <tr class="${rankClass}">
                     <td>
@@ -592,8 +1024,9 @@ class PredictionsViewer {
                 </tr>
             `;
         });
-
         html += '</tbody></table>';
+        // ソートイベント付与は描画後にsetupCombinationSortHandlersで行う
+        setTimeout(() => this.setupCombinationSortHandlers(raceId), 0);
         return html;
     }
 
@@ -646,7 +1079,7 @@ class PredictionsViewer {
      * レースヘッダーのイベント設定
      */
     setupRaceHeaders() {
-        document.querySelectorAll('.race-header').forEach(header => {
+        document.querySelectorAll('#venues-section .race-header').forEach(header => {
             header.addEventListener('click', () => {
                 const raceId = header.dataset.raceId;
                 const details = document.getElementById(`details-${raceId}`);
@@ -665,7 +1098,7 @@ class PredictionsViewer {
         });
         
         // 最初のレースを自動で開く
-        const firstHeader = document.querySelector('.race-header');
+        const firstHeader = document.querySelector('#venues-section .race-header');
         if (firstHeader) {
             const raceId = firstHeader.dataset.raceId;
             const details = document.getElementById(`details-${raceId}`);
@@ -677,8 +1110,9 @@ class PredictionsViewer {
                 icon.classList.add('fa-chevron-up');
             }
         }
+        
         // オッズ取得ボタンのイベント設定
-        document.querySelectorAll('.fetch-odds-btn').forEach(btn => {
+        document.querySelectorAll('#venues-section .fetch-odds-btn').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 const date = btn.getAttribute('data-date');
                 const venue = btn.getAttribute('data-venue');
@@ -701,6 +1135,77 @@ class PredictionsViewer {
                     const oddsData = await resp.json();
                     // 予測データとオッズを比較してテーブル生成
                     table.innerHTML = this.renderOddsCompareTable(oddsData, this.data.predictions.find(p => p.prediction_date === date && p.venue === venue && p.race_number === parseInt(raceNo)));
+                    table.classList.remove('d-none');
+                } catch (err) {
+                    errorText.textContent = err.message || 'オッズ取得に失敗しました';
+                    error.classList.remove('d-none');
+                } finally {
+                    loading.classList.add('d-none');
+                }
+            });
+        });
+    }
+
+    /**
+     * 過去分レースヘッダーのイベント設定
+     */
+    setupPastRaceHeaders() {
+        document.querySelectorAll('#past-venues-section .race-header').forEach(header => {
+            header.addEventListener('click', () => {
+                const raceId = header.dataset.raceId;
+                const details = document.getElementById(`details-${raceId}`);
+                const icon = header.querySelector('.fa-chevron-down, .fa-chevron-up');
+                
+                if (details.classList.contains('show')) {
+                    details.classList.remove('show');
+                    icon.classList.remove('fa-chevron-up');
+                    icon.classList.add('fa-chevron-down');
+                } else {
+                    details.classList.add('show');
+                    icon.classList.remove('fa-chevron-down');
+                    icon.classList.add('fa-chevron-up');
+                }
+            });
+        });
+        
+        // 最初のレースを自動で開く
+        const firstHeader = document.querySelector('#past-venues-section .race-header');
+        if (firstHeader) {
+            const raceId = firstHeader.dataset.raceId;
+            const details = document.getElementById(`details-${raceId}`);
+            const icon = firstHeader.querySelector('.fa-chevron-down, .fa-chevron-up');
+            
+            if (details && !details.classList.contains('show')) {
+                details.classList.add('show');
+                icon.classList.remove('fa-chevron-down');
+                icon.classList.add('fa-chevron-up');
+            }
+        }
+        
+        // オッズ取得ボタンのイベント設定
+        document.querySelectorAll('#past-venues-section .fetch-odds-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const date = btn.getAttribute('data-date');
+                const venue = btn.getAttribute('data-venue');
+                const raceNo = btn.getAttribute('data-race');
+                const oddsSection = btn.closest('.odds-section');
+                const loading = oddsSection.querySelector('.odds-loading');
+                const error = oddsSection.querySelector('.odds-error');
+                const errorText = oddsSection.querySelector('.odds-error-text');
+                const table = oddsSection.querySelector('.odds-compare-table');
+                // 表示制御
+                loading.classList.remove('d-none');
+                error.classList.add('d-none');
+                table.classList.add('d-none');
+                table.innerHTML = '';
+                try {
+                    // ファイル名例: odds_data_2024-02-07_KIRYU_R1.json
+                    const oddsFile = `/kyotei_predictor/data/raw/odds_data_${date}_${venue}_R${raceNo}.json`;
+                    const resp = await fetch(oddsFile);
+                    if (!resp.ok) throw new Error('オッズデータが見つかりません');
+                    const oddsData = await resp.json();
+                    // 予測データとオッズを比較してテーブル生成
+                    table.innerHTML = this.renderOddsCompareTable(oddsData, this.pastData.predictions.find(p => p.prediction_date === date && p.venue === venue && p.race_number === parseInt(raceNo)));
                     table.classList.remove('d-none');
                 } catch (err) {
                     errorText.textContent = err.message || 'オッズ取得に失敗しました';
@@ -827,6 +1332,47 @@ class PredictionsViewer {
         }
         html += '</tbody></table>';
         return html;
+    }
+
+    /**
+     * ソートイベントハンドラ
+     */
+    setupCombinationSortHandlers(raceId) {
+        const table = document.querySelector(`.combinations-table[data-race-id="${raceId}"]`);
+        if (!table) return;
+        const headers = table.querySelectorAll('th.sortable');
+        headers.forEach(th => {
+            th.style.cursor = 'pointer';
+            th.onclick = () => {
+                const col = th.getAttribute('data-col');
+                const state = this.combinationSortStates[raceId];
+                if (state.column === col) {
+                    state.order = state.order === 'asc' ? 'desc' : 'asc';
+                } else {
+                    state.column = col;
+                    state.order = 'asc';
+                }
+                // テーブルのみ再描画（展開状態を保持）
+                const race = this.findRaceById(raceId);
+                if (race) {
+                    const tableContainer = table.closest('.table-responsive');
+                    if (tableContainer) {
+                        tableContainer.innerHTML = this.renderCombinationsTable(race.top_20_combinations, race.venue, race.race_number);
+                    }
+                }
+            };
+        });
+    }
+
+    /**
+     * レースIDからraceデータを取得
+     */
+    findRaceById(raceId) {
+        const [venue, raceNumber] = raceId.split('-');
+        const num = parseInt(raceNumber, 10);
+        // 本日分・過去分両対応
+        const all = (this.filteredData?.predictions || []).concat(this.filteredPastData?.predictions || []);
+        return all.find(r => r.venue === venue && r.race_number === num);
     }
 
     /**
