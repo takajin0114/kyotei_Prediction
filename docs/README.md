@@ -21,11 +21,24 @@
 
 ### システム・運用
 - [BATCH_SYSTEM_CURRENT_STATUS.md](BATCH_SYSTEM_CURRENT_STATUS.md) - バッチシステム状況
-- [SCHEDULED_MAINTENANCE_GUIDE.md](SCHEDULED_MAINTENANCE_GUIDE.md) - スケジューラ化運用
 - [DEVELOPMENT_ROADMAP.md](DEVELOPMENT_ROADMAP.md) - 開発ロードマップ
 
-### 技術仕様
-- [data_acquisition.md](data_acquisition.md) - データ取得仕様
+### Web表示機能
+- [web_display/requirements.md](web_display/requirements.md) - Web表示機能要件定義
+- [web_display/plan.md](web_display/plan.md) - Web表示機能実装計画
+- [web_display/complete.md](web_display/complete.md) - Web表示機能実装完了報告
+
+### 要件定義
+- [requirements/ux_improvement.md](requirements/ux_improvement.md) - UX改善要件
+- [requirements/system_status_page.md](requirements/system_status_page.md) - システムステータスページ要件
+
+### 運用ガイド
+- [operations/scheduled_maintenance.md](operations/scheduled_maintenance.md) - スケジューラ化運用
+- [operations/data_acquisition.md](operations/data_acquisition.md) - データ取得仕様
+
+### ドキュメント管理
+- [DOCUMENTATION_STANDARDS.md](DOCUMENTATION_STANDARDS.md) - ドキュメント記載方法・方針
+- [DOCUMENT_CLEANUP_SUMMARY.md](DOCUMENT_CLEANUP_SUMMARY.md) - ドキュメント整理サマリー
 
 ## 🚀 クイックスタート
 
@@ -44,17 +57,19 @@ python -m kyotei_predictor.tools.prediction_tool --date 2024-07-12 --venues KIRY
 python -m kyotei_predictor.tools.run_data_maintenance
 ```
 
-## 📊 最新の進捗（2025-07-13）
+## 📊 最新の進捗（2025-07-15）
 
 > **詳細な進捗・TODOは [NEXT_STEPS.md](NEXT_STEPS.md) を参照してください**
 
 - ✅ **予想ツール実装完了**: 統合実行フロー、3連単予測、購入方法提案、JSON保存機能
 - ✅ **テスト成功**: TAMAGAWA会場12レースでの予測成功確認
-- 🔄 **Web表示機能実装中**: 静的HTMLファイルでの予測結果表示
+- ✅ **Web表示機能実装完了**: Phase 1・2完了、Phase 3（システムステータスページ）実装完了
 - 🔄 **2024年3月データ取得進行中**: 8並列処理で安定実行中
+- ✅ **ドキュメント整理完了**: ディレクトリ構成の整理・ファイル移動完了
 
 ## 📝 更新履歴
 
+- **2025-07-15**: ドキュメント整理完了、ディレクトリ構成の整理・ファイル移動
 - **2025-07-13**: 予想ツール実装完了、テスト成功確認
 - **2025-07-11**: 予想ツール仕様確定、購入方法提案機能追加
 - **2025-01-XX**: バッチシステム改善、進捗表示修正 
