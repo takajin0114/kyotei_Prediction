@@ -69,80 +69,103 @@ def get_all_stadiums():
     ]
 
 def main():
-    start_time = datetime.now()
-    print(f"🚀 未来日出走表高速取得開始: {start_time}")
-    
-    # 設定
-    DAYS_AHEAD = 7  # 未来7日間
-    RATE_LIMIT_SECONDS = 0.5  # 0.5秒間隔（高速化）
-    stadiums = get_all_stadiums()
-    
-    print(f"対象期間: 今日から{DAYS_AHEAD}日間")
-    print(f"対象会場数: {len(stadiums)}")
-    print(f"レート制限: {RATE_LIMIT_SECONDS}秒")
-    
-    data_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'future_entries')
-    os.makedirs(data_dir, exist_ok=True)
-    
-    total_entries = 0
-    success_entries = 0
-    
-    for stadium in stadiums:
-        print(f"\n=== {stadium.name} 未来日取得開始 ===")
+    lockfile = 'fast_future_entries_fetcher.lock'
+    import os
+    import sys
+    import atexit
+    from datetime import datetime
+    is_child = '--is-child' in sys.argv if '--is-child' in sys.argv else False
+    if not is_child:
+        if os.path.exists(lockfile):
+            print(f"[警告] すでにロックファイル {lockfile} が存在します。多重起動はできません。", flush=True)
+            print("このウィンドウで進捗を見たい場合は、他のバッチを停止してロックファイルを削除してから再実行してください。", flush=True)
+            sys.exit(1)
+        with open(lockfile, 'w') as f:
+            f.write(f"pid={os.getpid()}\n")
+            f.write(f"start={datetime.now().isoformat()}\n")
+            f.write(f"cmd={' '.join(sys.argv)}\n")
+        def remove_lockfile():
+            if os.path.exists(lockfile):
+                os.remove(lockfile)
+        atexit.register(remove_lockfile)
+    try:
+        start_time = datetime.now()
+        print(f"🚀 未来日出走表高速取得開始: {start_time}")
         
-        future_days = get_future_event_days(stadium, DAYS_AHEAD)
-        if not future_days:
-            print(f"{stadium.name}: 未来の開催日なし - スキップ")
-            continue
+        # 設定
+        DAYS_AHEAD = 7  # 未来7日間
+        RATE_LIMIT_SECONDS = 0.5  # 0.5秒間隔（高速化）
+        stadiums = get_all_stadiums()
         
-        print(f"{stadium.name}: {len(future_days)}日分の未来開催日")
-        print(f"  開催日: {[day.strftime('%Y-%m-%d') for day in future_days]}")
+        print(f"対象期間: 今日から{DAYS_AHEAD}日間")
+        print(f"対象会場数: {len(stadiums)}")
+        print(f"レート制限: {RATE_LIMIT_SECONDS}秒")
         
-        for day in future_days:
-            ymd = day.strftime('%Y-%m-%d')
-            venue_day_start_time = datetime.now()
-            print(f"\n  📅 {stadium.name} {ymd} の処理開始: {venue_day_start_time}")
+        data_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'future_entries')
+        os.makedirs(data_dir, exist_ok=True)
+        
+        total_entries = 0
+        success_entries = 0
+        
+        for stadium in stadiums:
+            print(f"\n=== {stadium.name} 未来日取得開始 ===")
             
-            for race_no in range(1, 13):  # 1R-12R
-                entry_fname = f"future_entry_{ymd}_{stadium.name}_R{race_no}.json"
-                entry_fpath = os.path.join(data_dir, entry_fname)
-                
-                # 既存ファイルチェック
-                if os.path.exists(entry_fpath):
-                    print(f"    R{race_no}: 既存ファイルあり - スキップ")
-                    continue
-                
-                print(f"    R{race_no}: 出走表取得中...")
-                
-                try:
-                    entry_data = fetch_race_entry_data(day, stadium, race_no)
-                    if entry_data:
-                        with open(entry_fpath, 'w', encoding='utf-8') as f:
-                            json.dump(entry_data, f, ensure_ascii=False, indent=2)
-                        print(f"      ✅ 出走表保存: {entry_fname}")
-                        success_entries += 1
-                    else:
-                        print(f"      ❌ 出走表取得失敗: {entry_fname}")
-                except Exception as e:
-                    print(f"      ❌ 出走表取得エラー: {type(e).__name__}: {e}")
-                
-                total_entries += 1
-                time.sleep(RATE_LIMIT_SECONDS)
+            future_days = get_future_event_days(stadium, DAYS_AHEAD)
+            if not future_days:
+                print(f"{stadium.name}: 未来の開催日なし - スキップ")
+                continue
             
-            venue_day_end_time = datetime.now()
-            print(f"  📅 {stadium.name} {ymd} の処理終了: {venue_day_end_time} (所要時間: {venue_day_end_time - venue_day_start_time})")
-    
-    # 結果サマリー
-    end_time = datetime.now()
-    print(f"\n=== 未来日出走表取得完了 ===")
-    print(f"対象期間: 今日から{DAYS_AHEAD}日間")
-    print(f"対象会場: {len(stadiums)}会場")
-    print(f"総リクエスト数: {total_entries}件")
-    print(f"成功数: {success_entries}件")
-    print(f"成功率: {success_entries/total_entries*100:.1f}%" if total_entries > 0 else "成功率: 計算不可")
-    print(f"バッチ処理開始: {start_time}")
-    print(f"バッチ処理終了: {end_time}")
-    print(f"所要時間: {end_time - start_time}")
+            print(f"{stadium.name}: {len(future_days)}日分の未来開催日")
+            print(f"  開催日: {[day.strftime('%Y-%m-%d') for day in future_days]}")
+            
+            for day in future_days:
+                ymd = day.strftime('%Y-%m-%d')
+                venue_day_start_time = datetime.now()
+                print(f"\n  📅 {stadium.name} {ymd} の処理開始: {venue_day_start_time}")
+                
+                for race_no in range(1, 13):  # 1R-12R
+                    entry_fname = f"future_entry_{ymd}_{stadium.name}_R{race_no}.json"
+                    entry_fpath = os.path.join(data_dir, entry_fname)
+                    
+                    # 既存ファイルチェック
+                    if os.path.exists(entry_fpath):
+                        print(f"    R{race_no}: 既存ファイルあり - スキップ")
+                        continue
+                    
+                    print(f"    R{race_no}: 出走表取得中...")
+                    
+                    try:
+                        entry_data = fetch_race_entry_data(day, stadium, race_no)
+                        if entry_data:
+                            with open(entry_fpath, 'w', encoding='utf-8') as f:
+                                json.dump(entry_data, f, ensure_ascii=False, indent=2)
+                            print(f"      ✅ 出走表保存: {entry_fname}")
+                            success_entries += 1
+                        else:
+                            print(f"      ❌ 出走表取得失敗: {entry_fname}")
+                    except Exception as e:
+                        print(f"      ❌ 出走表取得エラー: {type(e).__name__}: {e}")
+                    
+                    total_entries += 1
+                    time.sleep(RATE_LIMIT_SECONDS)
+                
+                venue_day_end_time = datetime.now()
+                print(f"  �� {stadium.name} {ymd} の処理終了: {venue_day_end_time} (所要時間: {venue_day_end_time - venue_day_start_time})")
+        
+        # 結果サマリー
+        end_time = datetime.now()
+        print(f"\n=== 未来日出走表取得完了 ===")
+        print(f"対象期間: 今日から{DAYS_AHEAD}日間")
+        print(f"対象会場: {len(stadiums)}会場")
+        print(f"総リクエスト数: {total_entries}件")
+        print(f"成功数: {success_entries}件")
+        print(f"成功率: {success_entries/total_entries*100:.1f}%" if total_entries > 0 else "成功率: 計算不可")
+        print(f"バッチ処理開始: {start_time}")
+        print(f"バッチ処理終了: {end_time}")
+        print(f"所要時間: {end_time - start_time}")
+    finally:
+        if not is_child and os.path.exists(lockfile):
+            os.remove(lockfile)
 
 if __name__ == "__main__":
     main() 

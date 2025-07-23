@@ -59,6 +59,10 @@ kyotei_predictor/
 │   └── optimization/              # 最適化ツール
 │       └── optimize_graduated_reward.py   # ハイパーパラメータ最適化
 ├── static/                        # 静的ファイル
+│   ├── predictions.css            # Web表示機能のスタイルシート
+│   ├── predictions.js             # Web表示機能のJavaScript
+│   ├── test_server.py             # ローカルテスト用HTTPサーバー
+│   └── stop_test_server.py        # テストサーバーの安全な停止スクリプト
 ├── templates/                     # HTMLテンプレート
 └── utils/                         # ユーティリティ
 ```
@@ -155,6 +159,21 @@ python -m kyotei_predictor.tools.batch.train_extended_graduated_reward
 # 予測システムの起動
 python kyotei_predictor/app.py
 ```
+
+### Web表示機能のテスト
+```bash
+# テストサーバーの起動
+python kyotei_predictor/static/test_server.py
+
+# テストサーバーの安全な停止（推奨）
+python kyotei_predictor/static/stop_test_server.py
+
+# 自動テストの実行
+python kyotei_predictor/tests/run_web_tests.py
+```
+
+**注意**: テストサーバー停止時は必ず`stop_test_server.py`を使用してください。
+`taskkill /f /im python.exe`は他のバッチ処理も停止してしまうため使用禁止です。
 
 ## 主要な技術
 

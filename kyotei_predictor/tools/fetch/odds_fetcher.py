@@ -17,7 +17,11 @@ import argparse
 import sys
 import os
 
-def fetch_trifecta_odds(race_date, stadium_code, race_number):
+def fetch_trifecta_odds(
+    race_date: date,
+    stadium_code: StadiumTelCode,
+    race_number: int
+) -> dict | None:
     """
     3連単オッズ情報を取得する関数
     
@@ -87,7 +91,11 @@ def fetch_trifecta_odds(race_date, stadium_code, race_number):
         print(f"❌ スクレイピングエラー: {e}")
         return None
 
-def fetch_odds_for_race(race_date_str, stadium_name, race_number):
+def fetch_odds_for_race(
+    race_date_str: str,
+    stadium_name: str,
+    race_number: int
+) -> dict | None:
     """
     指定されたレースのオッズを取得
     """
@@ -133,7 +141,7 @@ def fetch_odds_for_race(race_date_str, stadium_name, race_number):
         print(f"❌ エラー: {e}")
         return None
 
-def test_odds_fetching():
+def test_odds_fetching() -> None:
     """
     オッズ取得のテスト実行
     """
@@ -157,7 +165,7 @@ def test_odds_fetching():
             config['race_number']
         )
 
-def analyze_odds_data(odds_data):
+def analyze_odds_data(odds_data: dict) -> None:
     """
     オッズデータの分析
     """
@@ -180,7 +188,7 @@ def analyze_odds_data(odds_data):
             for i, odds in enumerate(sorted_odds[:5], 1):
                 print(f"     {i}位: {odds['combination']} → {odds['ratio']}倍")
 
-def main():
+def main() -> None:
     """
     メイン実行関数
     """
