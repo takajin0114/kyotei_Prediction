@@ -416,117 +416,140 @@ class PredictionTool:
             self.logger.warning(f"期待値計算エラー: {e}")
             return 0.0
     
-    def generate_purchase_suggestions(self, top_20_combinations: List[Dict]) -> List[Dict]:
-        """購入方法の提案を生成"""
+    def generate_formation_suggestions(self, combinations: List[Dict]) -> List[Dict]:
+        """フォーメーション買いの提案（例: 1着:1,2 2着:2,3 3着:3,4,5）"""
         suggestions = []
-        
+        # 例として、1着:1,2 2着:2,3 3着:3,4,5 のパターンを作る
+        first_candidates = [1, 2]
+        second_candidates = [2, 3]
+        third_candidates = [3, 4, 5]
+        formation_combos = []
+        for first in first_candidates:
+            for second in second_candidates:
+                if second == first:
+                    continue
+                for third in third_candidates:
+                    if third == first or third == second:
+                        continue
+                    formation_combos.append(f"{first}-{second}-{third}")
+        # 上位20組に含まれるものだけ抽出
+        formation_prob_combinations = [c for c in combinations if c['combination'] in formation_combos]
+        if len(formation_prob_combinations) >= 1:
+            total_prob = sum(c['probability'] for c in formation_prob_combinations)
+            total_cost = 100 * len(formation_combos)
+            expected_return = total_prob * 1000  # 仮の計算
+            suggestions.append({
+                'type': 'formation',
+                'description': '1着:1,2 2着:2,3 3着:3,4,5 フォーメーション',
+                'combinations': [c['combination'] for c in formation_prob_combinations],
+                'total_probability': total_prob,
+                'total_cost': total_cost,
+                'expected_return': expected_return
+            })
+        return suggestions
+
+    def generate_purchase_suggestions(self, top_20_combinations: List[Dict]) -> List[Dict]:
+        """購入方法の提案を生成（フォーメーションも含む）"""
+        suggestions = []
         # 1. 流し買い（Nagashi）の提案
         nagashi_suggestions = self.generate_nagashi_suggestions(top_20_combinations)
         suggestions.extend(nagashi_suggestions)
-        
         # 2. 流し買い（Wheel）の提案
         wheel_suggestions = self.generate_wheel_suggestions(top_20_combinations)
         suggestions.extend(wheel_suggestions)
-        
         # 3. ボックス買いの提案
         box_suggestions = self.generate_box_suggestions(top_20_combinations)
         suggestions.extend(box_suggestions)
-        
+        # 4. フォーメーションの提案
+        formation_suggestions = self.generate_formation_suggestions(top_20_combinations)
+        suggestions.extend(formation_suggestions)
         # 期待値でソート
         suggestions.sort(key=lambda x: x['expected_return'], reverse=True)
-        
         return suggestions[:5]  # 上位5件を返す
     
-    def generate_nagashi_suggestions(self, combinations: List[Dict]) -> List[Dict]:
-        """流し買い（同じ1-2着で3着を流す）の提案"""
-        suggestions = []
-        
-        # 1-2着の組み合わせをグループ化
-        first_second_groups = {}
-        for combo in combinations:
-            first, second, third = combo['combination'].split('-')
-            key = f"{first}-{second}"
-            if key not in first_second_groups:
-                first_second_groups[key] = []
-            first_second_groups[key].append(combo)
-        
-        # 上位の1-2着組み合わせで流し買いを提案
-        for key, group in first_second_groups.items():
-            if len(group) >= 3:  # 3つ以上の組み合わせがある場合
-                total_prob = sum(c['probability'] for c in group[:4])  # 上位4つ
-                total_cost = 400  # 流し買いのコスト
-                expected_return = total_prob * 1000  # 仮の計算
-                
-                suggestions.append({
-                    'type': 'nagashi',
-                    'description': f"{key}-流し",
-                    'combinations': [c['combination'] for c in group[:4]],
-                    'total_probability': total_prob,
-                    'total_cost': total_cost,
-                    'expected_return': expected_return
-                })
-        
-        return suggestions
-    
-    def generate_wheel_suggestions(self, combinations: List[Dict]) -> List[Dict]:
-        """流し買い（同じ1着で2-3着を流す）の提案"""
-        suggestions = []
-        
-        # 1着でグループ化
-        first_groups = {}
-        for combo in combinations:
-            first, second, third = combo['combination'].split('-')
-            if first not in first_groups:
-                first_groups[first] = []
-            first_groups[first].append(combo)
-        
-        # 上位の1着で流し買いを提案
-        for first, group in first_groups.items():
-            if len(group) >= 3:  # 3つ以上の組み合わせがある場合
-                total_prob = sum(c['probability'] for c in group[:4])  # 上位4つ
-                total_cost = 400  # 流し買いのコスト
-                expected_return = total_prob * 1000  # 仮の計算
-                
-                suggestions.append({
-                    'type': 'wheel',
-                    'description': f"{first}-流し",
-                    'combinations': [c['combination'] for c in group[:4]],
-                    'total_probability': total_prob,
-                    'total_cost': total_cost,
-                    'expected_return': expected_return
-                })
-        
-        return suggestions
-    
     def generate_box_suggestions(self, combinations: List[Dict]) -> List[Dict]:
-        """ボックス買いの提案"""
+        """ボックス買いの提案（3艇ボックスを重複なく一意に）"""
         suggestions = []
-        
-        # 上位の組み合わせでボックス買いを提案
-        for i, combo in enumerate(combinations[:3]):  # 上位3つ
-            first, second, third = combo['combination'].split('-')
-            
-            # 順列を生成
-            permutations_list = list(permutations([int(first), int(second), int(third)], 3))
-            box_combinations = [f"{p[0]}-{p[1]}-{p[2]}" for p in permutations_list]
-            
-            # 上位20組から該当する組み合わせを抽出
+        seen_boxes = set()
+        # 上位20組から3艇ボックス候補を抽出
+        for combo in combinations:
+            first, second, third = map(int, combo['combination'].split('-'))
+            box = tuple(sorted([first, second, third]))
+            if box in seen_boxes:
+                continue
+            seen_boxes.add(box)
+            # 3艇ボックスの全順列
+            box_combinations = [f"{a}-{b}-{c}" for a, b, c in permutations(box, 3)]
+            # 上位20組に含まれるものだけ抽出
             box_prob_combinations = [c for c in combinations if c['combination'] in box_combinations]
-            
             if len(box_prob_combinations) >= 3:
                 total_prob = sum(c['probability'] for c in box_prob_combinations)
-                total_cost = 1200  # ボックス買いのコスト（6通り）
+                total_cost = 100 * len(box_combinations)  # 6通り=600円
                 expected_return = total_prob * 1000  # 仮の計算
-                
                 suggestions.append({
                     'type': 'box',
-                    'description': f"{combo['combination']} ボックス",
+                    'description': f"{'-'.join(map(str, box))} ボックス",
                     'combinations': [c['combination'] for c in box_prob_combinations],
                     'total_probability': total_prob,
                     'total_cost': total_cost,
                     'expected_return': expected_return
                 })
-        
+        return suggestions
+
+    def generate_wheel_suggestions(self, combinations: List[Dict]) -> List[Dict]:
+        """1着固定で2,3着流し（全120通りから正しい組数を抽出）"""
+        suggestions = []
+        for first in range(1, 7):
+            wheel_combos = []
+            for second in range(1, 7):
+                if second == first:
+                    continue
+                for third in range(1, 7):
+                    if third == first or third == second:
+                        continue
+                    wheel_combos.append(f"{first}-{second}-{third}")
+            # 上位20組に含まれるものだけ抽出
+            wheel_prob_combinations = [c for c in combinations if c['combination'] in wheel_combos]
+            if len(wheel_prob_combinations) >= 3:
+                total_prob = sum(c['probability'] for c in wheel_prob_combinations)
+                total_cost = 100 * len(wheel_combos)  # 20通り=2000円
+                expected_return = total_prob * 1000  # 仮の計算
+                suggestions.append({
+                    'type': 'wheel',
+                    'description': f"{first}-流し",
+                    'combinations': [c['combination'] for c in wheel_prob_combinations],
+                    'total_probability': total_prob,
+                    'total_cost': total_cost,
+                    'expected_return': expected_return
+                })
+        return suggestions
+
+    def generate_nagashi_suggestions(self, combinations: List[Dict]) -> List[Dict]:
+        """1-2着固定で3着流し（全120通りから正しい組数を抽出）"""
+        suggestions = []
+        for first in range(1, 7):
+            for second in range(1, 7):
+                if second == first:
+                    continue
+                nagashi_combos = []
+                for third in range(1, 7):
+                    if third == first or third == second:
+                        continue
+                    nagashi_combos.append(f"{first}-{second}-{third}")
+                # 上位20組に含まれるものだけ抽出
+                nagashi_prob_combinations = [c for c in combinations if c['combination'] in nagashi_combos]
+                if len(nagashi_prob_combinations) >= 3:
+                    total_prob = sum(c['probability'] for c in nagashi_prob_combinations)
+                    total_cost = 100 * len(nagashi_combos)  # 4通り=400円
+                    expected_return = total_prob * 1000  # 仮の計算
+                    suggestions.append({
+                        'type': 'nagashi',
+                        'description': f"{first}-{second}-流し",
+                        'combinations': [c['combination'] for c in nagashi_prob_combinations],
+                        'total_probability': total_prob,
+                        'total_cost': total_cost,
+                        'expected_return': expected_return
+                    })
         return suggestions
     
     def predict_races(self, predict_date: str, venues: Optional[List[str]] = None) -> Optional[Dict]:
