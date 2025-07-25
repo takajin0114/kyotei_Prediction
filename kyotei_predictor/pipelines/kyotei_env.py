@@ -6,6 +6,15 @@ from typing import Tuple
 import glob
 import random
 import os
+import logging
+
+# Kyotei用ロギング設定
+ENABLE_KYOTEI_LOGGING = True  # TrueでDEBUG/INFOも表示、FalseでWARNING以上のみ
+if ENABLE_KYOTEI_LOGGING:
+    os.makedirs('outputs/logs', exist_ok=True)
+    logging.basicConfig(level=logging.DEBUG, format='[%(levelname)s] %(message)s', filename='outputs/logs/kyotei_env_debug.log', filemode='w')
+else:
+    logging.basicConfig(level=logging.WARNING, format='[%(levelname)s] %(message)s')
 
 class KyoteiEnv(gym.Env):
     """
@@ -28,34 +37,31 @@ class KyoteiEnv(gym.Env):
         self.arrival_tuple = (0,0,0)  # 必ずタプルで初期化
 
     def reset(self, *, seed=None, options=None) -> Tuple[np.ndarray | None, dict]:
+        print(f"[KyoteiEnv.reset] called. race={self.race_data_path}, odds={self.odds_data_path}")
         super().reset(seed=seed)
-        # レースデータ・oddsデータ読み込み
         assert self.race_data_path and self.odds_data_path, "race_data_path, odds_data_pathを指定してください"
         with open(self.race_data_path, encoding='utf-8') as f:
             race = json.load(f)
         with open(self.odds_data_path, encoding='utf-8') as f:
             odds = json.load(f)
         self.odds_data = odds['odds_data']
-        
-        # 正解着順（1-3着）の品質チェック
         valid_records = [r for r in race['race_records'] if r.get('arrival') is not None]
+        print(f"[KyoteiEnv.reset] valid_records={len(valid_records)}")
         if len(valid_records) < 3:
-            print(f"[WARNING] Skipping race with insufficient valid records: {len(valid_records)} < 3")
-            # 不完全なデータの場合は例外を発生させてスキップ
+            print(f"[KyoteiEnv.reset] Skipping race with insufficient valid records: {len(valid_records)} < 3")
+            logging.warning(f"Skipping race with insufficient valid records: {len(valid_records)} < 3")
             raise ValueError(f"Insufficient valid records: {len(valid_records)} < 3")
-        
         records = sorted(valid_records, key=lambda x: x['arrival'])
         self.arrival_tuple = tuple(r['pit_number'] for r in records[:3])
-        
-        # 着順タプルの妥当性チェック
+        print(f"[KyoteiEnv.reset] arrival_tuple={self.arrival_tuple}")
         if len(self.arrival_tuple) != 3:
-            print(f"[WARNING] Skipping race with invalid arrival_tuple: {self.arrival_tuple}")
+            print(f"[KyoteiEnv.reset] Skipping race with invalid arrival_tuple: {self.arrival_tuple}")
+            logging.warning(f"Skipping race with invalid arrival_tuple: {self.arrival_tuple}")
             raise ValueError(f"Invalid arrival_tuple: {self.arrival_tuple}, length: {len(self.arrival_tuple)}")
-        
-        # 状態ベクトル生成
         self.state = vectorize_race_state(self.race_data_path, self.odds_data_path)
         self.terminated = False
         info = {}
+        print(f"[KyoteiEnv.reset] state shape={self.state.shape if hasattr(self.state, 'shape') else type(self.state)}")
         return self.state, info
 
     def step(self, action: int) -> Tuple[np.ndarray | None, float, bool, bool, dict]:
@@ -68,7 +74,7 @@ class KyoteiEnv(gym.Env):
         return self.state, reward, self.terminated, truncated, info
 
     def render(self, mode: str = "human") -> None:
-        print(f"State: {self.state}")
+        logging.debug(f"State: {self.state}")
 
     def close(self) -> None:
         pass
@@ -168,7 +174,7 @@ def calc_trifecta_reward(action: int, arrival_tuple: Tuple[int,int,int], odds_da
     """
     # 着順タプルの妥当性チェック
     if len(arrival_tuple) != 3:
-        print(f"[WARNING] Invalid arrival_tuple: {arrival_tuple}, length: {len(arrival_tuple)}")
+        logging.warning(f"Invalid arrival_tuple: {arrival_tuple}, length: {len(arrival_tuple)}")
         return -100  # 不正な着順の場合は最大ペナルティ
     
     trifecta = action_to_trifecta(action)
@@ -209,81 +215,106 @@ class KyoteiEnvManager(gym.Env):
     
     def __init__(self, data_dir: str = "../data", bet_amount: int = 100):
         super().__init__()
+        logging.debug(f"[KyoteiEnvManager.__init__] received data_dir: {data_dir}")
         self.data_dir = data_dir
+        logging.debug(f"[KyoteiEnvManager.__init__] self.data_dir set to: {self.data_dir}")
         self.bet_amount = bet_amount
         self.pairs = self._find_race_odds_pairs()
         self.env = None
 
     def _find_race_odds_pairs(self) -> list:
-        print("[DEBUG] data_dir:", self.data_dir)
-        print("[DEBUG] abspath(data_dir):", os.path.abspath(self.data_dir))
-        race_files = glob.glob(os.path.join(self.data_dir, "race_data_*.json"))
-        odds_files = glob.glob(os.path.join(self.data_dir, "odds_data_*.json"))
-        print("[DEBUG] race_files:", race_files)
-        print("[DEBUG] odds_files:", odds_files)
+        logging.debug(f"data_dir: {self.data_dir}")
+        logging.debug(f"abspath(data_dir): {os.path.abspath(self.data_dir)}")
         
-        # キー: (date, stadium, race_number)
-        def parse_key(path, prefix):
-            fname = os.path.basename(path)
-            parts = fname.replace(prefix, "").replace(".json", "").split("_")
-            
-            # 日付部分を統合（例: 2024-06-15 → 20240615）
-            if len(parts) >= 3:
-                # 日付部分を統合
-                date_parts = parts[0:3]  # 年-月-日
-                date = "".join(date_parts).replace("-", "")
-                
-                # スタジアムとレース番号
-                if len(parts) >= 5:
-                    stadium = parts[3]
-                    rno = parts[4]
-                elif len(parts) >= 4:
-                    stadium = parts[3]
-                    rno = "1"
-                else:
-                    stadium = "UNKNOWN"
-                    rno = "1"
-            else:
-                date = parts[0] if parts else "UNKNOWN"
-                stadium = parts[1] if len(parts) > 1 else "UNKNOWN"
-                rno = parts[2] if len(parts) > 2 else "1"
-            
-            rno = rno.replace('R', '')  # 'R2'→'2' のようにRを除去
-            try:
-                rno_int = int(rno)
-            except ValueError:
-                rno_int = 1  # デフォルト値
-            
-            return (date, stadium, rno_int)
+        # サブディレクトリも含めて再帰的に検索
+        race_pattern = os.path.join(self.data_dir, "**", "race_data_*.json")
+        odds_pattern = os.path.join(self.data_dir, "**", "odds_data_*.json")
         
-        race_map = {parse_key(f, "race_data_"): f for f in race_files}
-        odds_map = {parse_key(f, "odds_data_"): f for f in odds_files}
+        logging.debug(f"race_pattern: {race_pattern}")
+        logging.debug(f"odds_pattern: {odds_pattern}")
         
-        # デバッグ出力
-        print("[DEBUG] race_map.keys():", list(race_map.keys()))
-        print("[DEBUG] odds_map.keys():", list(odds_map.keys()))
-        # ペアが揃っているものだけ
-        keys = set(race_map.keys()) & set(odds_map.keys())
-        print("[DEBUG] ペアが揃ったkeys:", list(keys))
-        pairs = [(race_map[k], odds_map[k]) for k in sorted(keys)]
-        print("[DEBUG] ペアリスト:", pairs)
+        race_files = glob.glob(race_pattern, recursive=True)
+        odds_files = glob.glob(odds_pattern, recursive=True)
+        
+        logging.debug(f"race_files count: {len(race_files)}")
+        logging.debug(f"odds_files count: {len(odds_files)}")
+        
+        if not race_files:
+            logging.warning(f"No race files found in {self.data_dir}")
+            return []
+        if not odds_files:
+            logging.warning(f"No odds files found in {self.data_dir}")
+            return []
+        
+        # ファイル名ベースでマッピングを作成
+        race_map = {}
+        odds_map = {}
+        
+        for race_file in race_files:
+            # ファイル名からキーを抽出（例: race_data_2024-03-31_OMURA_R1.json -> race_data_2024-03-31_OMURA_R1.json）
+            key = os.path.basename(race_file)
+            race_map[key] = race_file
+            
+        for odds_file in odds_files:
+            # ファイル名からキーを抽出（例: odds_data_2024-03-31_OMURA_R1.json -> odds_data_2024-03-31_OMURA_R1.json）
+            key = os.path.basename(odds_file)
+            odds_map[key] = odds_file
+        
+        logging.debug(f"race_map keys count: {len(race_map)}")
+        logging.debug(f"odds_map keys count: {len(odds_map)}")
+        
+        # 共通のキーを見つける（race_data_YYYY-MM-DD_VENUE_RN.json と odds_data_YYYY-MM-DD_VENUE_RN.json）
+        common_keys = set()
+        for race_key in race_map.keys():
+            # race_data_YYYY-MM-DD_VENUE_RN.json -> odds_data_YYYY-MM-DD_VENUE_RN.json
+            odds_key = race_key.replace("race_data_", "odds_data_")
+            if odds_key in odds_map:
+                common_keys.add(race_key)
+        
+        logging.debug(f"common_keys count: {len(common_keys)}")
+        
+        # ペアリストを作成
+        pairs = []
+        for race_key in common_keys:
+            odds_key = race_key.replace("race_data_", "odds_data_")
+            pairs.append((race_map[race_key], odds_map[odds_key]))
+        
+        logging.debug(f"pairs count: {len(pairs)}")
+        if pairs:
+            logging.debug(f"sample pair: {pairs[0]}")
+        
         return pairs
 
     def reset(self, *, seed=None, options=None) -> Tuple[np.ndarray | None, dict]:
+        print(f"[KyoteiEnvManager.reset] called. pairs={len(self.pairs)}")
         super().reset(seed=seed)
+        
+        # ペアが空の場合はエラー
+        if not self.pairs:
+            error_msg = f"No valid race-odds pairs found in {self.data_dir}. Please check if data files exist."
+            print(f"[KyoteiEnvManager.reset] {error_msg}")
+            logging.error(error_msg)
+            raise ValueError(error_msg)
+        
         # 有効なレースが見つかるまで試行
         max_attempts = 10
         for attempt in range(max_attempts):
             try:
                 # ランダムに1レース選択
                 race_path, odds_path = random.choice(self.pairs)
+                print(f"[KyoteiEnvManager.reset] attempt {attempt+1}: race={race_path}, odds={odds_path}")
+                logging.debug(f"Selected race: {race_path}")
+                logging.debug(f"Selected odds: {odds_path}")
+                
                 self.env = KyoteiEnv(race_data_path=race_path, odds_data_path=odds_path, bet_amount=self.bet_amount)
                 return self.env.reset()
             except ValueError as e:
-                print(f"[INFO] Attempt {attempt + 1}: Skipping invalid race data: {e}")
+                print(f"[KyoteiEnvManager.reset] attempt {attempt+1} failed: {e}")
+                logging.info(f"Attempt {attempt + 1}: Skipping invalid race data: {e}")
                 if attempt == max_attempts - 1:
                     # 最後の試行でも失敗した場合は、デフォルトの着順で強制実行
-                    print("[WARNING] All attempts failed, using fallback data")
+                    print(f"[KyoteiEnvManager.reset] All attempts failed, using fallback data")
+                    logging.warning(f"All attempts failed, using fallback data")
                     self.env = KyoteiEnv(race_data_path=race_path, odds_data_path=odds_path, bet_amount=self.bet_amount)
                     # 強制的にデフォルト値を設定
                     self.env.arrival_tuple = (1, 2, 3)
@@ -291,6 +322,7 @@ class KyoteiEnvManager(gym.Env):
         
         # 万が一の場合のフォールバック
         race_path, odds_path = random.choice(self.pairs)
+        print(f"[KyoteiEnvManager.reset] fallback: race={race_path}, odds={odds_path}")
         self.env = KyoteiEnv(race_data_path=race_path, odds_data_path=odds_path, bet_amount=self.bet_amount)
         self.env.arrival_tuple = (1, 2, 3)
         return self.env.state, {}
