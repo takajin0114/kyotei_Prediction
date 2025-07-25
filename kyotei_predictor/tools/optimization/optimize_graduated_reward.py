@@ -15,6 +15,7 @@ from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.callbacks import EvalCallback, CheckpointCallback
 import argparse
 import logging
+import time
 
 # プロジェクトルートをパスに追加
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
@@ -139,6 +140,17 @@ def action_to_trifecta(action: int):
     trifecta_list = list(permutations(range(1,7), 3))
     return trifecta_list[action]
 
+def safe_savez(filepath, *args, **kwargs):
+    """OSError対策付きnp.savez（3回リトライ）"""
+    for i in range(3):
+        try:
+            np.savez(filepath, *args, **kwargs)
+            return
+        except OSError as e:
+            print(f"[safe_savez] ファイル保存失敗: {filepath} (リトライ{i+1}) {e}")
+            time.sleep(1)
+    raise
+
 def optimize_graduated_reward(
     n_trials=50,
     study_name="graduated_reward_optimization",
@@ -218,6 +230,11 @@ def optimize_graduated_reward(
         # print(f"  的中率: {detailed_results['hit_rate']*100:.2f}%")
         # print(f"  平均報酬: {detailed_results['mean_reward']:.2f}")
         # print(f"  報酬の標準偏差: {detailed_results['std_reward']:.2f}")
+        
+        # 評価結果をnpzで保存（OSError対策）
+        eval_npz_path = f"./optuna_logs/trial_{study.best_trial.number}/evaluations.npz"
+        os.makedirs(os.path.dirname(eval_npz_path), exist_ok=True)
+        safe_savez(eval_npz_path, **detailed_results)
         
         # 最良モデルをコピー
         import shutil
