@@ -1,0 +1,11 @@
+numpy==1.26.4
+torch==2.3.0
+stable-baselines3==2.3.2
+tensorboard==2.16.2
+pandas==2.2.2
+pyarrow==15.0.2
+tqdm
+rich
+matplotlib
+seaborn
+scipy 

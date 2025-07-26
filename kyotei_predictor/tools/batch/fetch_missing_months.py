@@ -11,11 +11,12 @@ race_pattern = re.compile(r'race_data_(\d{4}-\d{2}-\d{2})_([A-Z0-9]+)_R\d+\.json
 # 取得済み日付を集計
 def collect_days():
     days = defaultdict(set)
-    for fname in os.listdir(RAW_DIR):
-        m = race_pattern.match(fname)
-        if m:
-            day, stadium = m.groups()
-            days[stadium].add(day)
+    for root, dirs, files in os.walk(RAW_DIR):
+        for fname in files:
+            m = race_pattern.match(fname)
+            if m:
+                day, stadium = m.groups()
+                days[stadium].add(day)
     return days
 
 def month_range(start, end):

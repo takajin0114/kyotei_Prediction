@@ -9,7 +9,7 @@
     <!-- Font Awesome for icons -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <!-- Custom CSS -->
-    <link href="/kyotei_predictor/static/css/predictions.css?v=20250716_3" rel="stylesheet">
+            <link href="/static/css/predictions.css?v=20250718_4" rel="stylesheet">
 </head>
 <body>
     <!-- Header -->
@@ -428,12 +428,17 @@
     <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Custom JS -->
-    <script src="/kyotei_predictor/static/js/predictions.js?v=20250716_10"></script>
+            <script src="/static/js/predictions.js?v=20250718_27"></script>
     <!-- Initialize PredictionsViewer -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             console.log('DOM loaded, initializing PredictionsViewer...');
             try {
+                // 重複初期化を防ぐ
+                if (window.predictionsViewer) {
+                    console.log('PredictionsViewer already initialized, skipping...');
+                    return;
+                }
                 window.predictionsViewer = new PredictionsViewer();
                 console.log('PredictionsViewer initialized successfully');
             } catch (error) {

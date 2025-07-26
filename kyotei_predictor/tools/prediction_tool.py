@@ -441,11 +441,127 @@ class PredictionTool:
             suggestions.append({
                 'type': 'formation',
                 'description': '1着:1,2 2着:2,3 3着:3,4,5 フォーメーション',
-                'combinations': [c['combination'] for c in formation_prob_combinations],
+                'combinations': formation_combos,  # 全組み合わせを表示
                 'total_probability': total_prob,
                 'total_cost': total_cost,
                 'expected_return': expected_return
             })
+        return suggestions
+
+    def generate_complex_wheel_suggestions(self, combinations: List[Dict]) -> List[Dict]:
+        """複雑な流しパターンの提案（1位固定-2位流し-3位固定など）"""
+        suggestions = []
+        
+        # パターン1: 1位固定-2位流し-3位固定
+        for first in range(1, 7):
+            for third in range(1, 7):
+                if third == first:
+                    continue
+                # 2位の候補（1位と3位以外）
+                second_candidates = [i for i in range(1, 7) if i != first and i != third]
+                if len(second_candidates) >= 2:  # 最低2つ以上の候補がある場合のみ
+                    complex_wheel_combos = []
+                    for second in second_candidates:
+                        complex_wheel_combos.append(f"{first}-{second}-{third}")
+                    
+                    # 上位20組に含まれるものだけ抽出
+                    complex_wheel_prob_combinations = [c for c in combinations if c['combination'] in complex_wheel_combos]
+                    if len(complex_wheel_prob_combinations) >= 2:
+                        total_prob = sum(c['probability'] for c in complex_wheel_prob_combinations)
+                        total_cost = 100 * len(complex_wheel_combos)
+                        expected_return = total_prob * 1000
+                        suggestions.append({
+                            'type': 'complex_wheel',
+                            'description': f"{first}-流し-{third}",
+                            'combinations': complex_wheel_combos,  # 全組み合わせを表示
+                            'total_probability': total_prob,
+                            'total_cost': total_cost,
+                            'expected_return': expected_return
+                        })
+        
+        # パターン2: 1位流し-2位固定-3位流し
+        for second in range(1, 7):
+            # 1位の候補（2位以外）
+            first_candidates = [i for i in range(1, 7) if i != second]
+            # 3位の候補（1位と2位以外）
+            third_candidates = [i for i in range(1, 7) if i != second]
+            
+            if len(first_candidates) >= 2 and len(third_candidates) >= 2:
+                complex_wheel_combos = []
+                for first in first_candidates:
+                    for third in third_candidates:
+                        if third != first:
+                            complex_wheel_combos.append(f"{first}-{second}-{third}")
+                
+                # 上位20組に含まれるものだけ抽出
+                complex_wheel_prob_combinations = [c for c in combinations if c['combination'] in complex_wheel_combos]
+                if len(complex_wheel_prob_combinations) >= 3:
+                    total_prob = sum(c['probability'] for c in complex_wheel_prob_combinations)
+                    total_cost = 100 * len(complex_wheel_combos)
+                    expected_return = total_prob * 1000
+                    suggestions.append({
+                        'type': 'complex_wheel',
+                        'description': f"流し-{second}-流し",
+                        'combinations': complex_wheel_combos,  # 全組み合わせを表示
+                        'total_probability': total_prob,
+                        'total_cost': total_cost,
+                        'expected_return': expected_return
+                    })
+        
+        return suggestions
+
+    def generate_advanced_formation_suggestions(self, combinations: List[Dict]) -> List[Dict]:
+        """高度なフォーメーション買いの提案"""
+        suggestions = []
+        
+        # パターン1: 1着:1,2,3 2着:2,3,4 3着:4,5,6
+        formation_patterns = [
+            {
+                'name': '1着:1,2,3 2着:2,3,4 3着:4,5,6 フォーメーション',
+                'first': [1, 2, 3],
+                'second': [2, 3, 4],
+                'third': [4, 5, 6]
+            },
+            {
+                'name': '1着:1,2 2着:3,4 3着:5,6 フォーメーション',
+                'first': [1, 2],
+                'second': [3, 4],
+                'third': [5, 6]
+            },
+            {
+                'name': '1着:1 2着:2,3,4 3着:5,6 フォーメーション',
+                'first': [1],
+                'second': [2, 3, 4],
+                'third': [5, 6]
+            }
+        ]
+        
+        for pattern in formation_patterns:
+            formation_combos = []
+            for first in pattern['first']:
+                for second in pattern['second']:
+                    if second == first:
+                        continue
+                    for third in pattern['third']:
+                        if third == first or third == second:
+                            continue
+                        formation_combos.append(f"{first}-{second}-{third}")
+            
+            # 上位20組に含まれるものだけ抽出
+            formation_prob_combinations = [c for c in combinations if c['combination'] in formation_combos]
+            if len(formation_prob_combinations) >= 2:
+                total_prob = sum(c['probability'] for c in formation_prob_combinations)
+                total_cost = 100 * len(formation_combos)
+                expected_return = total_prob * 1000
+                suggestions.append({
+                    'type': 'advanced_formation',
+                    'description': pattern['name'],
+                    'combinations': formation_combos,  # 全組み合わせを表示
+                    'total_probability': total_prob,
+                    'total_cost': total_cost,
+                    'expected_return': expected_return
+                })
+        
         return suggestions
 
     def generate_purchase_suggestions(self, top_20_combinations: List[Dict]) -> List[Dict]:
@@ -463,9 +579,15 @@ class PredictionTool:
         # 4. フォーメーションの提案
         formation_suggestions = self.generate_formation_suggestions(top_20_combinations)
         suggestions.extend(formation_suggestions)
+        # 5. 複雑な流しパターンの提案
+        complex_wheel_suggestions = self.generate_complex_wheel_suggestions(top_20_combinations)
+        suggestions.extend(complex_wheel_suggestions)
+        # 6. 高度なフォーメーションの提案
+        advanced_formation_suggestions = self.generate_advanced_formation_suggestions(top_20_combinations)
+        suggestions.extend(advanced_formation_suggestions)
         # 期待値でソート
         suggestions.sort(key=lambda x: x['expected_return'], reverse=True)
-        return suggestions[:5]  # 上位5件を返す
+        return suggestions[:8]  # 上位8件を返す（パターンが増えたため）
     
     def generate_box_suggestions(self, combinations: List[Dict]) -> List[Dict]:
         """ボックス買いの提案（3艇ボックスを重複なく一意に）"""
@@ -489,7 +611,7 @@ class PredictionTool:
                 suggestions.append({
                     'type': 'box',
                     'description': f"{'-'.join(map(str, box))} ボックス",
-                    'combinations': [c['combination'] for c in box_prob_combinations],
+                    'combinations': box_combinations,  # 全組み合わせを表示
                     'total_probability': total_prob,
                     'total_cost': total_cost,
                     'expected_return': expected_return
@@ -517,7 +639,7 @@ class PredictionTool:
                 suggestions.append({
                     'type': 'wheel',
                     'description': f"{first}-流し",
-                    'combinations': [c['combination'] for c in wheel_prob_combinations],
+                    'combinations': wheel_combos,  # 全組み合わせを表示
                     'total_probability': total_prob,
                     'total_cost': total_cost,
                     'expected_return': expected_return
@@ -545,7 +667,7 @@ class PredictionTool:
                     suggestions.append({
                         'type': 'nagashi',
                         'description': f"{first}-{second}-流し",
-                        'combinations': [c['combination'] for c in nagashi_prob_combinations],
+                        'combinations': nagashi_combos,  # 全組み合わせを表示
                         'total_probability': total_prob,
                         'total_cost': total_cost,
                         'expected_return': expected_return

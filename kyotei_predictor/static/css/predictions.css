@@ -137,6 +137,84 @@ body {
     display: block;
 }
 
+/* レースセクション */
+.race-section {
+    margin-bottom: 1.5rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.race-section:last-child {
+    margin-bottom: 0;
+}
+
+.section-header {
+    background: var(--light-blue);
+    padding: 1rem 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.section-header:hover {
+    background: #bfdbfe;
+}
+
+.section-header h5 {
+    margin: 0;
+    color: var(--primary-blue);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.section-toggle {
+    transition: transform 0.3s ease;
+}
+
+.section-content {
+    display: none !important;
+    padding: 1.5rem;
+    background: white;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+}
+
+.section-content.show {
+    display: block !important;
+    max-height: 2000px;
+}
+
+/* より強力なルール */
+.race-section .section-content {
+    display: none !important;
+}
+
+.race-section .section-content.show {
+    display: block !important;
+}
+
+/* 最も強力なルール - 確実に動作させる */
+div.section-content {
+    display: none !important;
+}
+
+div.section-content.show {
+    display: block !important;
+}
+
+/* さらに具体的なセレクタ */
+.race-section div.section-content {
+    display: none !important;
+}
+
+.race-section div.section-content.show {
+    display: block !important;
+}
+
 /* テーブルスタイル */
 .table {
     margin-bottom: 1.5rem;
@@ -569,4 +647,472 @@ th.sortable i.fas {
 /* テーブルのカーソル */
 .combinations-table th.sortable {
   cursor: pointer;
+} 
+
+/* Phase 3: 購入提案表示用スタイル */
+
+/* 購入提案セクション */
+.purchase-suggestions-section {
+    margin-top: 1.5rem;
+}
+
+.section-header h6 {
+    color: var(--primary-blue);
+    font-weight: 600;
+    border-bottom: 2px solid var(--light-blue);
+    padding-bottom: 0.5rem;
+}
+
+/* 提案比較テーブル */
+.suggestions-comparison .card {
+    border: 2px solid var(--light-blue);
+}
+
+.suggestions-comparison .table th {
+    background-color: var(--light-blue);
+    color: var(--primary-blue);
+    font-weight: 600;
+    font-size: 0.9rem;
+    padding: 0.75rem 0.5rem;
+}
+
+.suggestions-comparison .table td {
+    padding: 0.75rem 0.5rem;
+    font-size: 0.9rem;
+    vertical-align: middle;
+}
+
+.suggestions-comparison .table-success {
+    background-color: #dcfce7 !important;
+    border-left: 4px solid var(--success-green);
+}
+
+/* 提案カード */
+.suggestion-card {
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.suggestion-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.suggestion-card .card-header {
+    padding: 1rem 1.5rem;
+    font-weight: 600;
+}
+
+.suggestion-card .card-body {
+    padding: 1.5rem;
+}
+
+/* 統計カード */
+.stat-card {
+    border: 1px solid #e2e8f0;
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    background-color: var(--light-blue) !important;
+    transform: translateY(-1px);
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    line-height: 1.2;
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    margin-top: 0.25rem;
+}
+
+/* 確率バー */
+.progress {
+    background-color: #e2e8f0;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    background: linear-gradient(90deg, var(--secondary-blue), var(--primary-blue));
+    transition: width 0.5s ease;
+}
+
+/* 組み合わせグリッド */
+.combinations-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.combination-badge {
+    background-color: var(--light-blue);
+    color: var(--primary-blue);
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border: 1px solid var(--secondary-blue);
+    transition: all 0.3s ease;
+}
+
+.combination-badge:hover {
+    background-color: var(--secondary-blue);
+    color: white;
+    transform: scale(1.05);
+}
+
+/* 投資判断セクション */
+.investment-advice {
+    border-left: 4px solid var(--primary-blue);
+    background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+}
+
+.investment-advice h6 {
+    color: var(--primary-blue);
+    font-weight: 600;
+}
+
+/* バッジスタイル */
+.badge {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.35rem 0.75rem;
+    border-radius: 20px;
+}
+
+/* 提案タイプバッジ */
+.badge.wheel {
+    background-color: var(--primary-blue);
+    color: white;
+}
+
+.badge.box {
+    background-color: var(--accent-orange);
+    color: white;
+}
+
+.badge.nagashi {
+    background-color: var(--success-green);
+    color: white;
+}
+
+.badge.single {
+    background-color: var(--secondary-blue);
+    color: white;
+}
+
+.badge.formation {
+    background-color: #8b5cf6;
+    color: white;
+}
+
+.badge.complex-wheel {
+    background-color: #ec4899;
+    color: white;
+}
+
+.badge.advanced-formation {
+    background-color: #06b6d4;
+    color: white;
+}
+
+/* リスクレベルバッジ */
+.badge.bg-success {
+    background-color: var(--success-green) !important;
+}
+
+.badge.bg-warning {
+    background-color: var(--warning-orange) !important;
+}
+
+.badge.bg-danger {
+    background-color: var(--danger-red) !important;
+}
+
+/* 評価バッジ */
+.badge.bg-info {
+    background-color: var(--secondary-blue) !important;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+    .suggestions-comparison .table-responsive {
+        font-size: 0.8rem;
+    }
+    
+    .suggestions-comparison .table th,
+    .suggestions-comparison .table td {
+        padding: 0.5rem 0.25rem;
+    }
+    
+    .stat-value {
+        font-size: 1.2rem;
+    }
+    
+    .combinations-grid {
+        gap: 0.25rem;
+    }
+    
+    .combination-badge {
+        font-size: 0.75rem;
+        padding: 0.2rem 0.5rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .suggestion-card .card-body {
+        padding: 1rem;
+    }
+    
+    .suggestion-card .card-header {
+        padding: 0.75rem 1rem;
+    }
+    
+    .stat-card {
+        margin-bottom: 0.5rem;
+    }
+    
+    .combinations-grid {
+        justify-content: center;
+    }
+}
+
+/* アニメーション */
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.suggestion-card {
+    animation: slideInUp 0.5s ease forwards;
+}
+
+.suggestion-card:nth-child(1) { animation-delay: 0.1s; }
+.suggestion-card:nth-child(2) { animation-delay: 0.2s; }
+.suggestion-card:nth-child(3) { animation-delay: 0.3s; }
+.suggestion-card:nth-child(4) { animation-delay: 0.4s; }
+
+/* ホバーエフェクト */
+.suggestion-card .card-header {
+    position: relative;
+    overflow: hidden;
+}
+
+.suggestion-card .card-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s ease;
+}
+
+.suggestion-card:hover .card-header::before {
+    left: 100%;
+}
+
+/* ツールチップ風スタイル */
+.suggestion-card .stat-card {
+    position: relative;
+}
+
+.suggestion-card .stat-card::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: var(--gray-dark);
+    color: white;
+    padding: 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    z-index: 1000;
+}
+
+.suggestion-card .stat-card:hover::after {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(-5px);
+}
+
+/* 印刷用スタイル */
+@media print {
+    .suggestion-card {
+        break-inside: avoid;
+        box-shadow: none;
+        border: 1px solid #ddd;
+    }
+    
+    .suggestions-comparison {
+        break-inside: avoid;
+    }
+    
+    .suggestion-card:hover {
+        transform: none;
+    }
+}
+
+/* 提案比較テーブルの展開/折りたたみ機能 */
+.suggestion-row {
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.suggestion-row:hover {
+    background-color: rgba(59, 130, 246, 0.05) !important;
+}
+
+.suggestion-toggle {
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+.suggestion-toggle:hover {
+    transform: scale(1.1);
+}
+
+.suggestion-toggle i {
+    transition: transform 0.3s ease;
+}
+
+.suggestion-toggle.btn-primary i {
+    transform: rotate(180deg);
+}
+
+.suggestion-detail-row {
+    background-color: #f8fafc;
+}
+
+.suggestion-detail-content {
+    border-top: 2px solid #e2e8f0;
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 提案詳細コンテンツのスタイル */
+.suggestion-detail-content .stat-card {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.suggestion-detail-content .stat-card:hover {
+    border-color: var(--primary-blue);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.suggestion-detail-content .combinations-grid {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 1rem;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.suggestion-detail-content .combination-badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    margin: 0.125rem;
+    background-color: #f1f5f9;
+    color: #475569;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border: 1px solid #e2e8f0;
+    transition: all 0.2s ease;
+}
+
+.suggestion-detail-content .combination-badge:hover {
+    background-color: var(--primary-blue);
+    color: white;
+    border-color: var(--primary-blue);
+}
+
+.suggestion-detail-content .investment-advice {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.suggestion-detail-content .progress {
+    height: 15px;
+    border-radius: 8px;
+    background-color: #e2e8f0;
+}
+
+.suggestion-detail-content .progress-bar {
+    border-radius: 8px;
+    transition: width 0.6s ease;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+    .suggestion-toggle {
+        width: 28px;
+        height: 28px;
+    }
+    
+    .suggestion-detail-content .row {
+        margin: 0;
+    }
+    
+    .suggestion-detail-content .col-md-6 {
+        padding: 0.5rem;
+    }
+    
+    .suggestion-detail-content .stat-card {
+        margin-bottom: 0.5rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .suggestion-detail-content {
+        padding: 1rem;
+    }
+    
+    .suggestion-detail-content .combinations-grid {
+        max-height: 150px;
+    }
+    
+    .suggestion-detail-content .combination-badge {
+        font-size: 0.75rem;
+        padding: 0.2rem 0.4rem;
+    }
 } 
