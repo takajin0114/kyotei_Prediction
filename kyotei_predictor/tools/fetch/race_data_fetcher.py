@@ -16,93 +16,217 @@ import re
 from typing import List, Optional, Any, Union
 import os
 
-def safe_extract_racers(html_file: StringIO) -> list[Any]:
+def safe_extract_racers(html_file: StringIO, max_retries: int = 3) -> list[Any]:
     """
-    選手データを安全に抽出する関数（エラーハンドリング付き）
+    選手データを安全に抽出する関数（エラーハンドリング付き・リトライ機能付き）
     
     Args:
         html_file: HTMLファイルオブジェクト
+        max_retries: 最大リトライ回数
     
     Returns:
         list: 選手データのリスト（エラーが発生した場合は空のリスト）
     """
-    try:
-        return entry_scraping.extract_racers(html_file)
-    except ValueError as e:
-        if "not enough values to unpack" in str(e):
-            print(f"⚠️  選手名解析エラー: 名前の形式が予期しない形式です - {e}")
-            print(f"⚠️  選手名文字列: {getattr(e, 'args', [''])[0]}")
-            print("⚠️  選手データの取得をスキップします")
-            return []
-        else:
-            raise e
-    except Exception as e:
-        print(f"⚠️  選手データ抽出エラー: {e}")
-        return []
+    for attempt in range(max_retries):
+        try:
+            html_file.seek(0)  # ファイルポインタを先頭に戻す
+            racers = entry_scraping.extract_racers(html_file)
+            if racers:
+                print(f"✅ 選手データ取得成功: {len(racers)}名")
+                return racers
+            else:
+                print(f"⚠️  選手データが空です（試行 {attempt + 1}/{max_retries}）")
+                if attempt < max_retries - 1:
+                    time.sleep(2)  # 2秒待機してリトライ
+                    continue
+                else:
+                    print("❌ 選手データ取得失敗: 最大リトライ回数に達しました")
+                    return []
+        except ValueError as e:
+            error_msg = str(e)
+            if "not enough values to unpack" in error_msg:
+                print(f"⚠️  選手名解析エラー（試行 {attempt + 1}/{max_retries}）: 名前の形式が予期しない形式です")
+                print(f"⚠️  エラー詳細: {error_msg}")
+                if hasattr(e, 'args') and e.args:
+                    print(f"⚠️  問題の文字列: {e.args[0]}")
+                
+                if attempt < max_retries - 1:
+                    print(f"🔄 2秒後にリトライします...")
+                    time.sleep(2)
+                    continue
+                else:
+                    print("❌ 選手名解析エラー: 最大リトライ回数に達しました - スキップ")
+                    return []
+            else:
+                print(f"⚠️  ValueError（試行 {attempt + 1}/{max_retries}）: {error_msg}")
+                if attempt < max_retries - 1:
+                    time.sleep(2)
+                    continue
+                else:
+                    raise e
+        except Exception as e:
+            print(f"⚠️  選手データ抽出エラー（試行 {attempt + 1}/{max_retries}）: {type(e).__name__}: {e}")
+            if attempt < max_retries - 1:
+                print(f"🔄 2秒後にリトライします...")
+                time.sleep(2)
+                continue
+            else:
+                print("❌ 選手データ抽出エラー: 最大リトライ回数に達しました")
+                return []
+    
+    return []
 
-def safe_extract_race_entries(html_file: StringIO) -> list[Any]:
+def safe_extract_race_entries(html_file: StringIO, max_retries: int = 3) -> list[Any]:
     """
-    レース出走データを安全に抽出する関数（エラーハンドリング付き）
+    レース出走データを安全に抽出する関数（エラーハンドリング付き・リトライ機能付き）
     
     Args:
         html_file: HTMLファイルオブジェクト
+        max_retries: 最大リトライ回数
     
     Returns:
         list: レース出走データのリスト（エラーが発生した場合は空のリスト）
     """
-    try:
-        return entry_scraping.extract_race_entries(html_file)
-    except Exception as e:
-        print(f"⚠️  レース出走データ抽出エラー: {e}")
-        return []
+    for attempt in range(max_retries):
+        try:
+            html_file.seek(0)  # ファイルポインタを先頭に戻す
+            entries = entry_scraping.extract_race_entries(html_file)
+            if entries:
+                print(f"✅ レース出走データ取得成功: {len(entries)}艇")
+                return entries
+            else:
+                print(f"⚠️  レース出走データが空です（試行 {attempt + 1}/{max_retries}）")
+                if attempt < max_retries - 1:
+                    time.sleep(2)
+                    continue
+                else:
+                    print("❌ レース出走データ取得失敗: 最大リトライ回数に達しました")
+                    return []
+        except Exception as e:
+            print(f"⚠️  レース出走データ抽出エラー（試行 {attempt + 1}/{max_retries}）: {type(e).__name__}: {e}")
+            if attempt < max_retries - 1:
+                print(f"🔄 2秒後にリトライします...")
+                time.sleep(2)
+                continue
+            else:
+                print("❌ レース出走データ抽出エラー: 最大リトライ回数に達しました")
+                return []
+    
+    return []
 
-def safe_extract_racer_performances(html_file: StringIO) -> list[Any]:
+def safe_extract_racer_performances(html_file: StringIO, max_retries: int = 3) -> list[Any]:
     """
-    選手成績データを安全に抽出する関数（エラーハンドリング付き）
+    選手成績データを安全に抽出する関数（エラーハンドリング付き・リトライ機能付き）
     
     Args:
         html_file: HTMLファイルオブジェクト
+        max_retries: 最大リトライ回数
     
     Returns:
         list: 選手成績データのリスト（エラーが発生した場合は空のリスト）
     """
-    try:
-        return entry_scraping.extract_racer_performances(html_file)
-    except Exception as e:
-        print(f"⚠️  選手成績データ抽出エラー: {e}")
-        return []
+    for attempt in range(max_retries):
+        try:
+            html_file.seek(0)  # ファイルポインタを先頭に戻す
+            performances = entry_scraping.extract_racer_performances(html_file)
+            if performances:
+                print(f"✅ 選手成績データ取得成功: {len(performances)}件")
+                return performances
+            else:
+                print(f"⚠️  選手成績データが空です（試行 {attempt + 1}/{max_retries}）")
+                if attempt < max_retries - 1:
+                    time.sleep(2)
+                    continue
+                else:
+                    print("❌ 選手成績データ取得失敗: 最大リトライ回数に達しました")
+                    return []
+        except Exception as e:
+            print(f"⚠️  選手成績データ抽出エラー（試行 {attempt + 1}/{max_retries}）: {type(e).__name__}: {e}")
+            if attempt < max_retries - 1:
+                print(f"🔄 2秒後にリトライします...")
+                time.sleep(2)
+                continue
+            else:
+                print("❌ 選手成績データ抽出エラー: 最大リトライ回数に達しました")
+                return []
+    
+    return []
 
-def safe_extract_boat_performances(html_file: StringIO) -> list[Any]:
+def safe_extract_boat_performances(html_file: StringIO, max_retries: int = 3) -> list[Any]:
     """
-    ボート成績データを安全に抽出する関数（エラーハンドリング付き）
+    ボート成績データを安全に抽出する関数（エラーハンドリング付き・リトライ機能付き）
     
     Args:
         html_file: HTMLファイルオブジェクト
+        max_retries: 最大リトライ回数
     
     Returns:
         list: ボート成績データのリスト（エラーが発生した場合は空のリスト）
     """
-    try:
-        return entry_scraping.extract_boat_performances(html_file)
-    except Exception as e:
-        print(f"⚠️  ボート成績データ抽出エラー: {e}")
-        return []
+    for attempt in range(max_retries):
+        try:
+            html_file.seek(0)  # ファイルポインタを先頭に戻す
+            performances = entry_scraping.extract_boat_performances(html_file)
+            if performances:
+                print(f"✅ ボート成績データ取得成功: {len(performances)}件")
+                return performances
+            else:
+                print(f"⚠️  ボート成績データが空です（試行 {attempt + 1}/{max_retries}）")
+                if attempt < max_retries - 1:
+                    time.sleep(2)
+                    continue
+                else:
+                    print("❌ ボート成績データ取得失敗: 最大リトライ回数に達しました")
+                    return []
+        except Exception as e:
+            print(f"⚠️  ボート成績データ抽出エラー（試行 {attempt + 1}/{max_retries}）: {type(e).__name__}: {e}")
+            if attempt < max_retries - 1:
+                print(f"🔄 2秒後にリトライします...")
+                time.sleep(2)
+                continue
+            else:
+                print("❌ ボート成績データ抽出エラー: 最大リトライ回数に達しました")
+                return []
+    
+    return []
 
-def safe_extract_motor_performances(html_file: StringIO) -> list[Any]:
+def safe_extract_motor_performances(html_file: StringIO, max_retries: int = 3) -> list[Any]:
     """
-    モーター成績データを安全に抽出する関数（エラーハンドリング付き）
+    モーター成績データを安全に抽出する関数（エラーハンドリング付き・リトライ機能付き）
     
     Args:
         html_file: HTMLファイルオブジェクト
+        max_retries: 最大リトライ回数
     
     Returns:
         list: モーター成績データのリスト（エラーが発生した場合は空のリスト）
     """
-    try:
-        return entry_scraping.extract_motor_performances(html_file)
-    except Exception as e:
-        print(f"⚠️  モーター成績データ抽出エラー: {e}")
-        return []
+    for attempt in range(max_retries):
+        try:
+            html_file.seek(0)  # ファイルポインタを先頭に戻す
+            performances = entry_scraping.extract_motor_performances(html_file)
+            if performances:
+                print(f"✅ モーター成績データ取得成功: {len(performances)}件")
+                return performances
+            else:
+                print(f"⚠️  モーター成績データが空です（試行 {attempt + 1}/{max_retries}）")
+                if attempt < max_retries - 1:
+                    time.sleep(2)
+                    continue
+                else:
+                    print("❌ モーター成績データ取得失敗: 最大リトライ回数に達しました")
+                    return []
+        except Exception as e:
+            print(f"⚠️  モーター成績データ抽出エラー（試行 {attempt + 1}/{max_retries}）: {type(e).__name__}: {e}")
+            if attempt < max_retries - 1:
+                print(f"🔄 2秒後にリトライします...")
+                time.sleep(2)
+                continue
+            else:
+                print("❌ モーター成績データ抽出エラー: 最大リトライ回数に達しました")
+                return []
+    
+    return []
 
 def fetch_race_entry_data(
     race_date: date,
@@ -144,8 +268,6 @@ def fetch_race_entry_data(
         
         race_information = entry_scraping.extract_race_information(html_file)
         html_file.seek(0)
-        
-        # 安全なデータ抽出
         race_entries = safe_extract_race_entries(html_file)
         html_file.seek(0)
         racers = safe_extract_racers(html_file)
@@ -202,10 +324,19 @@ def fetch_race_entry_data(
             boat_perf = boat_performances[i] if i < len(boat_performances) else None
             motor_perf = motor_performances[i] if i < len(motor_performances) else None
             
+            # 選手名の安全な取得（選手名が取得できない場合は"不明"として処理を継続）
+            racer_name = "不明"
+            if racer:
+                try:
+                    racer_name = f"{racer.last_name} {racer.first_name}"
+                except (AttributeError, ValueError) as e:
+                    print(f"⚠️  艇番{entry.pit_number}の選手名解析エラー: {e}")
+                    racer_name = "不明"
+            
             entry_data = {
                 "pit_number": entry.pit_number,
                 "racer": {
-                    "name": f"{racer.last_name} {racer.first_name}" if racer else "不明",
+                    "name": racer_name,
                     "registration_number": racer.registration_number if racer else None,
                     "current_rating": racer.current_rating.name if racer and racer.current_rating else None,
                     "branch": racer.branch if racer else None,
