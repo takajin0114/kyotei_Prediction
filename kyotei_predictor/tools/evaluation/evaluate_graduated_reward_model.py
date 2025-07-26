@@ -263,11 +263,7 @@ def main():
         print(f"的中率: {results['statistics']['hit_rate']*100:.2f}%")
         print(f"平均報酬: {results['statistics']['mean_reward']:.2f}")
         print(f"正の報酬率: {results['statistics']['positive_reward_rate']*100:.2f}%")
-        
-        print("\n次のステップ:")
-        print("1. ハイパーパラメータ最適化の実行")
-        print("2. 特徴量エンジニアリングの改善")
-        print("3. より長期間の学習の検討")
+
 
 if __name__ == "__main__":
     main() 

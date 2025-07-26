@@ -31,7 +31,7 @@ def create_env(data_dir="kyotei_predictor/data/raw", bet_amount=100):
     
     return DummyVecEnv([make_env])
 
-def objective(trial, data_dir="kyotei_predictor/data/raw"):
+def objective(trial, data_dir="kyotei_predictor/data/raw", test_mode=False):
     print(f"[objective] Trial {trial.number} started")
     # ハイパーパラメータの提案
     learning_rate = trial.suggest_float('learning_rate', 1e-5, 1e-2, log=True)
@@ -75,19 +75,27 @@ def objective(trial, data_dir="kyotei_predictor/data/raw"):
         vf_coef=vf_coef,
         max_grad_norm=max_grad_norm,
         verbose=1,
-        tensorboard_log=f"./optuna_tensorboard/trial_{trial.number}/"
+        tensorboard_log=None  # TensorBoardログを無効化
     )
-    total_timesteps = 10000  # 学習量を10倍に増加
+    
+    # テストモードの場合は短時間設定
+    if test_mode:
+        total_timesteps = 10000  # テスト用に短縮
+        n_eval_episodes = 100    # テスト用に短縮
+    else:
+        total_timesteps = 100000  # 通常設定
+        n_eval_episodes = 2000    # 通常設定
+    
     try:
-        print(f"[objective] model.learn start")
+        print(f"[objective] model.learn start (timesteps: {total_timesteps})")
         model.learn(
             total_timesteps=total_timesteps,
             callback=[eval_callback, checkpoint_callback],
-            progress_bar=True
+            progress_bar=False  # ProgressBarを無効化
         )
         print(f"[objective] model.learn end")
-        print(f"[objective] evaluate_model start")
-        eval_results = evaluate_model(model, eval_env, n_eval_episodes=10)  # 評価エピソード数を10に増加
+        print(f"[objective] evaluate_model start (episodes: {n_eval_episodes})")
+        eval_results = evaluate_model(model, eval_env, n_eval_episodes=n_eval_episodes)
         print(f"[objective] evaluate_model end: {eval_results}")
         hit_rate = eval_results['hit_rate']
         mean_reward = eval_results['mean_reward']
@@ -96,11 +104,16 @@ def objective(trial, data_dir="kyotei_predictor/data/raw"):
         return score
     except Exception as e:
         import traceback
-        print(f"Trial {trial.number} failed with error: {e}")
-        print("Full traceback:")
+        import datetime
+        now_str = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        log_dir = "outputs/logs"
+        os.makedirs(log_dir, exist_ok=True)
+        log_path = f"{log_dir}/optimize_objective_error_{now_str}_trial{trial.number}.log"
+        with open(log_path, "w", encoding="utf-8") as f:
+            f.write(f"[Trial {trial.number}] Exception: {e}\n")
+            traceback.print_exc(file=f)
         traceback.print_exc()
-        logging.warning(f"Trial {trial.number} failed: {e}", exc_info=True)
-        return -1000  # 失敗時は低いスコア
+        return -1000.0
 
 def evaluate_model(model, env, n_eval_episodes=100):
     """モデルの評価"""
@@ -154,7 +167,8 @@ def safe_savez(filepath, *args, **kwargs):
 def optimize_graduated_reward(
     n_trials=50,
     study_name="graduated_reward_optimization",
-    data_dir="kyotei_predictor/data/raw"
+    data_dir="kyotei_predictor/data/raw",
+    test_mode=False
 ):
     """段階的報酬設計モデルのハイパーパラメータ最適化"""
     
@@ -176,7 +190,7 @@ def optimize_graduated_reward(
     )
     
     # 最適化実行
-    study.optimize(lambda trial: objective(trial, data_dir), n_trials=n_trials, show_progress_bar=True)
+    study.optimize(lambda trial: objective(trial, data_dir, test_mode), n_trials=n_trials, show_progress_bar=True)
     
     # 結果表示
     print("\n=== 最適化結果 ===")
@@ -252,15 +266,30 @@ def main():
     parser.add_argument('--data-dir', type=str, default="kyotei_predictor/data/raw", help='データディレクトリ')
     parser.add_argument('--study-name', type=str, default="graduated_reward_optimization", help='Optunaスタディ名')
     parser.add_argument('--n-trials', type=int, default=50, help='試行回数')
+    parser.add_argument('--test-mode', action='store_true', help='テストモード（短時間設定）')
     args = parser.parse_args()
+    
     print("段階的報酬設計モデルのハイパーパラメータ最適化を開始します")
-    logging.debug(f"[main] args.data_dir: {args.data_dir}")
-    # 最適化実行
-    study = optimize_graduated_reward(
-        n_trials=args.n_trials,
-        study_name=args.study_name,
-        data_dir=args.data_dir
-    )
+    
+    if args.test_mode:
+        print("=== テストモードで実行 ===")
+        print("設定: 試行回数=2, 学習ステップ数=10,000, 評価エピソード数=100")
+        # テスト用の短時間設定
+        study = optimize_graduated_reward(
+            n_trials=2,  # テスト用に2回のみ
+            study_name=f"{args.study_name}_test",
+            data_dir=args.data_dir,
+            test_mode=True
+        )
+    else:
+        print(f"設定: 試行回数={args.n_trials}, 学習ステップ数=100,000, 評価エピソード数=2,000")
+        # 通常設定
+        study = optimize_graduated_reward(
+            n_trials=args.n_trials,
+            study_name=args.study_name,
+            data_dir=args.data_dir
+        )
+    
     print("\n=== 最適化完了 ===")
 
 if __name__ == "__main__":
