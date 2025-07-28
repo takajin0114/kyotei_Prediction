@@ -18,19 +18,19 @@ CANCELED_FILE_PATTERN = re.compile(r"race_canceled_(\d{4}-\d{2}-\d{2})_([A-Z0-9]
 ALL_RACE_NOS = set(range(1, 13))
 
 def collect_existing_races(raw_dir):
-    files = os.listdir(raw_dir)
     existing = set()
-    for fname in files:
-        # race_data_ファイルをチェック
-        m = RACE_FILE_PATTERN.match(fname)
-        if m:
-            date, venue, race_no = m.groups()
-            existing.add((date, venue, int(race_no)))
-        # race_canceled_ファイルもチェック（レース中止も「存在」として扱う）
-        m_canceled = CANCELED_FILE_PATTERN.match(fname)
-        if m_canceled:
-            date, venue, race_no = m_canceled.groups()
-            existing.add((date, venue, int(race_no)))
+    for root, dirs, files in os.walk(raw_dir):
+        for fname in files:
+            # race_data_ファイルをチェック
+            m = RACE_FILE_PATTERN.match(fname)
+            if m:
+                date, venue, race_no = m.groups()
+                existing.add((date, venue, int(race_no)))
+            # race_canceled_ファイルもチェック（レース中止も「存在」として扱う）
+            m_canceled = CANCELED_FILE_PATTERN.match(fname)
+            if m_canceled:
+                date, venue, race_no = m_canceled.groups()
+                existing.add((date, venue, int(race_no)))
     return existing
 
 def collect_missing_races(existing):
@@ -45,14 +45,18 @@ def collect_missing_races(existing):
             missing.append((date, venue, race_no))
     return missing
 
+def get_month_dir(date_str):
+    month = date_str[:7]  # YYYY-MM
+    return os.path.join(RAW_DATA_DIR, month)
+
 def create_canceled_file(date_str, venue, race_no):
     """
-    レース中止ファイルを作成
+    レース中止ファイルを作成（月ごとサブディレクトリ対応）
     """
     canceled_fname = f"race_canceled_{date_str}_{venue}_R{race_no}.json"
-    canceled_fpath = os.path.join(RAW_DATA_DIR, canceled_fname)
-    # 保存先ディレクトリを作成
-    os.makedirs(os.path.dirname(canceled_fpath), exist_ok=True)
+    month_dir = get_month_dir(date_str)
+    os.makedirs(month_dir, exist_ok=True)
+    canceled_fpath = os.path.join(month_dir, canceled_fname)
     canceled_data = {
         "status": "canceled",
         "race_info": {
@@ -138,8 +142,11 @@ def main():
                 # レースデータ取得
                 race_data = fetch_complete_race_data(race_date, stadium_enum, race_no)
                 if race_data:
+                    # レースデータ保存
                     race_fname = f"race_data_{date_str}_{venue}_R{race_no}.json"
-                    race_fpath = os.path.join(RAW_DATA_DIR, race_fname)
+                    month_dir = get_month_dir(date_str)
+                    os.makedirs(month_dir, exist_ok=True)
+                    race_fpath = os.path.join(month_dir, race_fname)
                     with open(race_fpath, 'w', encoding='utf-8') as f:
                         json.dump(race_data, f, ensure_ascii=False, indent=2)
                     print(f"  ✅ race_data保存: {race_fname}")
@@ -147,8 +154,9 @@ def main():
                     # レースデータが正常に取得できた場合のみオッズ取得
                     odds_data = fetch_trifecta_odds(race_date, stadium_enum, race_no)
                     if odds_data:
+                        # オッズデータ保存
                         odds_fname = f"odds_data_{date_str}_{venue}_R{race_no}.json"
-                        odds_fpath = os.path.join(RAW_DATA_DIR, odds_fname)
+                        odds_fpath = os.path.join(month_dir, odds_fname)
                         with open(odds_fpath, 'w', encoding='utf-8') as f:
                             json.dump(odds_data, f, ensure_ascii=False, indent=2)
                         print(f"  ✅ odds_data保存: {odds_fname}")

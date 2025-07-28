@@ -19,7 +19,7 @@ from tools.fetch.race_data_fetcher import fetch_race_entry_data
 from tools.viz.html_display import generate_html_display as generate_race_html
 from errors import APIError, register_error_handlers
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='static')
 register_error_handlers(app)  # エラーハンドラーを登録
 
 # キャッシュ設定
@@ -32,6 +32,40 @@ cache.init_app(app)
 SAMPLE_DATA = Path('data/complete_race_data_20240615_KIRYU_R1.json')
 
 
+@app.route('/')
+def index():
+    """メインページ"""
+    return render_template('index.html')
+
+
+@app.route('/predictions')
+def predictions():
+    """予測ページ"""
+    return render_template('predictions.html')
+
+
+@app.route('/outputs/<filename>')
+def serve_output_file(filename):
+    """outputsディレクトリのファイルを提供"""
+    import os
+    file_path = os.path.join('outputs', filename)
+    if os.path.exists(file_path) and filename.endswith('.json'):
+        with open(file_path, 'r', encoding='utf-8') as f:
+            return f.read(), 200, {'Content-Type': 'application/json'}
+    return "File not found", 404
+
+
+@app.route('/kyotei_predictor/data/raw/<filename>')
+def serve_raw_data_file(filename):
+    """data/rawディレクトリのファイルを提供"""
+    import os
+    file_path = os.path.join('kyotei_predictor', 'data', 'raw', filename)
+    if os.path.exists(file_path) and filename.endswith('.json'):
+        with open(file_path, 'r', encoding='utf-8') as f:
+            return f.read(), 200, {'Content-Type': 'application/json'}
+    return "File not found", 404
+
+
 @app.route('/api/race_data', methods=['GET'])
 @cache.cached(timeout=300, query_string=True)  # 5分間キャッシュ
 def get_race_data():
@@ -41,7 +75,7 @@ def get_race_data():
     return jsonify({"error": "Sample data not found"}), 404
 
 @app.route('/api/predict', methods=['POST'])
-@cache.cached(timeout=60, key_prefix=lambda: str(request.json))  # 1分間キャッシュ（リクエスト内容でキー生成）
+@cache.cached(timeout=60)  # 1分間キャッシュ
 def predict():
     data = request.get_json()
     # 簡易的な予測ロジック

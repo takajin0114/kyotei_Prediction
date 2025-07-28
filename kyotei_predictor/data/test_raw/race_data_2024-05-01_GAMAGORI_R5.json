@@ -1,0 +1,245 @@
+{
+  "race_info": {
+    "date": "2024-05-01",
+    "stadium": "GAMAGORI",
+    "race_number": 5,
+    "url": "https://boatrace.jp/owpc/pc/race/racelist?rno=5&jcd=07&hd=20240501",
+    "title": "予選",
+    "deadline_at": "2024-05-01T08:01:00+00:00",
+    "number_of_laps": 3,
+    "is_course_fixed": false
+  },
+  "race_entries": [
+    {
+      "pit_number": 1,
+      "racer": {
+        "name": "三浦 洋次朗",
+        "registration_number": 4706,
+        "current_rating": "A2",
+        "branch": null,
+        "born_prefecture": null,
+        "birth_date": null,
+        "height": null,
+        "gender": null
+      },
+      "performance": {
+        "rate_in_all_stadium": 5.42,
+        "rate_in_event_going_stadium": 6.52
+      },
+      "boat": {
+        "number": 40,
+        "quinella_rate": 31.22,
+        "trio_rate": 51.32
+      },
+      "motor": {
+        "number": 57,
+        "quinella_rate": 31.94,
+        "trio_rate": 47.22
+      }
+    },
+    {
+      "pit_number": 2,
+      "racer": {
+        "name": "広瀬 聖仁",
+        "registration_number": 3315,
+        "current_rating": "B1",
+        "branch": null,
+        "born_prefecture": null,
+        "birth_date": null,
+        "height": null,
+        "gender": null
+      },
+      "performance": {
+        "rate_in_all_stadium": 5.29,
+        "rate_in_event_going_stadium": 4.0
+      },
+      "boat": {
+        "number": 62,
+        "quinella_rate": 34.76,
+        "trio_rate": 48.66
+      },
+      "motor": {
+        "number": 47,
+        "quinella_rate": 37.21,
+        "trio_rate": 57.67
+      }
+    },
+    {
+      "pit_number": 3,
+      "racer": {
+        "name": "久田 武",
+        "registration_number": 3885,
+        "current_rating": "A2",
+        "branch": null,
+        "born_prefecture": null,
+        "birth_date": null,
+        "height": null,
+        "gender": null
+      },
+      "performance": {
+        "rate_in_all_stadium": 5.25,
+        "rate_in_event_going_stadium": 5.93
+      },
+      "boat": {
+        "number": 48,
+        "quinella_rate": 38.69,
+        "trio_rate": 55.78
+      },
+      "motor": {
+        "number": 14,
+        "quinella_rate": 33.79,
+        "trio_rate": 54.79
+      }
+    },
+    {
+      "pit_number": 4,
+      "racer": {
+        "name": "坪井 爽佑",
+        "registration_number": 5128,
+        "current_rating": "B1",
+        "branch": null,
+        "born_prefecture": null,
+        "birth_date": null,
+        "height": null,
+        "gender": null
+      },
+      "performance": {
+        "rate_in_all_stadium": 3.4,
+        "rate_in_event_going_stadium": 1.33
+      },
+      "boat": {
+        "number": 53,
+        "quinella_rate": 39.89,
+        "trio_rate": 53.37
+      },
+      "motor": {
+        "number": 17,
+        "quinella_rate": 38.92,
+        "trio_rate": 54.05
+      }
+    },
+    {
+      "pit_number": 5,
+      "racer": {
+        "name": "近藤 颯斗",
+        "registration_number": 5319,
+        "current_rating": "B2",
+        "branch": null,
+        "born_prefecture": null,
+        "birth_date": null,
+        "height": null,
+        "gender": null
+      },
+      "performance": {
+        "rate_in_all_stadium": 1.4,
+        "rate_in_event_going_stadium": 1.43
+      },
+      "boat": {
+        "number": 39,
+        "quinella_rate": 34.3,
+        "trio_rate": 49.42
+      },
+      "motor": {
+        "number": 37,
+        "quinella_rate": 36.5,
+        "trio_rate": 47.5
+      }
+    },
+    {
+      "pit_number": 6,
+      "racer": {
+        "name": "柳沢 一",
+        "registration_number": 4074,
+        "current_rating": "A1",
+        "branch": null,
+        "born_prefecture": null,
+        "birth_date": null,
+        "height": null,
+        "gender": null
+      },
+      "performance": {
+        "rate_in_all_stadium": 6.92,
+        "rate_in_event_going_stadium": 6.84
+      },
+      "boat": {
+        "number": 23,
+        "quinella_rate": 31.68,
+        "trio_rate": 50.93
+      },
+      "motor": {
+        "number": 20,
+        "quinella_rate": 32.98,
+        "trio_rate": 51.06
+      }
+    }
+  ],
+  "race_records": [
+    {
+      "pit_number": 1,
+      "start_course": 1,
+      "start_time": 0.14,
+      "total_time": 112.7,
+      "arrival": 3,
+      "winning_trick": null
+    },
+    {
+      "pit_number": 2,
+      "start_course": 2,
+      "start_time": 0.16,
+      "total_time": 113.6,
+      "arrival": 4,
+      "winning_trick": null
+    },
+    {
+      "pit_number": 3,
+      "start_course": 3,
+      "start_time": 0.22,
+      "total_time": 111.0,
+      "arrival": 2,
+      "winning_trick": null
+    },
+    {
+      "pit_number": 4,
+      "start_course": 4,
+      "start_time": 0.17,
+      "total_time": null,
+      "arrival": 6,
+      "winning_trick": null
+    },
+    {
+      "pit_number": 5,
+      "start_course": 6,
+      "start_time": 0.1,
+      "total_time": null,
+      "arrival": 5,
+      "winning_trick": null
+    },
+    {
+      "pit_number": 6,
+      "start_course": 5,
+      "start_time": 0.04,
+      "total_time": 109.1,
+      "arrival": 1,
+      "winning_trick": "MAKURI"
+    }
+  ],
+  "weather_condition": {
+    "weather": "RAINY",
+    "wind_velocity": 4.0,
+    "wind_angle": 0.0,
+    "air_temperature": 16.0,
+    "water_temperature": 16.0,
+    "wavelength": 2.0
+  },
+  "payoffs": [
+    {
+      "betting_method": "TRIFECTA",
+      "betting_numbers": [
+        6,
+        3,
+        1
+      ],
+      "amount": 2840
+    }
+  ]
+}

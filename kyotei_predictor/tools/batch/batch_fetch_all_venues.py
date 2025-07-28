@@ -28,6 +28,24 @@ progress_lock = threading.Lock()
 progress_total = 0
 progress_done = 0
 
+# 選手名取得エラーログ用
+racer_error_log_file = None
+racer_error_log_lock = threading.Lock()
+
+def log_racer_error(error_info: dict):
+    """選手名取得エラーを専用ログファイルに記録"""
+    global racer_error_log_file
+    if racer_error_log_file is None:
+        # ログファイルを初期化
+        log_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'logs', 'racer_errors')
+        os.makedirs(log_dir, exist_ok=True)
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        racer_error_log_file = os.path.join(log_dir, f'racer_errors_{timestamp}.jsonl')
+    
+    with racer_error_log_lock:
+        with open(racer_error_log_file, 'a', encoding='utf-8') as f:
+            f.write(json.dumps(error_info, ensure_ascii=False) + '\n')
+
 def get_event_days_for_stadium(stadium: StadiumTelCode, start_date: date, end_date: date):
     """1会場の開催日を取得（高速化版）"""
     event_days = []
@@ -93,9 +111,11 @@ def log_info(message: str) -> None:
     print(message, flush=True)
 
 def make_race_file_paths(day: date, stadium: StadiumTelCode, race_no: int) -> Dict[str, str]:
-    """レース・オッズ・中止ファイルのパスをまとめて返す"""
+    """レース・オッズ・中止ファイルのパスをまとめて返す（月ごとサブディレクトリ対応）"""
     ymd = day.strftime('%Y-%m-%d')
-    base_dir = os.path.join("kyotei_predictor", "data", "raw")
+    month = ymd[:7]  # YYYY-MM
+    base_dir = os.path.join("kyotei_predictor", "data", "raw", month)
+    os.makedirs(base_dir, exist_ok=True)
     return {
         'race': os.path.join(base_dir, f"race_data_{ymd}_{stadium.name}_R{race_no}.json"),
         'odds': os.path.join(base_dir, f"odds_data_{ymd}_{stadium.name}_R{race_no}.json"),
@@ -161,9 +181,35 @@ def fetch_race_data_parallel(
                         log_info(f"    R{race_no}: レースデータ取得失敗（リトライ {retry_count}/{max_retries}）")
             except ValueError as e:
                 if "not enough values to unpack" in str(e):
-                    result['race_error'] = f"選手名解析エラー: {e}"
-                    log_info(f"    R{race_no}: 選手名解析エラー - スキップ")
-                    break
+                    # 選手名解析エラーは既にfetch_race_entry_data内で処理されているため、
+                    # ここでは正常にデータが取得できているはずです
+                    result['race_error'] = f"予期しない選手名解析エラー: {e}"
+                    log_info(f"    R{race_no}: 予期しない選手名解析エラー - 詳細情報を記録")
+                    
+                    # エラーの詳細ログを記録
+                    error_log_info = {
+                        "timestamp": datetime.now().isoformat(),
+                        "stadium": stadium.name,
+                        "date": ymd,
+                        "race_no": race_no,
+                        "error_type": "unexpected_racer_name_parse_error",
+                        "error_message": str(e),
+                        "error_details": {
+                            "args": getattr(e, 'args', []),
+                            "traceback": str(e)
+                        }
+                    }
+                    log_racer_error(error_log_info)
+                    
+                    # 予期しないエラーの場合はリトライ
+                    retry_count += 1
+                    if retry_count < max_retries:
+                        log_info(f"    R{race_no}: 予期しない選手名解析エラー - リトライ {retry_count}/{max_retries}")
+                        time.sleep(5)
+                    else:
+                        result['race_error'] = f"予期しない選手名解析エラー: {e}"
+                        log_info(f"    R{race_no}: 予期しない選手名解析エラー - 最大リトライ回数に達しました")
+                    continue
                 else:
                     retry_count += 1
                     result['race_error'] = str(e)
@@ -431,6 +477,7 @@ def main() -> None:
     total_odds = 0
     success_races = 0
     success_odds = 0
+    racer_parse_errors = 0  # 選手名解析エラー数
 
     for stadium in stadiums:
         event_days = all_event_days[stadium]
@@ -450,6 +497,9 @@ def main() -> None:
                     success_races += 1
                 if result['odds_success']:
                     success_odds += 1
+                # 選手名解析エラーのカウント
+                if result.get('race_error') and '選手名解析エラー' in result['race_error']:
+                    racer_parse_errors += 1
 
     log_info(f"\n=== バッチフェッチ完了（完全並列版） ===")
     log_info(f"対象期間: {start_date} 〜 {end_date}")
@@ -461,8 +511,17 @@ def main() -> None:
         log_info(f"失敗数: レース{total_races-success_races}件, オッズ{total_odds-success_odds}件")
     else:
         log_info("成功率: 計算不可")
+    
+    # 選手名解析エラーの統計
+    if racer_parse_errors > 0:
+        log_info(f"\n📊 選手名解析エラー統計:")
+        log_info(f"  選手名解析エラー数: {racer_parse_errors}件")
+        log_info(f"  エラー率: {racer_parse_errors/total_races*100:.1f}%")
+        if racer_error_log_file:
+            log_info(f"  詳細ログ: {racer_error_log_file}")
+    
     log_info(f"\n📊 エラーハンドリング改善:")
-    log_info(f"  - 選手名解析エラー: 自動スキップ処理")
+    log_info(f"  - 選手名解析エラー: 自動スキップ処理 + 部分データ保存")
     log_info(f"  - レース中止: 自動検出・スキップ")
     log_info(f"  - ネットワークエラー: 最大{MAX_RETRIES}回リトライ")
     log_info(f"  - レート制限: {RATE_LIMIT_SECONDS}秒間隔")

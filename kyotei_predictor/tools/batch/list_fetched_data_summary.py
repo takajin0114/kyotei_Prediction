@@ -8,12 +8,15 @@ race_pattern = re.compile(r'race_data_(\d{4}-\d{2}-\d{2})_([A-Z0-9]+)_R\d+\.json
 odds_pattern = re.compile(r'odds_data_(\d{4}-\d{2}-\d{2})_([A-Z0-9]+)_R\d+\.json')
 
 def collect_summary(pattern):
+    import os
+    from collections import defaultdict
     summary = defaultdict(set)
-    for fname in os.listdir(RAW_DIR):
-        m = pattern.match(fname)
-        if m:
-            day, stadium = m.groups()
-            summary[stadium].add(day)
+    for root, dirs, files in os.walk(RAW_DIR):
+        for fname in files:
+            m = pattern.match(fname)
+            if m:
+                day, stadium = m.groups()
+                summary[stadium].add(day)
     return summary
 
 def print_summary(summary, label):

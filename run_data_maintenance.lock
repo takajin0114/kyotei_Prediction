@@ -1,3 +1,0 @@
-pid=15588
-start=2025-07-16T22:41:45.672390
-cmd=C:\Users\takaj\Desktop\app\kyotei_Prediction\kyotei_Prediction\kyotei_predictor\tools\batch\run_data_maintenance.py --start-date 2024-03-01 --end-date 2024-04-30 --stadiums ALL

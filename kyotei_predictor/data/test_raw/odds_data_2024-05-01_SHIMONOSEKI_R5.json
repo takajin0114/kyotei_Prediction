@@ -1,0 +1,1209 @@
+{
+  "race_date": "2024-05-01",
+  "stadium": "SHIMONOSEKI",
+  "race_number": 5,
+  "odds_count": 120,
+  "odds_data": [
+    {
+      "betting_numbers": [
+        1,
+        2,
+        3
+      ],
+      "ratio": 4.8,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "1-2-3"
+    },
+    {
+      "betting_numbers": [
+        2,
+        1,
+        3
+      ],
+      "ratio": 29.6,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "2-1-3"
+    },
+    {
+      "betting_numbers": [
+        3,
+        1,
+        2
+      ],
+      "ratio": 38.7,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "3-1-2"
+    },
+    {
+      "betting_numbers": [
+        4,
+        1,
+        2
+      ],
+      "ratio": 148.8,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "4-1-2"
+    },
+    {
+      "betting_numbers": [
+        5,
+        1,
+        2
+      ],
+      "ratio": 703.1,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "5-1-2"
+    },
+    {
+      "betting_numbers": [
+        6,
+        1,
+        2
+      ],
+      "ratio": 159.9,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "6-1-2"
+    },
+    {
+      "betting_numbers": [
+        1,
+        2,
+        4
+      ],
+      "ratio": 11.0,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "1-2-4"
+    },
+    {
+      "betting_numbers": [
+        2,
+        1,
+        4
+      ],
+      "ratio": 51.5,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "2-1-4"
+    },
+    {
+      "betting_numbers": [
+        3,
+        1,
+        4
+      ],
+      "ratio": 68.9,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "3-1-4"
+    },
+    {
+      "betting_numbers": [
+        4,
+        1,
+        3
+      ],
+      "ratio": 171.1,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "4-1-3"
+    },
+    {
+      "betting_numbers": [
+        5,
+        1,
+        3
+      ],
+      "ratio": 671.9,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "5-1-3"
+    },
+    {
+      "betting_numbers": [
+        6,
+        1,
+        3
+      ],
+      "ratio": 169.0,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "6-1-3"
+    },
+    {
+      "betting_numbers": [
+        1,
+        2,
+        5
+      ],
+      "ratio": 30.1,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "1-2-5"
+    },
+    {
+      "betting_numbers": [
+        2,
+        1,
+        5
+      ],
+      "ratio": 140.7,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "2-1-5"
+    },
+    {
+      "betting_numbers": [
+        3,
+        1,
+        5
+      ],
+      "ratio": 142.6,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "3-1-5"
+    },
+    {
+      "betting_numbers": [
+        4,
+        1,
+        5
+      ],
+      "ratio": 237.1,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "4-1-5"
+    },
+    {
+      "betting_numbers": [
+        5,
+        1,
+        4
+      ],
+      "ratio": 779.0,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "5-1-4"
+    },
+    {
+      "betting_numbers": [
+        6,
+        1,
+        4
+      ],
+      "ratio": 320.5,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "6-1-4"
+    },
+    {
+      "betting_numbers": [
+        1,
+        2,
+        6
+      ],
+      "ratio": 14.6,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "1-2-6"
+    },
+    {
+      "betting_numbers": [
+        2,
+        1,
+        6
+      ],
+      "ratio": 62.6,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "2-1-6"
+    },
+    {
+      "betting_numbers": [
+        3,
+        1,
+        6
+      ],
+      "ratio": 78.1,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "3-1-6"
+    },
+    {
+      "betting_numbers": [
+        4,
+        1,
+        6
+      ],
+      "ratio": 174.5,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "4-1-6"
+    },
+    {
+      "betting_numbers": [
+        5,
+        1,
+        6
+      ],
+      "ratio": 862.1,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "5-1-6"
+    },
+    {
+      "betting_numbers": [
+        6,
+        1,
+        5
+      ],
+      "ratio": 521.1,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "6-1-5"
+    },
+    {
+      "betting_numbers": [
+        1,
+        3,
+        2
+      ],
+      "ratio": 5.9,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "1-3-2"
+    },
+    {
+      "betting_numbers": [
+        2,
+        3,
+        1
+      ],
+      "ratio": 74.6,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "2-3-1"
+    },
+    {
+      "betting_numbers": [
+        3,
+        2,
+        1
+      ],
+      "ratio": 75.3,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "3-2-1"
+    },
+    {
+      "betting_numbers": [
+        4,
+        2,
+        1
+      ],
+      "ratio": 265.8,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "4-2-1"
+    },
+    {
+      "betting_numbers": [
+        5,
+        2,
+        1
+      ],
+      "ratio": 1558.0,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "5-2-1"
+    },
+    {
+      "betting_numbers": [
+        6,
+        2,
+        1
+      ],
+      "ratio": 226.6,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "6-2-1"
+    },
+    {
+      "betting_numbers": [
+        1,
+        3,
+        4
+      ],
+      "ratio": 10.5,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "1-3-4"
+    },
+    {
+      "betting_numbers": [
+        2,
+        3,
+        4
+      ],
+      "ratio": 211.5,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "2-3-4"
+    },
+    {
+      "betting_numbers": [
+        3,
+        2,
+        4
+      ],
+      "ratio": 264.6,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "3-2-4"
+    },
+    {
+      "betting_numbers": [
+        4,
+        2,
+        3
+      ],
+      "ratio": 522.8,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "4-2-3"
+    },
+    {
+      "betting_numbers": [
+        5,
+        2,
+        3
+      ],
+      "ratio": 2321.0,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "5-2-3"
+    },
+    {
+      "betting_numbers": [
+        6,
+        2,
+        3
+      ],
+      "ratio": 389.8,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "6-2-3"
+    },
+    {
+      "betting_numbers": [
+        1,
+        3,
+        5
+      ],
+      "ratio": 24.9,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "1-3-5"
+    },
+    {
+      "betting_numbers": [
+        2,
+        3,
+        5
+      ],
+      "ratio": 447.1,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "2-3-5"
+    },
+    {
+      "betting_numbers": [
+        3,
+        2,
+        5
+      ],
+      "ratio": 469.0,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "3-2-5"
+    },
+    {
+      "betting_numbers": [
+        4,
+        2,
+        5
+      ],
+      "ratio": 709.5,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "4-2-5"
+    },
+    {
+      "betting_numbers": [
+        5,
+        2,
+        4
+      ],
+      "ratio": 2181.0,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "5-2-4"
+    },
+    {
+      "betting_numbers": [
+        6,
+        2,
+        4
+      ],
+      "ratio": 518.8,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "6-2-4"
+    },
+    {
+      "betting_numbers": [
+        1,
+        3,
+        6
+      ],
+      "ratio": 13.8,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "1-3-6"
+    },
+    {
+      "betting_numbers": [
+        2,
+        3,
+        6
+      ],
+      "ratio": 236.1,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "2-3-6"
+    },
+    {
+      "betting_numbers": [
+        3,
+        2,
+        6
+      ],
+      "ratio": 262.4,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "3-2-6"
+    },
+    {
+      "betting_numbers": [
+        4,
+        2,
+        6
+      ],
+      "ratio": 390.1,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "4-2-6"
+    },
+    {
+      "betting_numbers": [
+        5,
+        2,
+        6
+      ],
+      "ratio": 2591.0,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "5-2-6"
+    },
+    {
+      "betting_numbers": [
+        6,
+        2,
+        5
+      ],
+      "ratio": 1190.0,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "6-2-5"
+    },
+    {
+      "betting_numbers": [
+        1,
+        4,
+        2
+      ],
+      "ratio": 21.8,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "1-4-2"
+    },
+    {
+      "betting_numbers": [
+        2,
+        4,
+        1
+      ],
+      "ratio": 181.3,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "2-4-1"
+    },
+    {
+      "betting_numbers": [
+        3,
+        4,
+        1
+      ],
+      "ratio": 220.3,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "3-4-1"
+    },
+    {
+      "betting_numbers": [
+        4,
+        3,
+        1
+      ],
+      "ratio": 306.9,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "4-3-1"
+    },
+    {
+      "betting_numbers": [
+        5,
+        3,
+        1
+      ],
+      "ratio": 1264.0,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "5-3-1"
+    },
+    {
+      "betting_numbers": [
+        6,
+        3,
+        1
+      ],
+      "ratio": 325.4,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "6-3-1"
+    },
+    {
+      "betting_numbers": [
+        1,
+        4,
+        3
+      ],
+      "ratio": 23.9,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "1-4-3"
+    },
+    {
+      "betting_numbers": [
+        2,
+        4,
+        3
+      ],
+      "ratio": 346.3,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "2-4-3"
+    },
+    {
+      "betting_numbers": [
+        3,
+        4,
+        2
+      ],
+      "ratio": 435.0,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "3-4-2"
+    },
+    {
+      "betting_numbers": [
+        4,
+        3,
+        2
+      ],
+      "ratio": 588.4,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "4-3-2"
+    },
+    {
+      "betting_numbers": [
+        5,
+        3,
+        2
+      ],
+      "ratio": 3045.0,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "5-3-2"
+    },
+    {
+      "betting_numbers": [
+        6,
+        3,
+        2
+      ],
+      "ratio": 544.7,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "6-3-2"
+    },
+    {
+      "betting_numbers": [
+        1,
+        4,
+        5
+      ],
+      "ratio": 73.2,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "1-4-5"
+    },
+    {
+      "betting_numbers": [
+        2,
+        4,
+        5
+      ],
+      "ratio": 693.8,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "2-4-5"
+    },
+    {
+      "betting_numbers": [
+        3,
+        4,
+        5
+      ],
+      "ratio": 637.2,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "3-4-5"
+    },
+    {
+      "betting_numbers": [
+        4,
+        3,
+        5
+      ],
+      "ratio": 824.2,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "4-3-5"
+    },
+    {
+      "betting_numbers": [
+        5,
+        3,
+        4
+      ],
+      "ratio": 2508.0,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "5-3-4"
+    },
+    {
+      "betting_numbers": [
+        6,
+        3,
+        4
+      ],
+      "ratio": 819.9,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "6-3-4"
+    },
+    {
+      "betting_numbers": [
+        1,
+        4,
+        6
+      ],
+      "ratio": 40.4,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "1-4-6"
+    },
+    {
+      "betting_numbers": [
+        2,
+        4,
+        6
+      ],
+      "ratio": 289.6,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "2-4-6"
+    },
+    {
+      "betting_numbers": [
+        3,
+        4,
+        6
+      ],
+      "ratio": 436.6,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "3-4-6"
+    },
+    {
+      "betting_numbers": [
+        4,
+        3,
+        6
+      ],
+      "ratio": 606.7,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "4-3-6"
+    },
+    {
+      "betting_numbers": [
+        5,
+        3,
+        6
+      ],
+      "ratio": 2895.0,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "5-3-6"
+    },
+    {
+      "betting_numbers": [
+        6,
+        3,
+        5
+      ],
+      "ratio": 1611.0,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "6-3-5"
+    },
+    {
+      "betting_numbers": [
+        1,
+        5,
+        2
+      ],
+      "ratio": 114.2,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "1-5-2"
+    },
+    {
+      "betting_numbers": [
+        2,
+        5,
+        1
+      ],
+      "ratio": 863.7,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "2-5-1"
+    },
+    {
+      "betting_numbers": [
+        3,
+        5,
+        1
+      ],
+      "ratio": 579.0,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "3-5-1"
+    },
+    {
+      "betting_numbers": [
+        4,
+        5,
+        1
+      ],
+      "ratio": 339.8,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "4-5-1"
+    },
+    {
+      "betting_numbers": [
+        5,
+        4,
+        1
+      ],
+      "ratio": 1046.0,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "5-4-1"
+    },
+    {
+      "betting_numbers": [
+        6,
+        4,
+        1
+      ],
+      "ratio": 651.4,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "6-4-1"
+    },
+    {
+      "betting_numbers": [
+        1,
+        5,
+        3
+      ],
+      "ratio": 109.7,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "1-5-3"
+    },
+    {
+      "betting_numbers": [
+        2,
+        5,
+        3
+      ],
+      "ratio": 1429.0,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "2-5-3"
+    },
+    {
+      "betting_numbers": [
+        3,
+        5,
+        2
+      ],
+      "ratio": 1108.0,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "3-5-2"
+    },
+    {
+      "betting_numbers": [
+        4,
+        5,
+        2
+      ],
+      "ratio": 635.5,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "4-5-2"
+    },
+    {
+      "betting_numbers": [
+        5,
+        4,
+        2
+      ],
+      "ratio": 2066.0,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "5-4-2"
+    },
+    {
+      "betting_numbers": [
+        6,
+        4,
+        2
+      ],
+      "ratio": 779.0,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "6-4-2"
+    },
+    {
+      "betting_numbers": [
+        1,
+        5,
+        4
+      ],
+      "ratio": 177.6,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "1-5-4"
+    },
+    {
+      "betting_numbers": [
+        2,
+        5,
+        4
+      ],
+      "ratio": 1532.0,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "2-5-4"
+    },
+    {
+      "betting_numbers": [
+        3,
+        5,
+        4
+      ],
+      "ratio": 1083.0,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "3-5-4"
+    },
+    {
+      "betting_numbers": [
+        4,
+        5,
+        3
+      ],
+      "ratio": 708.4,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "4-5-3"
+    },
+    {
+      "betting_numbers": [
+        5,
+        4,
+        3
+      ],
+      "ratio": 1938.0,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "5-4-3"
+    },
+    {
+      "betting_numbers": [
+        6,
+        4,
+        3
+      ],
+      "ratio": 1292.0,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "6-4-3"
+    },
+    {
+      "betting_numbers": [
+        1,
+        5,
+        6
+      ],
+      "ratio": 169.9,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "1-5-6"
+    },
+    {
+      "betting_numbers": [
+        2,
+        5,
+        6
+      ],
+      "ratio": 1589.0,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "2-5-6"
+    },
+    {
+      "betting_numbers": [
+        3,
+        5,
+        6
+      ],
+      "ratio": 995.7,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "3-5-6"
+    },
+    {
+      "betting_numbers": [
+        4,
+        5,
+        6
+      ],
+      "ratio": 378.5,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "4-5-6"
+    },
+    {
+      "betting_numbers": [
+        5,
+        4,
+        6
+      ],
+      "ratio": 1039.0,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "5-4-6"
+    },
+    {
+      "betting_numbers": [
+        6,
+        4,
+        5
+      ],
+      "ratio": 1302.0,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "6-4-5"
+    },
+    {
+      "betting_numbers": [
+        1,
+        6,
+        2
+      ],
+      "ratio": 45.7,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "1-6-2"
+    },
+    {
+      "betting_numbers": [
+        2,
+        6,
+        1
+      ],
+      "ratio": 250.2,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "2-6-1"
+    },
+    {
+      "betting_numbers": [
+        3,
+        6,
+        1
+      ],
+      "ratio": 256.5,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "3-6-1"
+    },
+    {
+      "betting_numbers": [
+        4,
+        6,
+        1
+      ],
+      "ratio": 358.8,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "4-6-1"
+    },
+    {
+      "betting_numbers": [
+        5,
+        6,
+        1
+      ],
+      "ratio": 1681.0,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "5-6-1"
+    },
+    {
+      "betting_numbers": [
+        6,
+        5,
+        1
+      ],
+      "ratio": 1568.0,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "6-5-1"
+    },
+    {
+      "betting_numbers": [
+        1,
+        6,
+        3
+      ],
+      "ratio": 47.9,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "1-6-3"
+    },
+    {
+      "betting_numbers": [
+        2,
+        6,
+        3
+      ],
+      "ratio": 471.8,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "2-6-3"
+    },
+    {
+      "betting_numbers": [
+        3,
+        6,
+        2
+      ],
+      "ratio": 418.0,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "3-6-2"
+    },
+    {
+      "betting_numbers": [
+        4,
+        6,
+        2
+      ],
+      "ratio": 449.2,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "4-6-2"
+    },
+    {
+      "betting_numbers": [
+        5,
+        6,
+        2
+      ],
+      "ratio": 2877.0,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "5-6-2"
+    },
+    {
+      "betting_numbers": [
+        6,
+        5,
+        2
+      ],
+      "ratio": 2987.0,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "6-5-2"
+    },
+    {
+      "betting_numbers": [
+        1,
+        6,
+        4
+      ],
+      "ratio": 85.1,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "1-6-4"
+    },
+    {
+      "betting_numbers": [
+        2,
+        6,
+        4
+      ],
+      "ratio": 416.1,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "2-6-4"
+    },
+    {
+      "betting_numbers": [
+        3,
+        6,
+        4
+      ],
+      "ratio": 635.5,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "3-6-4"
+    },
+    {
+      "betting_numbers": [
+        4,
+        6,
+        3
+      ],
+      "ratio": 664.3,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "4-6-3"
+    },
+    {
+      "betting_numbers": [
+        5,
+        6,
+        3
+      ],
+      "ratio": 3006.0,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "5-6-3"
+    },
+    {
+      "betting_numbers": [
+        6,
+        5,
+        3
+      ],
+      "ratio": 2968.0,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "6-5-3"
+    },
+    {
+      "betting_numbers": [
+        1,
+        6,
+        5
+      ],
+      "ratio": 167.7,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "1-6-5"
+    },
+    {
+      "betting_numbers": [
+        2,
+        6,
+        5
+      ],
+      "ratio": 1371.0,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "2-6-5"
+    },
+    {
+      "betting_numbers": [
+        3,
+        6,
+        5
+      ],
+      "ratio": 1078.0,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "3-6-5"
+    },
+    {
+      "betting_numbers": [
+        4,
+        6,
+        5
+      ],
+      "ratio": 571.2,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "4-6-5"
+    },
+    {
+      "betting_numbers": [
+        5,
+        6,
+        4
+      ],
+      "ratio": 1568.0,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "5-6-4"
+    },
+    {
+      "betting_numbers": [
+        6,
+        5,
+        4
+      ],
+      "ratio": 1705.0,
+      "betting_method": "BettingMethod.TRIFECTA",
+      "combination": "6-5-4"
+    }
+  ],
+  "url": "https://boatrace.jp/owpc/pc/race/odds3t?rno=5&jcd=19&hd=20240501"
+}
