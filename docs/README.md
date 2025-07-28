@@ -1,75 +1,122 @@
-# kyotei_Prediction プロジェクト
+# 競艇予測システム - ドキュメント
 
-競艇レースの予測システムを構築するプロジェクトです。
+## 📋 目次
 
-## 📋 プロジェクト概要
+### 📊 プロジェクト概要
+- [CURRENT_STATUS_SUMMARY.md](CURRENT_STATUS_SUMMARY.md) - 現在の状況サマリー
+- [DOCUMENTATION_STANDARDS.md](DOCUMENTATION_STANDARDS.md) - ドキュメント標準
 
-- **目的**: 競艇レースの3連単予測システムの構築・運用
-- **現在の状況**: 予想ツールとしての実装完了、Web表示機能実装中
-- **最終目標**: 深夜自動実行による完全自動化システム
+### 🚀 今後の方針
+- [future_strategy.md](future_strategy.md) - 今後の方針と戦略
 
-> **詳細な現在の状況は [CURRENT_STATUS_SUMMARY.md](CURRENT_STATUS_SUMMARY.md) を参照してください**
+### 📁 運用ドキュメント
+- [operations/](operations/) - 運用関連ドキュメント
 
-## 📚 主要ドキュメント
+### 📋 要件ドキュメント
+- [requirements/](requirements/) - 要件関連ドキュメント
 
-### 現在の状況
-- [CURRENT_STATUS_SUMMARY.md](CURRENT_STATUS_SUMMARY.md) - プロジェクト全体の現在の状況サマリー
-- [NEXT_STEPS.md](NEXT_STEPS.md) - 直近のTODO・優先度・進捗
+### 🌐 Web表示ドキュメント
+- [web_display/](web_display/) - Web表示関連ドキュメント
 
-### 予想ツール
-- [PREDICTION_TOOL_ROADMAP.md](PREDICTION_TOOL_ROADMAP.md) - 予想ツール運用ロードマップ
+---
 
-### システム・運用
-- [BATCH_SYSTEM_CURRENT_STATUS.md](BATCH_SYSTEM_CURRENT_STATUS.md) - バッチシステム状況
-- [DEVELOPMENT_ROADMAP.md](DEVELOPMENT_ROADMAP.md) - 開発ロードマップ
+## 🎯 プロジェクト概要
 
-### Web表示機能
-- [web_display/requirements.md](web_display/requirements.md) - Web表示機能要件定義
-- [web_display/plan.md](web_display/plan.md) - Web表示機能実装計画
-- [web_display/complete.md](web_display/complete.md) - Web表示機能実装完了報告
+競艇予測システムは、強化学習を用いた競艇の3連単予測システムです。
 
-### 要件定義
-- [requirements/ux_improvement.md](requirements/ux_improvement.md) - UX改善要件
-- [requirements/system_status_page.md](requirements/system_status_page.md) - システムステータスページ要件
+### 主要機能
+- **段階的報酬設計**: 的中率1.70%（理論値の約2倍）
+- **最適化システム**: Optunaによる自動最適化
+- **監視システム**: リアルタイム進捗監視
+- **評価システム**: 客観的性能評価
 
-### 運用ガイド
-- [operations/scheduled_maintenance.md](operations/scheduled_maintenance.md) - スケジューラ化運用
-- [operations/data_acquisition.md](operations/data_acquisition.md) - データ取得仕様
+### 技術スタック
+- **強化学習**: Stable-Baselines3 (PPO)
+- **最適化**: Optuna
+- **データ処理**: pandas, numpy
+- **可視化**: matplotlib
 
-### ドキュメント管理
-- [DOCUMENTATION_STANDARDS.md](DOCUMENTATION_STANDARDS.md) - ドキュメント記載方法・方針
-- [DOCUMENT_CLEANUP_SUMMARY.md](DOCUMENT_CLEANUP_SUMMARY.md) - ドキュメント整理サマリー
+### 現在の成果
+- **的中率**: 1.70%（理論値0.83%の約2倍）
+- **学習効率**: 16.2倍
+- **報酬安定性**: 52.5%
+- **総合スコア**: 40.5/100
 
-## 🚀 クイックスタート
+---
 
-### 予想ツールの実行
+## 📈 今後の方針
+
+詳細な今後の方針については、[future_strategy.md](future_strategy.md)をご参照ください。
+
+### 主要な改善点
+1. **段階的最適化アプローチ** - 月別最適化の継続
+2. **報酬設計の改善** - 的中報酬の強化
+3. **学習パラメータの強化** - 学習時間の延長
+4. **アンサンブル学習の導入** - 予測精度の向上
+
+### 目標
+- **短期的目標（1ヶ月）**: 的中率2.5%以上
+- **中期的目標（3ヶ月）**: 的中率3.0%以上
+- **長期的目標（6ヶ月）**: 的中率4.0%以上
+
+---
+
+## 🔧 開発環境
+
+### 必要条件
+- Python 3.8+
+- 仮想環境（venv）
+- 必要なパッケージ（requirements.txt）
+
+### セットアップ
 ```bash
-# 完全統合実行
-python -m kyotei_predictor.tools.prediction_tool --date 2024-07-12
+# 仮想環境の作成
+python -m venv venv
 
-# 特定会場のみ実行
-python -m kyotei_predictor.tools.prediction_tool --date 2024-07-12 --venues KIRYU TAMAGAWA
+# 仮想環境の有効化
+venv\Scripts\activate  # Windows
+source venv/bin/activate  # Linux/Mac
+
+# 依存パッケージのインストール
+pip install -r requirements.txt
 ```
 
-### データ取得の実行
+### 実行方法
 ```bash
-# 一括データ取得
-python -m kyotei_predictor.tools.run_data_maintenance
+# 最適化の実行
+python -m kyotei_predictor.tools.optimization.optimize_graduated_reward
+
+# 監視の実行
+python monitor_optimization.py
+
+# 評価の実行
+python -m kyotei_predictor.tools.evaluation.evaluate_graduated_reward_model
 ```
 
-## 📊 最新の進捗（2025-07-15）
+---
 
-> **詳細な進捗・TODOは [NEXT_STEPS.md](NEXT_STEPS.md) を参照してください**
+## 📊 成果物
 
-- ✅ **予想ツール実装完了**: 統合実行フロー、3連単予測、購入方法提案、JSON保存機能
-- ✅ **テスト成功**: TAMAGAWA会場12レースでの予測成功確認
-- ✅ **Web表示機能実装完了**: Phase 1・2完了、Phase 3（システムステータスページ）実装完了
-- 🔄 **2024年3月データ取得進行中**: 8並列処理で安定実行中
-- ✅ **ドキュメント整理完了**: ディレクトリ構成の整理・ファイル移動完了
+### 最適化結果
+- **最適化データベース**: `optuna_studies/`
+- **最適化結果**: `optuna_results/`
+- **学習済みモデル**: `optuna_models/`
 
-## 📝 更新履歴
+### 評価結果
+- **評価結果**: `outputs/`
+- **分析結果**: `analysis_*.py`
 
-- **2025-07-15**: ドキュメント整理完了、ディレクトリ構成の整理・ファイル移動
-- **2025-07-13**: 予想ツール実装完了、テスト成功確認
-- **2025-07-11**: 予想ツール仕様確定、購入方法提案機能追加
-- **2025-01-XX**: バッチシステム改善、進捗表示修正 
+### ログ
+- **学習ログ**: `optuna_logs/`
+- **監視ログ**: `data/logs/`
+
+---
+
+## 🤝 貢献
+
+プロジェクトへの貢献については、[DOCUMENTATION_STANDARDS.md](DOCUMENTATION_STANDARDS.md)をご参照ください。
+
+---
+
+*最終更新: 2025年7月27日*
+*プロジェクト: 競艇予測システム* 
