@@ -13,6 +13,9 @@ from stable_baselines3 import PPO
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.callbacks import EvalCallback, CheckpointCallback
+import argparse
+import logging
+import time
 
 # プロジェクトルートをパスに追加
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
@@ -28,9 +31,8 @@ def create_env(data_dir="kyotei_predictor/data/raw", bet_amount=100):
     
     return DummyVecEnv([make_env])
 
-def objective(trial):
-    """Optunaの目的関数"""
-    
+def objective(trial, data_dir="kyotei_predictor/data/raw"):
+    print(f"[objective] Trial {trial.number} started")
     # ハイパーパラメータの提案
     learning_rate = trial.suggest_float('learning_rate', 1e-5, 1e-2, log=True)
     batch_size = trial.suggest_categorical('batch_size', [32, 64, 128, 256])
@@ -42,12 +44,10 @@ def objective(trial):
     ent_coef = trial.suggest_float('ent_coef', 0.0, 0.1)
     vf_coef = trial.suggest_float('vf_coef', 0.1, 1.0)
     max_grad_norm = trial.suggest_float('max_grad_norm', 0.1, 1.0)
-    
-    # 環境作成
-    train_env = create_env()
-    eval_env = create_env()
-    
-    # コールバック設定
+    print(f"[objective] Hyperparams: lr={learning_rate}, batch={batch_size}, n_steps={n_steps}, gamma={gamma}")
+    train_env = create_env(data_dir=data_dir)
+    eval_env = create_env(data_dir=data_dir)
+    print(f"[objective] Environments created")
     eval_callback = EvalCallback(
         eval_env,
         best_model_save_path=f"./optuna_models/trial_{trial.number}/",
@@ -56,14 +56,11 @@ def objective(trial):
         deterministic=True,
         render=False
     )
-    
     checkpoint_callback = CheckpointCallback(
         save_freq=max(n_steps // 4, 1),
         save_path=f"./optuna_models/trial_{trial.number}/",
         name_prefix="checkpoint"
     )
-    
-    # モデル作成
     model = PPO(
         "MlpPolicy",
         train_env,
@@ -77,38 +74,32 @@ def objective(trial):
         ent_coef=ent_coef,
         vf_coef=vf_coef,
         max_grad_norm=max_grad_norm,
-        verbose=0,
+        verbose=1,
         tensorboard_log=f"./optuna_tensorboard/trial_{trial.number}/"
     )
-    
-    # 学習実行
-    total_timesteps = 500000  # 50万ステップで評価
-    
+    total_timesteps = 10000  # 学習量を10倍に増加
     try:
+        print(f"[objective] model.learn start")
         model.learn(
             total_timesteps=total_timesteps,
             callback=[eval_callback, checkpoint_callback],
             progress_bar=True
         )
-        
-        # 評価実行
-        eval_results = evaluate_model(model, eval_env, n_eval_episodes=100)
-        
-        # 的中率を主要指標として使用
+        print(f"[objective] model.learn end")
+        print(f"[objective] evaluate_model start")
+        eval_results = evaluate_model(model, eval_env, n_eval_episodes=10)  # 評価エピソード数を10に増加
+        print(f"[objective] evaluate_model end: {eval_results}")
         hit_rate = eval_results['hit_rate']
-        
-        # 報酬も考慮
         mean_reward = eval_results['mean_reward']
-        
-        # 的中率を重視しつつ、報酬も考慮したスコア
         score = hit_rate * 100 + mean_reward / 1000
-        
-        print(f"Trial {trial.number}: Hit Rate = {hit_rate:.4f}, Mean Reward = {mean_reward:.2f}, Score = {score:.4f}")
-        
+        print(f"[objective] Trial {trial.number} score: {score}")
         return score
-        
     except Exception as e:
-        print(f"Trial {trial.number} failed: {e}")
+        import traceback
+        print(f"Trial {trial.number} failed with error: {e}")
+        print("Full traceback:")
+        traceback.print_exc()
+        logging.warning(f"Trial {trial.number} failed: {e}", exc_info=True)
         return -1000  # 失敗時は低いスコア
 
 def evaluate_model(model, env, n_eval_episodes=100):
@@ -149,6 +140,17 @@ def action_to_trifecta(action: int):
     trifecta_list = list(permutations(range(1,7), 3))
     return trifecta_list[action]
 
+def safe_savez(filepath, *args, **kwargs):
+    """OSError対策付きnp.savez（3回リトライ）"""
+    for i in range(3):
+        try:
+            np.savez(filepath, *args, **kwargs)
+            return
+        except OSError as e:
+            print(f"[safe_savez] ファイル保存失敗: {filepath} (リトライ{i+1}) {e}")
+            time.sleep(1)
+    raise
+
 def optimize_graduated_reward(
     n_trials=50,
     study_name="graduated_reward_optimization",
@@ -174,7 +176,7 @@ def optimize_graduated_reward(
     )
     
     # 最適化実行
-    study.optimize(objective, n_trials=n_trials, show_progress_bar=True)
+    study.optimize(lambda trial: objective(trial, data_dir), n_trials=n_trials, show_progress_bar=True)
     
     # 結果表示
     print("\n=== 最適化結果 ===")
@@ -224,10 +226,15 @@ def optimize_graduated_reward(
         
         detailed_results = evaluate_model(best_model, eval_env, n_eval_episodes=500)
         
-        print(f"詳細評価結果:")
-        print(f"  的中率: {detailed_results['hit_rate']*100:.2f}%")
-        print(f"  平均報酬: {detailed_results['mean_reward']:.2f}")
-        print(f"  報酬の標準偏差: {detailed_results['std_reward']:.2f}")
+        # print(f"詳細評価結果:")
+        # print(f"  的中率: {detailed_results['hit_rate']*100:.2f}%")
+        # print(f"  平均報酬: {detailed_results['mean_reward']:.2f}")
+        # print(f"  報酬の標準偏差: {detailed_results['std_reward']:.2f}")
+        
+        # 評価結果をnpzで保存（OSError対策）
+        eval_npz_path = f"./optuna_logs/trial_{study.best_trial.number}/evaluations.npz"
+        os.makedirs(os.path.dirname(eval_npz_path), exist_ok=True)
+        safe_savez(eval_npz_path, **detailed_results)
         
         # 最良モデルをコピー
         import shutil
@@ -235,25 +242,26 @@ def optimize_graduated_reward(
         os.makedirs(best_model_dir, exist_ok=True)
         shutil.copy2(best_model_path, f"{best_model_dir}/best_model.zip")
         
-        print(f"最良モデルを保存しました: {best_model_dir}/best_model.zip")
+        # print(f"最良モデルを保存しました: {best_model_dir}/best_model.zip")
     
     return study
 
 def main():
-    """メイン実行関数"""
+    """メイン実行関数（コマンドライン引数対応）"""
+    parser = argparse.ArgumentParser(description="段階的報酬設計モデルのハイパーパラメータ最適化")
+    parser.add_argument('--data-dir', type=str, default="kyotei_predictor/data/raw", help='データディレクトリ')
+    parser.add_argument('--study-name', type=str, default="graduated_reward_optimization", help='Optunaスタディ名')
+    parser.add_argument('--n-trials', type=int, default=50, help='試行回数')
+    args = parser.parse_args()
     print("段階的報酬設計モデルのハイパーパラメータ最適化を開始します")
-    
+    logging.debug(f"[main] args.data_dir: {args.data_dir}")
     # 最適化実行
     study = optimize_graduated_reward(
-        n_trials=50,
-        study_name="graduated_reward_optimization"
+        n_trials=args.n_trials,
+        study_name=args.study_name,
+        data_dir=args.data_dir
     )
-    
     print("\n=== 最適化完了 ===")
-    print("次のステップ:")
-    print("1. 最適化されたモデルの詳細評価")
-    print("2. 特徴量エンジニアリングの改善")
-    print("3. より長期間の学習の検討")
 
 if __name__ == "__main__":
     main() 
