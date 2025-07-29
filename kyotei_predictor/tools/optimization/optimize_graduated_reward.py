@@ -168,13 +168,15 @@ def optimize_graduated_reward(
     n_trials=50,
     study_name="graduated_reward_optimization",
     data_dir="kyotei_predictor/data/raw",
-    test_mode=False
+    test_mode=False,
+    resume_existing=False
 ):
     """段階的報酬設計モデルのハイパーパラメータ最適化"""
     
     print("=== 段階的報酬設計モデルのハイパーパラメータ最適化開始 ===")
     print(f"最適化開始時刻: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print(f"試行回数: {n_trials}")
+    print(f"既存スタディ継続: {resume_existing}")
     
     # ディレクトリ作成
     os.makedirs("./optuna_models", exist_ok=True)
@@ -182,12 +184,42 @@ def optimize_graduated_reward(
     os.makedirs("./optuna_tensorboard", exist_ok=True)
     os.makedirs("./optuna_studies", exist_ok=True)
     
-    # スタディ作成
+    # スタディ名とストレージパスの決定
+    if resume_existing:
+        # 既存スタディを継続する場合
+        # 既存のスタディファイルを探す
+        existing_studies = []
+        for file in os.listdir("./optuna_studies"):
+            if file.startswith(study_name) and file.endswith(".db"):
+                existing_studies.append(file)
+        
+        if existing_studies:
+            # 最新のスタディファイルを使用
+            latest_study = sorted(existing_studies)[-1]
+            storage_path = f"sqlite:///optuna_studies/{latest_study}"
+            print(f"既存スタディを継続します: {latest_study}")
+        else:
+            # 既存ファイルがない場合は新規作成
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            storage_path = f"sqlite:///optuna_studies/{study_name}_{timestamp}.db"
+            print(f"新規スタディを作成します: {study_name}_{timestamp}.db")
+    else:
+        # 新規スタディを作成する場合
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        storage_path = f"sqlite:///optuna_studies/{study_name}_{timestamp}.db"
+        print(f"新規スタディを作成します: {study_name}_{timestamp}.db")
+    
+    # スタディ作成（既存スタディの継続対応）
     study = optuna.create_study(
         direction="maximize",
         study_name=study_name,
-        storage=f"sqlite:///optuna_studies/{study_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.db"
+        storage=storage_path,
+        load_if_exists=True  # 既存スタディを読み込む
     )
+    
+    # 既存の試行数を確認
+    existing_trials = len(study.trials)
+    print(f"既存の試行数: {existing_trials}")
     
     # 最適化実行
     study.optimize(lambda trial: objective(trial, data_dir, test_mode), n_trials=n_trials, show_progress_bar=True)
@@ -205,6 +237,8 @@ def optimize_graduated_reward(
         'optimization_time': datetime.now().isoformat(),
         'study_name': study_name,
         'n_trials': n_trials,
+        'existing_trials': existing_trials,
+        'total_trials': len(study.trials),
         'best_trial': {
             'number': study.best_trial.number,
             'value': float(study.best_value),
@@ -267,30 +301,24 @@ def main():
     parser.add_argument('--study-name', type=str, default="graduated_reward_optimization", help='Optunaスタディ名')
     parser.add_argument('--n-trials', type=int, default=50, help='試行回数')
     parser.add_argument('--test-mode', action='store_true', help='テストモード（短時間設定）')
+    parser.add_argument('--resume-existing', action='store_true', help='既存スタディを継続する')
+    
     args = parser.parse_args()
     
-    print("段階的報酬設計モデルのハイパーパラメータ最適化を開始します")
+    study = optimize_graduated_reward(
+        n_trials=args.n_trials,
+        study_name=args.study_name,
+        data_dir=args.data_dir,
+        test_mode=args.test_mode,
+        resume_existing=args.resume_existing
+    )
     
-    if args.test_mode:
-        print("=== テストモードで実行 ===")
-        print("設定: 試行回数=2, 学習ステップ数=10,000, 評価エピソード数=100")
-        # テスト用の短時間設定
-        study = optimize_graduated_reward(
-            n_trials=2,  # テスト用に2回のみ
-            study_name=f"{args.study_name}_test",
-            data_dir=args.data_dir,
-            test_mode=True
-        )
-    else:
-        print(f"設定: 試行回数={args.n_trials}, 学習ステップ数=100,000, 評価エピソード数=2,000")
-        # 通常設定
-        study = optimize_graduated_reward(
-            n_trials=args.n_trials,
-            study_name=args.study_name,
-            data_dir=args.data_dir
-        )
+    print(f"\n=== 最適化完了 ===")
+    print(f"最良の試行: {study.best_trial.number}")
+    print(f"最良のスコア: {study.best_value:.4f}")
+    print(f"総試行数: {len(study.trials)}")
     
-    print("\n=== 最適化完了 ===")
+    return study
 
 if __name__ == "__main__":
     main() 

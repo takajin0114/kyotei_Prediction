@@ -1,63 +1,64 @@
 #!/usr/bin/env python3
 """
-段階的報酬設計モデルの詳細評価スクリプト
+段階的報酬モデルの評価スクリプト
 """
 
+import argparse
 import os
-import sys
 import json
 import numpy as np
 import matplotlib.pyplot as plt
-import seaborn as sns
 from datetime import datetime
 from stable_baselines3 import PPO
-from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv
-
-# プロジェクトルートをパスに追加
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-
 from kyotei_predictor.pipelines.kyotei_env import KyoteiEnvManager
-
-def create_eval_env(data_dir="kyotei_predictor/data/raw", bet_amount=100):
-    """評価用環境を作成"""
-    def make_env():
-        env = KyoteiEnvManager(data_dir=data_dir, bet_amount=bet_amount)
-        env = Monitor(env)
-        return env
-    
-    return DummyVecEnv([make_env])
+from kyotei_predictor.pipelines.kyotei_env import action_to_trifecta
 
 def evaluate_graduated_reward_model(
     model_path="./optuna_models/graduated_reward_best/best_model.zip",
     n_eval_episodes=1000,
     data_dir="kyotei_predictor/data/raw"
 ):
-    """段階的報酬設計モデルの詳細評価"""
+    """
+    段階的報酬モデルの評価を実行
     
-    print("=== 段階的報酬設計モデルの詳細評価開始 ===")
-    print(f"評価開始時刻: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    Args:
+        model_path: モデルファイルのパス
+        n_eval_episodes: 評価エピソード数
+        data_dir: データディレクトリ
     
-    # モデル読み込み
-    print(f"モデルを読み込み中: {model_path}")
-    if not os.path.exists(model_path):
-        print(f"エラー: モデルファイルが見つかりません: {model_path}")
+    Returns:
+        評価結果の辞書
+    """
+    print(f"=== 段階的報酬モデル評価 ===")
+    print(f"モデルパス: {model_path}")
+    print(f"評価エピソード数: {n_eval_episodes}")
+    print(f"データディレクトリ: {data_dir}")
+    
+    # モデルの読み込み
+    try:
+        model = PPO.load(model_path)
+        print(f"モデルを読み込みました: {model_path}")
+    except Exception as e:
+        print(f"モデル読み込みエラー: {e}")
         return None
     
-    model = PPO.load(model_path)
-    print("モデルの読み込みが完了しました")
+    # 環境の作成
+    try:
+        env_manager = KyoteiEnvManager(data_dir=data_dir)
+        eval_env = DummyVecEnv([lambda: env_manager])
+        print(f"評価環境を作成しました")
+    except Exception as e:
+        print(f"環境作成エラー: {e}")
+        return None
     
-    # 評価環境作成
-    print("評価環境を作成中...")
-    eval_env = create_eval_env(data_dir=data_dir)
-    
-    # 詳細評価
-    print(f"詳細評価を実行中（{n_eval_episodes}エピソード）...")
+    # 評価実行
+    print(f"\n評価を開始します...")
     
     rewards = []
-    hit_types = []  # 'win', 'first_second', 'first_only', 'miss'
     actions = []
     arrival_tuples = []
+    hit_types = []
     
     for episode in range(n_eval_episodes):
         if episode % 100 == 0:
@@ -167,12 +168,6 @@ def evaluate_graduated_reward_model(
     
     return results
 
-def action_to_trifecta(action: int):
-    """action(0-119)→(1着,2着,3着)の買い目タプル"""
-    from itertools import permutations
-    trifecta_list = list(permutations(range(1,7), 3))
-    return trifecta_list[action]
-
 def create_evaluation_plots(rewards, hit_types, model_path):
     """評価結果の可視化"""
     
@@ -234,13 +229,14 @@ def create_evaluation_plots(rewards, hit_types, model_path):
         hit_rates.append(hit_rate)
     
     plt.plot(range(window_size, len(hit_types) + 1), hit_rates)
-    plt.title(f'的中率の推移（{window_size}エピソード移動平均）')
+    plt.title(f'的中率の推移 (ウィンドウサイズ: {window_size})')
     plt.xlabel('エピソード')
     plt.ylabel('的中率')
     plt.grid(True)
     
     plt.tight_layout()
     
+    # 保存
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     plot_path = f"./outputs/graduated_reward_evaluation_plots_{timestamp}.png"
     plt.savefig(plot_path, dpi=300, bbox_inches='tight')
@@ -249,21 +245,27 @@ def create_evaluation_plots(rewards, hit_types, model_path):
     print(f"可視化結果を保存しました: {plot_path}")
 
 def main():
-    """メイン実行関数"""
-    print("段階的報酬設計モデルの詳細評価を開始します")
+    parser = argparse.ArgumentParser(description='段階的報酬モデルの評価')
+    parser.add_argument('--model-path', type=str, 
+                       default="./optuna_models/graduated_reward_best/best_model.zip",
+                       help='モデルファイルのパス')
+    parser.add_argument('--n-eval-episodes', type=int, default=1000,
+                       help='評価エピソード数')
+    parser.add_argument('--data-dir', type=str, default="kyotei_predictor/data/raw",
+                       help='データディレクトリ')
     
-    # 評価実行
+    args = parser.parse_args()
+    
     results = evaluate_graduated_reward_model(
-        model_path="./optuna_models/graduated_reward_best/best_model.zip",
-        n_eval_episodes=1000
+        model_path=args.model_path,
+        n_eval_episodes=args.n_eval_episodes,
+        data_dir=args.data_dir
     )
     
     if results:
-        print("\n=== 評価完了 ===")
-        print(f"的中率: {results['statistics']['hit_rate']*100:.2f}%")
+        print(f"\n=== 評価完了 ===")
+        print(f"的中率: {results['statistics']['hit_rate']:.4f} ({results['statistics']['hit_rate']*100:.2f}%)")
         print(f"平均報酬: {results['statistics']['mean_reward']:.2f}")
-        print(f"正の報酬率: {results['statistics']['positive_reward_rate']*100:.2f}%")
-
 
 if __name__ == "__main__":
     main() 
