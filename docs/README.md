@@ -9,6 +9,10 @@
 ### 🚀 今後の方針
 - [future_strategy.md](future_strategy.md) - 今後の方針と戦略
 
+### 🔧 開発者向けドキュメント
+- [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md) - 開発者ガイド
+- [API_SPECIFICATION.md](API_SPECIFICATION.md) - API仕様書
+
 ### 📁 運用ドキュメント
 - [operations/](operations/) - 運用関連ドキュメント
 
@@ -29,18 +33,88 @@
 - **最適化システム**: Optunaによる自動最適化
 - **監視システム**: リアルタイム進捗監視
 - **評価システム**: 客観的性能評価
+- **統合ユーティリティ**: 標準化された設定管理・ログ機能・エラーハンドリング
 
 ### 技術スタック
 - **強化学習**: Stable-Baselines3 (PPO)
 - **最適化**: Optuna
 - **データ処理**: pandas, numpy
 - **可視化**: matplotlib
+- **統合ユーティリティ**: カスタム設定管理・ログ機能・エラーハンドリング
 
 ### 現在の成果
 - **的中率**: 1.70%（理論値0.83%の約2倍）
 - **学習効率**: 16.2倍
 - **報酬安定性**: 52.5%
 - **総合スコア**: 40.5/100
+
+---
+
+## 🏗️ 新しいアーキテクチャ（v4.1）
+
+### 統合ユーティリティ構造
+```
+kyotei_predictor/utils/
+├── __init__.py          # 統合エントリーポイント
+├── common.py            # 基本ユーティリティ
+├── config.py            # 設定管理
+├── logger.py            # ログ機能
+├── venue_mapping.py     # 会場マッピング
+└── exceptions.py        # エラーハンドリング
+```
+
+### 設定管理構造
+```
+kyotei_predictor/config/
+├── config.json          # デフォルト設定
+└── README.md           # 設定ドキュメント
+```
+
+### テスト構造
+```
+kyotei_predictor/tests/
+├── test_utils.py        # 統合ユーティリティテスト
+└── README.md           # テストドキュメント
+```
+
+---
+
+## 🔧 使用方法
+
+### 1. **基本インポート**
+```python
+from kyotei_predictor.utils import (
+    KyoteiUtils, Config, setup_logger, VenueMapper,
+    KyoteiError, DataError, APIError
+)
+```
+
+### 2. **設定管理**
+```python
+config = Config()
+data_dir = config.get_data_dir()
+timeout = config.get_api_timeout()
+```
+
+### 3. **ログ機能**
+```python
+logger = setup_logger("my_module", log_file="logs/app.log")
+logger.info("処理開始")
+```
+
+### 4. **会場マッピング**
+```python
+venue_name = VenueMapper.get_venue_name(StadiumTelCode.KIRYU)
+venue_code = VenueMapper.get_venue_code(StadiumTelCode.KIRYU)
+```
+
+### 5. **エラーハンドリング**
+```python
+@handle_exception
+def my_function():
+    # 処理
+    pass
+```
 
 ---
 
@@ -53,6 +127,7 @@
 2. **報酬設計の改善** - 的中報酬の強化
 3. **学習パラメータの強化** - 学習時間の延長
 4. **アンサンブル学習の導入** - 予測精度の向上
+5. **既存コードの移行** - 統合ユーティリティの活用
 
 ### 目標
 - **短期的目標（1ヶ月）**: 的中率2.5%以上
@@ -91,6 +166,9 @@ python monitor_optimization.py
 
 # 評価の実行
 python -m kyotei_predictor.tools.evaluation.evaluate_graduated_reward_model
+
+# テストの実行
+python -m pytest kyotei_predictor/tests/
 ```
 
 ---
@@ -110,6 +188,10 @@ python -m kyotei_predictor.tools.evaluation.evaluate_graduated_reward_model
 - **学習ログ**: `optuna_logs/`
 - **監視ログ**: `data/logs/`
 
+### テスト結果
+- **テスト結果**: `kyotei_predictor/tests/`
+- **統合テスト**: 自動テスト実行
+
 ---
 
 ## 🤝 貢献
@@ -118,5 +200,6 @@ python -m kyotei_predictor.tools.evaluation.evaluate_graduated_reward_model
 
 ---
 
-*最終更新: 2025年7月27日*
-*プロジェクト: 競艇予測システム* 
+*最終更新: 2025年1月27日*  
+*プロジェクト: 競艇予測システム*  
+*バージョン: 4.1（リファクタリング完了）* 

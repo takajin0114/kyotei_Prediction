@@ -1,0 +1,22 @@
+{
+  "evaluation_time": "2025-07-27T06:41:00.442705",
+  "model_path": "./optuna_models/trial_29/best_model.zip",
+  "n_episodes": 1000,
+  "statistics": {
+    "mean_reward": 4.831999778747559,
+    "std_reward": 596.9505615234375,
+    "max_reward": 10212.0,
+    "min_reward": -100.0,
+    "hit_rate": 0.017,
+    "first_second_rate": 0.118,
+    "first_only_rate": 0.39,
+    "miss_rate": 0.475,
+    "positive_reward_rate": 0.525
+  },
+  "hit_type_counts": {
+    "miss": 475,
+    "first_second": 118,
+    "first_only": 390,
+    "win": 17
+  }
+}

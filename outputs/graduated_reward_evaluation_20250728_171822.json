@@ -1,0 +1,22 @@
+{
+  "evaluation_time": "2025-07-28T17:18:22.236791",
+  "model_path": "./optuna_models/trial_38/checkpoint_100352_steps.zip",
+  "n_episodes": 1000,
+  "statistics": {
+    "mean_reward": 97.48400115966797,
+    "std_reward": 548.3427734375,
+    "max_reward": 5340.0,
+    "min_reward": -100.0,
+    "hit_rate": 0.105,
+    "first_second_rate": 0.123,
+    "first_only_rate": 0.318,
+    "miss_rate": 0.454,
+    "positive_reward_rate": 0.546
+  },
+  "hit_type_counts": {
+    "miss": 454,
+    "first_only": 318,
+    "first_second": 123,
+    "win": 105
+  }
+}
