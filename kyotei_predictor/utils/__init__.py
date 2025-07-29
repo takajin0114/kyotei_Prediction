@@ -1,40 +1,45 @@
 #!/usr/bin/env python3
 """
-競艇予測システム - 統合共通ユーティリティ
+統合ユーティリティモジュール
 """
 
 from .common import KyoteiUtils
 from .config import Config
-from .logger import setup_logger, get_logger, LoggerMixin
-from .venue_mapping import VenueMapper, VENUE_MAPPING
-from .exceptions import (
-    KyoteiError, DataError, APIError, ValidationError, 
-    ConfigError, PredictionError, handle_exception, safe_execute
-)
+from .logger import setup_logger
+from .venue_mapping import VenueMapper
+from .exceptions import KyoteiError, DataError, APIError
+from .cache import CacheManager, get_cache_manager, cache_result
+from .parallel import ParallelProcessor, parallelize, batch_process, get_optimal_workers, measure_performance
+from .memory import MemoryMonitor, MemoryOptimizer, memory_efficient, chunk_processing, get_memory_info
 
 __all__ = [
     # 基本ユーティリティ
     'KyoteiUtils',
-    
-    # 設定管理
-    'Config',
-    
-    # ログ機能
+    'Config', 
     'setup_logger',
-    'get_logger',
-    'LoggerMixin',
-    
-    # 会場マッピング
     'VenueMapper',
-    'VENUE_MAPPING',
     
     # エラーハンドリング
     'KyoteiError',
-    'DataError',
+    'DataError', 
     'APIError',
-    'ValidationError',
-    'ConfigError',
-    'PredictionError',
-    'handle_exception',
-    'safe_execute'
+    
+    # キャッシュ機能
+    'CacheManager',
+    'get_cache_manager',
+    'cache_result',
+    
+    # 並列処理
+    'ParallelProcessor',
+    'parallelize',
+    'batch_process',
+    'get_optimal_workers',
+    'measure_performance',
+    
+    # メモリ最適化
+    'MemoryMonitor',
+    'MemoryOptimizer',
+    'memory_efficient',
+    'chunk_processing',
+    'get_memory_info'
 ] 

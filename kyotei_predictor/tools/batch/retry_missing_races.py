@@ -3,7 +3,7 @@ import json
 import re
 from kyotei_predictor.tools.fetch.race_data_fetcher import fetch_complete_race_data
 from kyotei_predictor.tools.fetch.odds_fetcher import fetch_trifecta_odds
-from kyotei_predictor.tools.common.venue_mapping import VENUE_MAPPING
+from kyotei_predictor.utils.venue_mapping import VENUE_MAPPING
 from metaboatrace.models.stadium import StadiumTelCode
 from datetime import datetime
 import argparse

@@ -15,9 +15,9 @@ from flask import Flask, render_template, request, jsonify
 from flask_caching import Cache
 import json
 import os
-from tools.fetch.race_data_fetcher import fetch_race_entry_data
-from tools.viz.html_display import generate_html_display as generate_race_html
-from errors import APIError, register_error_handlers
+from kyotei_predictor.tools.fetch.race_data_fetcher import fetch_race_entry_data
+from kyotei_predictor.tools.viz.html_display import generate_html_display as generate_race_html
+from kyotei_predictor.errors import APIError, register_error_handlers
 
 app = Flask(__name__, static_folder='static')
 register_error_handlers(app)  # エラーハンドラーを登録

@@ -1,420 +1,372 @@
 # API仕様書
 
 **最終更新日**: 2025-01-27  
-**バージョン**: 4.1（リファクタリング完了）
+**バージョン**: 4.2
 
 ---
 
-## 🎯 概要
+## 概要
 
-このドキュメントは、kyotei_Predictionプロジェクトの統合ユーティリティAPIの仕様を定義します。リファクタリング完了後の新しいアーキテクチャに基づいています。
-
----
-
-## 📋 API概要
-
-### 統合ユーティリティAPI
-- **KyoteiUtils**: 基本ユーティリティ
-- **Config**: 設定管理
-- **Logger**: ログ機能
-- **VenueMapper**: 会場マッピング
-- **Exceptions**: エラーハンドリング
+競艇予測システムのAPI仕様書です。統合ユーティリティ、キャッシュ機能、並列処理、メモリ最適化機能の使用方法を記載しています。
 
 ---
 
-## 🔧 KyoteiUtils API
+## 統合ユーティリティ API
 
-### 基本ユーティリティクラス
+### 基本ユーティリティ
 
-#### クラス定義
+#### KyoteiUtils
+
 ```python
-class KyoteiUtils:
-    """競艇予測システムの基本ユーティリティクラス"""
+from kyotei_predictor.utils import KyoteiUtils
+
+# JSON操作
+data = KyoteiUtils.load_json_file("data.json")
+success = KyoteiUtils.save_json_file(data, "output.json")
+
+# 確率計算
+probs = [1, 2, 3, 4, 5]
+normalized = KyoteiUtils.normalize_probabilities(probs)
+softmax_result = KyoteiUtils.softmax(probs)
+
+# データ検証
+is_valid = KyoteiUtils.validate_race_data(race_data)
 ```
 
-#### メソッド一覧
+#### Config
 
-##### `load_json(file_path: str) -> Dict[str, Any]`
-JSONファイルを読み込みます。
-
-**パラメータ:**
-- `file_path` (str): JSONファイルのパス
-
-**戻り値:**
-- `Dict[str, Any]`: 読み込んだJSONデータ
-
-**例外:**
-- `FileNotFoundError`: ファイルが見つからない場合
-- `JSONDecodeError`: JSON形式が不正な場合
-
-**使用例:**
 ```python
-data = KyoteiUtils.load_json("data.json")
-```
+from kyotei_predictor.utils import Config
 
-##### `save_json(data: Dict[str, Any], file_path: str) -> None`
-データをJSONファイルに保存します。
-
-**パラメータ:**
-- `data` (Dict[str, Any]): 保存するデータ
-- `file_path` (str): 保存先ファイルパス
-
-**戻り値:**
-- `None`
-
-**例外:**
-- `IOError`: ファイル書き込みエラーの場合
-
-**使用例:**
-```python
-KyoteiUtils.save_json(data, "output.json")
-```
-
-##### `process_data(raw_data: List[Dict[str, Any]]) -> List[Dict[str, Any]]`
-生データを処理します。
-
-**パラメータ:**
-- `raw_data` (List[Dict[str, Any]]): 生データ
-
-**戻り値:**
-- `List[Dict[str, Any]]`: 処理済みデータ
-
-**使用例:**
-```python
-processed_data = KyoteiUtils.process_data(raw_data)
-```
-
-##### `calculate_metric(data: List[Dict[str, Any]]) -> float`
-メトリックを計算します。
-
-**パラメータ:**
-- `data` (List[Dict[str, Any]]): 計算対象データ
-
-**戻り値:**
-- `float`: 計算結果
-
-**使用例:**
-```python
-metric = KyoteiUtils.calculate_metric(data)
-```
-
----
-
-## ⚙️ Config API
-
-### 設定管理クラス
-
-#### クラス定義
-```python
-class Config:
-    """競艇予測システムの設定管理クラス"""
-```
-
-#### メソッド一覧
-
-##### `__init__(config_file: Optional[str] = None)`
-設定クラスを初期化します。
-
-**パラメータ:**
-- `config_file` (Optional[str]): 設定ファイルのパス（デフォルト: None）
-
-**使用例:**
-```python
 config = Config()
-config = Config("custom_config.json")
-```
 
-##### `get_data_dir() -> str`
-データディレクトリのパスを取得します。
-
-**戻り値:**
-- `str`: データディレクトリのパス
-
-**使用例:**
-```python
+# 設定取得
 data_dir = config.get_data_dir()
-```
-
-##### `get_api_timeout() -> int`
-APIタイムアウト値を取得します。
-
-**戻り値:**
-- `int`: タイムアウト値（秒）
-
-**使用例:**
-```python
 timeout = config.get_api_timeout()
-```
-
-##### `get_log_level() -> str`
-ログレベルを取得します。
-
-**戻り値:**
-- `str`: ログレベル
-
-**使用例:**
-```python
 log_level = config.get_log_level()
 ```
 
-##### `get(key: str, default: Any = None) -> Any`
-カスタム設定値を取得します。
+#### VenueMapper
 
-**パラメータ:**
-- `key` (str): 設定キー
-- `default` (Any): デフォルト値
-
-**戻り値:**
-- `Any`: 設定値
-
-**使用例:**
 ```python
-value = config.get("custom_key", default="default_value")
+from kyotei_predictor.utils import VenueMapper
+from metaboatrace.models.stadium import StadiumTelCode
+
+# 会場情報取得
+venue_name = VenueMapper.get_venue_name(StadiumTelCode.KIRYU)
+venue_code = VenueMapper.get_venue_code(StadiumTelCode.KIRYU)
+region = VenueMapper.get_venue_region(StadiumTelCode.KIRYU)
+
+# 全スタジアム取得
+all_stadiums = VenueMapper.get_all_stadiums()
+region_stadiums = VenueMapper.get_stadiums_by_region("関東")
 ```
 
----
+#### Logger
 
-## 📝 Logger API
-
-### ログ機能
-
-#### 関数定義
 ```python
-def setup_logger(
-    name: str,
-    log_file: Optional[str] = None,
-    level: str = "INFO",
-    format_string: Optional[str] = None
-) -> logging.Logger:
-    """ロガーを設定します"""
-```
+from kyotei_predictor.utils import setup_logger
 
-#### パラメータ
-- `name` (str): ロガー名
-- `log_file` (Optional[str]): ログファイルパス（デフォルト: None）
-- `level` (str): ログレベル（デフォルト: "INFO"）
-- `format_string` (Optional[str]): ログフォーマット（デフォルト: None）
-
-#### 戻り値
-- `logging.Logger`: 設定されたロガー
-
-#### 使用例
-```python
 logger = setup_logger("my_module", log_file="logs/app.log")
-logger.info("処理開始")
+logger.info("情報メッセージ")
 logger.warning("警告メッセージ")
 logger.error("エラーメッセージ")
 ```
 
----
+#### Exceptions
 
-## 🏟️ VenueMapper API
-
-### 会場マッピングクラス
-
-#### クラス定義
 ```python
-class VenueMapper:
-    """競艇会場のマッピング機能を提供するクラス"""
-```
+from kyotei_predictor.utils import KyoteiError, DataError, APIError
 
-#### メソッド一覧
-
-##### `get_venue_name(stadium_code: StadiumTelCode) -> str`
-会場コードから会場名を取得します。
-
-**パラメータ:**
-- `stadium_code` (StadiumTelCode): 会場コード
-
-**戻り値:**
-- `str`: 会場名
-
-**使用例:**
-```python
-venue_name = VenueMapper.get_venue_name(StadiumTelCode.KIRYU)
-```
-
-##### `get_venue_code(stadium_code: StadiumTelCode) -> str`
-会場コードから会場コード文字列を取得します。
-
-**パラメータ:**
-- `stadium_code` (StadiumTelCode): 会場コード
-
-**戻り値:**
-- `str`: 会場コード文字列
-
-**使用例:**
-```python
-venue_code = VenueMapper.get_venue_code(StadiumTelCode.KIRYU)
-```
-
-##### `get_venues_by_region(region: str) -> List[StadiumTelCode]`
-地域別の会場リストを取得します。
-
-**パラメータ:**
-- `region` (str): 地域名
-
-**戻り値:**
-- `List[StadiumTelCode]`: 会場コードのリスト
-
-**使用例:**
-```python
-kanto_venues = VenueMapper.get_venues_by_region("関東")
+# カスタム例外
+raise KyoteiError("競艇システムエラー")
+raise DataError("データ処理エラー")
+raise APIError("API通信エラー")
 ```
 
 ---
 
-## ⚠️ Exceptions API
+## キャッシュ機能 API
 
-### カスタム例外クラス
+### CacheManager
 
-#### 基本例外クラス
 ```python
-class KyoteiError(Exception):
-    """競艇予測システムの基本例外クラス"""
+from kyotei_predictor.utils import CacheManager
+
+# キャッシュマネージャー初期化
+cache_manager = CacheManager(cache_dir="cache", max_size_mb=100)
+
+# データの保存・取得
+cache_manager.set("key", data, max_age_seconds=3600)
+cached_data = cache_manager.get("key", max_age_seconds=3600)
+
+# キャッシュ管理
+cache_manager.delete("key")
+cache_manager.clear()
+
+# 統計情報取得
+stats = cache_manager.get_stats()
 ```
 
-#### データ関連例外
+### グローバルキャッシュマネージャー
+
 ```python
-class DataError(KyoteiError):
-    """データ処理に関する例外"""
+from kyotei_predictor.utils import get_cache_manager
+
+cache_manager = get_cache_manager()
+cached_data = cache_manager.get("key")
 ```
 
-#### API関連例外
-```python
-class APIError(KyoteiError):
-    """API処理に関する例外"""
-```
+### キャッシュデコレータ
 
-#### 設定関連例外
 ```python
-class ConfigError(KyoteiError):
-    """設定処理に関する例外"""
-```
+from kyotei_predictor.utils import cache_result
 
-### エラーハンドリングデコレータ
-
-#### 関数定義
-```python
-def handle_exception(func: Callable) -> Callable:
-    """例外処理デコレータ"""
-```
-
-#### 使用例
-```python
-@handle_exception
-def my_function():
-    # 処理
-    pass
+@cache_result(max_age_seconds=3600)
+def expensive_function(param1, param2):
+    # 重い処理
+    return result
 ```
 
 ---
 
-## 🔄 移行ガイド
+## 並列処理 API
 
-### 既存コードからの移行
+### ParallelProcessor
 
-#### 1. インポート文の変更
 ```python
-# 移行前
-from tools.common import get_config, setup_logging
-from utils.common import process_data
+from kyotei_predictor.utils import ParallelProcessor
 
-# 移行後
+# 並列処理マネージャー初期化
+processor = ParallelProcessor(max_workers=4, use_processes=False)
+
+# リストの並列処理
+items = [1, 2, 3, 4, 5]
+results = processor.process_list(items, lambda x: x * 2)
+
+# 辞書の並列処理
+data_dict = {"a": 1, "b": 2, "c": 3}
+results = processor.process_dict(data_dict, lambda k, v: (k, v * 2))
+```
+
+### 並列化デコレータ
+
+```python
+from kyotei_predictor.utils import parallelize
+
+@parallelize(max_workers=4, use_processes=False)
+def process_item(item):
+    # 各アイテムの処理
+    return processed_item
+```
+
+### バッチ処理
+
+```python
+from kyotei_predictor.utils import batch_process
+
+items = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+results = batch_process(items, lambda x: x * 2, batch_size=3)
+```
+
+### パフォーマンス測定
+
+```python
+from kyotei_predictor.utils import measure_performance, get_optimal_workers
+
+# 実行時間測定
+result, execution_time = measure_performance(my_function, arg1, arg2)
+
+# 最適なワーカー数取得
+optimal_workers = get_optimal_workers(cpu_intensive=True)
+```
+
+---
+
+## メモリ最適化 API
+
+### MemoryMonitor
+
+```python
+from kyotei_predictor.utils import MemoryMonitor
+
+monitor = MemoryMonitor()
+
+# メモリ使用量取得
+memory_mb = monitor.get_memory_usage()
+memory_percent = monitor.get_memory_percentage()
+
+# システムメモリ情報
+system_info = monitor.get_system_memory_info()
+
+# メモリ使用量ログ
+monitor.log_memory_usage("処理前")
+
+# 閾値チェック
+is_over_threshold = monitor.check_memory_threshold(threshold_mb=1000)
+```
+
+### MemoryOptimizer
+
+```python
+from kyotei_predictor.utils import MemoryOptimizer
+
+optimizer = MemoryOptimizer()
+
+# メモリ最適化
+optimization_result = optimizer.optimize_memory(force_gc=True)
+
+# 関数監視
+monitor_result = optimizer.monitor_function(my_function, arg1, arg2)
+```
+
+### メモリ効率的デコレータ
+
+```python
+from kyotei_predictor.utils import memory_efficient
+
+@memory_efficient(max_memory_mb=1000)
+def memory_intensive_function(data):
+    # メモリ集約的な処理
+    return result
+```
+
+### チャンク処理
+
+```python
+from kyotei_predictor.utils import chunk_processing
+
+large_items = [1, 2, 3, ..., 10000]
+results = chunk_processing(large_items, process_item, chunk_size=100)
+```
+
+### メモリ情報取得
+
+```python
+from kyotei_predictor.utils import get_memory_info
+
+memory_info = get_memory_info()
+print(f"プロセスメモリ: {memory_info['process_memory_mb']:.2f}MB")
+print(f"システムメモリ使用率: {memory_info['system_memory']['percent']:.1f}%")
+```
+
+---
+
+## Web API
+
+### レースデータ取得
+
+```
+GET /api/race_data?date=2024-01-15&venue=KIRYU&race=1
+```
+
+**レスポンス例:**
+```json
+{
+  "race_info": {
+    "date": "2024-01-15",
+    "venue": "KIRYU",
+    "race_number": 1
+  },
+  "entries": [...],
+  "results": [...]
+}
+```
+
+### 予測実行
+
+```
+POST /api/predict
+Content-Type: application/json
+
+{
+  "date": "2024-01-15",
+  "venue": "KIRYU",
+  "race": 1,
+  "algorithm": "comprehensive"
+}
+```
+
+**レスポンス例:**
+```json
+{
+  "predictions": [
+    {"combination": [1, 2, 3], "probability": 0.15},
+    {"combination": [2, 1, 3], "probability": 0.12}
+  ],
+  "suggestions": [
+    {"type": "straight", "combinations": [[1, 2, 3]]},
+    {"type": "box", "combinations": [[1, 2, 3], [1, 3, 2]]}
+  ]
+}
+```
+
+---
+
+## エラーハンドリング
+
+### エラーコード
+
+| コード | 説明 |
+|--------|------|
+| 400 | リクエストエラー |
+| 404 | リソースが見つかりません |
+| 500 | サーバーエラー |
+| 503 | サービス利用不可 |
+
+### エラーレスポンス例
+
+```json
+{
+  "error": {
+    "code": 400,
+    "message": "不正なリクエスト",
+    "details": "日付形式が正しくありません"
+  }
+}
+```
+
+---
+
+## 使用例
+
+### 完全な使用例
+
+```python
 from kyotei_predictor.utils import (
-    Config, setup_logger, KyoteiUtils, handle_exception
+    KyoteiUtils, Config, setup_logger, VenueMapper,
+    CacheManager, ParallelProcessor, MemoryOptimizer,
+    cache_result, parallelize, memory_efficient
 )
-```
 
-#### 2. 設定管理の変更
-```python
-# 移行前
-config = get_config()
+# ログ設定
+logger = setup_logger("my_app")
 
-# 移行後
+# 設定取得
 config = Config()
-```
+data_dir = config.get_data_dir()
 
-#### 3. ログ機能の変更
-```python
-# 移行前
-logger = setup_logging("my_module")
+# キャッシュ設定
+cache_manager = CacheManager()
 
-# 移行後
-logger = setup_logger("my_module", log_file="logs/app.log")
-```
+# メモリ最適化
+optimizer = MemoryOptimizer()
 
-#### 4. エラーハンドリングの変更
-```python
-# 移行前
-try:
-    # 処理
-    pass
-except Exception as e:
-    logger.error(f"エラー: {e}")
+@cache_result(max_age_seconds=3600)
+@memory_efficient(max_memory_mb=1000)
+def process_race_data(race_data):
+    # レースデータ処理
+    return processed_data
 
-# 移行後
-@handle_exception
-def my_function():
-    # 処理
-    pass
+# 並列処理
+processor = ParallelProcessor(max_workers=4)
+results = processor.process_list(race_list, process_race_data)
 ```
 
 ---
 
-## 📊 パフォーマンス仕様
+## 更新履歴
 
-### メモリ使用量
-- **設定管理**: 最小限のメモリ使用量
-- **ログ機能**: ログローテーションによる自動クリーンアップ
-- **データ処理**: 効率的なデータ構造の使用
-
-### 処理速度
-- **JSON操作**: 高速なJSON読み書き
-- **設定取得**: キャッシュ機能による高速化
-- **会場マッピング**: 事前定義されたマッピングによる高速検索
-
-### スケーラビリティ
-- **並列処理対応**: スレッドセーフな実装
-- **拡張性**: プラグイン対応の設計
-- **保守性**: モジュール化された構造
-
----
-
-## 🧪 テスト仕様
-
-### 単体テスト
-- **KyoteiUtils**: JSON操作・データ処理・計算機能のテスト
-- **Config**: 設定読み込み・環境変数・ファイル操作のテスト
-- **VenueMapper**: 会場マッピング・地域別取得・コード変換のテスト
-- **Exceptions**: カスタム例外・エラーハンドリングのテスト
-- **Logger**: ログ設定・ファイル出力・レベル制御のテスト
-
-### 統合テスト
-- **全機能統合**: 統合ユーティリティ全体の動作テスト
-- **エラー処理**: 例外処理の統合テスト
-- **パフォーマンス**: 処理速度・メモリ使用量のテスト
-
----
-
-## 📋 今後の拡張計画
-
-### Phase 2: 既存コードの移行
-1. **データ取得ツールの移行**
-2. **バッチ処理の移行**
-3. **予測エンジンの移行**
-
-### Phase 3: パフォーマンス最適化
-1. **キャッシュ機能の実装**
-2. **並列処理の最適化**
-3. **メモリ使用量の最適化**
-
-### Phase 4: 機能拡張
-1. **新しいユーティリティの追加**
-2. **API機能の拡張**
-3. **プラグインシステムの実装**
-
----
-
-**最終更新**: 2025-01-27  
-**次回更新予定**: 2025-02-03 
+- **v4.2 (2025-01-27)**: キャッシュ機能、並列処理、メモリ最適化機能を追加
+- **v4.1 (2025-01-27)**: 統合ユーティリティの基本機能を追加
+- **v4.0 (2025-01-27)**: 初回リリース 
