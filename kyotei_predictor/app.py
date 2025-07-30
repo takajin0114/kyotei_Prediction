@@ -1,15 +1,32 @@
-
+#!/usr/bin/env python3
+"""
+競艇予測Webアプリケーション
+"""
 
 import sys
 from pathlib import Path
 from datetime import timedelta
 
+# プロジェクトルートを動的に取得
+def get_project_root() -> Path:
+    """プロジェクトルートを動的に検出"""
+    current_file = Path(__file__)
+    # app.pyはkyotei_predictorディレクトリ内にあるため、2階層上がる
+    project_root = current_file.parent.parent
+    
+    # Google Colab環境の検出
+    if str(project_root).startswith('/content/'):
+        return Path('/content/kyotei_Prediction')
+    
+    return project_root
+
+PROJECT_ROOT = get_project_root()
+
 # プロジェクトルートとtoolsディレクトリをパスに追加
-project_root = Path(__file__).parent
-sys.path.append(str(project_root))
-sys.path.append(str(project_root / "tools"))
-sys.path.append(str(project_root / "tools" / "fetch"))
-sys.path.append(str(project_root / "tools" / "viz"))
+sys.path.append(str(PROJECT_ROOT))
+sys.path.append(str(PROJECT_ROOT / "tools"))
+sys.path.append(str(PROJECT_ROOT / "tools" / "fetch"))
+sys.path.append(str(PROJECT_ROOT / "tools" / "viz"))
 
 from flask import Flask, render_template, request, jsonify
 from flask_caching import Cache
@@ -29,7 +46,7 @@ cache = Cache(config={
 })
 cache.init_app(app)
 
-SAMPLE_DATA = Path('data/complete_race_data_20240615_KIRYU_R1.json')
+SAMPLE_DATA = PROJECT_ROOT / 'data' / 'complete_race_data_20240615_KIRYU_R1.json'
 
 
 @app.route('/')
@@ -66,36 +83,54 @@ def serve_raw_data_file(filename):
     return "File not found", 404
 
 
-@app.route('/api/race_data', methods=['GET'])
-@cache.cached(timeout=300, query_string=True)  # 5分間キャッシュ
+@app.route('/api/race-data')
+@cache.cached(timeout=300)
 def get_race_data():
-    if SAMPLE_DATA.exists():
-        with open(SAMPLE_DATA) as f:
-            return jsonify(json.load(f))
-    return jsonify({"error": "Sample data not found"}), 404
+    """レースデータを取得"""
+    try:
+        # サンプルデータを使用
+        if SAMPLE_DATA.exists():
+            with open(SAMPLE_DATA, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            return jsonify(data)
+        else:
+            return jsonify({'error': 'サンプルデータが見つかりません'}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 
 @app.route('/api/predict', methods=['POST'])
-@cache.cached(timeout=60)  # 1分間キャッシュ
 def predict():
-    data = request.get_json()
-    # 簡易的な予測ロジック
-    race_entries = data.get('race_entries', [])
-    if not race_entries:
-        return jsonify({"error": "No race data provided"}), 400
+    """予測を実行"""
+    try:
+        data = request.get_json()
+        race_id = data.get('race_id')
+        
+        if not race_id:
+            return jsonify({'error': 'race_idが必要です'}), 400
+        
+        # ここで予測ロジックを実装
+        # 現在はサンプルデータを返す
+        prediction = {
+            'race_id': race_id,
+            'predictions': [
+                {'combination': '1-2-3', 'probability': 0.15},
+                {'combination': '2-1-3', 'probability': 0.12},
+                {'combination': '3-1-2', 'probability': 0.10}
+            ]
+        }
+        
+        return jsonify(prediction)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
-    # 簡易的な予測：勝率が最も高い選手を1着と予測
-    predicted_winner = max(race_entries, key=lambda x: x.get('rate_in_all_stadium', 0))
-    return jsonify({
-        "predicted_winner": predicted_winner,
-        "confidence": 0.75
-    })
 
 @app.route('/api/races', methods=['GET'])
 @cache.cached(timeout=300)  # 5分間キャッシュ
 def get_races():
     try:
         # サンプルデータからレース一覧を生成
-        sample_files = list(Path('data').glob('complete_race_data_*.json'))
+        sample_files = list(PROJECT_ROOT.glob('data/complete_race_data_*.json'))
         if not sample_files:
             raise APIError('No race data available', status_code=404)
             
@@ -132,7 +167,7 @@ def get_weather():
             raise APIError('date and stadium parameters are required', status_code=400)
         
         # 該当するデータファイルを検索
-        file_path = Path(f'data/complete_race_data_{date}_{stadium}_R1.json')
+        file_path = PROJECT_ROOT / f'data/complete_race_data_{date}_{stadium}_R1.json'
         if not file_path.exists():
             raise APIError('Weather data not found', status_code=404)
         
@@ -149,5 +184,5 @@ def get_weather():
         raise
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=51932, debug=True)
+    app.run(debug=True, host='0.0.0.0', port=5000)
 

@@ -1,0 +1,2367 @@
+{
+  "prediction_date": "2025-07-07",
+  "generated_at": "2025-07-11T20:29:18.988866",
+  "model_info": {
+    "model_path": "D:\\git\\kyotei_Prediction\\optuna_models\\graduated_reward_best\\best_model.zip",
+    "model_name": "best_model",
+    "version": "2025-07-09",
+    "training_data_until": "2025-07-10"
+  },
+  "execution_summary": {
+    "total_venues": 1,
+    "total_races": 12,
+    "successful_predictions": 12,
+    "execution_time_minutes": 0.10828153333333333
+  },
+  "predictions": [
+    {
+      "venue": "KIRYU",
+      "venue_code": "01",
+      "race_number": 1,
+      "race_time": "09:00",
+      "top_20_combinations": [
+        {
+          "combination": "1-2-3",
+          "probability": 0.9914650321006775,
+          "expected_value": -0.675,
+          "rank": 1
+        },
+        {
+          "combination": "1-3-2",
+          "probability": 0.003560611279681325,
+          "expected_value": -0.24,
+          "rank": 2
+        },
+        {
+          "combination": "1-3-5",
+          "probability": 0.0010467333486303687,
+          "expected_value": 11.65,
+          "rank": 3
+        },
+        {
+          "combination": "1-2-4",
+          "probability": 0.0009125731885433197,
+          "expected_value": -0.52,
+          "rank": 4
+        },
+        {
+          "combination": "1-3-4",
+          "probability": 0.0006365166627801955,
+          "expected_value": 0.47,
+          "rank": 5
+        },
+        {
+          "combination": "1-3-6",
+          "probability": 0.0003270628512836993,
+          "expected_value": 3.83,
+          "rank": 6
+        },
+        {
+          "combination": "1-2-5",
+          "probability": 0.0003029999206773937,
+          "expected_value": 5.325,
+          "rank": 7
+        },
+        {
+          "combination": "1-4-3",
+          "probability": 0.0003012636152561754,
+          "expected_value": 1.0750000000000002,
+          "rank": 8
+        },
+        {
+          "combination": "1-2-6",
+          "probability": 0.00024516350822523236,
+          "expected_value": 0.9350000000000003,
+          "rank": 9
+        },
+        {
+          "combination": "1-4-2",
+          "probability": 0.00015182951756287366,
+          "expected_value": 0.11499999999999999,
+          "rank": 10
+        },
+        {
+          "combination": "1-6-2",
+          "probability": 0.00011279644968453795,
+          "expected_value": 3.75,
+          "rank": 11
+        },
+        {
+          "combination": "1-5-2",
+          "probability": 8.638387953396887e-05,
+          "expected_value": 22.990000000000002,
+          "rank": 12
+        },
+        {
+          "combination": "1-4-6",
+          "probability": 6.963782652746886e-05,
+          "expected_value": 4.28,
+          "rank": 13
+        },
+        {
+          "combination": "1-4-5",
+          "probability": 6.172971188789234e-05,
+          "expected_value": 13.080000000000002,
+          "rank": 14
+        },
+        {
+          "combination": "1-5-4",
+          "probability": 5.241411417955533e-05,
+          "expected_value": 36.35,
+          "rank": 15
+        },
+        {
+          "combination": "1-5-3",
+          "probability": 3.896475755027495e-05,
+          "expected_value": 24.775000000000002,
+          "rank": 16
+        },
+        {
+          "combination": "1-6-5",
+          "probability": 3.193056909367442e-05,
+          "expected_value": 36.35,
+          "rank": 17
+        },
+        {
+          "combination": "1-6-3",
+          "probability": 2.6407928089611232e-05,
+          "expected_value": 8.025,
+          "rank": 18
+        },
+        {
+          "combination": "2-1-3",
+          "probability": 2.201128882006742e-05,
+          "expected_value": -0.5449999999999999,
+          "rank": 19
+        },
+        {
+          "combination": "1-6-4",
+          "probability": 2.0104793293285184e-05,
+          "expected_value": 7.695,
+          "rank": 20
+        }
+      ],
+      "total_probability": 0.9994721673119784,
+      "purchase_suggestions": [
+        {
+          "type": "wheel",
+          "description": "1-流し",
+          "combinations": [
+            "1-2-3",
+            "1-3-2",
+            "1-3-5",
+            "1-2-4"
+          ],
+          "total_probability": 0.9969849499175325,
+          "total_cost": 400,
+          "expected_return": 996.9849499175325
+        },
+        {
+          "type": "box",
+          "description": "1-2-3 ボックス",
+          "combinations": [
+            "1-2-3",
+            "1-3-2",
+            "2-1-3"
+          ],
+          "total_probability": 0.9950476546691789,
+          "total_cost": 1200,
+          "expected_return": 995.0476546691789
+        },
+        {
+          "type": "box",
+          "description": "1-3-2 ボックス",
+          "combinations": [
+            "1-2-3",
+            "1-3-2",
+            "2-1-3"
+          ],
+          "total_probability": 0.9950476546691789,
+          "total_cost": 1200,
+          "expected_return": 995.0476546691789
+        },
+        {
+          "type": "nagashi",
+          "description": "1-2-流し",
+          "combinations": [
+            "1-2-3",
+            "1-2-4",
+            "1-2-5",
+            "1-2-6"
+          ],
+          "total_probability": 0.9929257687181234,
+          "total_cost": 400,
+          "expected_return": 992.9257687181234
+        },
+        {
+          "type": "nagashi",
+          "description": "1-3-流し",
+          "combinations": [
+            "1-3-2",
+            "1-3-5",
+            "1-3-4",
+            "1-3-6"
+          ],
+          "total_probability": 0.005570924142375588,
+          "total_cost": 400,
+          "expected_return": 5.570924142375588
+        }
+      ],
+      "risk_level": "low"
+    },
+    {
+      "venue": "KIRYU",
+      "venue_code": "01",
+      "race_number": 10,
+      "race_time": "09:00",
+      "top_20_combinations": [
+        {
+          "combination": "1-2-3",
+          "probability": 0.9914612770080566,
+          "expected_value": 0.06500000000000017,
+          "rank": 1
+        },
+        {
+          "combination": "1-3-2",
+          "probability": 0.003571681445464492,
+          "expected_value": -0.44000000000000006,
+          "rank": 2
+        },
+        {
+          "combination": "1-3-5",
+          "probability": 0.0010483863297849894,
+          "expected_value": -0.81,
+          "rank": 3
+        },
+        {
+          "combination": "1-2-4",
+          "probability": 0.0009094789274968207,
+          "expected_value": 3.2649999999999997,
+          "rank": 4
+        },
+        {
+          "combination": "1-3-4",
+          "probability": 0.0006369526963680983,
+          "expected_value": -0.02499999999999991,
+          "rank": 5
+        },
+        {
+          "combination": "1-3-6",
+          "probability": 0.0003277535433880985,
+          "expected_value": -0.3799999999999999,
+          "rank": 6
+        },
+        {
+          "combination": "1-2-5",
+          "probability": 0.00030197325395420194,
+          "expected_value": 0.7100000000000002,
+          "rank": 7
+        },
+        {
+          "combination": "1-4-3",
+          "probability": 0.00030186641379259527,
+          "expected_value": 2.915,
+          "rank": 8
+        },
+        {
+          "combination": "1-2-6",
+          "probability": 0.00024385348660871387,
+          "expected_value": 3.04,
+          "rank": 9
+        },
+        {
+          "combination": "1-4-2",
+          "probability": 0.00015171649283729494,
+          "expected_value": 6.93,
+          "rank": 10
+        },
+        {
+          "combination": "1-6-2",
+          "probability": 0.00011276686564087868,
+          "expected_value": 6.8950000000000005,
+          "rank": 11
+        },
+        {
+          "combination": "1-5-2",
+          "probability": 8.580619032727554e-05,
+          "expected_value": 0.4950000000000001,
+          "rank": 12
+        },
+        {
+          "combination": "1-4-6",
+          "probability": 6.941967876628041e-05,
+          "expected_value": 6.635,
+          "rank": 13
+        },
+        {
+          "combination": "1-4-5",
+          "probability": 6.166552338982001e-05,
+          "expected_value": 3.5600000000000005,
+          "rank": 14
+        },
+        {
+          "combination": "1-5-4",
+          "probability": 5.223602056503296e-05,
+          "expected_value": 1.6800000000000002,
+          "rank": 15
+        },
+        {
+          "combination": "1-5-3",
+          "probability": 3.891581218340434e-05,
+          "expected_value": -0.595,
+          "rank": 16
+        },
+        {
+          "combination": "1-6-5",
+          "probability": 3.184617526130751e-05,
+          "expected_value": 2.465,
+          "rank": 17
+        },
+        {
+          "combination": "1-6-3",
+          "probability": 2.6257854187861085e-05,
+          "expected_value": 1.6550000000000002,
+          "rank": 18
+        },
+        {
+          "combination": "2-1-3",
+          "probability": 2.187609970860649e-05,
+          "expected_value": 11.055,
+          "rank": 19
+        },
+        {
+          "combination": "1-6-4",
+          "probability": 2.0023568140459247e-05,
+          "expected_value": 8.795000000000002,
+          "rank": 20
+        }
+      ],
+      "total_probability": 0.9994757533859229,
+      "purchase_suggestions": [
+        {
+          "type": "wheel",
+          "description": "1-流し",
+          "combinations": [
+            "1-2-3",
+            "1-3-2",
+            "1-3-5",
+            "1-2-4"
+          ],
+          "total_probability": 0.9969908237108029,
+          "total_cost": 400,
+          "expected_return": 996.9908237108029
+        },
+        {
+          "type": "box",
+          "description": "1-2-3 ボックス",
+          "combinations": [
+            "1-2-3",
+            "1-3-2",
+            "2-1-3"
+          ],
+          "total_probability": 0.9950548345532297,
+          "total_cost": 1200,
+          "expected_return": 995.0548345532297
+        },
+        {
+          "type": "box",
+          "description": "1-3-2 ボックス",
+          "combinations": [
+            "1-2-3",
+            "1-3-2",
+            "2-1-3"
+          ],
+          "total_probability": 0.9950548345532297,
+          "total_cost": 1200,
+          "expected_return": 995.0548345532297
+        },
+        {
+          "type": "nagashi",
+          "description": "1-2-流し",
+          "combinations": [
+            "1-2-3",
+            "1-2-4",
+            "1-2-5",
+            "1-2-6"
+          ],
+          "total_probability": 0.9929165826761164,
+          "total_cost": 400,
+          "expected_return": 992.9165826761164
+        },
+        {
+          "type": "nagashi",
+          "description": "1-3-流し",
+          "combinations": [
+            "1-3-2",
+            "1-3-5",
+            "1-3-4",
+            "1-3-6"
+          ],
+          "total_probability": 0.005584774015005678,
+          "total_cost": 400,
+          "expected_return": 5.584774015005678
+        }
+      ],
+      "risk_level": "low"
+    },
+    {
+      "venue": "KIRYU",
+      "venue_code": "01",
+      "race_number": 11,
+      "race_time": "09:00",
+      "top_20_combinations": [
+        {
+          "combination": "1-2-3",
+          "probability": 0.9915036559104919,
+          "expected_value": 0.09000000000000008,
+          "rank": 1
+        },
+        {
+          "combination": "1-3-2",
+          "probability": 0.003556600771844387,
+          "expected_value": -0.32999999999999996,
+          "rank": 2
+        },
+        {
+          "combination": "1-3-5",
+          "probability": 0.0010423496132716537,
+          "expected_value": 0.40000000000000013,
+          "rank": 3
+        },
+        {
+          "combination": "1-2-4",
+          "probability": 0.0009055007249116898,
+          "expected_value": 0.8,
+          "rank": 4
+        },
+        {
+          "combination": "1-3-4",
+          "probability": 0.0006333772325888276,
+          "expected_value": -0.72,
+          "rank": 5
+        },
+        {
+          "combination": "1-3-6",
+          "probability": 0.00032538684899918735,
+          "expected_value": -0.37,
+          "rank": 6
+        },
+        {
+          "combination": "1-2-5",
+          "probability": 0.00030037996475584805,
+          "expected_value": 5.470000000000001,
+          "rank": 7
+        },
+        {
+          "combination": "1-4-3",
+          "probability": 0.0003003476304002106,
+          "expected_value": -0.5449999999999999,
+          "rank": 8
+        },
+        {
+          "combination": "1-2-6",
+          "probability": 0.00024273926101159304,
+          "expected_value": 3.2350000000000003,
+          "rank": 9
+        },
+        {
+          "combination": "1-4-2",
+          "probability": 0.0001507745764683932,
+          "expected_value": 0.27,
+          "rank": 10
+        },
+        {
+          "combination": "1-6-2",
+          "probability": 0.0001120274537242949,
+          "expected_value": 4.945,
+          "rank": 11
+        },
+        {
+          "combination": "1-5-2",
+          "probability": 8.533147047273815e-05,
+          "expected_value": 7.450000000000001,
+          "rank": 12
+        },
+        {
+          "combination": "1-4-6",
+          "probability": 6.904746987856925e-05,
+          "expected_value": -0.20999999999999996,
+          "rank": 13
+        },
+        {
+          "combination": "1-4-5",
+          "probability": 6.128203676780686e-05,
+          "expected_value": 0.7300000000000002,
+          "rank": 14
+        },
+        {
+          "combination": "1-5-4",
+          "probability": 5.1940689445473254e-05,
+          "expected_value": 3.08,
+          "rank": 15
+        },
+        {
+          "combination": "1-5-3",
+          "probability": 3.865363760269247e-05,
+          "expected_value": 3.3950000000000005,
+          "rank": 16
+        },
+        {
+          "combination": "1-6-5",
+          "probability": 3.166217356920242e-05,
+          "expected_value": 5.195,
+          "rank": 17
+        },
+        {
+          "combination": "1-6-3",
+          "probability": 2.6104818971361965e-05,
+          "expected_value": 1.1949999999999998,
+          "rank": 18
+        },
+        {
+          "combination": "2-1-3",
+          "probability": 2.174884866690263e-05,
+          "expected_value": 8.625,
+          "rank": 19
+        },
+        {
+          "combination": "1-6-4",
+          "probability": 1.991391218325589e-05,
+          "expected_value": 1.2149999999999999,
+          "rank": 20
+        }
+      ],
+      "total_probability": 0.999478825046026,
+      "purchase_suggestions": [
+        {
+          "type": "wheel",
+          "description": "1-流し",
+          "combinations": [
+            "1-2-3",
+            "1-3-2",
+            "1-3-5",
+            "1-2-4"
+          ],
+          "total_probability": 0.9970081070205197,
+          "total_cost": 400,
+          "expected_return": 997.0081070205197
+        },
+        {
+          "type": "box",
+          "description": "1-2-3 ボックス",
+          "combinations": [
+            "1-2-3",
+            "1-3-2",
+            "2-1-3"
+          ],
+          "total_probability": 0.9950820055310032,
+          "total_cost": 1200,
+          "expected_return": 995.0820055310032
+        },
+        {
+          "type": "box",
+          "description": "1-3-2 ボックス",
+          "combinations": [
+            "1-2-3",
+            "1-3-2",
+            "2-1-3"
+          ],
+          "total_probability": 0.9950820055310032,
+          "total_cost": 1200,
+          "expected_return": 995.0820055310032
+        },
+        {
+          "type": "nagashi",
+          "description": "1-2-流し",
+          "combinations": [
+            "1-2-3",
+            "1-2-4",
+            "1-2-5",
+            "1-2-6"
+          ],
+          "total_probability": 0.9929522758611711,
+          "total_cost": 400,
+          "expected_return": 992.9522758611711
+        },
+        {
+          "type": "nagashi",
+          "description": "1-3-流し",
+          "combinations": [
+            "1-3-2",
+            "1-3-5",
+            "1-3-4",
+            "1-3-6"
+          ],
+          "total_probability": 0.005557714466704056,
+          "total_cost": 400,
+          "expected_return": 5.557714466704056
+        }
+      ],
+      "risk_level": "low"
+    },
+    {
+      "venue": "KIRYU",
+      "venue_code": "01",
+      "race_number": 12,
+      "race_time": "09:00",
+      "top_20_combinations": [
+        {
+          "combination": "1-2-3",
+          "probability": 0.9913498163223267,
+          "expected_value": -0.1349999999999999,
+          "rank": 1
+        },
+        {
+          "combination": "1-3-2",
+          "probability": 0.0036011815536767244,
+          "expected_value": -0.13,
+          "rank": 2
+        },
+        {
+          "combination": "1-3-5",
+          "probability": 0.0010615075007081032,
+          "expected_value": -0.48,
+          "rank": 3
+        },
+        {
+          "combination": "1-2-4",
+          "probability": 0.0009237717022188008,
+          "expected_value": 0.16999999999999993,
+          "rank": 4
+        },
+        {
+          "combination": "1-3-4",
+          "probability": 0.0006457800627686083,
+          "expected_value": -0.35,
+          "rank": 5
+        },
+        {
+          "combination": "1-3-6",
+          "probability": 0.000331601535435766,
+          "expected_value": 6.995000000000001,
+          "rank": 6
+        },
+        {
+          "combination": "1-2-5",
+          "probability": 0.00030751657322980464,
+          "expected_value": -0.1349999999999999,
+          "rank": 7
+        },
+        {
+          "combination": "1-4-3",
+          "probability": 0.0003068234655074775,
+          "expected_value": 0.0050000000000001155,
+          "rank": 8
+        },
+        {
+          "combination": "1-2-6",
+          "probability": 0.0002481511328369379,
+          "expected_value": 8.71,
+          "rank": 9
+        },
+        {
+          "combination": "1-4-2",
+          "probability": 0.0001543583784950897,
+          "expected_value": 0.3550000000000002,
+          "rank": 10
+        },
+        {
+          "combination": "1-6-2",
+          "probability": 0.00011468414595583454,
+          "expected_value": 22.200000000000003,
+          "rank": 11
+        },
+        {
+          "combination": "1-5-2",
+          "probability": 8.76799167599529e-05,
+          "expected_value": -0.0050000000000000044,
+          "rank": 12
+        },
+        {
+          "combination": "1-4-6",
+          "probability": 7.092110172379762e-05,
+          "expected_value": 5.965000000000001,
+          "rank": 13
+        },
+        {
+          "combination": "1-4-5",
+          "probability": 6.283039692789316e-05,
+          "expected_value": -0.21999999999999997,
+          "rank": 14
+        },
+        {
+          "combination": "1-5-4",
+          "probability": 5.3355717682279646e-05,
+          "expected_value": 0.07000000000000006,
+          "rank": 15
+        },
+        {
+          "combination": "1-5-3",
+          "probability": 3.971357364207506e-05,
+          "expected_value": -0.23499999999999988,
+          "rank": 16
+        },
+        {
+          "combination": "1-6-5",
+          "probability": 3.253290560678579e-05,
+          "expected_value": 18.930000000000003,
+          "rank": 17
+        },
+        {
+          "combination": "1-6-3",
+          "probability": 2.6834593882085755e-05,
+          "expected_value": 23.915000000000003,
+          "rank": 18
+        },
+        {
+          "combination": "2-1-3",
+          "probability": 2.2348049242282286e-05,
+          "expected_value": 3.7700000000000005,
+          "rank": 19
+        },
+        {
+          "combination": "1-6-4",
+          "probability": 2.0488310838118196e-05,
+          "expected_value": 19.975,
+          "rank": 20
+        }
+      ],
+      "total_probability": 0.9994618969394651,
+      "purchase_suggestions": [
+        {
+          "type": "wheel",
+          "description": "1-流し",
+          "combinations": [
+            "1-2-3",
+            "1-3-2",
+            "1-3-5",
+            "1-2-4"
+          ],
+          "total_probability": 0.9969362770789303,
+          "total_cost": 400,
+          "expected_return": 996.9362770789303
+        },
+        {
+          "type": "box",
+          "description": "1-2-3 ボックス",
+          "combinations": [
+            "1-2-3",
+            "1-3-2",
+            "2-1-3"
+          ],
+          "total_probability": 0.9949733459252457,
+          "total_cost": 1200,
+          "expected_return": 994.9733459252457
+        },
+        {
+          "type": "box",
+          "description": "1-3-2 ボックス",
+          "combinations": [
+            "1-2-3",
+            "1-3-2",
+            "2-1-3"
+          ],
+          "total_probability": 0.9949733459252457,
+          "total_cost": 1200,
+          "expected_return": 994.9733459252457
+        },
+        {
+          "type": "nagashi",
+          "description": "1-2-流し",
+          "combinations": [
+            "1-2-3",
+            "1-2-4",
+            "1-2-5",
+            "1-2-6"
+          ],
+          "total_probability": 0.9928292557306122,
+          "total_cost": 400,
+          "expected_return": 992.8292557306122
+        },
+        {
+          "type": "nagashi",
+          "description": "1-3-流し",
+          "combinations": [
+            "1-3-2",
+            "1-3-5",
+            "1-3-4",
+            "1-3-6"
+          ],
+          "total_probability": 0.005640070652589202,
+          "total_cost": 400,
+          "expected_return": 5.640070652589202
+        }
+      ],
+      "risk_level": "low"
+    },
+    {
+      "venue": "KIRYU",
+      "venue_code": "01",
+      "race_number": 2,
+      "race_time": "09:00",
+      "top_20_combinations": [
+        {
+          "combination": "1-2-3",
+          "probability": 0.9908689260482788,
+          "expected_value": 1.06,
+          "rank": 1
+        },
+        {
+          "combination": "1-3-2",
+          "probability": 0.0037840022705495358,
+          "expected_value": 0.19000000000000017,
+          "rank": 2
+        },
+        {
+          "combination": "1-3-5",
+          "probability": 0.0011201502056792378,
+          "expected_value": 3.08,
+          "rank": 3
+        },
+        {
+          "combination": "1-2-4",
+          "probability": 0.0009667253470979631,
+          "expected_value": 3.3450000000000006,
+          "rank": 4
+        },
+        {
+          "combination": "1-3-4",
+          "probability": 0.0006834719097241759,
+          "expected_value": 0.15999999999999992,
+          "rank": 5
+        },
+        {
+          "combination": "1-3-6",
+          "probability": 0.00035660783760249615,
+          "expected_value": 0.19500000000000006,
+          "rank": 6
+        },
+        {
+          "combination": "1-4-3",
+          "probability": 0.00032520366949029267,
+          "expected_value": 2.4000000000000004,
+          "rank": 7
+        },
+        {
+          "combination": "1-2-5",
+          "probability": 0.0003236396878492087,
+          "expected_value": 11.420000000000002,
+          "rank": 8
+        },
+        {
+          "combination": "1-2-6",
+          "probability": 0.0002622577012516558,
+          "expected_value": 3.960000000000001,
+          "rank": 9
+        },
+        {
+          "combination": "1-4-2",
+          "probability": 0.00016488081018906087,
+          "expected_value": 5.33,
+          "rank": 10
+        },
+        {
+          "combination": "1-6-2",
+          "probability": 0.00012277570203877985,
+          "expected_value": 6.21,
+          "rank": 11
+        },
+        {
+          "combination": "1-5-2",
+          "probability": 9.289443551097065e-05,
+          "expected_value": 39.425000000000004,
+          "rank": 12
+        },
+        {
+          "combination": "1-4-6",
+          "probability": 7.519299106206745e-05,
+          "expected_value": 4.88,
+          "rank": 13
+        },
+        {
+          "combination": "1-4-5",
+          "probability": 6.741933611920103e-05,
+          "expected_value": 19.97,
+          "rank": 14
+        },
+        {
+          "combination": "1-5-4",
+          "probability": 5.689662793884054e-05,
+          "expected_value": 42.125,
+          "rank": 15
+        },
+        {
+          "combination": "1-5-3",
+          "probability": 4.247067408869043e-05,
+          "expected_value": 16.335,
+          "rank": 16
+        },
+        {
+          "combination": "1-6-5",
+          "probability": 3.475514313322492e-05,
+          "expected_value": 21.01,
+          "rank": 17
+        },
+        {
+          "combination": "1-6-3",
+          "probability": 2.8811462470912375e-05,
+          "expected_value": 2.325,
+          "rank": 18
+        },
+        {
+          "combination": "2-1-3",
+          "probability": 2.396475974819623e-05,
+          "expected_value": 3.5250000000000004,
+          "rank": 19
+        },
+        {
+          "combination": "1-6-4",
+          "probability": 2.1920193830737844e-05,
+          "expected_value": 7.115,
+          "rank": 20
+        }
+      ],
+      "total_probability": 0.9994229668136541,
+      "purchase_suggestions": [
+        {
+          "type": "wheel",
+          "description": "1-流し",
+          "combinations": [
+            "1-2-3",
+            "1-3-2",
+            "1-3-5",
+            "1-2-4"
+          ],
+          "total_probability": 0.9967398038716055,
+          "total_cost": 400,
+          "expected_return": 996.7398038716055
+        },
+        {
+          "type": "box",
+          "description": "1-2-3 ボックス",
+          "combinations": [
+            "1-2-3",
+            "1-3-2",
+            "2-1-3"
+          ],
+          "total_probability": 0.9946768930785765,
+          "total_cost": 1200,
+          "expected_return": 994.6768930785765
+        },
+        {
+          "type": "box",
+          "description": "1-3-2 ボックス",
+          "combinations": [
+            "1-2-3",
+            "1-3-2",
+            "2-1-3"
+          ],
+          "total_probability": 0.9946768930785765,
+          "total_cost": 1200,
+          "expected_return": 994.6768930785765
+        },
+        {
+          "type": "nagashi",
+          "description": "1-2-流し",
+          "combinations": [
+            "1-2-3",
+            "1-2-4",
+            "1-2-5",
+            "1-2-6"
+          ],
+          "total_probability": 0.9924215487844776,
+          "total_cost": 400,
+          "expected_return": 992.4215487844776
+        },
+        {
+          "type": "nagashi",
+          "description": "1-3-流し",
+          "combinations": [
+            "1-3-2",
+            "1-3-5",
+            "1-3-4",
+            "1-3-6"
+          ],
+          "total_probability": 0.005944232223555446,
+          "total_cost": 400,
+          "expected_return": 5.944232223555446
+        }
+      ],
+      "risk_level": "low"
+    },
+    {
+      "venue": "KIRYU",
+      "venue_code": "01",
+      "race_number": 3,
+      "race_time": "09:00",
+      "top_20_combinations": [
+        {
+          "combination": "1-2-3",
+          "probability": 0.9912609457969666,
+          "expected_value": -0.245,
+          "rank": 1
+        },
+        {
+          "combination": "1-3-2",
+          "probability": 0.0036361347883939743,
+          "expected_value": 0.5350000000000001,
+          "rank": 2
+        },
+        {
+          "combination": "1-3-5",
+          "probability": 0.0010713298106566072,
+          "expected_value": 17.55,
+          "rank": 3
+        },
+        {
+          "combination": "1-2-4",
+          "probability": 0.00093147560255602,
+          "expected_value": -0.18499999999999994,
+          "rank": 4
+        },
+        {
+          "combination": "1-3-4",
+          "probability": 0.0006522875046357512,
+          "expected_value": 1.37,
+          "rank": 5
+        },
+        {
+          "combination": "1-3-6",
+          "probability": 0.00033696487662382424,
+          "expected_value": 3.295000000000001,
+          "rank": 6
+        },
+        {
+          "combination": "1-2-5",
+          "probability": 0.00031025108182802796,
+          "expected_value": 6.540000000000001,
+          "rank": 7
+        },
+        {
+          "combination": "1-4-3",
+          "probability": 0.000309316033963114,
+          "expected_value": 2.665,
+          "rank": 8
+        },
+        {
+          "combination": "1-2-6",
+          "probability": 0.00025133046437986195,
+          "expected_value": 0.5650000000000002,
+          "rank": 9
+        },
+        {
+          "combination": "1-4-2",
+          "probability": 0.0001562702818773687,
+          "expected_value": 0.9800000000000002,
+          "rank": 10
+        },
+        {
+          "combination": "1-6-2",
+          "probability": 0.00011621906742220744,
+          "expected_value": 4.905,
+          "rank": 11
+        },
+        {
+          "combination": "1-5-2",
+          "probability": 8.869772136677057e-05,
+          "expected_value": 35.27,
+          "rank": 12
+        },
+        {
+          "combination": "1-4-6",
+          "probability": 7.159509550547227e-05,
+          "expected_value": 4.675000000000001,
+          "rank": 13
+        },
+        {
+          "combination": "1-4-5",
+          "probability": 6.367683818098158e-05,
+          "expected_value": 21.180000000000003,
+          "rank": 14
+        },
+        {
+          "combination": "1-5-4",
+          "probability": 5.398553184932098e-05,
+          "expected_value": 54.800000000000004,
+          "rank": 15
+        },
+        {
+          "combination": "1-5-3",
+          "probability": 4.017967512481846e-05,
+          "expected_value": 36.78,
+          "rank": 16
+        },
+        {
+          "combination": "1-6-5",
+          "probability": 3.291523171355948e-05,
+          "expected_value": 51.150000000000006,
+          "rank": 17
+        },
+        {
+          "combination": "1-6-3",
+          "probability": 2.7267993573332205e-05,
+          "expected_value": 10.105,
+          "rank": 18
+        },
+        {
+          "combination": "2-1-3",
+          "probability": 2.272239544254262e-05,
+          "expected_value": -0.44499999999999995,
+          "rank": 19
+        },
+        {
+          "combination": "1-6-4",
+          "probability": 2.0754645447595976e-05,
+          "expected_value": 10.440000000000001,
+          "rank": 20
+        }
+      ],
+      "total_probability": 0.9994543204375077,
+      "purchase_suggestions": [
+        {
+          "type": "wheel",
+          "description": "1-流し",
+          "combinations": [
+            "1-2-3",
+            "1-3-2",
+            "1-3-5",
+            "1-2-4"
+          ],
+          "total_probability": 0.9968998859985732,
+          "total_cost": 400,
+          "expected_return": 996.8998859985732
+        },
+        {
+          "type": "box",
+          "description": "1-2-3 ボックス",
+          "combinations": [
+            "1-2-3",
+            "1-3-2",
+            "2-1-3"
+          ],
+          "total_probability": 0.9949198029808031,
+          "total_cost": 1200,
+          "expected_return": 994.9198029808031
+        },
+        {
+          "type": "box",
+          "description": "1-3-2 ボックス",
+          "combinations": [
+            "1-2-3",
+            "1-3-2",
+            "2-1-3"
+          ],
+          "total_probability": 0.9949198029808031,
+          "total_cost": 1200,
+          "expected_return": 994.9198029808031
+        },
+        {
+          "type": "nagashi",
+          "description": "1-2-流し",
+          "combinations": [
+            "1-2-3",
+            "1-2-4",
+            "1-2-5",
+            "1-2-6"
+          ],
+          "total_probability": 0.9927540029457305,
+          "total_cost": 400,
+          "expected_return": 992.7540029457305
+        },
+        {
+          "type": "nagashi",
+          "description": "1-3-流し",
+          "combinations": [
+            "1-3-2",
+            "1-3-5",
+            "1-3-4",
+            "1-3-6"
+          ],
+          "total_probability": 0.005696716980310157,
+          "total_cost": 400,
+          "expected_return": 5.696716980310157
+        }
+      ],
+      "risk_level": "low"
+    },
+    {
+      "venue": "KIRYU",
+      "venue_code": "01",
+      "race_number": 4,
+      "race_time": "09:00",
+      "top_20_combinations": [
+        {
+          "combination": "1-2-3",
+          "probability": 0.9912744164466858,
+          "expected_value": 0.645,
+          "rank": 1
+        },
+        {
+          "combination": "1-3-2",
+          "probability": 0.003627232974395156,
+          "expected_value": 1.23,
+          "rank": 2
+        },
+        {
+          "combination": "1-3-5",
+          "probability": 0.0010696777608245611,
+          "expected_value": 3.8450000000000006,
+          "rank": 3
+        },
+        {
+          "combination": "1-2-4",
+          "probability": 0.0009315264760516584,
+          "expected_value": -0.20499999999999996,
+          "rank": 4
+        },
+        {
+          "combination": "1-3-4",
+          "probability": 0.0006511626997962594,
+          "expected_value": 0.54,
+          "rank": 5
+        },
+        {
+          "combination": "1-3-6",
+          "probability": 0.000334639975335449,
+          "expected_value": 14.785,
+          "rank": 6
+        },
+        {
+          "combination": "1-2-5",
+          "probability": 0.0003104349598288536,
+          "expected_value": 1.5100000000000002,
+          "rank": 7
+        },
+        {
+          "combination": "1-4-3",
+          "probability": 0.00030997817520983517,
+          "expected_value": 0.3700000000000001,
+          "rank": 8
+        },
+        {
+          "combination": "1-2-6",
+          "probability": 0.0002508898905944079,
+          "expected_value": 10.590000000000002,
+          "rank": 9
+        },
+        {
+          "combination": "1-4-2",
+          "probability": 0.0001560256496304646,
+          "expected_value": -0.2849999999999999,
+          "rank": 10
+        },
+        {
+          "combination": "1-6-2",
+          "probability": 0.00011593272211030126,
+          "expected_value": 28.545,
+          "rank": 11
+        },
+        {
+          "combination": "1-5-2",
+          "probability": 8.866568532539532e-05,
+          "expected_value": 2.3200000000000003,
+          "rank": 12
+        },
+        {
+          "combination": "1-4-6",
+          "probability": 7.179325621109456e-05,
+          "expected_value": 5.670000000000001,
+          "rank": 13
+        },
+        {
+          "combination": "1-4-5",
+          "probability": 6.359050166793168e-05,
+          "expected_value": 0.5350000000000001,
+          "rank": 14
+        },
+        {
+          "combination": "1-5-4",
+          "probability": 5.402886381489225e-05,
+          "expected_value": 2.205,
+          "rank": 15
+        },
+        {
+          "combination": "1-5-3",
+          "probability": 4.018481922685169e-05,
+          "expected_value": 7.495000000000001,
+          "rank": 16
+        },
+        {
+          "combination": "1-6-5",
+          "probability": 3.2944732083706185e-05,
+          "expected_value": 30.405,
+          "rank": 17
+        },
+        {
+          "combination": "1-6-3",
+          "probability": 2.7222815333516337e-05,
+          "expected_value": 32.02,
+          "rank": 18
+        },
+        {
+          "combination": "2-1-3",
+          "probability": 2.2663125491817482e-05,
+          "expected_value": 2.6100000000000003,
+          "rank": 19
+        },
+        {
+          "combination": "1-6-4",
+          "probability": 2.078892066492699e-05,
+          "expected_value": 20.855000000000004,
+          "rank": 20
+        }
+      ],
+      "total_probability": 0.9994538004502829,
+      "purchase_suggestions": [
+        {
+          "type": "wheel",
+          "description": "1-流し",
+          "combinations": [
+            "1-2-3",
+            "1-3-2",
+            "1-3-5",
+            "1-2-4"
+          ],
+          "total_probability": 0.9969028536579572,
+          "total_cost": 400,
+          "expected_return": 996.9028536579572
+        },
+        {
+          "type": "box",
+          "description": "1-2-3 ボックス",
+          "combinations": [
+            "1-2-3",
+            "1-3-2",
+            "2-1-3"
+          ],
+          "total_probability": 0.9949243125465728,
+          "total_cost": 1200,
+          "expected_return": 994.9243125465728
+        },
+        {
+          "type": "box",
+          "description": "1-3-2 ボックス",
+          "combinations": [
+            "1-2-3",
+            "1-3-2",
+            "2-1-3"
+          ],
+          "total_probability": 0.9949243125465728,
+          "total_cost": 1200,
+          "expected_return": 994.9243125465728
+        },
+        {
+          "type": "nagashi",
+          "description": "1-2-流し",
+          "combinations": [
+            "1-2-3",
+            "1-2-4",
+            "1-2-5",
+            "1-2-6"
+          ],
+          "total_probability": 0.9927672677731607,
+          "total_cost": 400,
+          "expected_return": 992.7672677731607
+        },
+        {
+          "type": "nagashi",
+          "description": "1-3-流し",
+          "combinations": [
+            "1-3-2",
+            "1-3-5",
+            "1-3-4",
+            "1-3-6"
+          ],
+          "total_probability": 0.005682713410351425,
+          "total_cost": 400,
+          "expected_return": 5.682713410351425
+        }
+      ],
+      "risk_level": "low"
+    },
+    {
+      "venue": "KIRYU",
+      "venue_code": "01",
+      "race_number": 5,
+      "race_time": "09:00",
+      "top_20_combinations": [
+        {
+          "combination": "1-2-3",
+          "probability": 0.9912943243980408,
+          "expected_value": 0.77,
+          "rank": 1
+        },
+        {
+          "combination": "1-3-2",
+          "probability": 0.0036247537937015295,
+          "expected_value": 2.035,
+          "rank": 2
+        },
+        {
+          "combination": "1-3-5",
+          "probability": 0.001066761091351509,
+          "expected_value": 9.18,
+          "rank": 3
+        },
+        {
+          "combination": "1-2-4",
+          "probability": 0.0009279439691454172,
+          "expected_value": -0.2799999999999999,
+          "rank": 4
+        },
+        {
+          "combination": "1-3-4",
+          "probability": 0.0006494583794847131,
+          "expected_value": 1.875,
+          "rank": 5
+        },
+        {
+          "combination": "1-3-6",
+          "probability": 0.000334702868713066,
+          "expected_value": 4.195,
+          "rank": 6
+        },
+        {
+          "combination": "1-2-5",
+          "probability": 0.00030895910458639264,
+          "expected_value": 4.1850000000000005,
+          "rank": 7
+        },
+        {
+          "combination": "1-4-3",
+          "probability": 0.0003084112540818751,
+          "expected_value": 1.295,
+          "rank": 8
+        },
+        {
+          "combination": "1-2-6",
+          "probability": 0.0002502785937394947,
+          "expected_value": 0.7600000000000002,
+          "rank": 9
+        },
+        {
+          "combination": "1-4-2",
+          "probability": 0.00015546585200354457,
+          "expected_value": -0.11499999999999999,
+          "rank": 10
+        },
+        {
+          "combination": "1-6-2",
+          "probability": 0.00011559302220121026,
+          "expected_value": 3.670000000000001,
+          "rank": 11
+        },
+        {
+          "combination": "1-5-2",
+          "probability": 8.821926167001948e-05,
+          "expected_value": 11.57,
+          "rank": 12
+        },
+        {
+          "combination": "1-4-6",
+          "probability": 7.137396460166201e-05,
+          "expected_value": 0.7450000000000001,
+          "rank": 13
+        },
+        {
+          "combination": "1-4-5",
+          "probability": 6.337491504382342e-05,
+          "expected_value": 3.0650000000000004,
+          "rank": 14
+        },
+        {
+          "combination": "1-5-4",
+          "probability": 5.375533874030225e-05,
+          "expected_value": 12.15,
+          "rank": 15
+        },
+        {
+          "combination": "1-5-3",
+          "probability": 4.000316039309837e-05,
+          "expected_value": 19.78,
+          "rank": 16
+        },
+        {
+          "combination": "1-6-5",
+          "probability": 3.28051537508145e-05,
+          "expected_value": 17.935,
+          "rank": 17
+        },
+        {
+          "combination": "1-6-3",
+          "probability": 2.7130910893902183e-05,
+          "expected_value": 10.8,
+          "rank": 18
+        },
+        {
+          "combination": "2-1-3",
+          "probability": 2.260096516693011e-05,
+          "expected_value": 1.7650000000000001,
+          "rank": 19
+        },
+        {
+          "combination": "1-6-4",
+          "probability": 2.0692594262072816e-05,
+          "expected_value": 4.11,
+          "rank": 20
+        }
+      ],
+      "total_probability": 0.9994566085915721,
+      "purchase_suggestions": [
+        {
+          "type": "wheel",
+          "description": "1-流し",
+          "combinations": [
+            "1-2-3",
+            "1-3-2",
+            "1-3-5",
+            "1-2-4"
+          ],
+          "total_probability": 0.9969137832522392,
+          "total_cost": 400,
+          "expected_return": 996.9137832522392
+        },
+        {
+          "type": "box",
+          "description": "1-2-3 ボックス",
+          "combinations": [
+            "1-2-3",
+            "1-3-2",
+            "2-1-3"
+          ],
+          "total_probability": 0.9949416791569092,
+          "total_cost": 1200,
+          "expected_return": 994.9416791569092
+        },
+        {
+          "type": "box",
+          "description": "1-3-2 ボックス",
+          "combinations": [
+            "1-2-3",
+            "1-3-2",
+            "2-1-3"
+          ],
+          "total_probability": 0.9949416791569092,
+          "total_cost": 1200,
+          "expected_return": 994.9416791569092
+        },
+        {
+          "type": "nagashi",
+          "description": "1-2-流し",
+          "combinations": [
+            "1-2-3",
+            "1-2-4",
+            "1-2-5",
+            "1-2-6"
+          ],
+          "total_probability": 0.9927815060655121,
+          "total_cost": 400,
+          "expected_return": 992.7815060655121
+        },
+        {
+          "type": "nagashi",
+          "description": "1-3-流し",
+          "combinations": [
+            "1-3-2",
+            "1-3-5",
+            "1-3-4",
+            "1-3-6"
+          ],
+          "total_probability": 0.005675676133250818,
+          "total_cost": 400,
+          "expected_return": 5.675676133250818
+        }
+      ],
+      "risk_level": "low"
+    },
+    {
+      "venue": "KIRYU",
+      "venue_code": "01",
+      "race_number": 6,
+      "race_time": "09:00",
+      "top_20_combinations": [
+        {
+          "combination": "1-2-3",
+          "probability": 0.9915719032287598,
+          "expected_value": -0.735,
+          "rank": 1
+        },
+        {
+          "combination": "1-3-2",
+          "probability": 0.0035276771523058414,
+          "expected_value": -0.2849999999999999,
+          "rank": 2
+        },
+        {
+          "combination": "1-3-5",
+          "probability": 0.0010341681772843003,
+          "expected_value": -0.09499999999999986,
+          "rank": 3
+        },
+        {
+          "combination": "1-2-4",
+          "probability": 0.0008998798439279199,
+          "expected_value": 1.9850000000000003,
+          "rank": 4
+        },
+        {
+          "combination": "1-3-4",
+          "probability": 0.0006278813234530389,
+          "expected_value": 6.28,
+          "rank": 5
+        },
+        {
+          "combination": "1-3-6",
+          "probability": 0.00032206898322328925,
+          "expected_value": 1.6500000000000004,
+          "rank": 6
+        },
+        {
+          "combination": "1-2-5",
+          "probability": 0.0002983777376357466,
+          "expected_value": -0.8049999999999999,
+          "rank": 7
+        },
+        {
+          "combination": "1-4-3",
+          "probability": 0.00029736844589933753,
+          "expected_value": 15.405000000000001,
+          "rank": 8
+        },
+        {
+          "combination": "1-2-6",
+          "probability": 0.00024110240337904543,
+          "expected_value": -0.3599999999999999,
+          "rank": 9
+        },
+        {
+          "combination": "1-4-2",
+          "probability": 0.00014930024917703122,
+          "expected_value": 8.235,
+          "rank": 10
+        },
+        {
+          "combination": "1-6-2",
+          "probability": 0.00011095284571638331,
+          "expected_value": 1.0150000000000001,
+          "rank": 11
+        },
+        {
+          "combination": "1-5-2",
+          "probability": 8.472469926346093e-05,
+          "expected_value": -0.5900000000000001,
+          "rank": 12
+        },
+        {
+          "combination": "1-4-6",
+          "probability": 6.84835686115548e-05,
+          "expected_value": 15.525000000000002,
+          "rank": 13
+        },
+        {
+          "combination": "1-4-5",
+          "probability": 6.065473644412123e-05,
+          "expected_value": 14.950000000000001,
+          "rank": 14
+        },
+        {
+          "combination": "1-5-4",
+          "probability": 5.1476567023200914e-05,
+          "expected_value": 7.459999999999999,
+          "rank": 15
+        },
+        {
+          "combination": "1-5-3",
+          "probability": 3.831806679954752e-05,
+          "expected_value": 0.0050000000000001155,
+          "rank": 16
+        },
+        {
+          "combination": "1-6-5",
+          "probability": 3.1378353014588356e-05,
+          "expected_value": 1.3050000000000002,
+          "rank": 17
+        },
+        {
+          "combination": "1-6-3",
+          "probability": 2.5873800041154027e-05,
+          "expected_value": 3.0200000000000005,
+          "rank": 18
+        },
+        {
+          "combination": "2-1-3",
+          "probability": 2.1575240680249408e-05,
+          "expected_value": 0.8350000000000002,
+          "rank": 19
+        },
+        {
+          "combination": "1-6-4",
+          "probability": 1.9737077309400775e-05,
+          "expected_value": 11.445,
+          "rank": 20
+        }
+      ],
+      "total_probability": 0.999482902499949,
+      "purchase_suggestions": [
+        {
+          "type": "wheel",
+          "description": "1-流し",
+          "combinations": [
+            "1-2-3",
+            "1-3-2",
+            "1-3-5",
+            "1-2-4"
+          ],
+          "total_probability": 0.9970336284022778,
+          "total_cost": 400,
+          "expected_return": 997.0336284022778
+        },
+        {
+          "type": "box",
+          "description": "1-2-3 ボックス",
+          "combinations": [
+            "1-2-3",
+            "1-3-2",
+            "2-1-3"
+          ],
+          "total_probability": 0.9951211556217459,
+          "total_cost": 1200,
+          "expected_return": 995.1211556217459
+        },
+        {
+          "type": "box",
+          "description": "1-3-2 ボックス",
+          "combinations": [
+            "1-2-3",
+            "1-3-2",
+            "2-1-3"
+          ],
+          "total_probability": 0.9951211556217459,
+          "total_cost": 1200,
+          "expected_return": 995.1211556217459
+        },
+        {
+          "type": "nagashi",
+          "description": "1-2-流し",
+          "combinations": [
+            "1-2-3",
+            "1-2-4",
+            "1-2-5",
+            "1-2-6"
+          ],
+          "total_probability": 0.9930112632137025,
+          "total_cost": 400,
+          "expected_return": 993.0112632137025
+        },
+        {
+          "type": "nagashi",
+          "description": "1-3-流し",
+          "combinations": [
+            "1-3-2",
+            "1-3-5",
+            "1-3-4",
+            "1-3-6"
+          ],
+          "total_probability": 0.00551179563626647,
+          "total_cost": 400,
+          "expected_return": 5.51179563626647
+        }
+      ],
+      "risk_level": "low"
+    },
+    {
+      "venue": "KIRYU",
+      "venue_code": "01",
+      "race_number": 7,
+      "race_time": "09:00",
+      "top_20_combinations": [
+        {
+          "combination": "1-2-3",
+          "probability": 0.9915581941604614,
+          "expected_value": -0.745,
+          "rank": 1
+        },
+        {
+          "combination": "1-3-2",
+          "probability": 0.0035370304249227047,
+          "expected_value": -0.755,
+          "rank": 2
+        },
+        {
+          "combination": "1-3-5",
+          "probability": 0.0010362714529037476,
+          "expected_value": 0.015000000000000124,
+          "rank": 3
+        },
+        {
+          "combination": "1-2-4",
+          "probability": 0.000900006853044033,
+          "expected_value": -0.125,
+          "rank": 4
+        },
+        {
+          "combination": "1-3-4",
+          "probability": 0.0006291811587288976,
+          "expected_value": -0.515,
+          "rank": 5
+        },
+        {
+          "combination": "1-3-6",
+          "probability": 0.00032312472467310727,
+          "expected_value": -0.48,
+          "rank": 6
+        },
+        {
+          "combination": "1-2-5",
+          "probability": 0.00029832383734174073,
+          "expected_value": 0.6699999999999999,
+          "rank": 7
+        },
+        {
+          "combination": "1-4-3",
+          "probability": 0.0002979544806294143,
+          "expected_value": 0.41999999999999993,
+          "rank": 8
+        },
+        {
+          "combination": "1-2-6",
+          "probability": 0.0002409834269201383,
+          "expected_value": -0.29499999999999993,
+          "rank": 9
+        },
+        {
+          "combination": "1-4-2",
+          "probability": 0.00014957836538087577,
+          "expected_value": 0.665,
+          "rank": 10
+        },
+        {
+          "combination": "1-6-2",
+          "probability": 0.0001111366436816752,
+          "expected_value": 0.8250000000000002,
+          "rank": 11
+        },
+        {
+          "combination": "1-5-2",
+          "probability": 8.465826977044344e-05,
+          "expected_value": 2.17,
+          "rank": 12
+        },
+        {
+          "combination": "1-4-6",
+          "probability": 6.845741154393181e-05,
+          "expected_value": 1.8200000000000003,
+          "rank": 13
+        },
+        {
+          "combination": "1-4-5",
+          "probability": 6.074234624975361e-05,
+          "expected_value": 2.6700000000000004,
+          "rank": 14
+        },
+        {
+          "combination": "1-5-4",
+          "probability": 5.148292621015571e-05,
+          "expected_value": 5.28,
+          "rank": 15
+        },
+        {
+          "combination": "1-5-3",
+          "probability": 3.832488437183201e-05,
+          "expected_value": 2.055,
+          "rank": 16
+        },
+        {
+          "combination": "1-6-5",
+          "probability": 3.137190287816338e-05,
+          "expected_value": 5.420000000000001,
+          "rank": 17
+        },
+        {
+          "combination": "1-6-3",
+          "probability": 2.586305527074728e-05,
+          "expected_value": 0.6300000000000001,
+          "rank": 18
+        },
+        {
+          "combination": "2-1-3",
+          "probability": 2.154966932721436e-05,
+          "expected_value": 1.4700000000000002,
+          "rank": 19
+        },
+        {
+          "combination": "1-6-4",
+          "probability": 1.9721226635738276e-05,
+          "expected_value": 2.785,
+          "rank": 20
+        }
+      ],
+      "total_probability": 0.9994839572209457,
+      "purchase_suggestions": [
+        {
+          "type": "wheel",
+          "description": "1-流し",
+          "combinations": [
+            "1-2-3",
+            "1-3-2",
+            "1-3-5",
+            "1-2-4"
+          ],
+          "total_probability": 0.9970315028913319,
+          "total_cost": 400,
+          "expected_return": 997.0315028913319
+        },
+        {
+          "type": "box",
+          "description": "1-2-3 ボックス",
+          "combinations": [
+            "1-2-3",
+            "1-3-2",
+            "2-1-3"
+          ],
+          "total_probability": 0.9951167742547113,
+          "total_cost": 1200,
+          "expected_return": 995.1167742547113
+        },
+        {
+          "type": "box",
+          "description": "1-3-2 ボックス",
+          "combinations": [
+            "1-2-3",
+            "1-3-2",
+            "2-1-3"
+          ],
+          "total_probability": 0.9951167742547113,
+          "total_cost": 1200,
+          "expected_return": 995.1167742547113
+        },
+        {
+          "type": "nagashi",
+          "description": "1-2-流し",
+          "combinations": [
+            "1-2-3",
+            "1-2-4",
+            "1-2-5",
+            "1-2-6"
+          ],
+          "total_probability": 0.9929975082777673,
+          "total_cost": 400,
+          "expected_return": 992.9975082777673
+        },
+        {
+          "type": "nagashi",
+          "description": "1-3-流し",
+          "combinations": [
+            "1-3-2",
+            "1-3-5",
+            "1-3-4",
+            "1-3-6"
+          ],
+          "total_probability": 0.005525607761228457,
+          "total_cost": 400,
+          "expected_return": 5.525607761228457
+        }
+      ],
+      "risk_level": "low"
+    },
+    {
+      "venue": "KIRYU",
+      "venue_code": "01",
+      "race_number": 8,
+      "race_time": "09:00",
+      "top_20_combinations": [
+        {
+          "combination": "1-2-3",
+          "probability": 0.9914728403091431,
+          "expected_value": 0.45500000000000007,
+          "rank": 1
+        },
+        {
+          "combination": "1-3-2",
+          "probability": 0.0035577132366597652,
+          "expected_value": 0.9100000000000001,
+          "rank": 2
+        },
+        {
+          "combination": "1-3-5",
+          "probability": 0.0010463902726769447,
+          "expected_value": -0.1499999999999999,
+          "rank": 3
+        },
+        {
+          "combination": "1-2-4",
+          "probability": 0.0009116044384427369,
+          "expected_value": 0.11999999999999988,
+          "rank": 4
+        },
+        {
+          "combination": "1-3-4",
+          "probability": 0.0006359867984429002,
+          "expected_value": 0.645,
+          "rank": 5
+        },
+        {
+          "combination": "1-3-6",
+          "probability": 0.0003260150260757655,
+          "expected_value": 21.5,
+          "rank": 6
+        },
+        {
+          "combination": "1-2-5",
+          "probability": 0.00030277640325948596,
+          "expected_value": -0.485,
+          "rank": 7
+        },
+        {
+          "combination": "1-4-3",
+          "probability": 0.0003017211565747857,
+          "expected_value": 0.9450000000000001,
+          "rank": 8
+        },
+        {
+          "combination": "1-2-6",
+          "probability": 0.00024443844449706376,
+          "expected_value": 20.400000000000002,
+          "rank": 9
+        },
+        {
+          "combination": "1-4-2",
+          "probability": 0.00015162683848757297,
+          "expected_value": 0.8100000000000003,
+          "rank": 10
+        },
+        {
+          "combination": "1-6-2",
+          "probability": 0.00011265188368270174,
+          "expected_value": 50.5,
+          "rank": 11
+        },
+        {
+          "combination": "1-5-2",
+          "probability": 8.619635627837852e-05,
+          "expected_value": -0.62,
+          "rank": 12
+        },
+        {
+          "combination": "1-4-6",
+          "probability": 6.96412316756323e-05,
+          "expected_value": 22.965000000000003,
+          "rank": 13
+        },
+        {
+          "combination": "1-4-5",
+          "probability": 6.164924707263708e-05,
+          "expected_value": -0.27,
+          "rank": 14
+        },
+        {
+          "combination": "1-5-4",
+          "probability": 5.2368508477229625e-05,
+          "expected_value": -0.69,
+          "rank": 15
+        },
+        {
+          "combination": "1-5-3",
+          "probability": 3.896495036315173e-05,
+          "expected_value": -0.61,
+          "rank": 16
+        },
+        {
+          "combination": "1-6-5",
+          "probability": 3.191583891748451e-05,
+          "expected_value": 30.195,
+          "rank": 17
+        },
+        {
+          "combination": "1-6-3",
+          "probability": 2.632026189530734e-05,
+          "expected_value": 47.99,
+          "rank": 18
+        },
+        {
+          "combination": "2-1-3",
+          "probability": 2.1938321879133582e-05,
+          "expected_value": 3.7,
+          "rank": 19
+        },
+        {
+          "combination": "1-6-4",
+          "probability": 2.0088009478058666e-05,
+          "expected_value": 51.800000000000004,
+          "rank": 20
+        }
+      ],
+      "total_probability": 0.9994728475339798,
+      "purchase_suggestions": [
+        {
+          "type": "wheel",
+          "description": "1-流し",
+          "combinations": [
+            "1-2-3",
+            "1-3-2",
+            "1-3-5",
+            "1-2-4"
+          ],
+          "total_probability": 0.9969885482569225,
+          "total_cost": 400,
+          "expected_return": 996.9885482569225
+        },
+        {
+          "type": "box",
+          "description": "1-2-3 ボックス",
+          "combinations": [
+            "1-2-3",
+            "1-3-2",
+            "2-1-3"
+          ],
+          "total_probability": 0.995052491867682,
+          "total_cost": 1200,
+          "expected_return": 995.052491867682
+        },
+        {
+          "type": "box",
+          "description": "1-3-2 ボックス",
+          "combinations": [
+            "1-2-3",
+            "1-3-2",
+            "2-1-3"
+          ],
+          "total_probability": 0.995052491867682,
+          "total_cost": 1200,
+          "expected_return": 995.052491867682
+        },
+        {
+          "type": "nagashi",
+          "description": "1-2-流し",
+          "combinations": [
+            "1-2-3",
+            "1-2-4",
+            "1-2-5",
+            "1-2-6"
+          ],
+          "total_probability": 0.9929316595953424,
+          "total_cost": 400,
+          "expected_return": 992.9316595953424
+        },
+        {
+          "type": "nagashi",
+          "description": "1-3-流し",
+          "combinations": [
+            "1-3-2",
+            "1-3-5",
+            "1-3-4",
+            "1-3-6"
+          ],
+          "total_probability": 0.005566105333855376,
+          "total_cost": 400,
+          "expected_return": 5.566105333855376
+        }
+      ],
+      "risk_level": "low"
+    },
+    {
+      "venue": "KIRYU",
+      "venue_code": "01",
+      "race_number": 9,
+      "race_time": "09:00",
+      "top_20_combinations": [
+        {
+          "combination": "1-2-3",
+          "probability": 0.9914689064025879,
+          "expected_value": 0.15000000000000013,
+          "rank": 1
+        },
+        {
+          "combination": "1-3-2",
+          "probability": 0.0035611004568636417,
+          "expected_value": 0.9550000000000001,
+          "rank": 2
+        },
+        {
+          "combination": "1-3-5",
+          "probability": 0.0010456494055688381,
+          "expected_value": 5.43,
+          "rank": 3
+        },
+        {
+          "combination": "1-2-4",
+          "probability": 0.0009112809202633798,
+          "expected_value": -0.51,
+          "rank": 4
+        },
+        {
+          "combination": "1-3-4",
+          "probability": 0.0006360422703437507,
+          "expected_value": 1.8650000000000002,
+          "rank": 5
+        },
+        {
+          "combination": "1-3-6",
+          "probability": 0.00032656980329193175,
+          "expected_value": 2.94,
+          "rank": 6
+        },
+        {
+          "combination": "1-2-5",
+          "probability": 0.00030251950374804437,
+          "expected_value": 1.17,
+          "rank": 7
+        },
+        {
+          "combination": "1-4-3",
+          "probability": 0.00030146053177304566,
+          "expected_value": 1.975,
+          "rank": 8
+        },
+        {
+          "combination": "1-2-6",
+          "probability": 0.00024494266835972667,
+          "expected_value": -0.20499999999999996,
+          "rank": 9
+        },
+        {
+          "combination": "1-4-2",
+          "probability": 0.00015164502838160843,
+          "expected_value": 0.10000000000000009,
+          "rank": 10
+        },
+        {
+          "combination": "1-6-2",
+          "probability": 0.00011272634583292529,
+          "expected_value": 0.9950000000000001,
+          "rank": 11
+        },
+        {
+          "combination": "1-5-2",
+          "probability": 8.618573338026181e-05,
+          "expected_value": 4.495000000000001,
+          "rank": 12
+        },
+        {
+          "combination": "1-4-6",
+          "probability": 6.959461461519822e-05,
+          "expected_value": 0.6699999999999999,
+          "rank": 13
+        },
+        {
+          "combination": "1-4-5",
+          "probability": 6.17079422227107e-05,
+          "expected_value": 5.195,
+          "rank": 14
+        },
+        {
+          "combination": "1-5-4",
+          "probability": 5.2379440603544936e-05,
+          "expected_value": 11.235,
+          "rank": 15
+        },
+        {
+          "combination": "1-5-3",
+          "probability": 3.89624219678808e-05,
+          "expected_value": 11.280000000000001,
+          "rank": 16
+        },
+        {
+          "combination": "1-6-5",
+          "probability": 3.195682802470401e-05,
+          "expected_value": 7.535,
+          "rank": 17
+        },
+        {
+          "combination": "1-6-3",
+          "probability": 2.6380695999250747e-05,
+          "expected_value": 4.595000000000001,
+          "rank": 18
+        },
+        {
+          "combination": "2-1-3",
+          "probability": 2.1992553229210898e-05,
+          "expected_value": 1.17,
+          "rank": 19
+        },
+        {
+          "combination": "1-6-4",
+          "probability": 2.0119603505008854e-05,
+          "expected_value": 2.18,
+          "rank": 20
+        }
+      ],
+      "total_probability": 0.9994721231705626,
+      "purchase_suggestions": [
+        {
+          "type": "wheel",
+          "description": "1-流し",
+          "combinations": [
+            "1-2-3",
+            "1-3-2",
+            "1-3-5",
+            "1-2-4"
+          ],
+          "total_probability": 0.9969869371852838,
+          "total_cost": 400,
+          "expected_return": 996.9869371852838
+        },
+        {
+          "type": "box",
+          "description": "1-2-3 ボックス",
+          "combinations": [
+            "1-2-3",
+            "1-3-2",
+            "2-1-3"
+          ],
+          "total_probability": 0.9950519994126807,
+          "total_cost": 1200,
+          "expected_return": 995.0519994126807
+        },
+        {
+          "type": "box",
+          "description": "1-3-2 ボックス",
+          "combinations": [
+            "1-2-3",
+            "1-3-2",
+            "2-1-3"
+          ],
+          "total_probability": 0.9950519994126807,
+          "total_cost": 1200,
+          "expected_return": 995.0519994126807
+        },
+        {
+          "type": "nagashi",
+          "description": "1-2-流し",
+          "combinations": [
+            "1-2-3",
+            "1-2-4",
+            "1-2-5",
+            "1-2-6"
+          ],
+          "total_probability": 0.992927649494959,
+          "total_cost": 400,
+          "expected_return": 992.927649494959
+        },
+        {
+          "type": "nagashi",
+          "description": "1-3-流し",
+          "combinations": [
+            "1-3-2",
+            "1-3-5",
+            "1-3-4",
+            "1-3-6"
+          ],
+          "total_probability": 0.005569361936068162,
+          "total_cost": 400,
+          "expected_return": 5.569361936068162
+        }
+      ],
+      "risk_level": "low"
+    }
+  ],
+  "venue_summaries": [
+    {
+      "venue": "KIRYU",
+      "total_races": 12,
+      "high_confidence_races": 12,
+      "average_top_probability": 0.9994656807834872,
+      "average_expected_value": 1.2240833333333334
+    }
+  ]
+}

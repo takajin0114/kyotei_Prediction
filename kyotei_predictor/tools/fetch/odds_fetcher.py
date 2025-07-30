@@ -8,6 +8,7 @@ metaboatrace.scrapers ライブラリを使用して
 
 from metaboatrace.scrapers.official.website.v1707.pages.race.odds.trifecta_page import location, scraping
 from metaboatrace.models.stadium import StadiumTelCode
+
 from datetime import date
 import requests
 import time

@@ -1,0 +1,63 @@
+{
+  "max_disk_usage_percent": 80,
+  "cleanup_schedules": {
+    "daily": {
+      "enabled": true,
+      "time": "02:00",
+      "retention_days": 7
+    },
+    "weekly": {
+      "enabled": true,
+      "day": "sunday",
+      "time": "03:00",
+      "retention_days": 30
+    }
+  },
+  "targets": {
+    "outputs/logs": {
+      "enabled": true,
+      "max_files": 10,
+      "max_size_mb": 100
+    },
+    "optuna_models/graduated_reward_checkpoints": {
+      "enabled": true,
+      "max_files": 5,
+      "max_size_mb": 500
+    },
+    "archives/optimization": {
+      "enabled": true,
+      "max_files": 20,
+      "max_size_mb": 1000
+    },
+    "optuna_logs": {
+      "enabled": true,
+      "max_files": 15,
+      "max_size_mb": 200
+    },
+    "optuna_tensorboard": {
+      "enabled": true,
+      "max_files": 10,
+      "max_size_mb": 300
+    }
+  },
+  "notifications": {
+    "enabled": true,
+    "email": {
+      "enabled": false,
+      "smtp_server": "smtp.gmail.com",
+      "smtp_port": 587,
+      "username": "",
+      "password": "",
+      "to_email": ""
+    },
+    "discord": {
+      "enabled": false,
+      "webhook_url": ""
+    }
+  },
+  "emergency_cleanup": {
+    "enabled": true,
+    "threshold_percent": 90,
+    "aggressive_cleanup": true
+  }
+} 

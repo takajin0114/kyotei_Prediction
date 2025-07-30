@@ -8,4 +8,6 @@ tqdm
 rich
 matplotlib
 seaborn
-scipy 
+scipy
+psutil
+schedule 

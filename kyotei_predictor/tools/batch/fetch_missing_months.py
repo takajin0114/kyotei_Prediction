@@ -1,11 +1,34 @@
+#!/usr/bin/env python3
+"""
+不足月データ取得スクリプト
+"""
+
 import os
 import re
-from datetime import datetime, date, timedelta
+import sys
+import atexit
 from collections import defaultdict
+from datetime import date, timedelta
 import subprocess
+from pathlib import Path
+
+# プロジェクトルートを動的に取得
+def get_project_root() -> Path:
+    """プロジェクトルートを動的に検出"""
+    current_file = Path(__file__)
+    project_root = current_file.parent.parent.parent.parent
+    
+    # Google Colab環境の検出
+    if str(project_root).startswith('/content/'):
+        return Path('/content/kyotei_Prediction')
+    
+    return project_root
+
+PROJECT_ROOT = get_project_root()
+RAW_DIR = PROJECT_ROOT / "kyotei_predictor" / "data" / "raw"
+
 from kyotei_predictor.tools.batch.batch_fetch_all_venues import get_all_stadiums
 
-RAW_DIR = os.path.join(os.path.dirname(__file__), '../../data/raw')
 race_pattern = re.compile(r'race_data_(\d{4}-\d{2}-\d{2})_([A-Z0-9]+)_R\d+\.json')
 
 # 取得済み日付を集計
@@ -74,28 +97,24 @@ def main():
                 if not alldays.issubset(got):
                     # 未取得日がある月はバッチ取得
                     print(f'未取得: {sname} {first.strftime("%Y-%m")}, バッチ取得開始')
-                    # プロジェクトルートを絶対パスで取得し、venv311/Scripts/python.exeを指す
-                    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../'))
-                    python_exe = os.path.join(project_root, 'venv311', 'Scripts', 'python.exe')
-                    print(f'[DEBUG] python_exe: {python_exe}')
-                    if not os.path.exists(python_exe):
-                        print(f'[ERROR] python_exe not found: {python_exe}')
-                        continue
-                    cmd = [
-                        python_exe, '-m', 'kyotei_predictor.tools.batch.batch_fetch_all_venues',
+                    
+                    # 動的にPython実行ファイルを決定
+                    python_cmd = [sys.executable, '-m', 'kyotei_predictor.tools.batch.batch_fetch_all_venues',
                         '--start-date', first.strftime('%Y-%m-%d'),
                         '--end-date', last.strftime('%Y-%m-%d'),
                         '--stadiums', sname
                     ]
+                    
                     # 親の環境変数をコピーし、PYTHONPATHを明示的に渡す
                     env = os.environ.copy()
                     env["PYTHONPATH"] = os.environ.get("PYTHONPATH", "")
+                    
                     # エラーログをlogs/batch_err/に出力
-                    log_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'logs', 'batch_err')
-                    os.makedirs(log_dir, exist_ok=True)
-                    errfile_path = os.path.join(log_dir, f"fetch_err_{sname}_{first.strftime('%Y-%m')}.log")
+                    log_dir = PROJECT_ROOT / "kyotei_predictor" / "logs" / "batch_err"
+                    log_dir.mkdir(parents=True, exist_ok=True)
+                    errfile_path = log_dir / f"fetch_err_{sname}_{first.strftime('%Y-%m')}.log"
                     errfile = open(errfile_path, "w")
-                    subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=errfile, env=env)
+                    subprocess.Popen(python_cmd, stdout=subprocess.DEVNULL, stderr=errfile, env=env)
     finally:
         if not is_child and os.path.exists(lockfile):
             os.remove(lockfile)

@@ -1,0 +1,42 @@
+{
+  "optimization_time": "2025-07-29T08:58:52.098009",
+  "study_name": "test_new_study",
+  "n_trials": 1,
+  "existing_trials": 0,
+  "total_trials": 1,
+  "best_trial": {
+    "number": 0,
+    "value": -0.05299999937415123,
+    "params": {
+      "learning_rate": 0.0009689749569130277,
+      "batch_size": 64,
+      "n_steps": 1024,
+      "gamma": 0.9495401161722993,
+      "gae_lambda": 0.9792053222505535,
+      "n_epochs": 14,
+      "clip_range": 0.3611593206739079,
+      "ent_coef": 0.03304670428373992,
+      "vf_coef": 0.7043059627314014,
+      "max_grad_norm": 0.47631819639140605
+    }
+  },
+  "all_trials": [
+    {
+      "number": 0,
+      "value": -0.05299999937415123,
+      "params": {
+        "learning_rate": 0.0009689749569130277,
+        "batch_size": 64,
+        "n_steps": 1024,
+        "gamma": 0.9495401161722993,
+        "gae_lambda": 0.9792053222505535,
+        "n_epochs": 14,
+        "clip_range": 0.3611593206739079,
+        "ent_coef": 0.03304670428373992,
+        "vf_coef": 0.7043059627314014,
+        "max_grad_norm": 0.47631819639140605
+      },
+      "state": "COMPLETE"
+    }
+  ]
+}

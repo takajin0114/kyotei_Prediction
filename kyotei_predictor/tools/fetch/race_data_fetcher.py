@@ -7,6 +7,8 @@ metaboatrace.scrapers ライブラリ使用
 from metaboatrace.scrapers.official.website.v1707.pages.race.entry_page import location as entry_location, scraping as entry_scraping
 from metaboatrace.scrapers.official.website.v1707.pages.race.result_page import location as result_location, scraping as result_scraping
 from metaboatrace.models.stadium import StadiumTelCode
+from metaboatrace.scrapers.official.website.exceptions import RaceCanceled
+
 from datetime import date
 import requests
 import time

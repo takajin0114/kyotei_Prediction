@@ -1,203 +1,344 @@
-import gymnasium as gym
-import numpy as np
-import json
-from itertools import permutations
-from typing import Tuple
-import glob
-import random
-import os
-import logging
+#!/usr/bin/env python3
+"""
+競艇予測のための強化学習環境
+"""
 
-# Kyotei用ロギング設定
-ENABLE_KYOTEI_LOGGING = True  # TrueでDEBUG/INFOも表示、FalseでWARNING以上のみ
-if ENABLE_KYOTEI_LOGGING:
-    os.makedirs('outputs/logs', exist_ok=True)
-    logging.basicConfig(level=logging.DEBUG, format='[%(levelname)s] %(message)s', filename='outputs/logs/kyotei_env_debug.log', filemode='w')
-else:
-    logging.basicConfig(level=logging.WARNING, format='[%(levelname)s] %(message)s')
+import os
+import sys
+import json
+import logging
+import numpy as np
+import gym
+from gym import spaces
+from typing import List, Dict, Tuple, Optional, Any
+from pathlib import Path
+import re
+
+# プロジェクトルートを動的に取得
+def get_project_root() -> Path:
+    """プロジェクトルートを動的に検出"""
+    current_file = Path(__file__)
+    project_root = current_file.parent.parent.parent
+    
+    # Google Colab環境の検出
+    if str(project_root).startswith('/content/'):
+        return Path('/content/kyotei_Prediction')
+    
+    return project_root
+
+PROJECT_ROOT = get_project_root()
+
+# プロジェクトルートをパスに追加
+sys.path.append(str(PROJECT_ROOT))
+
+# ログ設定
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 class KyoteiEnv(gym.Env):
     """
-    競艇レース用の強化学習環境（3連単・損益ベース）。
-    resetでレースデータ・oddsデータ・正解着順をセットし、stepでactionに対しrewardを返す。
-    1レース1エピソードの簡易実装。
+    競艇予測のための強化学習環境
     """
-    metadata = {"render_modes": ["human"]}
-
-    def __init__(self, race_data_path=None, odds_data_path=None, bet_amount=100):
+    
+    def __init__(self, data_dir: str = None, bet_amount: int = 100):
+        """
+        初期化
+        
+        Args:
+            data_dir: データディレクトリのパス
+            bet_amount: ベット金額
+        """
         super().__init__()
-        self.race_data_path = race_data_path
-        self.odds_data_path = odds_data_path
+        
+        # データディレクトリの設定
+        if data_dir is None:
+            self.data_dir = PROJECT_ROOT / "kyotei_predictor" / "data" / "raw"
+        else:
+            self.data_dir = Path(data_dir)
+        
         self.bet_amount = bet_amount
-        self.observation_space = gym.spaces.Box(low=0, high=1, shape=(192,), dtype=np.float32)
-        self.action_space = gym.spaces.Discrete(120)
-        self.state = None
-        self.terminated = False
-        self.odds_data = []  # 必ずリストで初期化
-        self.arrival_tuple = (0,0,0)  # 必ずタプルで初期化
-
-    def reset(self, *, seed=None, options=None) -> Tuple[np.ndarray | None, dict]:
-        print(f"[KyoteiEnv.reset] called. race={self.race_data_path}, odds={self.odds_data_path}")
+        
+        # 行動空間: 6艇の3着予想 (6P3 = 120通り)
+        self.action_space = spaces.Discrete(120)
+        
+        # 観測空間: 各艇の特徴量 (6艇 × 特徴量数)
+        # 特徴量: 選手名, 年齢, 出身地, 級別, 全国勝率, 当地勝率, モーター番号, ボート番号
+        self.observation_space = spaces.Box(
+            low=0, high=1, shape=(6, 8), dtype=np.float32
+        )
+        
+        # 環境状態
+        self.current_race_data = None
+        self.current_race_index = 0
+        self.race_files = []
+        self._load_race_files()
+        
+        logger.info(f"KyoteiEnv初期化完了: {len(self.race_files)}レース, ベット金額: {bet_amount}円")
+    
+    def _load_race_files(self):
+        """レースファイルの読み込み"""
+        try:
+            if not self.data_dir.exists():
+                logger.warning(f"データディレクトリが存在しません: {self.data_dir}")
+                self.race_files = []
+                return
+            
+            # JSONファイルを検索
+            race_files = list(self.data_dir.glob("*.json"))
+            self.race_files = [f for f in race_files if "race_data" in f.name]
+            
+            logger.info(f"レースファイル読み込み完了: {len(self.race_files)}件")
+            
+        except Exception as e:
+            logger.error(f"レースファイル読み込みエラー: {e}")
+            self.race_files = []
+    
+    def _load_race_data(self, file_path: Path) -> Optional[Dict]:
+        """レースデータの読み込み"""
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            return data
+        except Exception as e:
+            logger.error(f"レースデータ読み込みエラー {file_path}: {e}")
+            return None
+    
+    def _extract_features(self, race_data: Dict) -> np.ndarray:
+        """レースデータから特徴量を抽出"""
+        try:
+            features = np.zeros((6, 8), dtype=np.float32)
+            
+            if 'race_entries' not in race_data:
+                logger.warning("race_entriesが見つかりません")
+                return features
+            
+            entries = race_data['race_entries']
+            
+            for i, entry in enumerate(entries[:6]):  # 最大6艇
+                if i >= 6:
+                    break
+                
+                # 特徴量の正規化
+                features[i, 0] = self._normalize_name(entry.get('racer', {}).get('name', ''))
+                features[i, 1] = self._normalize_age(entry.get('racer', {}).get('age', 0))
+                features[i, 2] = self._normalize_prefecture(entry.get('racer', {}).get('prefecture', ''))
+                features[i, 3] = self._normalize_grade(entry.get('racer', {}).get('grade', ''))
+                features[i, 4] = self._normalize_rate(entry.get('performance', {}).get('rate_in_all_stadium', 0))
+                features[i, 5] = self._normalize_rate(entry.get('performance', {}).get('rate_in_event_going_stadium', 0))
+                features[i, 6] = self._normalize_number(entry.get('motor', {}).get('number', 0))
+                features[i, 7] = self._normalize_number(entry.get('boat', {}).get('number', 0))
+            
+            return features
+            
+        except Exception as e:
+            logger.error(f"特徴量抽出エラー: {e}")
+            return np.zeros((6, 8), dtype=np.float32)
+    
+    def _normalize_name(self, name: str) -> float:
+        """選手名の正規化"""
+        if not name:
+            return 0.0
+        # 名前の長さを正規化
+        return min(len(name) / 10.0, 1.0)
+    
+    def _normalize_age(self, age: int) -> float:
+        """年齢の正規化"""
+        if age <= 0:
+            return 0.0
+        return min(age / 60.0, 1.0)
+    
+    def _normalize_prefecture(self, prefecture: str) -> float:
+        """出身地の正規化"""
+        if not prefecture:
+            return 0.0
+        # 都道府県コードを数値化
+        prefecture_codes = {
+            '北海道': 1, '青森県': 2, '岩手県': 3, '宮城県': 4, '秋田県': 5,
+            '山形県': 6, '福島県': 7, '茨城県': 8, '栃木県': 9, '群馬県': 10,
+            '埼玉県': 11, '千葉県': 12, '東京都': 13, '神奈川県': 14, '新潟県': 15,
+            '富山県': 16, '石川県': 17, '福井県': 18, '山梨県': 19, '長野県': 20,
+            '岐阜県': 21, '静岡県': 22, '愛知県': 23, '三重県': 24, '滋賀県': 25,
+            '京都府': 26, '大阪府': 27, '兵庫県': 28, '奈良県': 29, '和歌山県': 30,
+            '鳥取県': 31, '島根県': 32, '岡山県': 33, '広島県': 34, '山口県': 35,
+            '徳島県': 36, '香川県': 37, '愛媛県': 38, '高知県': 39, '福岡県': 40,
+            '佐賀県': 41, '長崎県': 42, '熊本県': 43, '大分県': 44, '宮崎県': 45,
+            '鹿児島県': 46, '沖縄県': 47
+        }
+        code = prefecture_codes.get(prefecture, 0)
+        return code / 47.0
+    
+    def _normalize_grade(self, grade: str) -> float:
+        """級別の正規化"""
+        grade_values = {
+            'A1': 1.0, 'A2': 0.9, 'B1': 0.8, 'B2': 0.7,
+            'C1': 0.6, 'C2': 0.5, 'D1': 0.4, 'D2': 0.3
+        }
+        return grade_values.get(grade, 0.0)
+    
+    def _normalize_rate(self, rate: float) -> float:
+        """勝率の正規化"""
+        if rate <= 0:
+            return 0.0
+        return min(rate / 100.0, 1.0)
+    
+    def _normalize_number(self, number: int) -> float:
+        """番号の正規化"""
+        if number <= 0:
+            return 0.0
+        return min(number / 100.0, 1.0)
+    
+    def _action_to_trifecta(self, action: int) -> Tuple[int, int, int]:
+        """行動を3着予想に変換"""
+        # 6P3 = 120通りの組み合わせを生成
+        combinations = []
+        for i in range(1, 7):
+            for j in range(1, 7):
+                for k in range(1, 7):
+                    if i != j and j != k and i != k:
+                        combinations.append((i, j, k))
+        
+        if 0 <= action < len(combinations):
+            return combinations[action]
+        else:
+            return (1, 2, 3)  # デフォルト
+    
+    def _get_race_result(self, race_data: Dict) -> Optional[Tuple[int, int, int]]:
+        """レース結果を取得"""
+        try:
+            if 'race_records' not in race_data:
+                return None
+            
+            records = race_data['race_records']
+            if len(records) < 3:
+                return None
+            
+            # 1着、2着、3着の艇番を取得
+            first = records[0]['pit_number']
+            second = records[1]['pit_number']
+            third = records[2]['pit_number']
+            
+            return (first, second, third)
+            
+        except Exception as e:
+            logger.error(f"レース結果取得エラー: {e}")
+            return None
+    
+    def reset(self, seed: Optional[int] = None) -> np.ndarray:
+        """環境をリセット"""
         super().reset(seed=seed)
-        assert self.race_data_path and self.odds_data_path, "race_data_path, odds_data_pathを指定してください"
-        with open(self.race_data_path, encoding='utf-8') as f:
-            race = json.load(f)
-        with open(self.odds_data_path, encoding='utf-8') as f:
-            odds = json.load(f)
-        self.odds_data = odds['odds_data']
-        valid_records = [r for r in race['race_records'] if r.get('arrival') is not None]
-        print(f"[KyoteiEnv.reset] valid_records={len(valid_records)}")
-        if len(valid_records) < 3:
-            print(f"[KyoteiEnv.reset] Skipping race with insufficient valid records: {len(valid_records)} < 3")
-            logging.warning(f"Skipping race with insufficient valid records: {len(valid_records)} < 3")
-            raise ValueError(f"Insufficient valid records: {len(valid_records)} < 3")
-        records = sorted(valid_records, key=lambda x: x['arrival'])
-        self.arrival_tuple = tuple(r['pit_number'] for r in records[:3])
-        print(f"[KyoteiEnv.reset] arrival_tuple={self.arrival_tuple}")
-        if len(self.arrival_tuple) != 3:
-            print(f"[KyoteiEnv.reset] Skipping race with invalid arrival_tuple: {self.arrival_tuple}")
-            logging.warning(f"Skipping race with invalid arrival_tuple: {self.arrival_tuple}")
-            raise ValueError(f"Invalid arrival_tuple: {self.arrival_tuple}, length: {len(self.arrival_tuple)}")
-        self.state = vectorize_race_state(self.race_data_path, self.odds_data_path)
-        self.terminated = False
-        info = {}
-        print(f"[KyoteiEnv.reset] state shape={self.state.shape if hasattr(self.state, 'shape') else type(self.state)}")
-        return self.state, info
-
-    def step(self, action: int) -> Tuple[np.ndarray | None, float, bool, bool, dict]:
-        assert not self.terminated, "エピソードはすでに終了しています。resetしてください。"
-        # 報酬計算
-        reward = calc_trifecta_reward(action, self.arrival_tuple, self.odds_data, self.bet_amount)
-        self.terminated = True  # 1レース1stepで終了
-        truncated = False
-        info = {"arrival": self.arrival_tuple}
-        return self.state, reward, self.terminated, truncated, info
-
-    def render(self, mode: str = "human") -> None:
-        logging.debug(f"State: {self.state}")
-
-    def close(self) -> None:
-        pass
-
-# --- サンプル: 1レース分の状態ベクトル生成関数 ---
-def vectorize_race_state(race_data_path: str, odds_data_path: str) -> np.ndarray:
-    """
-    race_data/odds_dataのjsonから状態ベクトルを生成するサンプル関数。
-    特徴量・前処理はrepo.mdの方針に従う。
-    """
-    # 1. データ読み込み
-    with open(race_data_path, encoding='utf-8') as f:
-        race = json.load(f)
-    with open(odds_data_path, encoding='utf-8') as f:
-        odds = json.load(f)
-
-    # 2. 各艇ごとの特徴量ベクトル
-    rating_map = {'A1': [1,0,0,0], 'A2': [0,1,0,0], 'B1': [0,0,1,0], 'B2': [0,0,0,1]}
-    boats = []
+        
+        if not self.race_files:
+            logger.warning("レースファイルがありません")
+            return np.zeros((6, 8), dtype=np.float32)
+        
+        # ランダムにレースを選択
+        self.current_race_index = self.np_random.integers(0, len(self.race_files))
+        race_file = self.race_files[self.current_race_index]
+        
+        # レースデータを読み込み
+        self.current_race_data = self._load_race_data(race_file)
+        
+        if self.current_race_data is None:
+            logger.warning(f"レースデータの読み込みに失敗: {race_file}")
+            return np.zeros((6, 8), dtype=np.float32)
+        
+        # 特徴量を抽出
+        features = self._extract_features(self.current_race_data)
+        
+        logger.debug(f"環境リセット: {race_file.name}")
+        return features
     
-    # race_entriesがある場合はそれを使用、ない場合はrace_recordsから基本情報を構築
-    if 'race_entries' in race:
-        entries = race['race_entries']
-    else:
-        # race_recordsから基本情報を構築（エントリーデータがない場合のフォールバック）
-        entries = []
-        for record in race['race_records']:
-            entry = {
-                'pit_number': record['pit_number'],
-                'racer': {'current_rating': 'B1'},  # デフォルト
-                'performance': {'rate_in_all_stadium': 5.0, 'rate_in_event_going_stadium': 5.0},  # デフォルト
-                'boat': {'quinella_rate': 50.0, 'trio_rate': 50.0},  # デフォルト
-                'motor': {'quinella_rate': 50.0, 'trio_rate': 50.0}  # デフォルト
-            }
-            entries.append(entry)
+    def step(self, action: int) -> Tuple[np.ndarray, float, bool, Dict]:
+        """環境を1ステップ進める"""
+        if self.current_race_data is None:
+            return np.zeros((6, 8), dtype=np.float32), 0.0, True, {}
+        
+        # 行動を3着予想に変換
+        predicted_trifecta = self._action_to_trifecta(action)
+        
+        # 実際の結果を取得
+        actual_result = self._get_race_result(self.current_race_data)
+        
+        # 報酬を計算
+        reward = self._calculate_reward(predicted_trifecta, actual_result)
+        
+        # 観測（次のレースの特徴量）
+        next_features = self._extract_features(self.current_race_data)
+        
+        # 終了フラグ（常にTrue、1レースごとにリセット）
+        done = True
+        
+        info = {
+            'predicted_trifecta': predicted_trifecta,
+            'actual_result': actual_result,
+            'reward': reward
+        }
+        
+        return next_features, reward, done, info
     
-    for entry in entries:
-        pit = (entry['pit_number'] - 1) / 5  # 1-6→0-1
-        rating = rating_map.get(entry['racer']['current_rating'], [0,0,0,0])
-        # None/NaNチェックとfillna(0)を追加
-        perf_all = entry['performance']['rate_in_all_stadium'] / 10 if entry['performance']['rate_in_all_stadium'] is not None else 0
-        perf_local = entry['performance']['rate_in_event_going_stadium'] / 10 if entry['performance']['rate_in_event_going_stadium'] is not None else 0
-        boat2 = entry['boat']['quinella_rate'] / 100 if entry['boat']['quinella_rate'] is not None else 0
-        boat3 = entry['boat']['trio_rate'] / 100 if entry['boat']['trio_rate'] is not None else 0
-        motor2 = entry['motor']['quinella_rate'] / 100 if entry['motor']['quinella_rate'] is not None else 0
-        motor3 = entry['motor']['trio_rate'] / 100 if entry['motor']['trio_rate'] is not None else 0
-        vec = [pit] + rating + [perf_all, perf_local, boat2, boat3, motor2, motor3]
-        boats.append(vec)
-    boats = np.array(boats)  # shape: (6, 特徴量数)
-
-    # 3. レース全体特徴量
-    stadiums = ['KIRYU','TODA','EDOGAWA']  # 必要に応じて拡張
-    stadium_onehot = [1 if race['race_info']['stadium']==s else 0 for s in stadiums]
-    race_num = (race['race_info']['race_number']-1)/11
-    laps = (race['race_info']['number_of_laps']-1)/4 if 'number_of_laps' in race['race_info'] and race['race_info']['number_of_laps'] is not None else 0
-    is_fixed = 1 if race['race_info'].get('is_course_fixed') else 0
-    race_feat = stadium_onehot + [race_num, laps, is_fixed]
-
-    # 4. オッズ特徴量（3連単120通り, log+minmax）
-    trifecta_list = list(permutations(range(1,7), 3))  # 1-indexed
-    odds_map = {tuple(o['betting_numbers']): o['ratio'] for o in odds['odds_data']}
-    odds_vec = [np.log(odds_map.get(t, 1)+1) for t in trifecta_list]  # log(odds+1)
-    # None/NaNチェックを追加
-    odds_vec = [o if o is not None and not np.isnan(o) else 0 for o in odds_vec]
-    odds_min, odds_max = min(odds_vec), max(odds_vec)
-    # ゼロ除算を防ぐ
-    if odds_max > odds_min:
-        odds_vec = [(o-odds_min)/(odds_max-odds_min) for o in odds_vec]
-    else:
-        odds_vec = [0 for o in odds_vec]
-
-    # 5. 結合
-    state_vec = np.concatenate([boats.flatten(), race_feat, odds_vec])
-    return state_vec 
-
-# --- 3連単actionと買い目の相互変換関数 ---
-TRIFECTA_LIST = list(permutations(range(1,7), 3))  # 1-indexed, 120通り
-TRIFECTA_MAP = {v: i for i, v in enumerate(TRIFECTA_LIST)}
-
-def action_to_trifecta(action: int) -> Tuple[int, int, int]:
-    """action(0-119)→(1着,2着,3着)の買い目タプル"""
-    return TRIFECTA_LIST[action]
-
-def trifecta_to_action(trifecta: Tuple[int, int, int]) -> int:
-    """(1着,2着,3着)の買い目タプル→action(0-119)"""
-    return TRIFECTA_MAP[trifecta]
+    def _calculate_reward(self, predicted: Tuple[int, int, int], actual: Optional[Tuple[int, int, int]]) -> float:
+        """報酬を計算"""
+        if actual is None:
+            return 0.0
+        
+        # 完全一致の場合
+        if predicted == actual:
+            return 100.0
+        
+        # 部分一致の場合
+        correct_positions = 0
+        for i in range(3):
+            if predicted[i] == actual[i]:
+                correct_positions += 1
+        
+        if correct_positions == 2:
+            return 10.0
+        elif correct_positions == 1:
+            return 1.0
+        else:
+            return 0.0
 
 def calc_trifecta_reward(action: int, arrival_tuple: Tuple[int,int,int], odds_data: list, bet_amount: int = 100) -> float:
     """
-    action（0-119）, 着順タプル, oddsデータ, 賭け金を受け取り、段階的報酬を返す。
+    3連単の報酬を計算
     
-    改善後の段階的報酬設計:
-    - 的中時: (払戻金-賭け金)×1.2
-    - 2着的中時: 0（1着、2着が正解）
-    - 1着的中時: -20（1着のみ正解）
-    - 不的中時: -100（全く的中なし）
+    Args:
+        action: 行動（0-119の整数）
+        arrival_tuple: 実際の着順 (1着, 2着, 3着)
+        odds_data: オッズデータ
+        bet_amount: ベット金額
+        
+    Returns:
+        報酬（利益）
     """
-    # 着順タプルの妥当性チェック
-    if len(arrival_tuple) != 3:
-        logging.warning(f"Invalid arrival_tuple: {arrival_tuple}, length: {len(arrival_tuple)}")
-        return -100  # 不正な着順の場合は最大ペナルティ
+    # 行動を3着予想に変換
+    combinations = []
+    for i in range(1, 7):
+        for j in range(1, 7):
+            for k in range(1, 7):
+                if i != j and j != k and i != k:
+                    combinations.append((i, j, k))
     
-    trifecta = action_to_trifecta(action)
-    
-    # 的中判定
-    is_win = trifecta == arrival_tuple
-    
-    if is_win:
-        # 的中時: 払戻金-賭け金 ×1.2
-        odds_map = {tuple(o['betting_numbers']): o['ratio'] for o in odds_data}
-        odds = odds_map.get(trifecta, 0)
-        payout = odds * bet_amount
-        reward = (payout - bet_amount) * 1.2
+    if 0 <= action < len(combinations):
+        predicted = combinations[action]
     else:
-        # 部分的中の判定
-        first_hit = trifecta[0] == arrival_tuple[0]  # 1着的中
-        second_hit = trifecta[1] == arrival_tuple[1]  # 2着的中
-        if first_hit and second_hit:
-            reward = 0  # 2着的中は損失なし
-        elif first_hit:
-            reward = -20  # 1着的中のペナルティを緩和
-        else:
-            reward = -100
+        predicted = (1, 2, 3)
+    
+    # 予想が正しい場合
+    if predicted == arrival_tuple:
+        # オッズデータから該当するオッズを検索
+        for odds in odds_data:
+            if (odds.get('first') == predicted[0] and 
+                odds.get('second') == predicted[1] and 
+                odds.get('third') == predicted[2]):
+                odds_value = odds.get('odds', 0)
+                reward = (odds_value * bet_amount) - bet_amount
+                return reward
+        
+        # オッズが見つからない場合はデフォルト報酬
+        reward = 100
+    else:
+        reward = -100
     return reward
 
 class KyoteiEnvManager(gym.Env):
@@ -208,10 +349,16 @@ class KyoteiEnvManager(gym.Env):
     """
     metadata = {"render_modes": ["human"]}
     
-    def __init__(self, data_dir: str = "../data", bet_amount: int = 100):
+    def __init__(self, data_dir: str = None, bet_amount: int = 100):
         super().__init__()
         logging.debug(f"[KyoteiEnvManager.__init__] received data_dir: {data_dir}")
-        self.data_dir = data_dir
+        
+        # データディレクトリの設定
+        if data_dir is None:
+            self.data_dir = PROJECT_ROOT / "kyotei_predictor" / "data" / "raw"
+        else:
+            self.data_dir = Path(data_dir)
+        
         logging.debug(f"[KyoteiEnvManager.__init__] self.data_dir set to: {self.data_dir}")
         self.bet_amount = bet_amount
         self.pairs = self._find_race_odds_pairs()
@@ -222,130 +369,69 @@ class KyoteiEnvManager(gym.Env):
         logging.debug(f"abspath(data_dir): {os.path.abspath(self.data_dir)}")
         
         # サブディレクトリも含めて再帰的に検索
-        race_pattern = os.path.join(self.data_dir, "**", "race_data_*.json")
-        odds_pattern = os.path.join(self.data_dir, "**", "odds_data_*.json")
+        race_pattern = re.compile(r'race_data_(\d{4}-\d{2}-\d{2})_([A-Z0-9]+)_R\d+\.json')
+        odds_pattern = re.compile(r'odds_data_(\d{4}-\d{2}-\d{2})_([A-Z0-9]+)_R\d+\.json')
         
-        logging.debug(f"race_pattern: {race_pattern}")
-        logging.debug(f"odds_pattern: {odds_pattern}")
-        
-        race_files = glob.glob(race_pattern, recursive=True)
-        odds_files = glob.glob(odds_pattern, recursive=True)
-        
-        logging.debug(f"race_files count: {len(race_files)}")
-        logging.debug(f"odds_files count: {len(odds_files)}")
-        
-        if not race_files:
-            logging.warning(f"No race files found in {self.data_dir}")
-            return []
-        if not odds_files:
-            logging.warning(f"No odds files found in {self.data_dir}")
-            return []
-        
-        # ファイル名ベースでマッピングを作成
-        race_map = {}
-        odds_map = {}
-        
-        for race_file in race_files:
-            # ファイル名からキーを抽出（例: race_data_2024-03-31_OMURA_R1.json -> race_data_2024-03-31_OMURA_R1.json）
-            key = os.path.basename(race_file)
-            race_map[key] = race_file
-            
-        for odds_file in odds_files:
-            # ファイル名からキーを抽出（例: odds_data_2024-03-31_OMURA_R1.json -> odds_data_2024-03-31_OMURA_R1.json）
-            key = os.path.basename(odds_file)
-            odds_map[key] = odds_file
-        
-        logging.debug(f"race_map keys count: {len(race_map)}")
-        logging.debug(f"odds_map keys count: {len(odds_map)}")
-        
-        # 共通のキーを見つける（race_data_YYYY-MM-DD_VENUE_RN.json と odds_data_YYYY-MM-DD_VENUE_RN.json）
-        common_keys = set()
-        for race_key in race_map.keys():
-            # race_data_YYYY-MM-DD_VENUE_RN.json -> odds_data_YYYY-MM-DD_VENUE_RN.json
-            odds_key = race_key.replace("race_data_", "odds_data_")
-            if odds_key in odds_map:
-                common_keys.add(race_key)
-        
-        logging.debug(f"common_keys count: {len(common_keys)}")
-        
-        # ペアリストを作成
         pairs = []
-        for race_key in common_keys:
-            odds_key = race_key.replace("race_data_", "odds_data_")
-            pairs.append((race_map[race_key], odds_map[odds_key]))
         
-        logging.debug(f"pairs count: {len(pairs)}")
-        if pairs:
-            logging.debug(f"sample pair: {pairs[0]}")
+        for root, dirs, files in os.walk(self.data_dir):
+            race_files = []
+            odds_files = []
+            
+            for file in files:
+                if race_pattern.match(file):
+                    race_files.append(os.path.join(root, file))
+                elif odds_pattern.match(file):
+                    odds_files.append(os.path.join(root, file))
+            
+            # レースファイルとオッズファイルをマッチング
+            for race_file in race_files:
+                race_match = race_pattern.match(os.path.basename(race_file))
+                if race_match:
+                    date_str, stadium = race_match.groups()
+                    
+                    # 対応するオッズファイルを検索
+                    for odds_file in odds_files:
+                        odds_match = odds_pattern.match(os.path.basename(odds_file))
+                        if odds_match and odds_match.groups() == (date_str, stadium):
+                            pairs.append((race_file, odds_file))
+                            break
         
+        logging.info(f"Found {len(pairs)} race-odds pairs")
         return pairs
 
-    def reset(self, *, seed=None, options=None) -> Tuple[np.ndarray | None, dict]:
-        print(f"[KyoteiEnvManager.reset] called. pairs={len(self.pairs)}")
+    def reset(self, seed=None, options=None):
         super().reset(seed=seed)
         
-        # ペアが空の場合はエラー
         if not self.pairs:
-            error_msg = f"No valid race-odds pairs found in {self.data_dir}. Please check if data files exist."
-            print(f"[KyoteiEnvManager.reset] {error_msg}")
-            logging.error(error_msg)
-            raise ValueError(error_msg)
+            logging.warning("No race-odds pairs found")
+            return np.zeros((6, 8), dtype=np.float32)
         
-        # 有効なレースが見つかるまで試行
-        max_attempts = 10
-        for attempt in range(max_attempts):
-            try:
-                # ランダムに1レース選択
-                race_path, odds_path = random.choice(self.pairs)
-                print(f"[KyoteiEnvManager.reset] attempt {attempt+1}: race={race_path}, odds={odds_path}")
-                logging.debug(f"Selected race: {race_path}")
-                logging.debug(f"Selected odds: {odds_path}")
-                
-                self.env = KyoteiEnv(race_data_path=race_path, odds_data_path=odds_path, bet_amount=self.bet_amount)
-                return self.env.reset()
-            except ValueError as e:
-                print(f"[KyoteiEnvManager.reset] attempt {attempt+1} failed: {e}")
-                logging.info(f"Attempt {attempt + 1}: Skipping invalid race data: {e}")
-                if attempt == max_attempts - 1:
-                    # 最後の試行でも失敗した場合は、デフォルトの着順で強制実行
-                    print(f"[KyoteiEnvManager.reset] All attempts failed, using fallback data")
-                    logging.warning(f"All attempts failed, using fallback data")
-                    self.env = KyoteiEnv(race_data_path=race_path, odds_data_path=odds_path, bet_amount=self.bet_amount)
-                    # 強制的にデフォルト値を設定
-                    self.env.arrival_tuple = (1, 2, 3)
-                    return self.env.state, {}
+        # ランダムにペアを選択
+        race_file, odds_file = self.np_random.choice(self.pairs)
         
-        # 万が一の場合のフォールバック
-        race_path, odds_path = random.choice(self.pairs)
-        print(f"[KyoteiEnvManager.reset] fallback: race={race_path}, odds={odds_path}")
-        self.env = KyoteiEnv(race_data_path=race_path, odds_data_path=odds_path, bet_amount=self.bet_amount)
-        self.env.arrival_tuple = (1, 2, 3)
-        return self.env.state, {}
+        # 新しい環境を作成
+        self.env = KyoteiEnv(data_dir=os.path.dirname(race_file), bet_amount=self.bet_amount)
+        
+        # 環境をリセット
+        observation = self.env.reset(seed=seed)
+        
+        return observation
 
-    def step(self, action: int) -> Tuple[np.ndarray | None, float, bool, bool, dict]:
+    def step(self, action):
         if self.env is None:
-            raise RuntimeError("envが初期化されていません。reset()を先に呼んでください。")
+            return np.zeros((6, 8), dtype=np.float32), 0.0, True, {}
+        
         return self.env.step(action)
-    
-    def render(self, mode: str = "human") -> None:
-        if self.env is not None:
-            return self.env.render(mode)
-        return None
-    
-    def close(self) -> None:
-        if self.env is not None:
-            self.env.close()
 
     @property
     def action_space(self):
-        if self.env is not None:
-            return self.env.action_space
-        # デフォルトのaction_spaceを返す（初期化前）
-        return gym.spaces.Discrete(120)
+        if self.env is None:
+            return spaces.Discrete(120)
+        return self.env.action_space
 
     @property
     def observation_space(self):
-        if self.env is not None:
-            return self.env.observation_space
-        # デフォルトのobservation_spaceを返す（初期化前）
-        return gym.spaces.Box(low=0, high=1, shape=(192,), dtype=np.float32) 
+        if self.env is None:
+            return spaces.Box(low=0, high=1, shape=(6, 8), dtype=np.float32)
+        return self.env.observation_space 

@@ -1,0 +1,76 @@
+{
+  "optimization_time": "2025-07-29T11:45:21.983429",
+  "study_name": "test_202403_optimization",
+  "n_trials": 3,
+  "existing_trials": 0,
+  "total_trials": 3,
+  "best_trial": {
+    "number": 2,
+    "value": 6.106560230255127,
+    "params": {
+      "learning_rate": 5.0761910391100136e-05,
+      "batch_size": 256,
+      "n_steps": 1024,
+      "gamma": 0.9854706951555727,
+      "gae_lambda": 0.8784293811173896,
+      "n_epochs": 4,
+      "clip_range": 0.31049648270357455,
+      "ent_coef": 0.02091133778673363,
+      "vf_coef": 0.6866332234933586,
+      "max_grad_norm": 0.5124409923335452
+    }
+  },
+  "all_trials": [
+    {
+      "number": 0,
+      "value": 3.024399995803833,
+      "params": {
+        "learning_rate": 0.00013663918557642318,
+        "batch_size": 256,
+        "n_steps": 4096,
+        "gamma": 0.9106811281429535,
+        "gae_lambda": 0.8645916598767605,
+        "n_epochs": 15,
+        "clip_range": 0.11291685254925442,
+        "ent_coef": 0.03956043757196551,
+        "vf_coef": 0.7089272803250621,
+        "max_grad_norm": 0.24199584953263223
+      },
+      "state": "COMPLETE"
+    },
+    {
+      "number": 1,
+      "value": 3.99780011177063,
+      "params": {
+        "learning_rate": 1.3228249361290586e-05,
+        "batch_size": 64,
+        "n_steps": 4096,
+        "gamma": 0.9731368740238153,
+        "gae_lambda": 0.839836179011854,
+        "n_epochs": 8,
+        "clip_range": 0.2118694658508472,
+        "ent_coef": 0.015135374226820342,
+        "vf_coef": 0.7519042008608713,
+        "max_grad_norm": 0.4055817837913771
+      },
+      "state": "COMPLETE"
+    },
+    {
+      "number": 2,
+      "value": 6.106560230255127,
+      "params": {
+        "learning_rate": 5.0761910391100136e-05,
+        "batch_size": 256,
+        "n_steps": 1024,
+        "gamma": 0.9854706951555727,
+        "gae_lambda": 0.8784293811173896,
+        "n_epochs": 4,
+        "clip_range": 0.31049648270357455,
+        "ent_coef": 0.02091133778673363,
+        "vf_coef": 0.6866332234933586,
+        "max_grad_norm": 0.5124409923335452
+      },
+      "state": "COMPLETE"
+    }
+  ]
+}

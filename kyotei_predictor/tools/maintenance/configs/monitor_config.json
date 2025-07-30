@@ -1,0 +1,31 @@
+{
+  "monitoring": {
+    "check_interval": 60,
+    "warning_threshold": 70,
+    "critical_threshold": 85,
+    "emergency_threshold": 95
+  },
+  "directories": {
+    "optuna_models": {"max_size_gb": 5},
+    "optuna_logs": {"max_size_gb": 2},
+    "optuna_tensorboard": {"max_size_gb": 3},
+    "outputs": {"max_size_gb": 1},
+    "archives": {"max_size_gb": 10}
+  },
+  "notifications": {
+    "enabled": true,
+    "warning_interval": 3600,
+    "critical_interval": 1800
+  },
+  "cleanup": {
+    "enabled": true,
+    "emergency_threshold": 90,
+    "target_directories": ["optuna_logs", "outputs", "archives"]
+  },
+  "logging": {
+    "level": "INFO",
+    "file": "disk_monitor.log",
+    "max_size_mb": 10,
+    "backup_count": 5
+  }
+} 

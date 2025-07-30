@@ -1,0 +1,35 @@
+{
+  "schedules": {
+    "daily_cleanup": {
+      "enabled": true,
+      "time": "02:00",
+      "command": "python kyotei_predictor/tools/maintenance/auto_cleanup.py"
+    },
+    "weekly_cleanup": {
+      "enabled": true,
+      "day": "sunday",
+      "time": "03:00",
+      "command": "python kyotei_predictor/tools/maintenance/auto_cleanup.py --config configs/cleanup_config.json"
+    },
+    "disk_monitor": {
+      "enabled": true,
+      "interval_minutes": 30,
+      "command": "python kyotei_predictor/tools/maintenance/disk_monitor.py --status"
+    }
+  },
+  "monitoring": {
+    "enabled": true,
+    "check_interval": 60
+  },
+  "notifications": {
+    "enabled": true,
+    "warning_interval": 3600,
+    "critical_interval": 1800
+  },
+  "logging": {
+    "level": "INFO",
+    "file": "scheduler.log",
+    "max_size_mb": 10,
+    "backup_count": 5
+  }
+} 

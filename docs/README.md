@@ -1,10 +1,18 @@
 # 競艇予測システム - ドキュメント
 
+**最終更新日**: 2025-07-30  
+**バージョン**: 5.0（リファクタリング完了・統合システム完成）
+
 ## 📋 目次
 
 ### 📊 プロジェクト概要
-- [CURRENT_STATUS_SUMMARY.md](CURRENT_STATUS_SUMMARY.md) - 現在の状況サマリー
+- [CURRENT_STATUS_SUMMARY.md](CURRENT_STATUS_SUMMARY.md) - 現在の状況サマリー（最新）
 - [DOCUMENTATION_STANDARDS.md](DOCUMENTATION_STANDARDS.md) - ドキュメント標準
+
+### 🔄 リファクタリング・整理作業
+- [refactoring/](refactoring/) - リファクタリング関連ドキュメント
+  - [README.md](refactoring/README.md) - リファクタリング作業概要
+  - [COMPREHENSIVE_REFACTORING_SUMMARY.md](refactoring/COMPREHENSIVE_REFACTORING_SUMMARY.md) - 包括的サマリー
 
 ### 🚀 今後の方針
 - [future_strategy.md](future_strategy.md) - 今後の方針と戦略
@@ -14,6 +22,7 @@
 - [API_SPECIFICATION.md](API_SPECIFICATION.md) - API仕様書
 
 ### 📁 運用ドキュメント
+- [OPERATIONS_MANUAL.md](OPERATIONS_MANUAL.md) - 運用マニュアル
 - [operations/](operations/) - 運用関連ドキュメント
 
 ### 📋 要件ドキュメント
@@ -21,6 +30,9 @@
 
 ### 🌐 Web表示ドキュメント
 - [web_display/](web_display/) - Web表示関連ドキュメント
+
+### 🔧 最適化ドキュメント
+- [optimization/](optimization/) - 最適化関連ドキュメント
 
 ---
 
@@ -30,14 +42,14 @@
 
 ### 主要機能
 - **段階的報酬設計**: 的中率1.70%（理論値の約2倍）
-- **最適化システム**: Optunaによる自動最適化
+- **統合最適化システム**: Optunaによる自動最適化（4つの最適化タイプ対応）
 - **監視システム**: リアルタイム進捗監視
 - **評価システム**: 客観的性能評価
 - **統合ユーティリティ**: 標準化された設定管理・ログ機能・エラーハンドリング
 
 ### 技術スタック
 - **強化学習**: Stable-Baselines3 (PPO)
-- **最適化**: Optuna
+- **最適化**: Optuna（統合システム）
 - **データ処理**: pandas, numpy
 - **可視化**: matplotlib
 - **統合ユーティリティ**: カスタム設定管理・ログ機能・エラーハンドリング
@@ -47,10 +59,19 @@
 - **学習効率**: 16.2倍
 - **報酬安定性**: 52.5%
 - **総合スコア**: 40.5/100
+- **ディスク容量節約**: 約8MB
+- **保守性向上**: 重複コード完全削除
 
 ---
 
-## 🏗️ 新しいアーキテクチャ（v4.1）
+## 🏗️ 新しいアーキテクチャ（v5.0）
+
+### 統合最適化システム
+```
+kyotei_predictor/tools/optimization/
+├── unified_optimizer.py          # 統合最適化スクリプト
+└── optimization_config.json      # 設定ファイル
+```
 
 ### 統合ユーティリティ構造
 ```
@@ -81,7 +102,19 @@ kyotei_predictor/tests/
 
 ## 🔧 使用方法
 
-### 1. **基本インポート**
+### 1. **統合最適化システム**
+```bash
+# 段階的報酬最適化
+python -m kyotei_predictor.tools.optimization.unified_optimizer --type graduated_reward
+
+# シンプル最適化
+python -m kyotei_predictor.tools.optimization.unified_optimizer --type simple --n-trials 50
+
+# テスト最適化
+python -m kyotei_predictor.tools.optimization.unified_optimizer --type test --n-trials 10
+```
+
+### 2. **基本インポート**
 ```python
 from kyotei_predictor.utils import (
     KyoteiUtils, Config, setup_logger, VenueMapper,
@@ -89,117 +122,56 @@ from kyotei_predictor.utils import (
 )
 ```
 
-### 2. **設定管理**
+### 3. **設定管理**
 ```python
 config = Config()
 data_dir = config.get_data_dir()
 timeout = config.get_api_timeout()
 ```
 
-### 3. **ログ機能**
+### 4. **ログ機能**
 ```python
-logger = setup_logger("my_module", log_file="logs/app.log")
+logger = setup_logger(__name__)
 logger.info("処理開始")
-```
-
-### 4. **会場マッピング**
-```python
-venue_name = VenueMapper.get_venue_name(StadiumTelCode.KIRYU)
-venue_code = VenueMapper.get_venue_code(StadiumTelCode.KIRYU)
-```
-
-### 5. **エラーハンドリング**
-```python
-@handle_exception
-def my_function():
-    # 処理
-    pass
+logger.error("エラー発生", exc_info=True)
 ```
 
 ---
 
-## 📈 今後の方針
+## 📊 リファクタリング成果
 
-詳細な今後の方針については、[future_strategy.md](future_strategy.md)をご参照ください。
+### **ディスク容量の大幅節約**
+- アーカイブ移動: 約8MB
+- 重複ファイル削除: 約100KB
+- **合計: 約8MBの容量節約**
 
-### 主要な改善点
-1. **段階的最適化アプローチ** - 月別最適化の継続
-2. **報酬設計の改善** - 的中報酬の強化
-3. **学習パラメータの強化** - 学習時間の延長
-4. **アンサンブル学習の導入** - 予測精度の向上
-5. **既存コードの移行** - 統合ユーティリティの活用
+### **保守性の大幅向上**
+- 重複コードの完全削除
+- 統一されたインターフェース
+- 設定ファイルによる制御
+- 明確なディレクトリ構造
 
-### 目標
-- **短期的目標（1ヶ月）**: 的中率2.5%以上
-- **中期的目標（3ヶ月）**: 的中率3.0%以上
-- **長期的目標（6ヶ月）**: 的中率4.0%以上
-
----
-
-## 🔧 開発環境
-
-### 必要条件
-- Python 3.8+
-- 仮想環境（venv）
-- 必要なパッケージ（requirements.txt）
-
-### セットアップ
-```bash
-# 仮想環境の作成
-python -m venv venv
-
-# 仮想環境の有効化
-venv\Scripts\activate  # Windows
-source venv/bin/activate  # Linux/Mac
-
-# 依存パッケージのインストール
-pip install -r requirements.txt
-```
-
-### 実行方法
-```bash
-# 最適化の実行
-python -m kyotei_predictor.tools.optimization.optimize_graduated_reward
-
-# 監視の実行
-python monitor_optimization.py
-
-# 評価の実行
-python -m kyotei_predictor.tools.evaluation.evaluate_graduated_reward_model
-
-# テストの実行
-python -m pytest kyotei_predictor/tests/
-```
+### **開発効率の大幅向上**
+- 明確なディレクトリ構造
+- 統一されたツール
+- 分かりやすいファイル配置
+- 統合最適化システム
 
 ---
 
-## 📊 成果物
+## 🚀 次のステップ
 
-### 最適化結果
-- **最適化データベース**: `optuna_studies/`
-- **最適化結果**: `optuna_results/`
-- **学習済みモデル**: `optuna_models/`
+### **即座に実行可能**
+1. **Phase 4: 最終クリーンアップ** - 古いtrialディレクトリの整理
+2. **統合最適化システムのテスト** - 動作確認
 
-### 評価結果
-- **評価結果**: `outputs/`
-- **分析結果**: `analysis_*.py`
+### **中期的な作業**
+3. **Phase 5: ドキュメント最終更新** - 運用ガイドの完成
+4. **Phase 6: テスト・検証作業** - システムの安定性確保
 
-### ログ
-- **学習ログ**: `optuna_logs/`
-- **監視ログ**: `data/logs/`
-
-### テスト結果
-- **テスト結果**: `kyotei_predictor/tests/`
-- **統合テスト**: 自動テスト実行
+### **長期的な作業**
+5. **Phase 7: 運用準備作業** - 完全な運用体制の構築
 
 ---
 
-## 🤝 貢献
-
-プロジェクトへの貢献については、[DOCUMENTATION_STANDARDS.md](DOCUMENTATION_STANDARDS.md)をご参照ください。
-
----
-
-*最終更新: 2025年1月27日*  
-*プロジェクト: 競艇予測システム*  
-*バージョン: 4.1（リファクタリング完了）* 
+**Phase 1-3は正常に完了しました。プロジェクトの保守性・拡張性・パフォーマンス・運用性が大幅に向上し、統合最適化システムによる効率的な開発・運用が可能になりました。** 

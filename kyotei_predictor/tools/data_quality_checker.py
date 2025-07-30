@@ -1,414 +1,341 @@
 #!/usr/bin/env python3
 """
-データ品質チェック・欠損再取得の自動化強化ツール
-
-機能:
-1. 日次データ品質チェックの自動化
-2. 異常値・欠損値の自動検出
-3. 品質レポートの自動生成・配信
-4. 欠損データの自動再取得
-5. データ整合性チェック
-
-使用方法:
-    python -m kyotei_predictor.tools.data_quality_checker --date 2024-02-01
-    python -m kyotei_predictor.tools.data_quality_checker --date-range 2024-02-01 2024-02-29
-    python -m kyotei_predictor.tools.data_quality_checker --daily-check
+データ品質チェッカー
 """
 
 import os
+import sys
 import json
-import argparse
 import logging
 from datetime import datetime, timedelta
 from pathlib import Path
-import pandas as pd
-import numpy as np
-from typing import Dict, List, Tuple, Optional
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+from typing import Dict, List, Optional, Any
 
-# プロジェクトルートの設定
-PROJECT_ROOT = Path(__file__).parent.parent.parent
-DATA_DIR = PROJECT_ROOT / "kyotei_predictor" / "data" / "raw"
-LOGS_DIR = PROJECT_ROOT / "kyotei_predictor" / "logs"
-OUTPUTS_DIR = PROJECT_ROOT / "outputs"
+# プロジェクトルートを動的に取得
+def get_project_root() -> Path:
+    """プロジェクトルートを動的に検出"""
+    current_file = Path(__file__)
+    project_root = current_file.parent.parent.parent
+    
+    # Google Colab環境の検出
+    if str(project_root).startswith('/content/'):
+        return Path('/content/kyotei_Prediction')
+    
+    return project_root
+
+PROJECT_ROOT = get_project_root()
+
+# プロジェクトルートをパスに追加
+sys.path.append(str(PROJECT_ROOT))
 
 class DataQualityChecker:
-    """データ品質チェック・自動化ツール"""
+    """データ品質チェッカークラス"""
     
-    def __init__(self, log_level=logging.INFO):
-        self.setup_logging(log_level)
-        self.quality_report = {
-            'check_date': datetime.now().isoformat(),
-            'summary': {},
-            'details': {},
-            'issues': [],
-            'recommendations': []
-        }
+    def __init__(self):
+        """初期化"""
+        self.project_root = PROJECT_ROOT
+        self.log_dir = self.project_root / "kyotei_predictor" / "logs"
+        self.log_dir.mkdir(parents=True, exist_ok=True)
         
-    def setup_logging(self, log_level):
-        """ログ設定"""
-        log_file = LOGS_DIR / f"data_quality_check_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
-        log_file.parent.mkdir(exist_ok=True)
-        
+        # ログ設定
+        log_file = self.log_dir / "data_quality_checker.log"
         logging.basicConfig(
-            level=log_level,
-            format='%(asctime)s - %(levelname)s - %(message)s',
+            level=logging.INFO,
+            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
             handlers=[
-                logging.FileHandler(log_file, encoding='utf-8'),
+                logging.FileHandler(log_file),
                 logging.StreamHandler()
             ]
         )
         self.logger = logging.getLogger(__name__)
         
-    def check_data_availability(self, date_str: str, venue: Optional[str] = None) -> Dict:
-        """データ可用性チェック"""
-        self.logger.info(f"データ可用性チェック開始: {date_str}")
+        self.logger.info("DataQualityChecker初期化完了")
+    
+    def check_data_quality(self, target_date: str = None) -> Dict:
+        """
+        データ品質をチェック
         
-        date_dir = DATA_DIR / date_str
-        if not date_dir.exists():
-            return {'status': 'no_data', 'message': f'データディレクトリが存在しません: {date_str}'}
-        
-        # レースデータとオッズデータの存在確認
-        race_files = list(date_dir.glob(f"race_data_{date_str}_*_R*.json"))
-        odds_files = list(date_dir.glob(f"odds_data_{date_str}_*_R*.json"))
-        
-        # 会場別に整理
-        venues_data = {}
-        for race_file in race_files:
-            parts = race_file.stem.split('_')
-            if len(parts) >= 4:
-                venue_code = parts[2]
-                race_num = parts[3]
-                if venue_code not in venues_data:
-                    venues_data[venue_code] = {'races': [], 'odds': []}
-                venues_data[venue_code]['races'].append(race_num)
-        
-        for odds_file in odds_files:
-            parts = odds_file.stem.split('_')
-            if len(parts) >= 4:
-                venue_code = parts[2]
-                race_num = parts[3]
-                if venue_code in venues_data:
-                    venues_data[venue_code]['odds'].append(race_num)
-        
-        # 品質チェック
-        issues = []
-        for venue_code, data in venues_data.items():
-            races = sorted(data['races'], key=lambda x: int(x.replace('R', '')))
-            odds = sorted(data['odds'], key=lambda x: int(x.replace('R', '')))
+        Args:
+            target_date: チェック対象日
             
-            # レース番号の連続性チェック
-            if races:
-                race_nums = [int(r.replace('R', '')) for r in races]
-                expected_races = list(range(min(race_nums), max(race_nums) + 1))
-                missing_races = [f"R{r}" for r in expected_races if r not in race_nums]
-                if missing_races:
-                    issues.append(f"{venue_code}: 不足レース {missing_races}")
-            
-            # オッズデータの不足チェック
-            missing_odds = [r for r in races if r not in odds]
-            if missing_odds:
-                issues.append(f"{venue_code}: 不足オッズ {missing_odds}")
-        
-        return {
-            'status': 'success' if not issues else 'issues_found',
-            'venues': len(venues_data),
-            'total_races': sum(len(data['races']) for data in venues_data.values()),
-            'total_odds': sum(len(data['odds']) for data in venues_data.values()),
-            'issues': issues
-        }
-    
-    def check_data_integrity(self, date_str: str) -> Dict:
-        """データ整合性チェック"""
-        self.logger.info(f"データ整合性チェック開始: {date_str}")
-        
-        date_dir = DATA_DIR / date_str
-        if not date_dir.exists():
-            return {'status': 'no_data', 'message': f'データディレクトリが存在しません: {date_str}'}
-        
-        integrity_issues = []
-        
-        # レースデータの詳細チェック
-        race_files = list(date_dir.glob(f"race_data_{date_str}_*_R*.json"))
-        for race_file in race_files:
-            try:
-                with open(race_file, 'r', encoding='utf-8') as f:
-                    race_data = json.load(f)
-                
-                # 必須フィールドの存在確認
-                required_fields = ['race_info', 'race_records']
-                for field in required_fields:
-                    if field not in race_data:
-                        integrity_issues.append(f"{race_file.name}: 必須フィールド '{field}' が存在しません")
-                
-                # レース結果の整合性チェック
-                if 'race_records' in race_data:
-                    records = race_data['race_records']
-                    if len(records) != 6:
-                        integrity_issues.append(f"{race_file.name}: レース結果が6件ではありません ({len(records)}件)")
-                    
-                    # 着順の重複チェック
-                    arrivals = [r.get('arrival') for r in records if r.get('arrival')]
-                    if len(arrivals) != len(set(arrivals)):
-                        integrity_issues.append(f"{race_file.name}: 着順に重複があります")
-                    
-                    # 艇番の重複チェック
-                    pit_numbers = [r.get('pit_number') for r in records if r.get('pit_number')]
-                    if len(pit_numbers) != len(set(pit_numbers)):
-                        integrity_issues.append(f"{race_file.name}: 艇番に重複があります")
-                
-            except Exception as e:
-                integrity_issues.append(f"{race_file.name}: ファイル読み込みエラー - {str(e)}")
-        
-        # オッズデータの詳細チェック
-        odds_files = list(date_dir.glob(f"odds_data_{date_str}_*_R*.json"))
-        for odds_file in odds_files:
-            try:
-                with open(odds_file, 'r', encoding='utf-8') as f:
-                    odds_data = json.load(f)
-                
-                # オッズデータの構造チェック
-                if not isinstance(odds_data, dict):
-                    integrity_issues.append(f"{odds_file.name}: オッズデータが辞書形式ではありません")
-                elif not odds_data:
-                    integrity_issues.append(f"{odds_file.name}: オッズデータが空です")
-                
-            except Exception as e:
-                integrity_issues.append(f"{odds_file.name}: ファイル読み込みエラー - {str(e)}")
-        
-        return {
-            'status': 'success' if not integrity_issues else 'issues_found',
-            'files_checked': len(race_files) + len(odds_files),
-            'issues': integrity_issues
-        }
-    
-    def detect_anomalies(self, date_str: str) -> Dict:
-        """異常値検出"""
-        self.logger.info(f"異常値検出開始: {date_str}")
-        
-        date_dir = DATA_DIR / date_str
-        if not date_dir.exists():
-            return {'status': 'no_data', 'message': f'データディレクトリが存在しません: {date_str}'}
-        
-        anomalies = []
-        
-        # レースデータの異常値チェック
-        race_files = list(date_dir.glob(f"race_data_{date_str}_*_R*.json"))
-        for race_file in race_files:
-            try:
-                with open(race_file, 'r', encoding='utf-8') as f:
-                    race_data = json.load(f)
-                
-                if 'race_records' in race_data:
-                    for record in race_data['race_records']:
-                        # タイムの異常値チェック
-                        total_time = record.get('total_time')
-                        if total_time:
-                            try:
-                                time_float = float(total_time)
-                                if time_float < 30.0 or time_float > 100.0:  # 異常なタイム
-                                    anomalies.append(f"{race_file.name}: 異常なタイム {total_time}秒")
-                            except ValueError:
-                                anomalies.append(f"{race_file.name}: 無効なタイム形式 {total_time}")
-                        
-                        # 着順の異常値チェック
-                        arrival = record.get('arrival')
-                        if arrival:
-                            try:
-                                arrival_int = int(arrival)
-                                if arrival_int < 1 or arrival_int > 6:
-                                    anomalies.append(f"{race_file.name}: 異常な着順 {arrival}")
-                            except ValueError:
-                                anomalies.append(f"{race_file.name}: 無効な着順形式 {arrival}")
-                        
-                        # 艇番の異常値チェック
-                        pit_number = record.get('pit_number')
-                        if pit_number:
-                            try:
-                                pit_int = int(pit_number)
-                                if pit_int < 1 or pit_int > 6:
-                                    anomalies.append(f"{race_file.name}: 異常な艇番 {pit_number}")
-                            except ValueError:
-                                anomalies.append(f"{race_file.name}: 無効な艇番形式 {pit_number}")
-                
-            except Exception as e:
-                anomalies.append(f"{race_file.name}: 異常値検出エラー - {str(e)}")
-        
-        return {
-            'status': 'success' if not anomalies else 'anomalies_found',
-            'anomalies': anomalies
-        }
-    
-    def generate_quality_report(self, date_str: str) -> Dict:
-        """品質レポート生成"""
-        self.logger.info(f"品質レポート生成開始: {date_str}")
-        
-        # 各チェックを実行
-        availability_result = self.check_data_availability(date_str)
-        integrity_result = self.check_data_integrity(date_str)
-        anomaly_result = self.detect_anomalies(date_str)
-        
-        # レポート作成
-        report = {
-            'date': date_str,
-            'check_timestamp': datetime.now().isoformat(),
-            'availability': availability_result,
-            'integrity': integrity_result,
-            'anomalies': anomaly_result,
-            'summary': {
-                'overall_status': 'good',
-                'total_issues': 0,
-                'recommendations': []
-            }
-        }
-        
-        # 総合評価
-        total_issues = 0
-        if availability_result.get('issues'):
-            total_issues += len(availability_result['issues'])
-        if integrity_result.get('issues'):
-            total_issues += len(integrity_result['issues'])
-        if anomaly_result.get('anomalies'):
-            total_issues += len(anomaly_result['anomalies'])
-        
-        report['summary']['total_issues'] = total_issues
-        
-        if total_issues == 0:
-            report['summary']['overall_status'] = 'excellent'
-            report['summary']['recommendations'].append('データ品質は良好です')
-        elif total_issues <= 5:
-            report['summary']['overall_status'] = 'good'
-            report['summary']['recommendations'].append('軽微な問題がありますが、運用に支障はありません')
-        elif total_issues <= 20:
-            report['summary']['overall_status'] = 'warning'
-            report['summary']['recommendations'].append('データ品質に問題があります。確認が必要です')
-        else:
-            report['summary']['overall_status'] = 'critical'
-            report['summary']['recommendations'].append('データ品質に重大な問題があります。即座に対応が必要です')
-        
-        # レポート保存
-        report_file = OUTPUTS_DIR / f"quality_report_{date_str}.json"
-        report_file.parent.mkdir(exist_ok=True)
-        
-        with open(report_file, 'w', encoding='utf-8') as f:
-            json.dump(report, f, ensure_ascii=False, indent=2)
-        
-        self.logger.info(f"品質レポート保存完了: {report_file}")
-        
-        return report
-    
-    def send_quality_report(self, report: Dict, email_config: Optional[Dict] = None):
-        """品質レポートの自動配信"""
-        if not email_config:
-            self.logger.info("メール設定がありません。レポート配信をスキップします")
-            return
-        
+        Returns:
+            品質チェック結果
+        """
         try:
-            # メール本文作成
-            subject = f"データ品質レポート - {report['date']}"
+            if not target_date:
+                target_date = datetime.now().strftime('%Y-%m-%d')
             
-            body = f"""
-データ品質チェックレポート
-
-日付: {report['date']}
-チェック時刻: {report['check_timestamp']}
-総合評価: {report['summary']['overall_status']}
-問題数: {report['summary']['total_issues']}
-
-=== 詳細 ===
-可用性チェック: {report['availability']['status']}
-整合性チェック: {report['integrity']['status']}
-異常値検出: {report['anomalies']['status']}
-
-=== 推奨事項 ===
-{chr(10).join(report['summary']['recommendations'])}
-
-詳細は添付のJSONファイルをご確認ください。
-"""
+            self.logger.info(f"データ品質チェック開始: {target_date}")
             
-            # メール送信（実装は省略）
-            self.logger.info(f"品質レポート送信完了: {subject}")
+            # データディレクトリ
+            data_dir = self.project_root / "kyotei_predictor" / "data" / "raw"
+            
+            # チェック結果
+            results = {
+                'target_date': target_date,
+                'timestamp': datetime.now().isoformat(),
+                'total_files': 0,
+                'valid_files': 0,
+                'invalid_files': 0,
+                'missing_files': 0,
+                'quality_score': 0.0,
+                'issues': []
+            }
+            
+            # ファイルチェック
+            self.check_files(data_dir, target_date, results)
+            
+            # データ内容チェック
+            self.check_data_content(data_dir, target_date, results)
+            
+            # 品質スコア計算
+            self.calculate_quality_score(results)
+            
+            self.logger.info(f"データ品質チェック完了: スコア {results['quality_score']:.2f}")
+            return results
             
         except Exception as e:
-            self.logger.error(f"メール送信エラー: {str(e)}")
+            self.logger.error(f"データ品質チェックエラー: {e}")
+            return {
+                'target_date': target_date,
+                'timestamp': datetime.now().isoformat(),
+                'error': str(e),
+                'quality_score': 0.0
+            }
     
-    def run_daily_check(self):
-        """日次データ品質チェックの自動実行"""
-        today = datetime.now().strftime('%Y-%m-%d')
-        yesterday = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
-        
-        self.logger.info("日次データ品質チェック開始")
-        
-        # 昨日のデータをチェック
-        report = self.generate_quality_report(yesterday)
-        
-        # レポートの表示
-        self.print_report_summary(report)
-        
-        return report
+    def check_files(self, data_dir: Path, target_date: str, results: Dict):
+        """ファイル存在チェック"""
+        try:
+            # 期待されるファイルパターン
+            expected_patterns = [
+                f"race_data_{target_date}_*_R*.json",
+                f"odds_data_{target_date}_*_R*.json"
+            ]
+            
+            found_files = []
+            for pattern in expected_patterns:
+                files = list(data_dir.glob(pattern))
+                found_files.extend(files)
+            
+            results['total_files'] = len(found_files)
+            
+            # ファイルの妥当性チェック
+            for file_path in found_files:
+                if self.is_valid_file(file_path):
+                    results['valid_files'] += 1
+                else:
+                    results['invalid_files'] += 1
+                    results['issues'].append(f"無効なファイル: {file_path.name}")
+            
+            # 不足ファイルの検出
+            expected_count = self.get_expected_file_count(target_date)
+            if results['valid_files'] < expected_count:
+                results['missing_files'] = expected_count - results['valid_files']
+                results['issues'].append(f"不足ファイル数: {results['missing_files']}")
+                
+        except Exception as e:
+            self.logger.error(f"ファイルチェックエラー: {e}")
+            results['issues'].append(f"ファイルチェックエラー: {e}")
     
-    def print_report_summary(self, report: Dict):
-        """レポートサマリーの表示"""
-        print(f"\n=== データ品質レポート - {report['date']} ===")
-        print(f"総合評価: {report['summary']['overall_status']}")
-        print(f"問題数: {report['summary']['total_issues']}")
-        print(f"推奨事項: {', '.join(report['summary']['recommendations'])}")
+    def check_data_content(self, data_dir: Path, target_date: str, results: Dict):
+        """データ内容のチェック"""
+        try:
+            # レースデータファイルを取得
+            race_files = list(data_dir.glob(f"race_data_{target_date}_*_R*.json"))
+            
+            for race_file in race_files:
+                try:
+                    with open(race_file, 'r', encoding='utf-8') as f:
+                        data = json.load(f)
+                    
+                    # データ構造チェック
+                    if not self.check_race_data_structure(data):
+                        results['issues'].append(f"データ構造エラー: {race_file.name}")
+                    
+                    # データ内容チェック
+                    content_issues = self.check_race_data_content(data)
+                    results['issues'].extend([f"{race_file.name}: {issue}" for issue in content_issues])
+                    
+                except Exception as e:
+                    results['issues'].append(f"ファイル読み込みエラー {race_file.name}: {e}")
+            
+            # オッズデータファイルを取得
+            odds_files = list(data_dir.glob(f"odds_data_{target_date}_*_R*.json"))
+            
+            for odds_file in odds_files:
+                try:
+                    with open(odds_file, 'r', encoding='utf-8') as f:
+                        data = json.load(f)
+                    
+                    # オッズデータ構造チェック
+                    if not self.check_odds_data_structure(data):
+                        results['issues'].append(f"オッズデータ構造エラー: {odds_file.name}")
+                    
+                except Exception as e:
+                    results['issues'].append(f"オッズファイル読み込みエラー {odds_file.name}: {e}")
+                    
+        except Exception as e:
+            self.logger.error(f"データ内容チェックエラー: {e}")
+            results['issues'].append(f"データ内容チェックエラー: {e}")
+    
+    def is_valid_file(self, file_path: Path) -> bool:
+        """ファイルの妥当性をチェック"""
+        try:
+            # ファイルサイズチェック
+            if file_path.stat().st_size == 0:
+                return False
+            
+            # JSON形式チェック
+            with open(file_path, 'r', encoding='utf-8') as f:
+                json.load(f)
+            
+            return True
+            
+        except Exception:
+            return False
+    
+    def get_expected_file_count(self, target_date: str) -> int:
+        """期待されるファイル数を取得"""
+        # 簡易的な計算（実際の実装ではより詳細に）
+        return 24  # 24会場 × 1日分
+    
+    def check_race_data_structure(self, data: Dict) -> bool:
+        """レースデータの構造をチェック"""
+        required_keys = ['race_info', 'race_entries']
         
-        if report['availability'].get('issues'):
-            print(f"\n可用性問題: {len(report['availability']['issues'])}件")
-            for issue in report['availability']['issues'][:3]:  # 最初の3件のみ表示
-                print(f"  - {issue}")
+        for key in required_keys:
+            if key not in data:
+                return False
         
-        if report['integrity'].get('issues'):
-            print(f"\n整合性問題: {len(report['integrity']['issues'])}件")
-            for issue in report['integrity']['issues'][:3]:  # 最初の3件のみ表示
-                print(f"  - {issue}")
+        # race_entriesの構造チェック
+        entries = data.get('race_entries', [])
+        if not isinstance(entries, list) or len(entries) != 6:
+            return False
         
-        if report['anomalies'].get('anomalies'):
-            print(f"\n異常値: {len(report['anomalies']['anomalies'])}件")
-            for anomaly in report['anomalies']['anomalies'][:3]:  # 最初の3件のみ表示
-                print(f"  - {anomaly}")
+        return True
+    
+    def check_race_data_content(self, data: Dict) -> List[str]:
+        """レースデータの内容をチェック"""
+        issues = []
+        
+        try:
+            entries = data.get('race_entries', [])
+            
+            for i, entry in enumerate(entries):
+                # 必須フィールドチェック
+                required_fields = ['pit_number', 'racer', 'boat', 'motor', 'performance']
+                
+                for field in required_fields:
+                    if field not in entry:
+                        issues.append(f"艇{i+1}: {field}フィールドが不足")
+                
+                # データ型チェック
+                if not isinstance(entry.get('pit_number'), int):
+                    issues.append(f"艇{i+1}: pit_numberが整数ではありません")
+                
+                # 値の範囲チェック
+                pit_number = entry.get('pit_number', 0)
+                if pit_number < 1 or pit_number > 6:
+                    issues.append(f"艇{i+1}: pit_numberが範囲外: {pit_number}")
+            
+        except Exception as e:
+            issues.append(f"データ内容チェックエラー: {e}")
+        
+        return issues
+    
+    def check_odds_data_structure(self, data: Dict) -> bool:
+        """オッズデータの構造をチェック"""
+        if 'odds_data' not in data:
+            return False
+        
+        odds_data = data.get('odds_data', [])
+        if not isinstance(odds_data, list):
+            return False
+        
+        return True
+    
+    def calculate_quality_score(self, results: Dict):
+        """品質スコアを計算"""
+        try:
+            total_issues = len(results['issues'])
+            valid_files = results['valid_files']
+            total_files = results['total_files']
+            
+            if total_files == 0:
+                results['quality_score'] = 0.0
+                return
+            
+            # ファイル存在率
+            file_score = valid_files / total_files if total_files > 0 else 0
+            
+            # エラー率
+            error_penalty = min(total_issues * 0.1, 1.0)  # 最大1.0のペナルティ
+            
+            # 品質スコア計算
+            quality_score = max(0.0, file_score - error_penalty)
+            results['quality_score'] = round(quality_score * 100, 2)
+            
+        except Exception as e:
+            self.logger.error(f"品質スコア計算エラー: {e}")
+            results['quality_score'] = 0.0
+    
+    def save_quality_report(self, results: Dict) -> Optional[Path]:
+        """品質レポートを保存"""
+        try:
+            # 出力ディレクトリ
+            output_dir = self.project_root / "outputs" / "quality_reports"
+            output_dir.mkdir(parents=True, exist_ok=True)
+            
+            # ファイル名
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"quality_report_{results['target_date']}_{timestamp}.json"
+            output_path = output_dir / filename
+            
+            # 保存
+            with open(output_path, 'w', encoding='utf-8') as f:
+                json.dump(results, f, ensure_ascii=False, indent=2)
+            
+            self.logger.info(f"品質レポートを保存: {output_path}")
+            return output_path
+            
+        except Exception as e:
+            self.logger.error(f"品質レポート保存エラー: {e}")
+            return None
 
 def main():
-    parser = argparse.ArgumentParser(description='データ品質チェック・自動化ツール')
+    """メイン関数"""
+    import argparse
+    
+    parser = argparse.ArgumentParser(description='データ品質チェッカー')
     parser.add_argument('--date', type=str, help='チェック対象日 (YYYY-MM-DD)')
-    parser.add_argument('--date-range', nargs=2, type=str, help='チェック対象期間 (開始日 終了日)')
-    parser.add_argument('--daily-check', action='store_true', help='日次チェックを実行')
-    parser.add_argument('--verbose', action='store_true', help='詳細ログ出力')
+    parser.add_argument('--save-report', action='store_true', help='レポートを保存')
     
     args = parser.parse_args()
     
-    # ログレベル設定
-    log_level = logging.DEBUG if args.verbose else logging.INFO
+    checker = DataQualityChecker()
     
-    # チェッカー初期化
-    checker = DataQualityChecker(log_level)
+    # 品質チェック実行
+    results = checker.check_data_quality(args.date)
     
-    if args.daily_check:
-        # 日次チェック
-        report = checker.run_daily_check()
-    elif args.date:
-        # 単日チェック
-        report = checker.generate_quality_report(args.date)
-        checker.print_report_summary(report)
-    elif args.date_range:
-        # 期間チェック
-        start_date, end_date = args.date_range
-        start = datetime.strptime(start_date, '%Y-%m-%d')
-        end = datetime.strptime(end_date, '%Y-%m-%d')
-        
-        for i in range((end - start).days + 1):
-            check_date = (start + timedelta(days=i)).strftime('%Y-%m-%d')
-            print(f"\n=== {check_date} のチェック ===")
-            report = checker.generate_quality_report(check_date)
-            checker.print_report_summary(report)
-    else:
-        # デフォルト: 昨日のデータをチェック
-        yesterday = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
-        report = checker.generate_quality_report(yesterday)
-        checker.print_report_summary(report)
+    # 結果表示
+    print(f"=== データ品質チェック結果 ===")
+    print(f"対象日: {results['target_date']}")
+    print(f"品質スコア: {results['quality_score']}")
+    print(f"総ファイル数: {results['total_files']}")
+    print(f"有効ファイル数: {results['valid_files']}")
+    print(f"無効ファイル数: {results['invalid_files']}")
+    print(f"不足ファイル数: {results['missing_files']}")
+    
+    if results['issues']:
+        print(f"\n=== 問題点 ===")
+        for issue in results['issues']:
+            print(f"- {issue}")
+    
+    # レポート保存
+    if args.save_report:
+        output_path = checker.save_quality_report(results)
+        if output_path:
+            print(f"\nレポート保存: {output_path}")
 
 if __name__ == "__main__":
     main() 

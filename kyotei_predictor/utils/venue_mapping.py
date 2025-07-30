@@ -4,40 +4,7 @@
 """
 from typing import Dict, List, Optional, Any
 
-# metaboatraceの依存関係をオプショナルにする
-try:
-    from metaboatrace.models.stadium import StadiumTelCode
-    METABOATRACE_AVAILABLE = True
-except ImportError:
-    # フォールバック用のEnum
-    from enum import Enum
-    class StadiumTelCode(Enum):
-        KIRYU = "KIRYU"
-        TODA = "TODA"
-        EDOGAWA = "EDOGAWA"
-        HEIWAJIMA = "HEIWAJIMA"
-        TAMAGAWA = "TAMAGAWA"
-        HAMANAKO = "HAMANAKO"
-        GAMAGORI = "GAMAGORI"
-        TOKONAME = "TOKONAME"
-        TSU = "TSU"
-        MIKUNI = "MIKUNI"
-        BIWAKO = "BIWAKO"
-        WAKAMATSU = "WAKAMATSU"
-        ASHIYA = "ASHIYA"
-        SUMINOE = "SUMINOE"
-        AMAGASAKI = "AMAGASAKI"
-        NARUTO = "NARUTO"
-        MARUGAME = "MARUGAME"
-        KOJIMA = "KOJIMA"
-        MIYAJIMA = "MIYAJIMA"
-        FUKUOKA = "FUKUOKA"
-        KARATSU = "KARATSU"
-        OMURA = "OMURA"
-        BEPPU = "BEPPU"
-        YANAGAWA = "YANAGAWA"
-    
-    METABOATRACE_AVAILABLE = False
+from metaboatrace.models.stadium import StadiumTelCode
 
 # 全24会場の詳細マッピング
 VENUE_MAPPING = {

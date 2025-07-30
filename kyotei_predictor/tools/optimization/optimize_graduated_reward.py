@@ -16,104 +16,91 @@ from stable_baselines3.common.callbacks import EvalCallback, CheckpointCallback
 import argparse
 import logging
 import time
+from pathlib import Path
+
+# プロジェクトルートを動的に取得
+def get_project_root() -> Path:
+    """プロジェクトルートを動的に検出"""
+    current_file = Path(__file__)
+    project_root = current_file.parent.parent.parent.parent
+    
+    # Google Colab環境の検出
+    if str(project_root).startswith('/content/'):
+        return Path('/content/kyotei_Prediction')
+    
+    return project_root
+
+PROJECT_ROOT = get_project_root()
 
 # プロジェクトルートをパスに追加
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+sys.path.append(str(PROJECT_ROOT))
 
 from kyotei_predictor.pipelines.kyotei_env import KyoteiEnvManager
 
-def create_env(data_dir="kyotei_predictor/data/raw", bet_amount=100):
+def create_env(data_dir=None, bet_amount=100):
     """環境を作成"""
     def make_env():
-        env = KyoteiEnvManager(data_dir=data_dir, bet_amount=bet_amount)
+        if data_dir is None:
+            data_dir = PROJECT_ROOT / "kyotei_predictor" / "data" / "raw"
+        env = KyoteiEnvManager(data_dir=str(data_dir), bet_amount=bet_amount)
         env = Monitor(env)
         return env
     
     return DummyVecEnv([make_env])
 
-def objective(trial, data_dir="kyotei_predictor/data/raw", test_mode=False):
-    print(f"[objective] Trial {trial.number} started")
+def objective(trial):
+    """Optunaの目的関数"""
+    
     # ハイパーパラメータの提案
-    learning_rate = trial.suggest_float('learning_rate', 1e-5, 1e-2, log=True)
-    batch_size = trial.suggest_categorical('batch_size', [32, 64, 128, 256])
+    learning_rate = trial.suggest_float('learning_rate', 1e-5, 1e-3, log=True)
     n_steps = trial.suggest_categorical('n_steps', [1024, 2048, 4096])
+    batch_size = trial.suggest_categorical('batch_size', [32, 64, 128])
+    n_epochs = trial.suggest_int('n_epochs', 5, 20)
     gamma = trial.suggest_float('gamma', 0.9, 0.999)
-    gae_lambda = trial.suggest_float('gae_lambda', 0.8, 0.99)
-    n_epochs = trial.suggest_int('n_epochs', 3, 20)
-    clip_range = trial.suggest_float('clip_range', 0.1, 0.4)
-    ent_coef = trial.suggest_float('ent_coef', 0.0, 0.1)
-    vf_coef = trial.suggest_float('vf_coef', 0.1, 1.0)
-    max_grad_norm = trial.suggest_float('max_grad_norm', 0.1, 1.0)
-    print(f"[objective] Hyperparams: lr={learning_rate}, batch={batch_size}, n_steps={n_steps}, gamma={gamma}")
-    train_env = create_env(data_dir=data_dir)
-    eval_env = create_env(data_dir=data_dir)
-    print(f"[objective] Environments created")
-    eval_callback = EvalCallback(
-        eval_env,
-        best_model_save_path=f"./optuna_models/trial_{trial.number}/",
-        log_path=f"./optuna_logs/trial_{trial.number}/",
-        eval_freq=max(n_steps // 4, 1),
-        deterministic=True,
-        render=False
-    )
-    checkpoint_callback = CheckpointCallback(
-        save_freq=max(n_steps // 4, 1),
-        save_path=f"./optuna_models/trial_{trial.number}/",
-        name_prefix="checkpoint"
-    )
+    gae_lambda = trial.suggest_float('gae_lambda', 0.9, 0.999)
+    clip_range = trial.suggest_float('clip_range', 0.1, 0.3)
+    ent_coef = trial.suggest_float('ent_coef', 0.01, 0.1)
+    vf_coef = trial.suggest_float('vf_coef', 0.5, 1.0)
+    max_grad_norm = trial.suggest_float('max_grad_norm', 0.3, 0.7)
+    
+    # 環境作成
+    env = create_env()
+    eval_env = create_env()
+    
+    # モデル作成
     model = PPO(
         "MlpPolicy",
-        train_env,
+        env,
         learning_rate=learning_rate,
-        batch_size=batch_size,
         n_steps=n_steps,
+        batch_size=batch_size,
+        n_epochs=n_epochs,
         gamma=gamma,
         gae_lambda=gae_lambda,
-        n_epochs=n_epochs,
         clip_range=clip_range,
         ent_coef=ent_coef,
         vf_coef=vf_coef,
         max_grad_norm=max_grad_norm,
-        verbose=1,
-        tensorboard_log=None  # TensorBoardログを無効化
+        verbose=0
     )
     
-    # テストモードの場合は短時間設定
-    if test_mode:
-        total_timesteps = 10000  # テスト用に短縮
-        n_eval_episodes = 100    # テスト用に短縮
-    else:
-        total_timesteps = 100000  # 通常設定
-        n_eval_episodes = 2000    # 通常設定
+    # コールバック設定
+    eval_callback = EvalCallback(
+        eval_env,
+        best_model_save_path=str(PROJECT_ROOT / "optuna_models" / f"trial_{trial.number}"),
+        log_path=str(PROJECT_ROOT / "optuna_logs" / f"trial_{trial.number}"),
+        eval_freq=10000,
+        deterministic=True,
+        render=False
+    )
     
-    try:
-        print(f"[objective] model.learn start (timesteps: {total_timesteps})")
-        model.learn(
-            total_timesteps=total_timesteps,
-            callback=[eval_callback, checkpoint_callback],
-            progress_bar=False  # ProgressBarを無効化
-        )
-        print(f"[objective] model.learn end")
-        print(f"[objective] evaluate_model start (episodes: {n_eval_episodes})")
-        eval_results = evaluate_model(model, eval_env, n_eval_episodes=n_eval_episodes)
-        print(f"[objective] evaluate_model end: {eval_results}")
-        hit_rate = eval_results['hit_rate']
-        mean_reward = eval_results['mean_reward']
-        score = hit_rate * 100 + mean_reward / 1000
-        print(f"[objective] Trial {trial.number} score: {score}")
-        return score
-    except Exception as e:
-        import traceback
-        import datetime
-        now_str = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        log_dir = "outputs/logs"
-        os.makedirs(log_dir, exist_ok=True)
-        log_path = f"{log_dir}/optimize_objective_error_{now_str}_trial{trial.number}.log"
-        with open(log_path, "w", encoding="utf-8") as f:
-            f.write(f"[Trial {trial.number}] Exception: {e}\n")
-            traceback.print_exc(file=f)
-        traceback.print_exc()
-        return -1000.0
+    # 学習
+    model.learn(total_timesteps=100000, callback=eval_callback)
+    
+    # 評価
+    mean_reward, _ = evaluate_policy(model, eval_env, n_eval_episodes=10)
+    
+    return mean_reward
 
 def evaluate_model(model, env, n_eval_episodes=100):
     """モデルの評価"""
@@ -179,17 +166,17 @@ def optimize_graduated_reward(
     print(f"既存スタディ継続: {resume_existing}")
     
     # ディレクトリ作成
-    os.makedirs("./optuna_models", exist_ok=True)
-    os.makedirs("./optuna_logs", exist_ok=True)
-    os.makedirs("./optuna_tensorboard", exist_ok=True)
-    os.makedirs("./optuna_studies", exist_ok=True)
+    os.makedirs(PROJECT_ROOT / "optuna_models", exist_ok=True)
+    os.makedirs(PROJECT_ROOT / "optuna_logs", exist_ok=True)
+    os.makedirs(PROJECT_ROOT / "optuna_tensorboard", exist_ok=True)
+    os.makedirs(PROJECT_ROOT / "optuna_studies", exist_ok=True)
     
     # スタディ名とストレージパスの決定
     if resume_existing:
         # 既存スタディを継続する場合
         # 既存のスタディファイルを探す
         existing_studies = []
-        for file in os.listdir("./optuna_studies"):
+        for file in os.listdir(PROJECT_ROOT / "optuna_studies"):
             if file.startswith(study_name) and file.endswith(".db"):
                 existing_studies.append(file)
         
@@ -222,7 +209,7 @@ def optimize_graduated_reward(
     print(f"既存の試行数: {existing_trials}")
     
     # 最適化実行
-    study.optimize(lambda trial: objective(trial, data_dir, test_mode), n_trials=n_trials, show_progress_bar=True)
+    study.optimize(objective, n_trials=n_trials, show_progress_bar=True)
     
     # 結果表示
     print("\n=== 最適化結果 ===")
@@ -256,9 +243,9 @@ def optimize_graduated_reward(
         })
     
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    results_path = f"./optuna_results/graduated_reward_optimization_{timestamp}.json"
+    results_path = PROJECT_ROOT / "optuna_results" / f"{study_name}_{timestamp}.json"
     
-    os.makedirs("./optuna_results", exist_ok=True)
+    os.makedirs(PROJECT_ROOT / "optuna_results", exist_ok=True)
     with open(results_path, 'w', encoding='utf-8') as f:
         json.dump(results, f, indent=2, ensure_ascii=False)
     
@@ -266,7 +253,7 @@ def optimize_graduated_reward(
     
     # 最良モデルの詳細評価
     print("\n=== 最良モデルの詳細評価 ===")
-    best_model_path = f"./optuna_models/trial_{study.best_trial.number}/best_model.zip"
+    best_model_path = PROJECT_ROOT / "optuna_models" / f"trial_{study.best_trial.number}" / "best_model.zip"
     
     if os.path.exists(best_model_path):
         best_model = PPO.load(best_model_path)
@@ -280,13 +267,13 @@ def optimize_graduated_reward(
         # print(f"  報酬の標準偏差: {detailed_results['std_reward']:.2f}")
         
         # 評価結果をnpzで保存（OSError対策）
-        eval_npz_path = f"./optuna_logs/trial_{study.best_trial.number}/evaluations.npz"
-        os.makedirs(os.path.dirname(eval_npz_path), exist_ok=True)
+        eval_npz_path = PROJECT_ROOT / "optuna_logs" / f"trial_{study.best_trial.number}" / "evaluations.npz"
+        os.makedirs(eval_npz_path.parent, exist_ok=True)
         safe_savez(eval_npz_path, **detailed_results)
         
         # 最良モデルをコピー
         import shutil
-        best_model_dir = f"./optuna_models/graduated_reward_best"
+        best_model_dir = PROJECT_ROOT / "optuna_models" / "graduated_reward_best"
         os.makedirs(best_model_dir, exist_ok=True)
         shutil.copy2(best_model_path, f"{best_model_dir}/best_model.zip")
         

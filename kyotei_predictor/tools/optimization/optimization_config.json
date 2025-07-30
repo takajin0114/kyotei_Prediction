@@ -1,0 +1,37 @@
+{
+  "optimization": {
+    "graduated_reward": {
+      "n_trials": 100,
+      "timeout": 3600,
+      "study_name": "graduated_reward_optimization",
+      "storage": "sqlite:///optuna_studies/graduated_reward_optimization.db"
+    },
+    "simple": {
+      "n_trials": 50,
+      "timeout": 1800,
+      "study_name": "simple_optimization",
+      "storage": "sqlite:///optuna_studies/simple_optimization.db"
+    },
+    "full": {
+      "n_trials": 200,
+      "timeout": 7200,
+      "study_name": "full_optimization",
+      "storage": "sqlite:///optuna_studies/full_optimization.db"
+    },
+    "test": {
+      "n_trials": 10,
+      "timeout": 600,
+      "study_name": "test_optimization",
+      "storage": "sqlite:///optuna_studies/test_optimization.db"
+    }
+  },
+  "logging": {
+    "level": "INFO",
+    "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  },
+  "output": {
+    "results_dir": "optuna_results",
+    "models_dir": "optuna_models",
+    "logs_dir": "optuna_logs"
+  }
+} 

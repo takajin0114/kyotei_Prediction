@@ -3,27 +3,46 @@
 統合設定ファイル
 """
 import os
+from pathlib import Path
 from typing import Dict, Any
+
+def get_project_root() -> Path:
+    """プロジェクトルートを動的に検出"""
+    # 現在のファイルの場所から遡ってプロジェクトルートを検出
+    current_file = Path(__file__)
+    
+    # kyotei_predictor/config/settings.py から kyotei_Prediction/ まで遡る
+    project_root = current_file.parent.parent.parent
+    
+    # Google Colab環境の検出
+    if str(project_root).startswith('/content/'):
+        # Colab環境では /content/kyotei_Prediction を使用
+        return Path('/content/kyotei_Prediction')
+    
+    return project_root
 
 class Settings:
     """競艇予測システムの設定クラス"""
+    
+    # プロジェクトルートを動的に取得
+    PROJECT_ROOT = get_project_root()
     
     # 基本設定
     PROJECT_NAME = "kyotei_Prediction"
     VERSION = "Phase 3"
     
-    # データディレクトリ
+    # データディレクトリ（相対パス）
     DATA_DIR = "kyotei_predictor/data"
     RAW_DATA_DIR = os.path.join(DATA_DIR, "raw")
     PROCESSED_DATA_DIR = os.path.join(DATA_DIR, "processed")
     SAMPLE_DATA_DIR = os.path.join(DATA_DIR, "sample")
     BACKUP_DATA_DIR = os.path.join(DATA_DIR, "backup")
     
-    # 出力ディレクトリ
+    # 出力ディレクトリ（相対パス）
     OUTPUT_DIR = "kyotei_predictor/outputs"
     LOGS_DIR = "kyotei_predictor/logs"
     
-    # Optuna関連
+    # Optuna関連（相対パス）
     OPTUNA_STUDIES_DIR = "optuna_studies"
     OPTUNA_LOGS_DIR = "optuna_logs"
     OPTUNA_MODELS_DIR = "optuna_models"
@@ -60,27 +79,37 @@ class Settings:
     LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     
     @classmethod
+    def get_project_root_path(cls) -> Path:
+        """プロジェクトルートのPathオブジェクトを取得"""
+        return cls.PROJECT_ROOT
+    
+    @classmethod
+    def get_absolute_path(cls, relative_path: str) -> Path:
+        """相対パスを絶対パスに変換"""
+        return cls.PROJECT_ROOT / relative_path
+    
+    @classmethod
     def get_data_paths(cls) -> Dict[str, str]:
-        """データパスの辞書を取得"""
+        """データパスの辞書を取得（絶対パス）"""
         return {
-            'data_dir': cls.DATA_DIR,
-            'raw_dir': cls.RAW_DATA_DIR,
-            'processed_dir': cls.PROCESSED_DATA_DIR,
-            'sample_dir': cls.SAMPLE_DATA_DIR,
-            'backup_dir': cls.BACKUP_DATA_DIR,
-            'output_dir': cls.OUTPUT_DIR,
-            'logs_dir': cls.LOGS_DIR
+            'data_dir': str(cls.get_absolute_path(cls.DATA_DIR)),
+            'raw_dir': str(cls.get_absolute_path(cls.RAW_DATA_DIR)),
+            'processed_dir': str(cls.get_absolute_path(cls.PROCESSED_DATA_DIR)),
+            'sample_dir': str(cls.get_absolute_path(cls.SAMPLE_DATA_DIR)),
+            'backup_dir': str(cls.get_absolute_path(cls.BACKUP_DATA_DIR)),
+            'output_dir': str(cls.get_absolute_path(cls.OUTPUT_DIR)),
+            'logs_dir': str(cls.get_absolute_path(cls.LOGS_DIR))
         }
     
     @classmethod
     def get_optuna_paths(cls) -> Dict[str, str]:
-        """Optunaパスの辞書を取得"""
+        """Optunaパスの辞書を取得（絶対パス）"""
         return {
-            'studies_dir': cls.OPTUNA_STUDIES_DIR,
-            'logs_dir': cls.OPTUNA_LOGS_DIR,
-            'models_dir': cls.OPTUNA_MODELS_DIR,
-            'results_dir': cls.OPTUNA_RESULTS_DIR,
-            'tensorboard_dir': cls.OPTUNA_TENSORBOARD_DIR
+            'studies_dir': str(cls.get_absolute_path(cls.OPTUNA_STUDIES_DIR)),
+            'logs_dir': str(cls.get_absolute_path(cls.OPTUNA_LOGS_DIR)),
+            'models_dir': str(cls.get_absolute_path(cls.OPTUNA_MODELS_DIR)),
+            'results_dir': str(cls.get_absolute_path(cls.OPTUNA_RESULTS_DIR)),
+            'tensorboard_dir': str(cls.get_absolute_path(cls.OPTUNA_TENSORBOARD_DIR))
         }
     
     @classmethod
@@ -130,7 +159,8 @@ class Settings:
         ]
         
         for directory in directories:
-            os.makedirs(directory, exist_ok=True)
+            abs_path = cls.get_absolute_path(directory)
+            abs_path.mkdir(parents=True, exist_ok=True)
 
 # 環境変数による設定オーバーライド
 def get_env_settings() -> Dict[str, Any]:
