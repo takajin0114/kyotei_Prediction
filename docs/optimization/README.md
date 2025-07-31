@@ -1,10 +1,26 @@
 # 最適化関連ドキュメント
 
 競艇予測モデルのハイパーパラメータ最適化に関するドキュメントを管理するディレクトリです。
+**汎用的な月別データ対応システム**に対応しています。
 
 ## 📚 ドキュメント一覧
 
-### [BATCH_EXECUTION_GUIDE.md](BATCH_EXECUTION_GUIDE.md) ⭐ **NEW**
+### [GENERIC_OPTIMIZATION_GUIDE.md](GENERIC_OPTIMIZATION_GUIDE.md) ⭐ **NEW**
+汎用的な段階的報酬最適化の詳細ガイドです。
+- 月別データ対応システムの使用方法
+- インタラクティブ実行と一括実行
+- 新しい月のデータ追加方法
+- トラブルシューティング
+
+### [OPTIMIZATION_GUIDE.md](OPTIMIZATION_GUIDE.md) ⭐ **UPDATED**
+最適化実行の詳細ガイドです。
+- 汎用システムに対応した実行方法
+- 月別データ対応
+- 設定オプション（テストモード、本番モード）
+- 結果の確認方法
+- トラブルシューティング
+
+### [BATCH_EXECUTION_GUIDE.md](BATCH_EXECUTION_GUIDE.md)
 最適化バッチ実行の包括的なガイドです。
 - 実行方法（汎用スクリプト、直接実行、Pythonコード）
 - 本番想定パラメータの詳細
@@ -12,21 +28,12 @@
 - トラブルシューティング
 - 結果分析方法
 
-### [CURRENT_STATUS.md](CURRENT_STATUS.md) ⭐ **NEW**
+### [CURRENT_STATUS.md](CURRENT_STATUS.md)
 現在の最適化バッチ実行状況の詳細レポートです。
 - 実行中の最適化状況
 - 完了済み最適化履歴
 - パフォーマンス指標
 - 今後の予定
-
-### [OPTIMIZATION_GUIDE.md](OPTIMIZATION_GUIDE.md)
-最適化実行の詳細ガイドです。
-- 実行方法（汎用スクリプト、直接実行、Pythonコード）
-- 設定オプション（テストモード、通常モード、パラメータ範囲）
-- 実行例（2024年3月、1月、2月データ）
-- 結果の確認方法
-- トラブルシューティング
-- ベストプラクティス
 
 ### [EXECUTION_EXAMPLES.md](EXECUTION_EXAMPLES.md)
 具体的な実行例とサンプルコードです。
@@ -39,44 +46,40 @@
 ### 基本的な実行
 
 ```bash
-# 2024年3月データでの最適化（本番想定）
-python run_full_optimization.py
+# 本番実行（推奨）
+run_optimization_production_with_cleanup.bat
 
-# テストモードでの実行
-python test_optimization.py
+# インタラクティブ実行
+run_optimization_with_setup_interactive.bat
 
-# モジュール直接実行
-python -m kyotei_predictor.tools.optimization.optimize_graduated_reward \
-    --data-dir kyotei_predictor/data/raw/2024-03 \
-    --n-trials 50
+# コマンドライン直接実行
+python -m kyotei_predictor.tools.optimization.optimize_graduated_reward_generic \
+    --data-month 2024-01 --test-mode --n-trials 3
 ```
 
-### 他の期間データでの実行
+### 月別データでの実行
 
 ```bash
-# 2024年1月データ
-python -m kyotei_predictor.tools.optimization.optimize_graduated_reward \
-    --data-dir kyotei_predictor/data/raw/2024-01 \
-    --n-trials 50
+# 2024年1月データ（テストモード）
+python -m kyotei_predictor.tools.optimization.optimize_graduated_reward_generic \
+    --data-month 2024-01 --test-mode --n-trials 3
 
-# 2024年2月データ
-python -m kyotei_predictor.tools.optimization.optimize_graduated_reward \
-    --data-dir kyotei_predictor/data/raw/2024-02 \
-    --n-trials 50
+# 2024年1月データ（本番モード）
+python -m kyotei_predictor.tools.optimization.optimize_graduated_reward_generic \
+    --data-month 2024-01 --n-trials 50
 
-# 2024年4月データ
-python -m kyotei_predictor.tools.optimization.optimize_graduated_reward \
-    --data-dir kyotei_predictor/data/raw/2024-04 \
-    --n-trials 50
+# 2024年2月データ（今後追加予定）
+python -m kyotei_predictor.tools.optimization.optimize_graduated_reward_generic \
+    --data-month 2024-02 --n-trials 50
 ```
 
 ## 📊 最適化結果
 
 ### 保存場所
 
-- **結果ファイル**: `optuna_results/`
-- **最良モデル**: `optuna_models/graduated_reward_best/`
-- **ログファイル**: `optuna_logs/`
+- **結果ファイル**: `optuna_results/graduated_reward_optimization_YYYYMM_YYYYMMDD_HHMMSS.json`
+- **最良モデル**: `optuna_models/graduated_reward_best_YYYYMM/best_model.zip`
+- **ログファイル**: `optuna_logs/trial_X/`
 - **スタディファイル**: `optuna_studies/`
 
 ### 結果の確認
@@ -85,107 +88,136 @@ python -m kyotei_predictor.tools.optimization.optimize_graduated_reward \
 import json
 
 # 最新の結果を読み込み
-with open('optuna_results/graduated_reward_optimization_YYYYMMDD_HHMMSS.json', 'r') as f:
+with open('optuna_results/graduated_reward_optimization_202401_YYYYMMDD_HHMMSS.json', 'r') as f:
     results = json.load(f)
 
+print(f"対象月: {results['data_month']}")
 print(f"最良スコア: {results['best_trial']['value']}")
 print(f"最良パラメータ: {results['best_trial']['params']}")
 ```
 
-## 🔧 設定ファイル
+## 🔧 新しい月のデータを追加
 
-### Optuna設定
+### 1. データディレクトリの準備
 
-- **ファイル**: `kyotei_predictor/config/optuna_config.json`
-- **内容**: ハイパーパラメータ範囲、最適化設定
-
-### 環境設定
-
-- **データディレクトリ**: `kyotei_predictor/data/raw/YYYY-MM/`
-- **モデル保存**: `optuna_models/`
-- **結果保存**: `optuna_results/`
-
-## 📈 実行状況
-
-### 現在実行中（2025-07-29）
-
-| 項目 | 詳細 |
-|------|------|
-| **データ期間** | 2024年3月 |
-| **データペア数** | 4,221 |
-| **試行回数** | 50（本番想定） |
-| **実行モード** | 本番モード |
-| **スタディ名** | `graduated_reward_optimization_202403_full` |
-| **開始時刻** | 2025-07-29 22:51:24 |
-| **実行時間** | 進行中（予想8-12時間） |
-
-### 完了済み最適化
-
-| 期間 | 試行回数 | 最良スコア | 実行日 |
-|------|----------|------------|--------|
-| 2024年3月（テスト） | 3 | 6.107 | 2025-07-29 |
-| 2024年3月（本格） | 30 | 8.3606 | 2025-07-29 |
-| 2024年3月（本番想定） | 50 | 実行中 | 2025-07-29 |
-
-### 今後の予定
-
-- [ ] 2024年1月データでの最適化
-- [ ] 2024年2月データでの最適化
-- [ ] 2024年4月データでの最適化
-- [ ] 複数月データでの統合最適化
-
-## 🛠️ 監視・管理
-
-### リアルタイム監視
-
-```bash
-# プロセス確認
-Get-Process python | Select-Object Id, ProcessName, StartTime
-
-# 進行状況確認
-ls optuna_logs/ | Measure-Object
-
-# 結果確認
-ls optuna_results/
+```
+kyotei_predictor/data/raw/2024-02/
+├── race_data_2024-02-01_BIWAKO_R1.json
+├── odds_data_2024-02-01_BIWAKO_R1.json
+├── race_data_2024-02-01_BIWAKO_R2.json
+├── odds_data_2024-02-01_BIWAKO_R2.json
+└── ...
 ```
 
-### 自動監視スクリプト
+### 2. 実行スクリプトの更新
 
 ```python
-import os
-import time
-from datetime import datetime
+# run_optimization_generic.py
+months = [
+    "2024-01",  # 1月
+    "2024-02",  # 2月（新規追加）
+    "2024-03",  # 3月（今後追加）
+]
 
-def monitor_optimization():
-    while True:
-        if os.system('Get-Process python >nul 2>&1') == 0:
-            log_dirs = [d for d in os.listdir('optuna_logs') if d.startswith('trial_')]
-            print(f"[{datetime.now()}] 進行中... 完了試行: {len(log_dirs)}")
-        else:
-            print(f"[{datetime.now()}] 完了")
-            break
-        time.sleep(60)
+# run_optimization_batch.py
+target_months = [
+    "2024-01",  # 1月
+    "2024-02",  # 2月（新規追加）
+    # "2024-03",  # 3月（コメントアウトで無効化）
+]
 ```
 
-## 🔗 関連ドキュメント
+## 📋 実行モード
 
-- [バッチ実行ガイド](BATCH_EXECUTION_GUIDE.md) - 詳細な実行方法
-- [現在の状況](CURRENT_STATUS.md) - 現在の実行状況
-- [最適化実行ガイド](OPTIMIZATION_GUIDE.md) - 詳細な最適化手法
-- [現在の状況サマリー](../CURRENT_STATUS_SUMMARY.md) - プロジェクト全体の状況
-- [API仕様書](../API_SPECIFICATION.md) - API仕様
-- [運用ガイド](../operations/README.md) - 運用に関するガイド
+### テストモード
+- **総ステップ数**: 1,000
+- **評価エピソード数**: 10
+- **実行時間**: 数分
+- **用途**: 動作確認、パラメータ調整
+
+### 本番モード
+- **総ステップ数**: 100,000
+- **評価エピソード数**: 2,000
+- **実行時間**: 数時間
+- **用途**: 本格的な最適化
+
+## 🛠️ トラブルシューティング
+
+### よくある問題
+
+1. **データが見つからない**
+   - データディレクトリの存在確認
+   - ファイル名の形式確認
+
+2. **メモリ不足**
+   - テストモードで実行
+   - データ量を制限
+
+3. **的中率が0%**
+   - テストモードでは想定通り
+   - 本番モードで長時間学習
+
+## 📈 パフォーマンス指標
+
+### 理論的中率
+- **三連複**: 約0.83%（1/120）
+- **短時間学習**: 的中率向上は困難
+- **長時間学習**: 的中率向上の可能性
+
+### 評価指標
+- **的中率**: 主要指標
+- **平均報酬**: 補助指標
+- **報酬の標準偏差**: 安定性指標
+
+## 🔗 関連ファイル
+
+### 実行スクリプト
+- `run_optimization_generic.py` - インタラクティブ実行
+- `run_optimization_batch.py` - 一括実行
+
+### 最適化モジュール
+- `kyotei_predictor/tools/optimization/optimize_graduated_reward_generic.py` - 汎用最適化モジュール
+
+### 設定ファイル
+- `kyotei_predictor/config/optuna_config.json` - Optuna設定
 
 ## 📝 更新履歴
 
-- **2025-07-29**: バッチ実行ガイドの作成
-- **2025-07-29**: 現在の状況ドキュメントの作成
-- **2025-07-29**: READMEの更新
-- **2025-01-27**: 最適化ガイドの作成
-- **2025-01-27**: 汎用最適化スクリプトの実装
-- **2025-01-27**: ドキュメント構造の整理
+- **2025-07-30**: 汎用的な月別データ対応システムを追加
+- **2025-07-30**: GENERIC_OPTIMIZATION_GUIDE.mdを追加
+- **2025-07-30**: OPTIMIZATION_GUIDE.mdを更新
 
 ---
 
-**最終更新**: 2025-07-29  
-**バージョン**: 2.0
+**最終更新**: 2025-07-30  
+**バージョン**: 2.0（汎用システム対応）
+
+## 🐍 Python仮想環境・依存関係トラブル事例
+
+### 事例
+- 仮想環境(venv)のactivate時に「このシステムではスクリプトの実行が無効になっているため...」エラーが発生し、Pythonプロセスが即時終了。
+- 最適化実行時にGymの非互換エラー（NumPy 2.0未対応）でプロセスが停止。
+
+### 主な原因
+- PowerShellの実行ポリシーが「Restricted」や「Undefined」だと、activateスクリプトが実行できない。
+- Gym（旧版）はNumPy 2.0に非対応。
+
+### 対策
+- PowerShellで以下を実行し、一時的に実行ポリシーを緩和：
+  ```powershell
+  Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned
+  .\venv\Scripts\activate
+  ```
+- 依存関係エラー時は、requirements.txtを再インストール：
+  ```powershell
+  pip install -r requirements.txt
+  ```
+- GymのNumPy 2.0非対応エラー時は、
+  - (推奨) gymnasium への移行を検討
+  - (暫定) NumPyを1系にダウングレード：
+    ```powershell
+    pip install numpy==1.26.4
+    ```
+
+### 備考
+- 仮想環境の有効化・依存関係の再インストール・パス設定・主要モジュールのimport確認は、最適化実行前に必ず行うこと。

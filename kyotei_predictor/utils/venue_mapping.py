@@ -228,26 +228,26 @@ VENUE_MAPPING = {
         'opened': '1952年',
         'capacity': '約2,000人'
     },
-    StadiumTelCode.BEPPU: {
-        'code': '23',
-        'name': 'BEPPU',
-        'japanese_name': '別府',
-        'region': '九州',
-        'prefecture': '大分県',
-        'address': '大分県別府市',
-        'opened': '1952年',
-        'capacity': '約2,000人'
-    },
-    StadiumTelCode.YANAGAWA: {
-        'code': '24',
-        'name': 'YANAGAWA',
-        'japanese_name': '柳川',
-        'region': '九州',
-        'prefecture': '福岡県',
-        'address': '福岡県柳川市',
-        'opened': '1952年',
-        'capacity': '約2,000人'
-    }
+    # StadiumTelCode.BEPPU: {
+    #     'code': '23',
+    #     'name': 'BEPPU',
+    #     'japanese_name': '別府',
+    #     'region': '九州',
+    #     'prefecture': '大分県',
+    #     'address': '大分県別府市',
+    #     'opened': '1952年',
+    #     'capacity': '約2,000人'
+    # },
+    # StadiumTelCode.YANAGAWA: {
+    #     'code': '24',
+    #     'name': 'YANAGAWA',
+    #     'japanese_name': '柳川',
+    #     'region': '九州',
+    #     'prefecture': '福岡県',
+    #     'address': '福岡県柳川市',
+    #     'opened': '1952年',
+    #     'capacity': '約2,000人'
+    # }
 }
 
 class VenueMapper:

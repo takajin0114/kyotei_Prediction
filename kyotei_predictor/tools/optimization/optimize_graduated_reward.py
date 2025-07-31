@@ -35,14 +35,15 @@ PROJECT_ROOT = get_project_root()
 # プロジェクトルートをパスに追加
 sys.path.append(str(PROJECT_ROOT))
 
-from kyotei_predictor.pipelines.kyotei_env import KyoteiEnvManager
+from kyotei_predictor.pipelines.kyotei_env import KyoteiEnv
 
 def create_env(data_dir=None, bet_amount=100):
     """環境を作成"""
     def make_env():
+        nonlocal data_dir
         if data_dir is None:
             data_dir = PROJECT_ROOT / "kyotei_predictor" / "data" / "raw"
-        env = KyoteiEnvManager(data_dir=str(data_dir), bet_amount=bet_amount)
+        env = KyoteiEnv(data_dir=str(data_dir), bet_amount=bet_amount)
         env = Monitor(env)
         return env
     
@@ -94,8 +95,8 @@ def objective(trial):
         render=False
     )
     
-    # 学習
-    model.learn(total_timesteps=100000, callback=eval_callback)
+    # 学習（テスト用に短縮）
+    model.learn(total_timesteps=1000, callback=eval_callback)
     
     # 評価
     mean_reward, _ = evaluate_policy(model, eval_env, n_eval_episodes=10)

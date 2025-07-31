@@ -2,7 +2,7 @@ import unittest
 from kyotei_predictor.pipelines.kyotei_env import KyoteiEnv, vectorize_race_state, action_to_trifecta, trifecta_to_action, calc_trifecta_reward, KyoteiEnvManager
 import os
 import pytest
-import gym
+import gymnasium as gym
 
 class TestKyoteiEnv(unittest.TestCase):
     def test_reset_and_step(self):

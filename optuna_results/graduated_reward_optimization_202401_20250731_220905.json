@@ -1,0 +1,62 @@
+{
+  "optimization_time": "2025-07-31T22:09:05.299272",
+  "study_name": "graduated_reward_optimization_202401",
+  "data_month": "2024-01",
+  "data_dir": "kyotei_predictor/data/raw/2024-01",
+  "n_trials": 2,
+  "test_mode": true,
+  "existing_trials": 0,
+  "total_trials": 2,
+  "best_trial": {
+    "number": 0,
+    "value": 0.0,
+    "params": {
+      "learning_rate": 0.00030159888513606436,
+      "batch_size": 256,
+      "n_steps": 2048,
+      "gamma": 0.9551983928301493,
+      "gae_lambda": 0.8193233940590435,
+      "n_epochs": 18,
+      "clip_range": 0.2932232671509649,
+      "ent_coef": 0.019678724961054897,
+      "vf_coef": 0.8307371671036392,
+      "max_grad_norm": 0.7539840976580977
+    }
+  },
+  "all_trials": [
+    {
+      "number": 0,
+      "value": 0.0,
+      "params": {
+        "learning_rate": 0.00030159888513606436,
+        "batch_size": 256,
+        "n_steps": 2048,
+        "gamma": 0.9551983928301493,
+        "gae_lambda": 0.8193233940590435,
+        "n_epochs": 18,
+        "clip_range": 0.2932232671509649,
+        "ent_coef": 0.019678724961054897,
+        "vf_coef": 0.8307371671036392,
+        "max_grad_norm": 0.7539840976580977
+      },
+      "state": "COMPLETE"
+    },
+    {
+      "number": 1,
+      "value": 0.0,
+      "params": {
+        "learning_rate": 4.146491812745934e-05,
+        "batch_size": 64,
+        "n_steps": 2048,
+        "gamma": 0.9855449535254073,
+        "gae_lambda": 0.8816123599995918,
+        "n_epochs": 3,
+        "clip_range": 0.18555497824687267,
+        "ent_coef": 0.007578923889600565,
+        "vf_coef": 0.6423424899666855,
+        "max_grad_norm": 0.37667726989333283
+      },
+      "state": "COMPLETE"
+    }
+  ]
+}

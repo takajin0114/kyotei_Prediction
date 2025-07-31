@@ -1,0 +1,44 @@
+{
+  "optimization_time": "2025-07-30T23:08:41.873861",
+  "study_name": "test_graduated_reward_optimization_202401_final",
+  "data_dir": "kyotei_predictor/data/raw/2024-01",
+  "n_trials": 1,
+  "test_mode": true,
+  "existing_trials": 0,
+  "total_trials": 1,
+  "best_trial": {
+    "number": 0,
+    "value": 0.0,
+    "params": {
+      "learning_rate": 7.542902269056339e-05,
+      "batch_size": 256,
+      "n_steps": 1024,
+      "gamma": 0.9806777305314875,
+      "gae_lambda": 0.9425152465375264,
+      "n_epochs": 18,
+      "clip_range": 0.1863592662276814,
+      "ent_coef": 0.012995692887677735,
+      "vf_coef": 0.7822506293764493,
+      "max_grad_norm": 0.8805639393234274
+    }
+  },
+  "all_trials": [
+    {
+      "number": 0,
+      "value": 0.0,
+      "params": {
+        "learning_rate": 7.542902269056339e-05,
+        "batch_size": 256,
+        "n_steps": 1024,
+        "gamma": 0.9806777305314875,
+        "gae_lambda": 0.9425152465375264,
+        "n_epochs": 18,
+        "clip_range": 0.1863592662276814,
+        "ent_coef": 0.012995692887677735,
+        "vf_coef": 0.7822506293764493,
+        "max_grad_norm": 0.8805639393234274
+      },
+      "state": "COMPLETE"
+    }
+  ]
+}
