@@ -196,3 +196,7 @@ important_results/
 # ただし、重要な結果ファイルは含める
 !optuna_results/graduated_reward_optimization_*_final.json
 !optuna_results/graduated_reward_optimization_*_summary.json
+
+# 既存の重要な結果ファイルは手動で管理
+optuna_results/graduated_reward_optimization_202401_20250801_005109.json
+optuna_results/graduated_reward_optimization_202402_20250801_133404.json
