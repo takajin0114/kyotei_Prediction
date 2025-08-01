@@ -261,7 +261,7 @@ class KyoteiEnv(gym.Env):
         return features, {}
     
     def step(self, action: int) -> Tuple[np.ndarray, float, bool, bool, Dict]:
-        """環境を1ステップ進める"""
+        """環境を1ステップ進める（改善版）"""
         if self.current_race_data is None:
             return np.zeros((6, 8), dtype=np.float32), 0.0, True, False, {}
         
@@ -270,6 +270,9 @@ class KyoteiEnv(gym.Env):
         
         # 実際の結果を取得
         actual_result = self._get_race_result(self.current_race_data)
+        
+        # 的中判定とタイプを詳細に計算
+        hit_info = self._calculate_hit_info(predicted_trifecta, actual_result)
         
         # 報酬を計算
         reward = self._calculate_reward(predicted_trifecta, actual_result)
@@ -282,21 +285,26 @@ class KyoteiEnv(gym.Env):
         truncated = False
         
         info = {
-            'predicted_trifecta': predicted_trifecta,
-            'actual_result': actual_result,
-            'reward': reward
+            'predicted': predicted_trifecta,
+            'actual': actual_result,
+            'hit': hit_info['hit'],
+            'hit_type': hit_info['hit_type'],
+            'bet': 1,  # 1レースにつき1ベット
+            'reward': reward,
+            'predicted_trifecta': predicted_trifecta,  # 後方互換性
+            'actual_result': actual_result  # 後方互換性
         }
         
         return next_features, reward, terminated, truncated, info
     
-    def _calculate_reward(self, predicted: Tuple[int, int, int], actual: Optional[Tuple[int, int, int]]) -> float:
-        """報酬を計算"""
+    def _calculate_hit_info(self, predicted: Tuple[int, int, int], actual: Optional[Tuple[int, int, int]]) -> Dict[str, Any]:
+        """的中情報を詳細に計算"""
         if actual is None:
-            return 0.0
+            return {'hit': 0, 'hit_type': 'unknown'}
         
         # 完全一致の場合
         if predicted == actual:
-            return 100.0
+            return {'hit': 1, 'hit_type': 'win'}
         
         # 部分一致の場合
         correct_positions = 0
@@ -305,11 +313,51 @@ class KyoteiEnv(gym.Env):
                 correct_positions += 1
         
         if correct_positions == 2:
-            return 10.0
+            return {'hit': 1, 'hit_type': 'first_second'}
         elif correct_positions == 1:
-            return 1.0
+            return {'hit': 1, 'hit_type': 'first_only'}
         else:
+            return {'hit': 0, 'hit_type': 'miss'}
+    
+    def _calculate_reward(self, predicted: Tuple[int, int, int], actual: Optional[Tuple[int, int, int]]) -> float:
+        """報酬を計算（改善版）"""
+        if actual is None:
             return 0.0
+        
+        # 完全一致の場合（最高報酬）
+        if predicted == actual:
+            return 100.0
+        
+        # 部分一致の場合（段階的報酬）
+        correct_positions = 0
+        for i in range(3):
+            if predicted[i] == actual[i]:
+                correct_positions += 1
+        
+        # より詳細な段階的報酬
+        if correct_positions == 2:
+            # 2着的中の場合、位置も考慮
+            if predicted[0] == actual[0] and predicted[1] == actual[1]:
+                return 25.0  # 1着2着的中
+            elif predicted[0] == actual[0] and predicted[2] == actual[2]:
+                return 20.0  # 1着3着的中
+            elif predicted[1] == actual[1] and predicted[2] == actual[2]:
+                return 15.0  # 2着3着的中
+            else:
+                return 10.0  # その他の2着的中
+        elif correct_positions == 1:
+            # 1着的中の場合、位置も考慮
+            if predicted[0] == actual[0]:
+                return 5.0   # 1着的中
+            elif predicted[1] == actual[1]:
+                return 3.0   # 2着的中
+            elif predicted[2] == actual[2]:
+                return 1.0   # 3着的中
+            else:
+                return 1.0   # その他の1着的中
+        else:
+            # 不的中の場合、小さな負の報酬
+            return -0.1
 
 def calc_trifecta_reward(action: int, arrival_tuple: Tuple[int,int,int], odds_data: list, bet_amount: int = 100) -> float:
     """

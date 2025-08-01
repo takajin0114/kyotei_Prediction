@@ -100,10 +100,10 @@ def objective(trial, data_dir, test_mode=False, data_check_env=None):
         
         # テストモードの場合は短時間設定
         if test_mode:
-            total_timesteps = 500    # テスト用にさらに短縮
-            n_eval_episodes = 5      # テスト用にさらに短縮
+            total_timesteps = 1000   # テスト用（少し増加）
+            n_eval_episodes = 10     # テスト用（少し増加）
         else:
-            total_timesteps = 100000  # 本番用（元の設定）
+            total_timesteps = 500000  # 本番用（大幅増加）
             n_eval_episodes = 200     # 本番用（元の設定）
         
         print(f"[objective] model.learn start (timesteps: {total_timesteps})")
@@ -131,49 +131,98 @@ def objective(trial, data_dir, test_mode=False, data_check_env=None):
         traceback.print_exc()
         return -1000.0  # エラーの場合は低いスコアを返す
 
-def evaluate_model(model, env, n_eval_episodes=100):
-    """モデルの評価"""
+def evaluate_model(model, env, n_eval_episodes=200):
+    """モデルの評価（改善版）"""
     rewards = []
-    hit_counts = []
-    total_bets = []
+    hit_types = []
+    episode_lengths = []
+    detailed_results = []
     
     for episode in range(n_eval_episodes):
         obs = env.reset()
         done = False
         episode_reward = 0
+        episode_steps = 0
         episode_hits = 0
         episode_bets = 0
+        episode_results = []
         
         while not done:
             action, _ = model.predict(obs, deterministic=True)
             obs, reward, done, info = env.step(action)
             episode_reward += reward
+            episode_steps += 1
             
-            # 的中情報を取得
+            # 詳細な的中情報を記録
             if 'hit' in info[0]:
                 episode_hits += info[0]['hit']
             if 'bet' in info[0]:
                 episode_bets += info[0]['bet']
+            
+            # 的中タイプを記録
+            if 'hit_type' in info[0]:
+                hit_types.append(info[0]['hit_type'])
+            else:
+                hit_types.append('unknown')
+            
+            # 詳細結果を記録
+            if 'predicted' in info[0] and 'actual' in info[0]:
+                episode_results.append({
+                    'predicted': info[0]['predicted'],
+                    'actual': info[0]['actual'],
+                    'hit': info[0].get('hit', 0),
+                    'reward': reward
+                })
         
         rewards.append(episode_reward)
-        hit_counts.append(episode_hits)
-        total_bets.append(episode_bets)
+        episode_lengths.append(episode_steps)
+        detailed_results.append(episode_results)
     
     # 統計計算
     mean_reward = np.mean(rewards)
     std_reward = np.std(rewards)
-    total_hits = sum(hit_counts)
-    total_bets = sum(total_bets)
+    mean_episode_length = np.mean(episode_lengths)
+    
+    # 的中率の詳細計算
+    total_hits = sum(1 for hit_type in hit_types if hit_type in ['win', 'first_second', 'first_only'])
+    total_bets = len(hit_types)
     hit_rate = total_hits / total_bets if total_bets > 0 else 0
+    
+    # 的中タイプ別の分析
+    hit_type_counts = {}
+    for hit_type in hit_types:
+        hit_type_counts[hit_type] = hit_type_counts.get(hit_type, 0) + 1
+    
+    # 詳細な的中分析
+    detailed_hit_analysis = {
+        'win': hit_type_counts.get('win', 0),
+        'first_second': hit_type_counts.get('first_second', 0),
+        'first_only': hit_type_counts.get('first_only', 0),
+        'miss': hit_type_counts.get('miss', 0),
+        'unknown': hit_type_counts.get('unknown', 0)
+    }
+    
+    # 的中率の詳細
+    hit_rates = {
+        'overall': hit_rate * 100,
+        'win': (detailed_hit_analysis['win'] / total_bets * 100) if total_bets > 0 else 0,
+        'first_second': (detailed_hit_analysis['first_second'] / total_bets * 100) if total_bets > 0 else 0,
+        'first_only': (detailed_hit_analysis['first_only'] / total_bets * 100) if total_bets > 0 else 0
+    }
     
     return {
         'mean_reward': mean_reward,
         'std_reward': std_reward,
-        'hit_rate': hit_rate,
+        'hit_rate': hit_rate * 100,  # パーセンテージで返す
+        'hit_rates': hit_rates,
+        'detailed_hit_analysis': detailed_hit_analysis,
         'total_hits': total_hits,
         'total_bets': total_bets,
+        'mean_episode_length': mean_episode_length,
         'rewards': rewards,
-        'hit_counts': hit_counts
+        'hit_types': hit_types,
+        'episode_lengths': episode_lengths,
+        'detailed_results': detailed_results
     }
 
 def action_to_trifecta(action: int):
@@ -338,12 +387,29 @@ def optimize_graduated_reward_generic(
         else:
             eval_env = create_env(data_dir=data_dir)
         
-        detailed_results = evaluate_model(best_model, eval_env, n_eval_episodes=1000)
+        detailed_results = evaluate_model(best_model, eval_env, n_eval_episodes=200)
         
         print(f"詳細評価結果:")
-        print(f"  的中率: {detailed_results['hit_rate']*100:.2f}%")
+        print(f"  的中率: {detailed_results['hit_rate']:.2f}%")
         print(f"  平均報酬: {detailed_results['mean_reward']:.2f}")
         print(f"  報酬の標準偏差: {detailed_results['std_reward']:.2f}")
+        print(f"  平均エピソード長: {detailed_results['mean_episode_length']:.2f}")
+        
+        # 的中タイプ別の詳細分析
+        print(f"\n=== 的中タイプ別分析 ===")
+        hit_analysis = detailed_results['detailed_hit_analysis']
+        print(f"  完全的中: {hit_analysis['win']}回 ({detailed_results['hit_rates']['win']:.2f}%)")
+        print(f"  2着的中: {hit_analysis['first_second']}回 ({detailed_results['hit_rates']['first_second']:.2f}%)")
+        print(f"  1着的中: {hit_analysis['first_only']}回 ({detailed_results['hit_rates']['first_only']:.2f}%)")
+        print(f"  不的中: {hit_analysis['miss']}回")
+        print(f"  不明: {hit_analysis['unknown']}回")
+        
+        # 総合的中率
+        total_hit_rate = detailed_results['hit_rates']['overall']
+        print(f"\n=== 総合的中率 ===")
+        print(f"  総的中率: {total_hit_rate:.2f}%")
+        print(f"  総的中数: {detailed_results['total_hits']}回")
+        print(f"  総ベット数: {detailed_results['total_bets']}回")
         
         # 評価結果をnpzで保存（OSError対策）
         eval_npz_path = f"./optuna_logs/trial_{study.best_trial.number}/evaluations.npz"
