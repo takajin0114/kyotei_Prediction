@@ -149,3 +149,43 @@ complete_race_data_*.json
 !kyotei_predictor/optuna_tensorboard/README.md
 !kyotei_predictor/optuna_studies/README.md
 !kyotei_predictor/optuna_results/README.md
+
+# --- 最適化・トレーニング関連の除外 ---
+# トレーニングの途中データ
+optuna_logs/trial_*/
+optuna_models/trial_*/
+optuna_models/graduated_reward_best_*/checkpoint_*_steps.zip
+optuna_models/graduated_reward_best_*/model_*.zip
+
+# 一時ファイル・ログ
+*.log
+auto_cleanup.log
+outputs/logs/*.log
+kyotei_predictor/logs/*.log
+
+# テスト用スクリプト（一時的なもの）
+kyotei_predictor/tools/optimization/test_*.py
+kyotei_predictor/tools/optimization/check_*.py
+kyotei_predictor/tools/optimization/analyze_*.py
+
+# 誤作成ファイル
+tatus
+temp_*
+tmp_*
+
+# 不要なバッチファイル
+run_optimization_with_setup*.bat
+run_optimization_with_setup_cleanup*.bat
+
+# 最適化結果は重要なもののみ含める（手動で管理）
+# optuna_results/graduated_reward_optimization_*.json は手動で追加
+# optuna_studies/graduated_reward_optimization_*.db は手動で追加
+
+# モデルファイル（大容量のため除外）
+optuna_models/graduated_reward_best_*/best_model.zip
+optuna_models/graduated_reward_best_*/model_*.zip
+optuna_models/graduated_reward_best_*/checkpoint_*.zip
+
+# ただし、重要な結果ファイルは含める
+!optuna_results/graduated_reward_optimization_*_final.json
+!optuna_results/graduated_reward_optimization_*_summary.json
