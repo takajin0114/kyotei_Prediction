@@ -45,16 +45,32 @@
 
 ### 基本的な実行
 
+#### バッチファイル実行（推奨）
+
 ```bash
-# 本番実行（推奨）
-run_optimization_production_with_cleanup.bat
+# 本番実行（自動版）
+.\run_optimization_production_with_cleanup_auto.bat 2024-02
+
+# 本番実行（手動確認版）
+.\run_optimization_production_with_cleanup.bat 2024-02
+
+# シンプル版（30試行）
+.\run_optimization_production_simple.bat 2024-02
 
 # インタラクティブ実行
-run_optimization_with_setup_interactive.bat
+.\run_optimization_with_setup_interactive.bat
+```
 
-# コマンドライン直接実行
+#### コマンドライン直接実行
+
+```bash
+# テストモード（1月データ）
 python -m kyotei_predictor.tools.optimization.optimize_graduated_reward_generic \
     --data-month 2024-01 --test-mode --n-trials 3
+
+# 本番モード（1月データ）
+python -m kyotei_predictor.tools.optimization.optimize_graduated_reward_generic \
+    --data-month 2024-01 --n-trials 50
 ```
 
 ### 月別データでの実行
@@ -68,7 +84,7 @@ python -m kyotei_predictor.tools.optimization.optimize_graduated_reward_generic 
 python -m kyotei_predictor.tools.optimization.optimize_graduated_reward_generic \
     --data-month 2024-01 --n-trials 50
 
-# 2024年2月データ（今後追加予定）
+# 2024年2月データ（本番モード）
 python -m kyotei_predictor.tools.optimization.optimize_graduated_reward_generic \
     --data-month 2024-02 --n-trials 50
 ```
@@ -145,15 +161,34 @@ target_months = [
 
 ### よくある問題
 
-1. **データが見つからない**
-   - データディレクトリの存在確認
-   - ファイル名の形式確認
+1. **PowerShell実行ポリシーエラー**
+   ```
+   このシステムではスクリプトの実行が無効になっているため...
+   ```
+   **対処法:**
+   ```powershell
+   Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned
+   .\run_optimization_production_with_cleanup_auto.bat 2024-02
+   ```
 
-2. **メモリ不足**
+2. **バッチファイルが見つからない**
+   ```
+   用語 'run_optimization_production_with_cleanup_auto.bat' は認識されません
+   ```
+   **対処法:**
+   ```powershell
+   .\run_optimization_production_with_cleanup_auto.bat 2024-02
+   ```
+
+3. **データが見つからない**
+   - データディレクトリの存在確認
+   - ファイル名の形式確認（race_data_YYYY-MM-DD_VENUE_RX.json）
+
+4. **メモリ不足**
    - テストモードで実行
    - データ量を制限
 
-3. **的中率が0%**
+5. **的中率が0%**
    - テストモードでは想定通り
    - 本番モードで長時間学習
 
@@ -183,14 +218,15 @@ target_months = [
 
 ## 📝 更新履歴
 
+- **2025-08-01**: PowerShell実行ポリシーエラーの対処法を追加
 - **2025-07-30**: 汎用的な月別データ対応システムを追加
 - **2025-07-30**: GENERIC_OPTIMIZATION_GUIDE.mdを追加
 - **2025-07-30**: OPTIMIZATION_GUIDE.mdを更新
 
 ---
 
-**最終更新**: 2025-07-30  
-**バージョン**: 2.0（汎用システム対応）
+**最終更新**: 2025-08-01  
+**バージョン**: 2.1（PowerShell対応）
 
 ## 🐍 Python仮想環境・依存関係トラブル事例
 

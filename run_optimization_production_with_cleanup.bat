@@ -8,6 +8,29 @@ echo Production Optimization with Cleanup
 echo ========================================
 echo.
 
+REM Check if data month is provided as argument
+set DATA_MONTH=%1
+if "%DATA_MONTH%"=="" (
+    echo Usage: run_optimization_production_with_cleanup.bat [DATA_MONTH]
+    echo Example: run_optimization_production_with_cleanup.bat 2024-01
+    echo Example: run_optimization_production_with_cleanup.bat 2024-02
+    echo.
+    echo Available data months:
+    if exist "kyotei_predictor\data\raw" (
+        for /d %%i in ("kyotei_predictor\data\raw\*") do (
+            echo - %%~ni
+        )
+    ) else (
+        echo No data directories found
+    )
+    echo.
+    pause
+    exit /b 1
+)
+
+echo Data month: %DATA_MONTH%
+echo.
+
 REM 1. Virtual environment activation
 echo [1/5] Activating virtual environment...
 call venv\Scripts\activate.bat
@@ -29,16 +52,27 @@ if errorlevel 1 (
 REM 3. Data check
 echo.
 echo [3/5] Checking data...
-if not exist "kyotei_predictor\data\raw\2024-01" (
-    echo ERROR: 2024-01 data not found
+if not exist "kyotei_predictor\data\raw\%DATA_MONTH%" (
+    echo ERROR: %DATA_MONTH% data not found
+    echo.
+    echo Available data directories:
+    if exist "kyotei_predictor\data\raw" (
+        for /d %%i in ("kyotei_predictor\data\raw\*") do (
+            echo - %%~ni
+        )
+    ) else (
+        echo No data directories found
+    )
+    echo.
+    pause
     exit /b 1
 )
-echo OK: 2024-01 data confirmed
+echo OK: %DATA_MONTH% data confirmed
 
 REM 4. Production optimization execution
 echo.
 echo [4/5] Starting production optimization...
-echo Data month: 2024-01
+echo Data month: %DATA_MONTH%
 echo Mode: Production
 echo Trials: 50
 echo Timesteps: 100000
@@ -46,7 +80,7 @@ echo Eval episodes: 200
 echo.
 
 REM Production optimization execution
-python -m kyotei_predictor.tools.optimization.optimize_graduated_reward_generic --data-month 2024-01 --n-trials 50
+python -m kyotei_predictor.tools.optimization.optimize_graduated_reward_generic --data-month %DATA_MONTH% --n-trials 50
 
 if errorlevel 1 (
     echo.
@@ -82,7 +116,7 @@ echo ALL PROCESSES COMPLETED
 echo ========================================
 echo.
 echo Results saved to:
-echo - ./optuna_models/graduated_reward_best_202401/
+echo - ./optuna_models/graduated_reward_best_%DATA_MONTH%/
 echo - ./optuna_studies/
 echo - ./optuna_results/
 echo.

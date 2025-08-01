@@ -12,12 +12,18 @@
 **用途**: 本番環境での最適化実行（クリーンアップ付き）
 - 仮想環境の有効化
 - 依存関係の確認
-- 2024-01データでの最適化実行（50試行）
+- 指定データ月での最適化実行（50試行）
 - 自動クリーンアップ実行
 
 **実行方法**:
 ```cmd
-run_optimization_production_with_cleanup.bat
+run_optimization_production_with_cleanup.bat [DATA_MONTH]
+```
+
+**例**:
+```cmd
+run_optimization_production_with_cleanup.bat 2024-01
+run_optimization_production_with_cleanup.bat 2024-02
 ```
 
 #### `run_optimization_production_simple.bat`
@@ -27,7 +33,13 @@ run_optimization_production_with_cleanup.bat
 
 **実行方法**:
 ```cmd
-run_optimization_production_simple.bat
+run_optimization_production_simple.bat [DATA_MONTH]
+```
+
+**例**:
+```cmd
+run_optimization_production_simple.bat 2024-01
+run_optimization_production_simple.bat 2024-02
 ```
 
 ### 2. セットアップ付きバッチファイル
@@ -89,7 +101,7 @@ pip install -r requirements.txt
 
 ### 1. 本番実行（推奨）
 ```cmd
-run_optimization_production_with_cleanup.bat
+run_optimization_production_with_cleanup.bat 2024-01
 ```
 
 ### 2. インタラクティブ実行
@@ -101,6 +113,18 @@ run_optimization_with_setup_interactive.bat
 ```cmd
 venv\Scripts\activate
 python -m kyotei_predictor.tools.optimization.optimize_graduated_reward_generic --data-month 2024-01 --n-trials 50
+```
+
+### 4. 他の月のデータで実行
+```cmd
+# 2024年2月データ
+run_optimization_production_with_cleanup.bat 2024-02
+
+# 2024年3月データ
+run_optimization_production_with_cleanup.bat 2024-03
+
+# 手動実行で他の月
+python -m kyotei_predictor.tools.optimization.optimize_graduated_reward_generic --data-month 2024-02 --n-trials 50
 ```
 
 ## 実行結果

@@ -22,7 +22,30 @@
 
 ## 使用方法
 
-### 方法1: インタラクティブ実行
+### 方法1: バッチファイル実行（推奨）
+
+#### PowerShellでの実行
+```powershell
+# 本番実行（自動版）
+.\run_optimization_production_with_cleanup_auto.bat 2024-02
+
+# 本番実行（手動確認版）
+.\run_optimization_production_with_cleanup.bat 2024-02
+
+# シンプル版（30試行）
+.\run_optimization_production_simple.bat 2024-02
+```
+
+#### コマンドプロンプトでの実行
+```cmd
+# 本番実行（自動版）
+run_optimization_production_with_cleanup_auto.bat 2024-02
+
+# 本番実行（手動確認版）
+run_optimization_production_with_cleanup.bat 2024-02
+```
+
+### 方法2: インタラクティブ実行
 
 ```bash
 python run_optimization_generic.py
@@ -39,7 +62,7 @@ python run_optimization_generic.py
    - 1. テストモード（短時間、3試行）
    - 2. 本番モード（長時間、50試行）
 
-### 方法2: 一括実行
+### 方法3: 一括実行
 
 ```bash
 python run_optimization_batch.py
@@ -47,7 +70,7 @@ python run_optimization_batch.py
 
 設定された月を順次実行します。
 
-### 方法3: コマンドライン直接実行
+### 方法4: コマンドライン直接実行
 
 ```bash
 # テストモード（1月データ）
@@ -55,6 +78,9 @@ python -m kyotei_predictor.tools.optimization.optimize_graduated_reward_generic 
 
 # 本番モード（1月データ）
 python -m kyotei_predictor.tools.optimization.optimize_graduated_reward_generic --data-month 2024-01 --n-trials 50
+
+# 本番モード（2月データ）
+python -m kyotei_predictor.tools.optimization.optimize_graduated_reward_generic --data-month 2024-02 --n-trials 50
 ```
 
 ## 新しい月のデータを追加する方法
@@ -109,7 +135,30 @@ target_months = [
 
 ## トラブルシューティング
 
-### 1. データが見つからない場合
+### 1. PowerShell実行ポリシーエラー
+
+```
+このシステムではスクリプトの実行が無効になっているため...
+```
+
+**対処法:**
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned
+.\run_optimization_production_with_cleanup_auto.bat 2024-02
+```
+
+### 2. バッチファイルが見つからない
+
+```
+用語 'run_optimization_production_with_cleanup_auto.bat' は認識されません
+```
+
+**対処法:**
+```powershell
+.\run_optimization_production_with_cleanup_auto.bat 2024-02
+```
+
+### 3. データが見つからない場合
 
 ```
 エラー: データペアが存在しません
@@ -119,13 +168,13 @@ target_months = [
 - データディレクトリの存在確認
 - ファイル名の形式確認（race_data_YYYY-MM-DD_VENUE_RX.json）
 
-### 2. メモリ不足の場合
+### 4. メモリ不足の場合
 
 **対処法:**
 - テストモードで実行
 - データ量を制限（KyoteiEnvManagerの修正）
 
-### 3. 学習時間が長すぎる場合
+### 5. 学習時間が長すぎる場合
 
 **対処法:**
 - テストモードを使用
@@ -149,4 +198,5 @@ target_months = [
 1. **データ形式**: 必ず`race_data_`と`odds_data_`のペアで配置
 2. **ファイル名**: 日付と会場名を含む形式に統一
 3. **メモリ使用量**: 大量データの場合はテストモードから開始
-4. **実行時間**: 本番モードは数時間かかる場合があります 
+4. **実行時間**: 本番モードは数時間かかる場合があります
+5. **PowerShell実行**: `.\\`プレフィックスを使用してバッチファイルを実行 

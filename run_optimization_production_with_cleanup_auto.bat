@@ -123,6 +123,8 @@ echo Results saved to:
 echo - ./optuna_models/graduated_reward_best_%DATA_MONTH%/
 echo - ./optuna_studies/
 echo - ./optuna_results/
+echo - ./final_results/ (important results)
+echo - ./results/ (detailed results)
 echo.
 echo Cleanup completed for:
 echo - Old log files

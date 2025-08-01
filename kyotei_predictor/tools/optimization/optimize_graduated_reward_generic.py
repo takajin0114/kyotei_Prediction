@@ -294,6 +294,10 @@ def optimize_graduated_reward_generic(
     os.makedirs("./optuna_studies", exist_ok=True)
     os.makedirs("./optuna_results", exist_ok=True)
     
+    # 重要な結果ファイル用の専用ディレクトリ
+    os.makedirs("./results", exist_ok=True)
+    os.makedirs("./final_results", exist_ok=True)
+    
     # スタディ名とストレージパスの決定
     if resume_existing:
         existing_studies = []
@@ -375,6 +379,13 @@ def optimize_graduated_reward_generic(
     
     print(f"最適化結果を保存しました: {results_path}")
     
+    # 重要な結果ファイルを専用ディレクトリにもコピー
+    final_results_path = f"./final_results/{study_name}_{timestamp}_final.json"
+    with open(final_results_path, 'w', encoding='utf-8') as f:
+        json.dump(results, f, indent=2, ensure_ascii=False)
+    
+    print(f"最終結果を保存しました: {final_results_path}")
+    
     # 最良モデルの詳細評価
     print("\n=== 最良モデルの詳細評価 ===")
     best_model_path = f"./optuna_models/trial_{study.best_trial.number}/best_model.zip"
@@ -423,6 +434,13 @@ def optimize_graduated_reward_generic(
         shutil.copy2(best_model_path, f"{best_model_dir}/best_model.zip")
         
         print(f"最良モデルを保存しました: {best_model_dir}/best_model.zip")
+        
+        # 詳細評価結果を専用ディレクトリにも保存
+        detailed_results_path = f"./results/{study_name}_{timestamp}_detailed.json"
+        with open(detailed_results_path, 'w', encoding='utf-8') as f:
+            json.dump(detailed_results, f, indent=2, ensure_ascii=False)
+        
+        print(f"詳細評価結果を保存しました: {detailed_results_path}")
     
     return study
 

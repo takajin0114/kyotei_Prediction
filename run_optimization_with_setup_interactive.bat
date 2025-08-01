@@ -1,4 +1,5 @@
 @echo off
+setlocal enabledelayedexpansion
 chcp 65001 >nul
 REM Interactive optimization execution batch file
 REM Setup + user selection for optimization execution
@@ -36,30 +37,38 @@ REM 3. Data month selection
 echo.
 echo [3/6] Selecting data month...
 echo.
-echo Select optimization target data month:
-echo 1. 2024 January
-echo 2. 2024 February
-echo 3. 2024 March
-echo 4. Other (manual input)
-echo.
-set /p month_choice="Choice (1-4): "
+echo Available data months:
+if exist "kyotei_predictor\data\raw" (
+    set /a count=1
+    for /d %%i in ("kyotei_predictor\data\raw\*") do (
+        echo !count!. %%~ni
+        set "month_!count!=%%~ni"
+        set /a count+=1
+    )
+    set /a total_months=!count!-1
+) else (
+    echo No data directories found
+    pause
+    exit /b 1
+)
 
-if "%month_choice%"=="1" (
-    set DATA_MONTH=2024-01
-    set MONTH_NAME=2024 January
-) else if "%month_choice%"=="2" (
-    set DATA_MONTH=2024-02
-    set MONTH_NAME=2024 February
-) else if "%month_choice%"=="3" (
-    set DATA_MONTH=2024-03
-    set MONTH_NAME=2024 March
-) else if "%month_choice%"=="4" (
+echo.
+echo Select optimization target data month:
+echo 1-%total_months%. Available data months
+echo 0. Manual input
+echo.
+set /p month_choice="Choice (0-%total_months%): "
+
+if "%month_choice%"=="0" (
     echo.
     echo Enter data month (e.g., 2024-01):
     set /p DATA_MONTH="Data month: "
     set MONTH_NAME=%DATA_MONTH%
+) else if "%month_choice%" geq "1" if "%month_choice%" leq "%total_months%" (
+    call set DATA_MONTH=%%month_%month_choice%%%
+    set MONTH_NAME=%DATA_MONTH%
 ) else (
-    echo Invalid choice. Please select 1-4.
+    echo Invalid choice. Please select 0-%total_months%.
     pause
     exit /b 1
 )

@@ -186,6 +186,13 @@ optuna_models/graduated_reward_best_*/best_model.zip
 optuna_models/graduated_reward_best_*/model_*.zip
 optuna_models/graduated_reward_best_*/checkpoint_*.zip
 
+# --- 重要な結果ファイル用の専用ディレクトリ ---
+# 重要な結果ファイルは専用ディレクトリに出力し、自動でコミット対象にする
+# このディレクトリ内のファイルは全てコミット対象
+results/
+final_results/
+important_results/
+
 # ただし、重要な結果ファイルは含める
 !optuna_results/graduated_reward_optimization_*_final.json
 !optuna_results/graduated_reward_optimization_*_summary.json
