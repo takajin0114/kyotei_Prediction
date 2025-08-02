@@ -84,9 +84,143 @@ python -m kyotei_predictor.tools.optimization.optimize_graduated_reward \
   --study-name opt_all_final
 ```
 
-### **Phase 2: 報酬設計の改善**
+### **Phase 2: 継続学習システムの改善**
 
-#### **2.1 現在の報酬設計の課題**
+#### **2.1 現在の継続学習の実装状況**
+
+##### **✅ 実装済み機能**
+- **PPOモデルの継続学習**: `PPO.load()`による既存モデルからの学習継続
+- **チェックポイント保存**: 定期的なモデル保存機能
+- **Optuna最適化の継続**: `load_if_exists=True`による最適化履歴の活用
+- **統計データの継続学習**: 既存統計値の加算によるインクリメンタル学習
+
+##### **⚠️ 改善が必要な点**
+- **自動継続学習**: 手動でモデルパスを指定する必要がある
+- **学習履歴管理**: どのモデルから継続学習したかの履歴が不明確
+- **段階的学習の最適化**: 複数セッションの統合が限定的
+
+#### **2.2 継続学習改善案**
+
+##### **2.2.1 自動継続学習機能の実装**
+```python
+def auto_continue_training():
+    """最新のモデルを自動検出して継続学習"""
+    latest_model = find_latest_model()
+    if latest_model:
+        return train_extended_graduated_reward(model_path=latest_model)
+    else:
+        return train_extended_graduated_reward()
+
+def find_latest_model():
+    """最新の学習済みモデルを検出"""
+    model_dir = Path("optuna_models")
+    model_files = list(model_dir.glob("**/*.zip"))
+    if model_files:
+        return max(model_files, key=lambda x: x.stat().st_mtime)
+    return None
+```
+
+##### **2.2.2 学習履歴の記録システム**
+```python
+def record_training_history(model_path, performance_metrics):
+    """学習履歴を記録"""
+    history = {
+        'model_path': model_path,
+        'timestamp': datetime.now().isoformat(),
+        'performance': performance_metrics,
+        'parent_model': get_parent_model_path(),
+        'training_parameters': get_training_parameters(),
+        'data_version': get_data_version()
+    }
+    save_training_history(history)
+
+def get_training_lineage():
+    """学習系譜を取得"""
+    history_file = Path("training_history.json")
+    if history_file.exists():
+        with open(history_file, 'r') as f:
+            return json.load(f)
+    return []
+```
+
+##### **2.2.3 段階的学習の最適化**
+```python
+def progressive_learning():
+    """段階的に学習を進める"""
+    models = get_all_trained_models()
+    for model in models:
+        continue_training_with_curriculum(model)
+
+def continue_training_with_curriculum(model_path):
+    """カリキュラム学習による継続学習"""
+    # 1. 基本スキルの強化
+    train_basic_skills(model_path)
+    
+    # 2. 応用スキルの学習
+    train_advanced_skills(model_path)
+    
+    # 3. 特殊状況への対応
+    train_specialized_skills(model_path)
+```
+
+##### **2.2.4 学習効率の最適化**
+```python
+def adaptive_learning_rate(model_path):
+    """適応的学習率の実装"""
+    performance_history = get_performance_history(model_path)
+    
+    if performance_improving(performance_history):
+        return increase_learning_rate()
+    else:
+        return decrease_learning_rate()
+
+def curriculum_scheduling():
+    """カリキュラムスケジューリング"""
+    return {
+        'phase_1': {'difficulty': 'easy', 'duration': 100000},
+        'phase_2': {'difficulty': 'medium', 'duration': 200000},
+        'phase_3': {'difficulty': 'hard', 'duration': 300000}
+    }
+```
+
+#### **2.3 実装計画**
+
+##### **短期目標（1ヶ月）**
+1. **自動継続学習機能の実装**
+   - `auto_continue_training()`関数の実装
+   - 最新モデル検出機能の実装
+   - 学習履歴記録システムの実装
+
+2. **学習履歴管理システム**
+   - `training_history.json`の設計・実装
+   - 学習系譜の可視化機能
+   - 性能追跡システム
+
+##### **中期目標（3ヶ月）**
+1. **段階的学習の最適化**
+   - カリキュラム学習の実装
+   - 適応的学習率の実装
+   - 学習効率の監視システム
+
+2. **学習品質の向上**
+   - 過学習検出システム
+   - 早期停止機能の改善
+   - クロスバリデーションの強化
+
+##### **長期目標（6ヶ月）**
+1. **完全自動化された学習システム**
+   - 自動データ更新検出
+   - 自動モデル再学習
+   - 性能劣化の自動検出・対応
+
+2. **分散学習システム**
+   - 複数GPUでの並列学習
+   - 学習結果の自動統合
+   - 学習リソースの最適化
+
+### **Phase 3: 報酬設計の改善**
+
+#### **3.1 現在の報酬設計の課題**
 ```python
 # 現在の報酬設計
 - 的中時: (払戻金-賭け金)×1.2
@@ -95,7 +229,7 @@ python -m kyotei_predictor.tools.optimization.optimize_graduated_reward \
 - 不的中時: -100
 ```
 
-#### **2.2 改善提案**
+#### **3.2 改善提案**
 ```python
 # 新しい報酬設計
 - 的中時: (払戻金-賭け金)×1.5  # 的中報酬の強化

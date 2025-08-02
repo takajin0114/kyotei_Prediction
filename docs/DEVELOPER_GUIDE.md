@@ -813,5 +813,271 @@ def expensive_calculation(data):
 
 ---
 
+## 継続学習システム
+
+### 1. 現在の実装状況
+
+#### 1.1 基本機能
+```python
+# 既存モデルからの継続学習
+def train_with_existing_model(model_path: str):
+    """既存モデルから継続学習"""
+    if os.path.exists(model_path):
+        model = PPO.load(model_path, env=env)
+        print(f"既存モデルから継続学習: {model_path}")
+    else:
+        model = PPO("MlpPolicy", env)
+        print("新規モデルを作成")
+    
+    return model
+```
+
+#### 1.2 チェックポイント保存
+```python
+# 定期的なチェックポイント保存
+checkpoint_callback = CheckpointCallback(
+    save_freq=50000,
+    save_path="./optuna_models/",
+    name_prefix="checkpoint"
+)
+```
+
+### 2. 改善実装ガイド
+
+#### 2.1 自動継続学習機能
+
+```python
+from pathlib import Path
+from datetime import datetime
+import json
+
+class ContinuousLearningManager:
+    """継続学習管理クラス"""
+    
+    def __init__(self, model_dir: str = "optuna_models"):
+        self.model_dir = Path(model_dir)
+        self.history_file = Path("training_history.json")
+    
+    def find_latest_model(self) -> Optional[Path]:
+        """最新の学習済みモデルを検出"""
+        model_files = list(self.model_dir.glob("**/*.zip"))
+        if model_files:
+            return max(model_files, key=lambda x: x.stat().st_mtime)
+        return None
+    
+    def auto_continue_training(self, training_function):
+        """自動継続学習の実行"""
+        latest_model = self.find_latest_model()
+        
+        if latest_model:
+            print(f"最新モデルを検出: {latest_model}")
+            return training_function(model_path=str(latest_model))
+        else:
+            print("新規学習を開始")
+            return training_function()
+    
+    def record_training_history(self, model_path: str, performance_metrics: dict):
+        """学習履歴を記録"""
+        history_entry = {
+            'model_path': model_path,
+            'timestamp': datetime.now().isoformat(),
+            'performance': performance_metrics,
+            'parent_model': self._get_parent_model(),
+            'training_parameters': self._get_training_parameters(),
+            'data_version': self._get_data_version()
+        }
+        
+        self._save_history(history_entry)
+    
+    def _get_parent_model(self) -> Optional[str]:
+        """親モデルのパスを取得"""
+        if self.history_file.exists():
+            with open(self.history_file, 'r') as f:
+                history = json.load(f)
+                if history:
+                    return history[-1]['model_path']
+        return None
+    
+    def _get_training_parameters(self) -> dict:
+        """現在の学習パラメータを取得"""
+        return {
+            'learning_rate': 3e-4,
+            'n_steps': 2048,
+            'batch_size': 64,
+            'n_epochs': 10
+        }
+    
+    def _get_data_version(self) -> str:
+        """データバージョンを取得"""
+        return datetime.now().strftime("%Y%m")
+    
+    def _save_history(self, entry: dict):
+        """履歴を保存"""
+        history = []
+        if self.history_file.exists():
+            with open(self.history_file, 'r') as f:
+                history = json.load(f)
+        
+        history.append(entry)
+        
+        with open(self.history_file, 'w') as f:
+            json.dump(history, f, indent=2)
+```
+
+#### 2.2 学習履歴の可視化
+
+```python
+import matplotlib.pyplot as plt
+import pandas as pd
+
+class TrainingHistoryVisualizer:
+    """学習履歴の可視化クラス"""
+    
+    def __init__(self, history_file: str = "training_history.json"):
+        self.history_file = Path(history_file)
+    
+    def plot_performance_trend(self):
+        """性能トレンドをプロット"""
+        if not self.history_file.exists():
+            print("履歴ファイルが存在しません")
+            return
+        
+        with open(self.history_file, 'r') as f:
+            history = json.load(f)
+        
+        df = pd.DataFrame(history)
+        df['timestamp'] = pd.to_datetime(df['timestamp'])
+        
+        plt.figure(figsize=(12, 6))
+        plt.plot(df['timestamp'], df['performance'].apply(lambda x: x.get('mean_reward', 0)))
+        plt.title('学習性能の推移')
+        plt.xlabel('日時')
+        plt.ylabel('平均報酬')
+        plt.xticks(rotation=45)
+        plt.tight_layout()
+        plt.show()
+    
+    def plot_training_lineage(self):
+        """学習系譜をプロット"""
+        if not self.history_file.exists():
+            return
+        
+        with open(self.history_file, 'r') as f:
+            history = json.load(f)
+        
+        # 学習系譜の可視化
+        for i, entry in enumerate(history):
+            print(f"モデル {i+1}: {entry['model_path']}")
+            print(f"  親モデル: {entry.get('parent_model', '新規')}")
+            print(f"  性能: {entry['performance']}")
+            print(f"  学習日時: {entry['timestamp']}")
+            print("---")
+```
+
+#### 2.3 段階的学習の実装
+
+```python
+class CurriculumLearning:
+    """カリキュラム学習クラス"""
+    
+    def __init__(self):
+        self.curriculum = {
+            'phase_1': {
+                'difficulty': 'easy',
+                'duration': 100000,
+                'data_filter': lambda x: x['race_type'] == 'normal'
+            },
+            'phase_2': {
+                'difficulty': 'medium',
+                'duration': 200000,
+                'data_filter': lambda x: x['race_type'] in ['normal', 'special']
+            },
+            'phase_3': {
+                'difficulty': 'hard',
+                'duration': 300000,
+                'data_filter': lambda x: True  # 全データ
+            }
+        }
+    
+    def progressive_learning(self, model_path: str):
+        """段階的学習の実行"""
+        for phase_name, phase_config in self.curriculum.items():
+            print(f"フェーズ {phase_name} を開始")
+            
+            # フェーズ固有の学習
+            model = self._train_phase(model_path, phase_config)
+            
+            # フェーズ完了後の評価
+            performance = self._evaluate_phase(model, phase_config)
+            
+            # 次のフェーズに進むか判定
+            if not self._should_continue(performance):
+                print(f"フェーズ {phase_name} で学習を停止")
+                break
+            
+            model_path = self._save_phase_model(model, phase_name)
+    
+    def _train_phase(self, model_path: str, phase_config: dict):
+        """フェーズ固有の学習"""
+        # フェーズに応じたデータフィルタリング
+        filtered_data = self._filter_data_for_phase(phase_config['data_filter'])
+        
+        # フェーズ固有の学習パラメータ
+        learning_params = self._get_phase_params(phase_config)
+        
+        # 学習実行
+        return self._execute_training(model_path, filtered_data, learning_params)
+    
+    def _evaluate_phase(self, model, phase_config: dict) -> dict:
+        """フェーズ完了後の評価"""
+        # フェーズ固有の評価指標
+        return {
+            'mean_reward': self._calculate_mean_reward(model),
+            'success_rate': self._calculate_success_rate(model),
+            'phase_difficulty': phase_config['difficulty']
+        }
+    
+    def _should_continue(self, performance: dict) -> bool:
+        """次のフェーズに進むか判定"""
+        # 性能基準に基づく判定
+        return performance['mean_reward'] > 0 and performance['success_rate'] > 0.01
+```
+
+### 3. 実装チェックリスト
+
+#### 3.1 短期実装（1ヶ月以内）
+- [ ] `ContinuousLearningManager`クラスの実装
+- [ ] `TrainingHistoryVisualizer`クラスの実装
+- [ ] 自動継続学習機能のテスト
+- [ ] 学習履歴の記録・可視化のテスト
+
+#### 3.2 中期実装（3ヶ月以内）
+- [ ] `CurriculumLearning`クラスの実装
+- [ ] 適応的学習率の実装
+- [ ] 過学習検出システムの実装
+- [ ] 学習効率監視システムの実装
+
+#### 3.3 長期実装（6ヶ月以内）
+- [ ] 完全自動化された学習システム
+- [ ] 分散学習システムの実装
+- [ ] リアルタイム性能監視システム
+- [ ] 自動モデル選択システム
+
+### 4. ベストプラクティス
+
+#### 4.1 継続学習の設計原則
+1. **段階的アプローチ**: 簡単なタスクから複雑なタスクへ
+2. **履歴管理**: 全ての学習履歴を記録・追跡
+3. **性能監視**: 継続的な性能評価と改善
+4. **自動化**: 手動介入を最小限に抑制
+
+#### 4.2 実装時の注意点
+1. **メモリ管理**: 大量のモデルファイルの適切な管理
+2. **バックアップ**: 重要な学習結果の定期的なバックアップ
+3. **エラーハンドリング**: 学習失敗時の適切な復旧処理
+4. **ログ管理**: 詳細な学習ログの記録と分析
+
+---
+
 **最終更新**: 2025-01-27  
 **次回更新予定**: 2025-02-03 
