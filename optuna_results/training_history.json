@@ -1,0 +1,1718 @@
+[
+  {
+    "model_path": "./optuna_models/trial_0/checkpoint_2048_steps.zip",
+    "timestamp": "2025-08-03T21:26:16.900694",
+    "performance": {
+      "mean_reward": -1000.0,
+      "trial_number": 0,
+      "parameters": {
+        "learning_rate": 1.1676308776831082e-05,
+        "batch_size": 76,
+        "n_steps": 2048,
+        "gamma": 0.9342984376509952,
+        "gae_lambda": 0.9671658571467053,
+        "clip_range": 0.149380247016991,
+        "ent_coef": 0.0049525818058229944,
+        "vf_coef": 0.5714553803854369,
+        "max_grad_norm": 0.4397305757550185
+      }
+    },
+    "parent_model": null,
+    "training_parameters": {
+      "learning_rate": 0.0003,
+      "n_steps": 2048,
+      "batch_size": 64,
+      "n_epochs": 10,
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "clip_range": 0.2,
+      "ent_coef": 0.01,
+      "vf_coef": 0.5,
+      "max_grad_norm": 0.5
+    },
+    "data_version": "202508"
+  },
+  {
+    "model_path": "./optuna_models/trial_0/checkpoint_1024_steps.zip",
+    "timestamp": "2025-08-03T21:32:39.830703",
+    "performance": {
+      "mean_reward": 453175.0,
+      "trial_number": 0,
+      "parameters": {
+        "learning_rate": 0.004254174226863553,
+        "batch_size": 153,
+        "n_steps": 1024,
+        "gamma": 0.9122473399878024,
+        "gae_lambda": 0.9663054127682281,
+        "clip_range": 0.10482483886135022,
+        "ent_coef": 0.01230763067203988,
+        "vf_coef": 0.41410325010707993,
+        "max_grad_norm": 0.8185614560361045
+      }
+    },
+    "parent_model": "./optuna_models/trial_0/checkpoint_2048_steps.zip",
+    "training_parameters": {
+      "learning_rate": 0.0003,
+      "n_steps": 2048,
+      "batch_size": 64,
+      "n_epochs": 10,
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "clip_range": 0.2,
+      "ent_coef": 0.01,
+      "vf_coef": 0.5,
+      "max_grad_norm": 0.5
+    },
+    "data_version": "202508"
+  },
+  {
+    "model_path": "./optuna_models/trial_0/checkpoint_1024_steps.zip",
+    "timestamp": "2025-08-03T21:44:38.332528",
+    "performance": {
+      "mean_reward": 453700.0,
+      "trial_number": 0,
+      "parameters": {
+        "learning_rate": 0.0009875490287658782,
+        "batch_size": 38,
+        "n_steps": 1024,
+        "gamma": 0.9304055595108915,
+        "gae_lambda": 0.9189928203198143,
+        "clip_range": 0.18139079840102784,
+        "ent_coef": 0.04051956224254976,
+        "vf_coef": 0.11148141467156326,
+        "max_grad_norm": 0.6844662717817094
+      }
+    },
+    "parent_model": "./optuna_models/trial_0/checkpoint_1024_steps.zip",
+    "training_parameters": {
+      "learning_rate": 0.0003,
+      "n_steps": 2048,
+      "batch_size": 64,
+      "n_epochs": 10,
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "clip_range": 0.2,
+      "ent_coef": 0.01,
+      "vf_coef": 0.5,
+      "max_grad_norm": 0.5
+    },
+    "data_version": "202508"
+  },
+  {
+    "model_path": "./optuna_models/trial_1/checkpoint_2048_steps.zip",
+    "timestamp": "2025-08-03T21:46:57.391778",
+    "performance": {
+      "mean_reward": 453700.0,
+      "trial_number": 1,
+      "parameters": {
+        "learning_rate": 0.0003204138660215833,
+        "batch_size": 76,
+        "n_steps": 2048,
+        "gamma": 0.9582235909273709,
+        "gae_lambda": 0.9480764668673229,
+        "clip_range": 0.18850750057230675,
+        "ent_coef": 0.009786126540501464,
+        "vf_coef": 0.8813483630684059,
+        "max_grad_norm": 0.754736603870216
+      }
+    },
+    "parent_model": "./optuna_models/trial_0/checkpoint_1024_steps.zip",
+    "training_parameters": {
+      "learning_rate": 0.0003,
+      "n_steps": 2048,
+      "batch_size": 64,
+      "n_epochs": 10,
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "clip_range": 0.2,
+      "ent_coef": 0.01,
+      "vf_coef": 0.5,
+      "max_grad_norm": 0.5
+    },
+    "data_version": "202508"
+  },
+  {
+    "model_path": "./optuna_models/trial_2/checkpoint_1024_steps.zip",
+    "timestamp": "2025-08-03T21:48:51.993959",
+    "performance": {
+      "mean_reward": 453700.0,
+      "trial_number": 2,
+      "parameters": {
+        "learning_rate": 2.8870542791596093e-05,
+        "batch_size": 153,
+        "n_steps": 1024,
+        "gamma": 0.9021796786449268,
+        "gae_lambda": 0.9306163542854856,
+        "clip_range": 0.21658906974953607,
+        "ent_coef": 0.022593226253569562,
+        "vf_coef": 0.9839190974027519,
+        "max_grad_norm": 0.8524218347503515
+      }
+    },
+    "parent_model": "./optuna_models/trial_1/checkpoint_2048_steps.zip",
+    "training_parameters": {
+      "learning_rate": 0.0003,
+      "n_steps": 2048,
+      "batch_size": 64,
+      "n_epochs": 10,
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "clip_range": 0.2,
+      "ent_coef": 0.01,
+      "vf_coef": 0.5,
+      "max_grad_norm": 0.5
+    },
+    "data_version": "202508"
+  },
+  {
+    "model_path": "./optuna_models/trial_3/checkpoint_2048_steps.zip",
+    "timestamp": "2025-08-03T21:52:15.999183",
+    "performance": {
+      "mean_reward": 453700.0,
+      "trial_number": 3,
+      "parameters": {
+        "learning_rate": 1.2247463071215982e-05,
+        "batch_size": 19,
+        "n_steps": 2048,
+        "gamma": 0.9417633645968955,
+        "gae_lambda": 0.9469279932371519,
+        "clip_range": 0.2987484212925875,
+        "ent_coef": 0.04264504164448057,
+        "vf_coef": 0.9844574527996106,
+        "max_grad_norm": 0.6574070487702187
+      }
+    },
+    "parent_model": "./optuna_models/trial_2/checkpoint_1024_steps.zip",
+    "training_parameters": {
+      "learning_rate": 0.0003,
+      "n_steps": 2048,
+      "batch_size": 64,
+      "n_epochs": 10,
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "clip_range": 0.2,
+      "ent_coef": 0.01,
+      "vf_coef": 0.5,
+      "max_grad_norm": 0.5
+    },
+    "data_version": "202508"
+  },
+  {
+    "model_path": "./optuna_models/trial_4/checkpoint_4096_steps.zip",
+    "timestamp": "2025-08-03T21:54:10.670570",
+    "performance": {
+      "mean_reward": 453700.0,
+      "trial_number": 4,
+      "parameters": {
+        "learning_rate": 8.326275132054527e-06,
+        "batch_size": 153,
+        "n_steps": 4096,
+        "gamma": 0.9121852698308465,
+        "gae_lambda": 0.9588316775124568,
+        "clip_range": 0.2154052954896183,
+        "ent_coef": 0.0735805979464083,
+        "vf_coef": 0.8375498013513418,
+        "max_grad_norm": 0.9045087635380944
+      }
+    },
+    "parent_model": "./optuna_models/trial_3/checkpoint_2048_steps.zip",
+    "training_parameters": {
+      "learning_rate": 0.0003,
+      "n_steps": 2048,
+      "batch_size": 64,
+      "n_epochs": 10,
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "clip_range": 0.2,
+      "ent_coef": 0.01,
+      "vf_coef": 0.5,
+      "max_grad_norm": 0.5
+    },
+    "data_version": "202508"
+  },
+  {
+    "model_path": "./optuna_models/trial_5/checkpoint_1024_steps.zip",
+    "timestamp": "2025-08-03T21:57:43.484577",
+    "performance": {
+      "mean_reward": 90740.0,
+      "trial_number": 5,
+      "parameters": {
+        "learning_rate": 0.007039850625219862,
+        "batch_size": 19,
+        "n_steps": 1024,
+        "gamma": 0.9273824381559058,
+        "gae_lambda": 0.9573777199302704,
+        "clip_range": 0.24547903409118207,
+        "ent_coef": 0.012294845678543031,
+        "vf_coef": 0.7718341496381459,
+        "max_grad_norm": 0.9525117583807471
+      }
+    },
+    "parent_model": "./optuna_models/trial_4/checkpoint_4096_steps.zip",
+    "training_parameters": {
+      "learning_rate": 0.0003,
+      "n_steps": 2048,
+      "batch_size": 64,
+      "n_epochs": 10,
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "clip_range": 0.2,
+      "ent_coef": 0.01,
+      "vf_coef": 0.5,
+      "max_grad_norm": 0.5
+    },
+    "data_version": "202508"
+  },
+  {
+    "model_path": "./optuna_models/trial_6/checkpoint_1024_steps.zip",
+    "timestamp": "2025-08-03T22:00:27.243300",
+    "performance": {
+      "mean_reward": 453700.0,
+      "trial_number": 6,
+      "parameters": {
+        "learning_rate": 4.3482757135668e-05,
+        "batch_size": 38,
+        "n_steps": 1024,
+        "gamma": 0.9080811374623886,
+        "gae_lambda": 0.9072349001487968,
+        "clip_range": 0.29504748901079536,
+        "ent_coef": 0.07519815186549297,
+        "vf_coef": 0.10829366518176944,
+        "max_grad_norm": 0.7691386580425041
+      }
+    },
+    "parent_model": "./optuna_models/trial_5/checkpoint_1024_steps.zip",
+    "training_parameters": {
+      "learning_rate": 0.0003,
+      "n_steps": 2048,
+      "batch_size": 64,
+      "n_epochs": 10,
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "clip_range": 0.2,
+      "ent_coef": 0.01,
+      "vf_coef": 0.5,
+      "max_grad_norm": 0.5
+    },
+    "data_version": "202508"
+  },
+  {
+    "model_path": "./optuna_models/trial_7/checkpoint_2048_steps.zip",
+    "timestamp": "2025-08-03T22:02:26.711470",
+    "performance": {
+      "mean_reward": 453700.0,
+      "trial_number": 7,
+      "parameters": {
+        "learning_rate": 0.0011486826494226904,
+        "batch_size": 153,
+        "n_steps": 2048,
+        "gamma": 0.9254967623705748,
+        "gae_lambda": 0.9655031466690663,
+        "clip_range": 0.2571871628760366,
+        "ent_coef": 0.013529576122711877,
+        "vf_coef": 0.5159892581504633,
+        "max_grad_norm": 0.8119567149999868
+      }
+    },
+    "parent_model": "./optuna_models/trial_6/checkpoint_1024_steps.zip",
+    "training_parameters": {
+      "learning_rate": 0.0003,
+      "n_steps": 2048,
+      "batch_size": 64,
+      "n_epochs": 10,
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "clip_range": 0.2,
+      "ent_coef": 0.01,
+      "vf_coef": 0.5,
+      "max_grad_norm": 0.5
+    },
+    "data_version": "202508"
+  },
+  {
+    "model_path": "./optuna_models/trial_8/checkpoint_1024_steps.zip",
+    "timestamp": "2025-08-03T22:04:51.885343",
+    "performance": {
+      "mean_reward": 453700.0,
+      "trial_number": 8,
+      "parameters": {
+        "learning_rate": 0.0019736551755701473,
+        "batch_size": 76,
+        "n_steps": 1024,
+        "gamma": 0.926775402321134,
+        "gae_lambda": 0.9037664680999492,
+        "clip_range": 0.1713945580923078,
+        "ent_coef": 0.0464568806025042,
+        "vf_coef": 0.47819527762683445,
+        "max_grad_norm": 0.7934911249861482
+      }
+    },
+    "parent_model": "./optuna_models/trial_7/checkpoint_2048_steps.zip",
+    "training_parameters": {
+      "learning_rate": 0.0003,
+      "n_steps": 2048,
+      "batch_size": 64,
+      "n_epochs": 10,
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "clip_range": 0.2,
+      "ent_coef": 0.01,
+      "vf_coef": 0.5,
+      "max_grad_norm": 0.5
+    },
+    "data_version": "202508"
+  },
+  {
+    "model_path": "./optuna_models/trial_9/checkpoint_1024_steps.zip",
+    "timestamp": "2025-08-03T22:08:25.172298",
+    "performance": {
+      "mean_reward": 453700.0,
+      "trial_number": 9,
+      "parameters": {
+        "learning_rate": 0.0029364190418831983,
+        "batch_size": 19,
+        "n_steps": 1024,
+        "gamma": 0.9650084108360176,
+        "gae_lambda": 0.9446216155307424,
+        "clip_range": 0.17413890932537734,
+        "ent_coef": 0.0012337614719532626,
+        "vf_coef": 0.6588395459237782,
+        "max_grad_norm": 0.8855113088459344
+      }
+    },
+    "parent_model": "./optuna_models/trial_8/checkpoint_1024_steps.zip",
+    "training_parameters": {
+      "learning_rate": 0.0003,
+      "n_steps": 2048,
+      "batch_size": 64,
+      "n_epochs": 10,
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "clip_range": 0.2,
+      "ent_coef": 0.01,
+      "vf_coef": 0.5,
+      "max_grad_norm": 0.5
+    },
+    "data_version": "202508"
+  },
+  {
+    "model_path": "./optuna_models/trial_10/checkpoint_4096_steps.zip",
+    "timestamp": "2025-08-03T22:10:47.525555",
+    "performance": {
+      "mean_reward": 453700.0,
+      "trial_number": 10,
+      "parameters": {
+        "learning_rate": 0.00023281755035697144,
+        "batch_size": 38,
+        "n_steps": 4096,
+        "gamma": 0.9842211471068552,
+        "gae_lambda": 0.985519109981568,
+        "clip_range": 0.11064387003741953,
+        "ent_coef": 0.003929634230100749,
+        "vf_coef": 0.10498754274390754,
+        "max_grad_norm": 0.34492224666672744
+      }
+    },
+    "parent_model": "./optuna_models/trial_9/checkpoint_1024_steps.zip",
+    "training_parameters": {
+      "learning_rate": 0.0003,
+      "n_steps": 2048,
+      "batch_size": 64,
+      "n_epochs": 10,
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "clip_range": 0.2,
+      "ent_coef": 0.01,
+      "vf_coef": 0.5,
+      "max_grad_norm": 0.5
+    },
+    "data_version": "202508"
+  },
+  {
+    "model_path": "./optuna_models/trial_11/checkpoint_2048_steps.zip",
+    "timestamp": "2025-08-03T22:12:49.640264",
+    "performance": {
+      "mean_reward": 453700.0,
+      "trial_number": 11,
+      "parameters": {
+        "learning_rate": 0.0003730994276503678,
+        "batch_size": 76,
+        "n_steps": 2048,
+        "gamma": 0.9568678306009325,
+        "gae_lambda": 0.92241746015561,
+        "clip_range": 0.1495269088811989,
+        "ent_coef": 0.005247751035831806,
+        "vf_coef": 0.33502570110126106,
+        "max_grad_norm": 0.5094329756389278
+      }
+    },
+    "parent_model": "./optuna_models/trial_10/checkpoint_4096_steps.zip",
+    "training_parameters": {
+      "learning_rate": 0.0003,
+      "n_steps": 2048,
+      "batch_size": 64,
+      "n_epochs": 10,
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "clip_range": 0.2,
+      "ent_coef": 0.01,
+      "vf_coef": 0.5,
+      "max_grad_norm": 0.5
+    },
+    "data_version": "202508"
+  },
+  {
+    "model_path": "./optuna_models/trial_12/checkpoint_2048_steps.zip",
+    "timestamp": "2025-08-03T22:14:55.641734",
+    "performance": {
+      "mean_reward": 453700.0,
+      "trial_number": 12,
+      "parameters": {
+        "learning_rate": 0.0005473995415007507,
+        "batch_size": 76,
+        "n_steps": 2048,
+        "gamma": 0.948700126801267,
+        "gae_lambda": 0.9259053638648649,
+        "clip_range": 0.1346196910453016,
+        "ent_coef": 0.005206366390145616,
+        "vf_coef": 0.3199465184432917,
+        "max_grad_norm": 0.5615409822390038
+      }
+    },
+    "parent_model": "./optuna_models/trial_11/checkpoint_2048_steps.zip",
+    "training_parameters": {
+      "learning_rate": 0.0003,
+      "n_steps": 2048,
+      "batch_size": 64,
+      "n_epochs": 10,
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "clip_range": 0.2,
+      "ent_coef": 0.01,
+      "vf_coef": 0.5,
+      "max_grad_norm": 0.5
+    },
+    "data_version": "202508"
+  },
+  {
+    "model_path": "./optuna_models/trial_13/checkpoint_2048_steps.zip",
+    "timestamp": "2025-08-03T22:17:25.608053",
+    "performance": {
+      "mean_reward": 453700.0,
+      "trial_number": 13,
+      "parameters": {
+        "learning_rate": 0.00011660320417866275,
+        "batch_size": 38,
+        "n_steps": 2048,
+        "gamma": 0.97055588304173,
+        "gae_lambda": 0.9369210715053088,
+        "clip_range": 0.19446677343360438,
+        "ent_coef": 0.023016630793131387,
+        "vf_coef": 0.3120260826194862,
+        "max_grad_norm": 0.20476343478016296
+      }
+    },
+    "parent_model": "./optuna_models/trial_12/checkpoint_2048_steps.zip",
+    "training_parameters": {
+      "learning_rate": 0.0003,
+      "n_steps": 2048,
+      "batch_size": 64,
+      "n_epochs": 10,
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "clip_range": 0.2,
+      "ent_coef": 0.01,
+      "vf_coef": 0.5,
+      "max_grad_norm": 0.5
+    },
+    "data_version": "202508"
+  },
+  {
+    "model_path": "./optuna_models/trial_14/checkpoint_4096_steps.zip",
+    "timestamp": "2025-08-03T22:19:32.849695",
+    "performance": {
+      "mean_reward": 453700.0,
+      "trial_number": 14,
+      "parameters": {
+        "learning_rate": 9.836157492209988e-05,
+        "batch_size": 76,
+        "n_steps": 4096,
+        "gamma": 0.9414286779471415,
+        "gae_lambda": 0.9174712332463644,
+        "clip_range": 0.18512188252137632,
+        "ent_coef": 0.0018614245217308744,
+        "vf_coef": 0.6509041345159886,
+        "max_grad_norm": 0.648420369716987
+      }
+    },
+    "parent_model": "./optuna_models/trial_13/checkpoint_2048_steps.zip",
+    "training_parameters": {
+      "learning_rate": 0.0003,
+      "n_steps": 2048,
+      "batch_size": 64,
+      "n_epochs": 10,
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "clip_range": 0.2,
+      "ent_coef": 0.01,
+      "vf_coef": 0.5,
+      "max_grad_norm": 0.5
+    },
+    "data_version": "202508"
+  },
+  {
+    "model_path": "./optuna_models/trial_15/checkpoint_1024_steps.zip",
+    "timestamp": "2025-08-03T22:21:59.856453",
+    "performance": {
+      "mean_reward": 453700.0,
+      "trial_number": 15,
+      "parameters": {
+        "learning_rate": 0.0009238547850442592,
+        "batch_size": 38,
+        "n_steps": 1024,
+        "gamma": 0.9895747733074647,
+        "gae_lambda": 0.9776688779132895,
+        "clip_range": 0.15307138236910756,
+        "ent_coef": 0.02332645104745595,
+        "vf_coef": 0.789644887951409,
+        "max_grad_norm": 0.4683829070418216
+      }
+    },
+    "parent_model": "./optuna_models/trial_14/checkpoint_4096_steps.zip",
+    "training_parameters": {
+      "learning_rate": 0.0003,
+      "n_steps": 2048,
+      "batch_size": 64,
+      "n_epochs": 10,
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "clip_range": 0.2,
+      "ent_coef": 0.01,
+      "vf_coef": 0.5,
+      "max_grad_norm": 0.5
+    },
+    "data_version": "202508"
+  },
+  {
+    "model_path": "./optuna_models/trial_16/checkpoint_2048_steps.zip",
+    "timestamp": "2025-08-03T22:24:30.852314",
+    "performance": {
+      "mean_reward": 453700.0,
+      "trial_number": 16,
+      "parameters": {
+        "learning_rate": 0.0001237202533666568,
+        "batch_size": 38,
+        "n_steps": 2048,
+        "gamma": 0.9700945958378262,
+        "gae_lambda": 0.9138798751337472,
+        "clip_range": 0.23048357922145024,
+        "ent_coef": 0.008905161127082643,
+        "vf_coef": 0.2293186028884353,
+        "max_grad_norm": 0.6680772514299976
+      }
+    },
+    "parent_model": "./optuna_models/trial_15/checkpoint_1024_steps.zip",
+    "training_parameters": {
+      "learning_rate": 0.0003,
+      "n_steps": 2048,
+      "batch_size": 64,
+      "n_epochs": 10,
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "clip_range": 0.2,
+      "ent_coef": 0.01,
+      "vf_coef": 0.5,
+      "max_grad_norm": 0.5
+    },
+    "data_version": "202508"
+  },
+  {
+    "model_path": "./optuna_models/trial_17/checkpoint_2048_steps.zip",
+    "timestamp": "2025-08-03T22:26:34.098735",
+    "performance": {
+      "mean_reward": 453700.0,
+      "trial_number": 17,
+      "parameters": {
+        "learning_rate": 0.0005813871730026802,
+        "batch_size": 76,
+        "n_steps": 2048,
+        "gamma": 0.9531188889298267,
+        "gae_lambda": 0.9407823754860659,
+        "clip_range": 0.10414938073839668,
+        "ent_coef": 0.0027731725886155326,
+        "vf_coef": 0.44791799658018083,
+        "max_grad_norm": 0.9955048442951444
+      }
+    },
+    "parent_model": "./optuna_models/trial_16/checkpoint_2048_steps.zip",
+    "training_parameters": {
+      "learning_rate": 0.0003,
+      "n_steps": 2048,
+      "batch_size": 64,
+      "n_epochs": 10,
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "clip_range": 0.2,
+      "ent_coef": 0.01,
+      "vf_coef": 0.5,
+      "max_grad_norm": 0.5
+    },
+    "data_version": "202508"
+  },
+  {
+    "model_path": "./optuna_models/trial_18/checkpoint_1024_steps.zip",
+    "timestamp": "2025-08-03T22:28:37.206379",
+    "performance": {
+      "mean_reward": 453700.0,
+      "trial_number": 18,
+      "parameters": {
+        "learning_rate": 0.003911658467253757,
+        "batch_size": 76,
+        "n_steps": 1024,
+        "gamma": 0.9344916589170956,
+        "gae_lambda": 0.9550796331825929,
+        "clip_range": 0.20488329969897265,
+        "ent_coef": 0.008059763034775612,
+        "vf_coef": 0.6098833681605824,
+        "max_grad_norm": 0.39372931742495254
+      }
+    },
+    "parent_model": "./optuna_models/trial_17/checkpoint_2048_steps.zip",
+    "training_parameters": {
+      "learning_rate": 0.0003,
+      "n_steps": 2048,
+      "batch_size": 64,
+      "n_epochs": 10,
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "clip_range": 0.2,
+      "ent_coef": 0.01,
+      "vf_coef": 0.5,
+      "max_grad_norm": 0.5
+    },
+    "data_version": "202508"
+  },
+  {
+    "model_path": "./optuna_models/trial_19/checkpoint_4096_steps.zip",
+    "timestamp": "2025-08-03T22:31:07.637262",
+    "performance": {
+      "mean_reward": 453700.0,
+      "trial_number": 19,
+      "parameters": {
+        "learning_rate": 0.0012563027729269116,
+        "batch_size": 38,
+        "n_steps": 4096,
+        "gamma": 0.9609332404630944,
+        "gae_lambda": 0.9726100621332703,
+        "clip_range": 0.13045837391782472,
+        "ent_coef": 0.03964611183482377,
+        "vf_coef": 0.8714178042017604,
+        "max_grad_norm": 0.724275842009889
+      }
+    },
+    "parent_model": "./optuna_models/trial_18/checkpoint_1024_steps.zip",
+    "training_parameters": {
+      "learning_rate": 0.0003,
+      "n_steps": 2048,
+      "batch_size": 64,
+      "n_epochs": 10,
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "clip_range": 0.2,
+      "ent_coef": 0.01,
+      "vf_coef": 0.5,
+      "max_grad_norm": 0.5
+    },
+    "data_version": "202508"
+  },
+  {
+    "model_path": "./optuna_models/trial_20/checkpoint_2048_steps.zip",
+    "timestamp": "2025-08-03T22:33:10.798040",
+    "performance": {
+      "mean_reward": 453700.0,
+      "trial_number": 20,
+      "parameters": {
+        "learning_rate": 0.0002476096666493723,
+        "batch_size": 76,
+        "n_steps": 2048,
+        "gamma": 0.9196657053080255,
+        "gae_lambda": 0.9327522200155779,
+        "clip_range": 0.26917440281975324,
+        "ent_coef": 0.01587199211732982,
+        "vf_coef": 0.7160596501220676,
+        "max_grad_norm": 0.10790118864856063
+      }
+    },
+    "parent_model": "./optuna_models/trial_19/checkpoint_4096_steps.zip",
+    "training_parameters": {
+      "learning_rate": 0.0003,
+      "n_steps": 2048,
+      "batch_size": 64,
+      "n_epochs": 10,
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "clip_range": 0.2,
+      "ent_coef": 0.01,
+      "vf_coef": 0.5,
+      "max_grad_norm": 0.5
+    },
+    "data_version": "202508"
+  },
+  {
+    "model_path": "./optuna_models/trial_21/checkpoint_1024_steps.zip",
+    "timestamp": "2025-08-03T22:35:01.608170",
+    "performance": {
+      "mean_reward": 453700.0,
+      "trial_number": 21,
+      "parameters": {
+        "learning_rate": 4.3853724959726285e-05,
+        "batch_size": 153,
+        "n_steps": 1024,
+        "gamma": 0.9022829249232831,
+        "gae_lambda": 0.9298031069758247,
+        "clip_range": 0.21219606088323992,
+        "ent_coef": 0.024998273751134517,
+        "vf_coef": 0.9662466154293919,
+        "max_grad_norm": 0.8645802077744581
+      }
+    },
+    "parent_model": "./optuna_models/trial_20/checkpoint_2048_steps.zip",
+    "training_parameters": {
+      "learning_rate": 0.0003,
+      "n_steps": 2048,
+      "batch_size": 64,
+      "n_epochs": 10,
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "clip_range": 0.2,
+      "ent_coef": 0.01,
+      "vf_coef": 0.5,
+      "max_grad_norm": 0.5
+    },
+    "data_version": "202508"
+  },
+  {
+    "model_path": "./optuna_models/trial_22/checkpoint_1024_steps.zip",
+    "timestamp": "2025-08-03T22:36:52.598751",
+    "performance": {
+      "mean_reward": 453700.0,
+      "trial_number": 22,
+      "parameters": {
+        "learning_rate": 2.3667977992990427e-05,
+        "batch_size": 153,
+        "n_steps": 1024,
+        "gamma": 0.9160743983849675,
+        "gae_lambda": 0.9127462496551312,
+        "clip_range": 0.23006834863187273,
+        "ent_coef": 0.03374108313014516,
+        "vf_coef": 0.9042174864757903,
+        "max_grad_norm": 0.5902899745663991
+      }
+    },
+    "parent_model": "./optuna_models/trial_21/checkpoint_1024_steps.zip",
+    "training_parameters": {
+      "learning_rate": 0.0003,
+      "n_steps": 2048,
+      "batch_size": 64,
+      "n_epochs": 10,
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "clip_range": 0.2,
+      "ent_coef": 0.01,
+      "vf_coef": 0.5,
+      "max_grad_norm": 0.5
+    },
+    "data_version": "202508"
+  },
+  {
+    "model_path": "./optuna_models/trial_23/checkpoint_1024_steps.zip",
+    "timestamp": "2025-08-03T22:38:43.721601",
+    "performance": {
+      "mean_reward": 453700.0,
+      "trial_number": 23,
+      "parameters": {
+        "learning_rate": 5.648006860114242e-05,
+        "batch_size": 153,
+        "n_steps": 1024,
+        "gamma": 0.9029770399871562,
+        "gae_lambda": 0.9490261103979165,
+        "clip_range": 0.16895401144608818,
+        "ent_coef": 0.01647063536346679,
+        "vf_coef": 0.948291225210755,
+        "max_grad_norm": 0.7204361418789555
+      }
+    },
+    "parent_model": "./optuna_models/trial_22/checkpoint_1024_steps.zip",
+    "training_parameters": {
+      "learning_rate": 0.0003,
+      "n_steps": 2048,
+      "batch_size": 64,
+      "n_epochs": 10,
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "clip_range": 0.2,
+      "ent_coef": 0.01,
+      "vf_coef": 0.5,
+      "max_grad_norm": 0.5
+    },
+    "data_version": "202508"
+  },
+  {
+    "model_path": "./optuna_models/trial_24/checkpoint_1024_steps.zip",
+    "timestamp": "2025-08-03T22:40:34.356313",
+    "performance": {
+      "mean_reward": 453700.0,
+      "trial_number": 24,
+      "parameters": {
+        "learning_rate": 2.0351767719061733e-05,
+        "batch_size": 153,
+        "n_steps": 1024,
+        "gamma": 0.9359874492934553,
+        "gae_lambda": 0.9231664996442446,
+        "clip_range": 0.19033649694486512,
+        "ent_coef": 0.09645534570748425,
+        "vf_coef": 0.40932284472038843,
+        "max_grad_norm": 0.8456871744025697
+      }
+    },
+    "parent_model": "./optuna_models/trial_23/checkpoint_1024_steps.zip",
+    "training_parameters": {
+      "learning_rate": 0.0003,
+      "n_steps": 2048,
+      "batch_size": 64,
+      "n_epochs": 10,
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "clip_range": 0.2,
+      "ent_coef": 0.01,
+      "vf_coef": 0.5,
+      "max_grad_norm": 0.5
+    },
+    "data_version": "202508"
+  },
+  {
+    "model_path": "./optuna_models/trial_25/checkpoint_1024_steps.zip",
+    "timestamp": "2025-08-03T22:42:24.289358",
+    "performance": {
+      "mean_reward": 453700.0,
+      "trial_number": 25,
+      "parameters": {
+        "learning_rate": 0.0007320568472988774,
+        "batch_size": 153,
+        "n_steps": 1024,
+        "gamma": 0.9479586215058797,
+        "gae_lambda": 0.9003237467624694,
+        "clip_range": 0.22307970292280763,
+        "ent_coef": 0.007388794110365539,
+        "vf_coef": 0.7976949766303139,
+        "max_grad_norm": 0.7653542190022331
+      }
+    },
+    "parent_model": "./optuna_models/trial_24/checkpoint_1024_steps.zip",
+    "training_parameters": {
+      "learning_rate": 0.0003,
+      "n_steps": 2048,
+      "batch_size": 64,
+      "n_epochs": 10,
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "clip_range": 0.2,
+      "ent_coef": 0.01,
+      "vf_coef": 0.5,
+      "max_grad_norm": 0.5
+    },
+    "data_version": "202508"
+  },
+  {
+    "model_path": "./optuna_models/trial_26/checkpoint_1024_steps.zip",
+    "timestamp": "2025-08-03T22:44:50.376113",
+    "performance": {
+      "mean_reward": 453700.0,
+      "trial_number": 26,
+      "parameters": {
+        "learning_rate": 0.00044383090454104497,
+        "batch_size": 38,
+        "n_steps": 1024,
+        "gamma": 0.9753444598342006,
+        "gae_lambda": 0.936025752859538,
+        "clip_range": 0.15719644357736712,
+        "ent_coef": 0.05851209475544344,
+        "vf_coef": 0.23294318341232523,
+        "max_grad_norm": 0.7114266158274279
+      }
+    },
+    "parent_model": "./optuna_models/trial_25/checkpoint_1024_steps.zip",
+    "training_parameters": {
+      "learning_rate": 0.0003,
+      "n_steps": 2048,
+      "batch_size": 64,
+      "n_epochs": 10,
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "clip_range": 0.2,
+      "ent_coef": 0.01,
+      "vf_coef": 0.5,
+      "max_grad_norm": 0.5
+    },
+    "data_version": "202508"
+  },
+  {
+    "model_path": "./optuna_models/trial_27/checkpoint_1024_steps.zip",
+    "timestamp": "2025-08-03T22:47:52.353806",
+    "performance": {
+      "mean_reward": 453700.0,
+      "trial_number": 27,
+      "parameters": {
+        "learning_rate": 0.00020187409653401591,
+        "batch_size": 19,
+        "n_steps": 1024,
+        "gamma": 0.9196868061130921,
+        "gae_lambda": 0.9298062831930849,
+        "clip_range": 0.2018109204800211,
+        "ent_coef": 0.027134944388106222,
+        "vf_coef": 0.9010522551583249,
+        "max_grad_norm": 0.621907017878623
+      }
+    },
+    "parent_model": "./optuna_models/trial_26/checkpoint_1024_steps.zip",
+    "training_parameters": {
+      "learning_rate": 0.0003,
+      "n_steps": 2048,
+      "batch_size": 64,
+      "n_epochs": 10,
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "clip_range": 0.2,
+      "ent_coef": 0.01,
+      "vf_coef": 0.5,
+      "max_grad_norm": 0.5
+    },
+    "data_version": "202508"
+  },
+  {
+    "model_path": "./optuna_models/trial_28/checkpoint_4096_steps.zip",
+    "timestamp": "2025-08-03T22:50:22.599029",
+    "performance": {
+      "mean_reward": 453700.0,
+      "trial_number": 28,
+      "parameters": {
+        "learning_rate": 0.0019815109199622606,
+        "batch_size": 38,
+        "n_steps": 4096,
+        "gamma": 0.9380345557399998,
+        "gae_lambda": 0.9173222522663662,
+        "clip_range": 0.18283263297877325,
+        "ent_coef": 0.016745857702982498,
+        "vf_coef": 0.7468596305942673,
+        "max_grad_norm": 0.9303333516698731
+      }
+    },
+    "parent_model": "./optuna_models/trial_27/checkpoint_1024_steps.zip",
+    "training_parameters": {
+      "learning_rate": 0.0003,
+      "n_steps": 2048,
+      "batch_size": 64,
+      "n_epochs": 10,
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "clip_range": 0.2,
+      "ent_coef": 0.01,
+      "vf_coef": 0.5,
+      "max_grad_norm": 0.5
+    },
+    "data_version": "202508"
+  },
+  {
+    "model_path": "./optuna_models/trial_29/checkpoint_2048_steps.zip",
+    "timestamp": "2025-08-03T22:53:27.446304",
+    "performance": {
+      "mean_reward": 453700.0,
+      "trial_number": 29,
+      "parameters": {
+        "learning_rate": 1.8254616056690658e-05,
+        "batch_size": 19,
+        "n_steps": 2048,
+        "gamma": 0.9326657566317227,
+        "gae_lambda": 0.9490616936925849,
+        "clip_range": 0.24131954714821968,
+        "ent_coef": 0.05213596969791804,
+        "vf_coef": 0.5723388579524366,
+        "max_grad_norm": 0.6632386813884227
+      }
+    },
+    "parent_model": "./optuna_models/trial_28/checkpoint_4096_steps.zip",
+    "training_parameters": {
+      "learning_rate": 0.0003,
+      "n_steps": 2048,
+      "batch_size": 64,
+      "n_epochs": 10,
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "clip_range": 0.2,
+      "ent_coef": 0.01,
+      "vf_coef": 0.5,
+      "max_grad_norm": 0.5
+    },
+    "data_version": "202508"
+  },
+  {
+    "model_path": "./optuna_models/trial_30/checkpoint_2048_steps.zip",
+    "timestamp": "2025-08-03T22:55:17.656865",
+    "performance": {
+      "mean_reward": 453700.0,
+      "trial_number": 30,
+      "parameters": {
+        "learning_rate": 0.00032891746314928625,
+        "batch_size": 153,
+        "n_steps": 2048,
+        "gamma": 0.946415188715983,
+        "gae_lambda": 0.9434077743621312,
+        "clip_range": 0.26781170638161084,
+        "ent_coef": 0.03346099924249953,
+        "vf_coef": 0.9802168507195099,
+        "max_grad_norm": 0.49287499277120744
+      }
+    },
+    "parent_model": "./optuna_models/trial_29/checkpoint_2048_steps.zip",
+    "training_parameters": {
+      "learning_rate": 0.0003,
+      "n_steps": 2048,
+      "batch_size": 64,
+      "n_epochs": 10,
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "clip_range": 0.2,
+      "ent_coef": 0.01,
+      "vf_coef": 0.5,
+      "max_grad_norm": 0.5
+    },
+    "data_version": "202508"
+  },
+  {
+    "model_path": "./optuna_models/trial_31/checkpoint_2048_steps.zip",
+    "timestamp": "2025-08-03T22:58:23.207166",
+    "performance": {
+      "mean_reward": 453700.0,
+      "trial_number": 31,
+      "parameters": {
+        "learning_rate": 9.172448083204722e-06,
+        "batch_size": 19,
+        "n_steps": 2048,
+        "gamma": 0.9098555773802022,
+        "gae_lambda": 0.9500803339792188,
+        "clip_range": 0.29902436702656954,
+        "ent_coef": 0.06020822675842782,
+        "vf_coef": 0.9994285794359159,
+        "max_grad_norm": 0.8270642407788615
+      }
+    },
+    "parent_model": "./optuna_models/trial_30/checkpoint_2048_steps.zip",
+    "training_parameters": {
+      "learning_rate": 0.0003,
+      "n_steps": 2048,
+      "batch_size": 64,
+      "n_epochs": 10,
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "clip_range": 0.2,
+      "ent_coef": 0.01,
+      "vf_coef": 0.5,
+      "max_grad_norm": 0.5
+    },
+    "data_version": "202508"
+  },
+  {
+    "model_path": "./optuna_models/trial_32/checkpoint_2048_steps.zip",
+    "timestamp": "2025-08-03T23:01:26.781910",
+    "performance": {
+      "mean_reward": 453700.0,
+      "trial_number": 32,
+      "parameters": {
+        "learning_rate": 8.164240114563434e-06,
+        "batch_size": 19,
+        "n_steps": 2048,
+        "gamma": 0.9541459300653676,
+        "gae_lambda": 0.9607716465122486,
+        "clip_range": 0.282682962481892,
+        "ent_coef": 0.011546651220507671,
+        "vf_coef": 0.8370450104235975,
+        "max_grad_norm": 0.736617188084063
+      }
+    },
+    "parent_model": "./optuna_models/trial_31/checkpoint_2048_steps.zip",
+    "training_parameters": {
+      "learning_rate": 0.0003,
+      "n_steps": 2048,
+      "batch_size": 64,
+      "n_epochs": 10,
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "clip_range": 0.2,
+      "ent_coef": 0.01,
+      "vf_coef": 0.5,
+      "max_grad_norm": 0.5
+    },
+    "data_version": "202508"
+  },
+  {
+    "model_path": "./optuna_models/trial_33/checkpoint_2048_steps.zip",
+    "timestamp": "2025-08-03T23:05:09.936102",
+    "performance": {
+      "mean_reward": 453700.0,
+      "trial_number": 33,
+      "parameters": {
+        "learning_rate": 1.2773163513714787e-05,
+        "batch_size": 19,
+        "n_steps": 2048,
+        "gamma": 0.9423585072579579,
+        "gae_lambda": 0.9385508443358328,
+        "clip_range": 0.21304220654069678,
+        "ent_coef": 0.08120386442071612,
+        "vf_coef": 0.9258332436859941,
+        "max_grad_norm": 0.9578998608404569
+      }
+    },
+    "parent_model": "./optuna_models/trial_32/checkpoint_2048_steps.zip",
+    "training_parameters": {
+      "learning_rate": 0.0003,
+      "n_steps": 2048,
+      "batch_size": 64,
+      "n_epochs": 10,
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "clip_range": 0.2,
+      "ent_coef": 0.01,
+      "vf_coef": 0.5,
+      "max_grad_norm": 0.5
+    },
+    "data_version": "202508"
+  },
+  {
+    "model_path": "./optuna_models/trial_34/checkpoint_2048_steps.zip",
+    "timestamp": "2025-08-03T23:08:14.614788",
+    "performance": {
+      "mean_reward": 453700.0,
+      "trial_number": 34,
+      "parameters": {
+        "learning_rate": 7.322041703163039e-05,
+        "batch_size": 19,
+        "n_steps": 2048,
+        "gamma": 0.9602302058215035,
+        "gae_lambda": 0.9635418100484482,
+        "clip_range": 0.24725230890563704,
+        "ent_coef": 0.020304800465087702,
+        "vf_coef": 0.828003159944938,
+        "max_grad_norm": 0.5875015762640955
+      }
+    },
+    "parent_model": "./optuna_models/trial_33/checkpoint_2048_steps.zip",
+    "training_parameters": {
+      "learning_rate": 0.0003,
+      "n_steps": 2048,
+      "batch_size": 64,
+      "n_epochs": 10,
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "clip_range": 0.2,
+      "ent_coef": 0.01,
+      "vf_coef": 0.5,
+      "max_grad_norm": 0.5
+    },
+    "data_version": "202508"
+  },
+  {
+    "model_path": "./optuna_models/trial_35/checkpoint_1024_steps.zip",
+    "timestamp": "2025-08-03T23:10:04.764425",
+    "performance": {
+      "mean_reward": 453700.0,
+      "trial_number": 35,
+      "parameters": {
+        "learning_rate": 3.643875762563512e-05,
+        "batch_size": 153,
+        "n_steps": 1024,
+        "gamma": 0.9273057577718047,
+        "gae_lambda": 0.955124805975566,
+        "clip_range": 0.16325751591909035,
+        "ent_coef": 0.03267686307734421,
+        "vf_coef": 0.8888651423483236,
+        "max_grad_norm": 0.8073954498610616
+      }
+    },
+    "parent_model": "./optuna_models/trial_34/checkpoint_2048_steps.zip",
+    "training_parameters": {
+      "learning_rate": 0.0003,
+      "n_steps": 2048,
+      "batch_size": 64,
+      "n_epochs": 10,
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "clip_range": 0.2,
+      "ent_coef": 0.01,
+      "vf_coef": 0.5,
+      "max_grad_norm": 0.5
+    },
+    "data_version": "202508"
+  },
+  {
+    "model_path": "./optuna_models/trial_36/checkpoint_4096_steps.zip",
+    "timestamp": "2025-08-03T23:12:09.241905",
+    "performance": {
+      "mean_reward": 453700.0,
+      "trial_number": 36,
+      "parameters": {
+        "learning_rate": 2.9862662750028377e-05,
+        "batch_size": 76,
+        "n_steps": 4096,
+        "gamma": 0.9299732015285656,
+        "gae_lambda": 0.9077981085116807,
+        "clip_range": 0.284297774266938,
+        "ent_coef": 0.01120158460936679,
+        "vf_coef": 0.17961033177868313,
+        "max_grad_norm": 0.8891172800107742
+      }
+    },
+    "parent_model": "./optuna_models/trial_35/checkpoint_1024_steps.zip",
+    "training_parameters": {
+      "learning_rate": 0.0003,
+      "n_steps": 2048,
+      "batch_size": 64,
+      "n_epochs": 10,
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "clip_range": 0.2,
+      "ent_coef": 0.01,
+      "vf_coef": 0.5,
+      "max_grad_norm": 0.5
+    },
+    "data_version": "202508"
+  },
+  {
+    "model_path": "./optuna_models/trial_37/checkpoint_1024_steps.zip",
+    "timestamp": "2025-08-03T23:15:12.062673",
+    "performance": {
+      "mean_reward": 453700.0,
+      "trial_number": 37,
+      "parameters": {
+        "learning_rate": 1.2481179319328217e-05,
+        "batch_size": 19,
+        "n_steps": 1024,
+        "gamma": 0.9230723425222533,
+        "gae_lambda": 0.9692007085511739,
+        "clip_range": 0.1393655220694447,
+        "ent_coef": 0.04468788211586225,
+        "vf_coef": 0.7171914551853568,
+        "max_grad_norm": 0.7786333539050854
+      }
+    },
+    "parent_model": "./optuna_models/trial_36/checkpoint_4096_steps.zip",
+    "training_parameters": {
+      "learning_rate": 0.0003,
+      "n_steps": 2048,
+      "batch_size": 64,
+      "n_epochs": 10,
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "clip_range": 0.2,
+      "ent_coef": 0.01,
+      "vf_coef": 0.5,
+      "max_grad_norm": 0.5
+    },
+    "data_version": "202508"
+  },
+  {
+    "model_path": "./optuna_models/trial_38/checkpoint_2048_steps.zip",
+    "timestamp": "2025-08-03T23:17:39.087623",
+    "performance": {
+      "mean_reward": 453700.0,
+      "trial_number": 38,
+      "parameters": {
+        "learning_rate": 0.0001638123257650963,
+        "batch_size": 38,
+        "n_steps": 2048,
+        "gamma": 0.9114452672117215,
+        "gae_lambda": 0.928867734899316,
+        "clip_range": 0.17851608375866732,
+        "ent_coef": 0.013780164627325751,
+        "vf_coef": 0.8528192913781921,
+        "max_grad_norm": 0.6737909855013503
+      }
+    },
+    "parent_model": "./optuna_models/trial_37/checkpoint_1024_steps.zip",
+    "training_parameters": {
+      "learning_rate": 0.0003,
+      "n_steps": 2048,
+      "batch_size": 64,
+      "n_epochs": 10,
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "clip_range": 0.2,
+      "ent_coef": 0.01,
+      "vf_coef": 0.5,
+      "max_grad_norm": 0.5
+    },
+    "data_version": "202508"
+  },
+  {
+    "model_path": "./optuna_models/trial_39/checkpoint_1024_steps.zip",
+    "timestamp": "2025-08-03T23:19:41.944856",
+    "performance": {
+      "mean_reward": 453700.0,
+      "trial_number": 39,
+      "parameters": {
+        "learning_rate": 0.0013833418093560914,
+        "batch_size": 76,
+        "n_steps": 1024,
+        "gamma": 0.9512857772521943,
+        "gae_lambda": 0.946458239487115,
+        "clip_range": 0.12354745023365346,
+        "ent_coef": 0.06934328456031864,
+        "vf_coef": 0.9454126948596685,
+        "max_grad_norm": 0.540939660554466
+      }
+    },
+    "parent_model": "./optuna_models/trial_38/checkpoint_2048_steps.zip",
+    "training_parameters": {
+      "learning_rate": 0.0003,
+      "n_steps": 2048,
+      "batch_size": 64,
+      "n_epochs": 10,
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "clip_range": 0.2,
+      "ent_coef": 0.01,
+      "vf_coef": 0.5,
+      "max_grad_norm": 0.5
+    },
+    "data_version": "202508"
+  },
+  {
+    "model_path": "./optuna_models/trial_40/checkpoint_2048_steps.zip",
+    "timestamp": "2025-08-03T23:21:31.958480",
+    "performance": {
+      "mean_reward": 453700.0,
+      "trial_number": 40,
+      "parameters": {
+        "learning_rate": 0.003251242711063429,
+        "batch_size": 153,
+        "n_steps": 2048,
+        "gamma": 0.9415749027208892,
+        "gae_lambda": 0.9340482973044356,
+        "clip_range": 0.2572000016880746,
+        "ent_coef": 0.005329529349037896,
+        "vf_coef": 0.9994615234877393,
+        "max_grad_norm": 0.4209405101771012
+      }
+    },
+    "parent_model": "./optuna_models/trial_39/checkpoint_1024_steps.zip",
+    "training_parameters": {
+      "learning_rate": 0.0003,
+      "n_steps": 2048,
+      "batch_size": 64,
+      "n_epochs": 10,
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "clip_range": 0.2,
+      "ent_coef": 0.01,
+      "vf_coef": 0.5,
+      "max_grad_norm": 0.5
+    },
+    "data_version": "202508"
+  },
+  {
+    "model_path": "./optuna_models/trial_41/checkpoint_4096_steps.zip",
+    "timestamp": "2025-08-03T23:23:24.332987",
+    "performance": {
+      "mean_reward": 453700.0,
+      "trial_number": 41,
+      "parameters": {
+        "learning_rate": 1.0695458684144247e-05,
+        "batch_size": 153,
+        "n_steps": 4096,
+        "gamma": 0.90573637777572,
+        "gae_lambda": 0.9584345752194692,
+        "clip_range": 0.21013159054305502,
+        "ent_coef": 0.09561305943875972,
+        "vf_coef": 0.5090987641378026,
+        "max_grad_norm": 0.9116471295611891
+      }
+    },
+    "parent_model": "./optuna_models/trial_40/checkpoint_2048_steps.zip",
+    "training_parameters": {
+      "learning_rate": 0.0003,
+      "n_steps": 2048,
+      "batch_size": 64,
+      "n_epochs": 10,
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "clip_range": 0.2,
+      "ent_coef": 0.01,
+      "vf_coef": 0.5,
+      "max_grad_norm": 0.5
+    },
+    "data_version": "202508"
+  },
+  {
+    "model_path": "./optuna_models/trial_42/checkpoint_4096_steps.zip",
+    "timestamp": "2025-08-03T23:25:15.247066",
+    "performance": {
+      "mean_reward": 453700.0,
+      "trial_number": 42,
+      "parameters": {
+        "learning_rate": 1.5696751818323997e-05,
+        "batch_size": 153,
+        "n_steps": 4096,
+        "gamma": 0.9132831183159399,
+        "gae_lambda": 0.9521145342359305,
+        "clip_range": 0.19633974154781145,
+        "ent_coef": 0.03969488768141566,
+        "vf_coef": 0.9358945037486711,
+        "max_grad_norm": 0.9696429346881306
+      }
+    },
+    "parent_model": "./optuna_models/trial_41/checkpoint_4096_steps.zip",
+    "training_parameters": {
+      "learning_rate": 0.0003,
+      "n_steps": 2048,
+      "batch_size": 64,
+      "n_epochs": 10,
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "clip_range": 0.2,
+      "ent_coef": 0.01,
+      "vf_coef": 0.5,
+      "max_grad_norm": 0.5
+    },
+    "data_version": "202508"
+  },
+  {
+    "model_path": "./optuna_models/trial_43/checkpoint_4096_steps.zip",
+    "timestamp": "2025-08-03T23:27:07.381122",
+    "performance": {
+      "mean_reward": 453700.0,
+      "trial_number": 43,
+      "parameters": {
+        "learning_rate": 7.890672718653306e-06,
+        "batch_size": 153,
+        "n_steps": 4096,
+        "gamma": 0.9006996232515001,
+        "gae_lambda": 0.9215372155629902,
+        "clip_range": 0.22161878592096534,
+        "ent_coef": 0.07021441230150188,
+        "vf_coef": 0.8087786096535732,
+        "max_grad_norm": 0.7714136282767613
+      }
+    },
+    "parent_model": "./optuna_models/trial_42/checkpoint_4096_steps.zip",
+    "training_parameters": {
+      "learning_rate": 0.0003,
+      "n_steps": 2048,
+      "batch_size": 64,
+      "n_epochs": 10,
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "clip_range": 0.2,
+      "ent_coef": 0.01,
+      "vf_coef": 0.5,
+      "max_grad_norm": 0.5
+    },
+    "data_version": "202508"
+  },
+  {
+    "model_path": "./optuna_models/trial_44/checkpoint_4096_steps.zip",
+    "timestamp": "2025-08-03T23:29:37.151473",
+    "performance": {
+      "mean_reward": 113425.0,
+      "trial_number": 44,
+      "parameters": {
+        "learning_rate": 0.006548342981079177,
+        "batch_size": 38,
+        "n_steps": 4096,
+        "gamma": 0.9069552968174456,
+        "gae_lambda": 0.9414290910963533,
+        "clip_range": 0.1731070274880301,
+        "ent_coef": 0.048909143568292644,
+        "vf_coef": 0.6785798106873506,
+        "max_grad_norm": 0.8214997251236557
+      }
+    },
+    "parent_model": "./optuna_models/trial_43/checkpoint_4096_steps.zip",
+    "training_parameters": {
+      "learning_rate": 0.0003,
+      "n_steps": 2048,
+      "batch_size": 64,
+      "n_epochs": 10,
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "clip_range": 0.2,
+      "ent_coef": 0.01,
+      "vf_coef": 0.5,
+      "max_grad_norm": 0.5
+    },
+    "data_version": "202508"
+  },
+  {
+    "model_path": "./optuna_models/trial_45/checkpoint_4096_steps.zip",
+    "timestamp": "2025-08-03T23:31:43.277355",
+    "performance": {
+      "mean_reward": 453700.0,
+      "trial_number": 45,
+      "parameters": {
+        "learning_rate": 2.530387853459724e-05,
+        "batch_size": 76,
+        "n_steps": 4096,
+        "gamma": 0.9145662617201686,
+        "gae_lambda": 0.9681231675634747,
+        "clip_range": 0.23794948969078522,
+        "ent_coef": 0.001115585387921992,
+        "vf_coef": 0.8669165432027028,
+        "max_grad_norm": 0.8752963573135749
+      }
+    },
+    "parent_model": "./optuna_models/trial_44/checkpoint_4096_steps.zip",
+    "training_parameters": {
+      "learning_rate": 0.0003,
+      "n_steps": 2048,
+      "batch_size": 64,
+      "n_epochs": 10,
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "clip_range": 0.2,
+      "ent_coef": 0.01,
+      "vf_coef": 0.5,
+      "max_grad_norm": 0.5
+    },
+    "data_version": "202508"
+  },
+  {
+    "model_path": "./optuna_models/trial_46/checkpoint_2048_steps.zip",
+    "timestamp": "2025-08-03T23:34:48.368483",
+    "performance": {
+      "mean_reward": 453700.0,
+      "trial_number": 46,
+      "parameters": {
+        "learning_rate": 1.532669886629828e-05,
+        "batch_size": 19,
+        "n_steps": 2048,
+        "gamma": 0.9234145433554937,
+        "gae_lambda": 0.9441808310152998,
+        "clip_range": 0.18620295346290663,
+        "ent_coef": 0.006038389734149918,
+        "vf_coef": 0.3794170532703774,
+        "max_grad_norm": 0.6177532335060516
+      }
+    },
+    "parent_model": "./optuna_models/trial_45/checkpoint_4096_steps.zip",
+    "training_parameters": {
+      "learning_rate": 0.0003,
+      "n_steps": 2048,
+      "batch_size": 64,
+      "n_epochs": 10,
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "clip_range": 0.2,
+      "ent_coef": 0.01,
+      "vf_coef": 0.5,
+      "max_grad_norm": 0.5
+    },
+    "data_version": "202508"
+  },
+  {
+    "model_path": "./optuna_models/trial_47/checkpoint_1024_steps.zip",
+    "timestamp": "2025-08-03T23:37:15.570823",
+    "performance": {
+      "mean_reward": 453700.0,
+      "trial_number": 47,
+      "parameters": {
+        "learning_rate": 0.0008875552662421361,
+        "batch_size": 38,
+        "n_steps": 1024,
+        "gamma": 0.9313757852137281,
+        "gae_lambda": 0.9876488768884458,
+        "clip_range": 0.14671064761572977,
+        "ent_coef": 0.020417626776651713,
+        "vf_coef": 0.5915826787076935,
+        "max_grad_norm": 0.6882656032062171
+      }
+    },
+    "parent_model": "./optuna_models/trial_46/checkpoint_2048_steps.zip",
+    "training_parameters": {
+      "learning_rate": 0.0003,
+      "n_steps": 2048,
+      "batch_size": 64,
+      "n_epochs": 10,
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "clip_range": 0.2,
+      "ent_coef": 0.01,
+      "vf_coef": 0.5,
+      "max_grad_norm": 0.5
+    },
+    "data_version": "202508"
+  },
+  {
+    "model_path": "./optuna_models/trial_48/checkpoint_2048_steps.zip",
+    "timestamp": "2025-08-03T23:39:18.284592",
+    "performance": {
+      "mean_reward": 453700.0,
+      "trial_number": 48,
+      "parameters": {
+        "learning_rate": 7.218856428861217e-06,
+        "batch_size": 76,
+        "n_steps": 2048,
+        "gamma": 0.9184246736800792,
+        "gae_lambda": 0.977645271572587,
+        "clip_range": 0.20185373519908584,
+        "ent_coef": 0.004012758733350937,
+        "vf_coef": 0.7480929031251428,
+        "max_grad_norm": 0.759287584164624
+      }
+    },
+    "parent_model": "./optuna_models/trial_47/checkpoint_1024_steps.zip",
+    "training_parameters": {
+      "learning_rate": 0.0003,
+      "n_steps": 2048,
+      "batch_size": 64,
+      "n_epochs": 10,
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "clip_range": 0.2,
+      "ent_coef": 0.01,
+      "vf_coef": 0.5,
+      "max_grad_norm": 0.5
+    },
+    "data_version": "202508"
+  },
+  {
+    "model_path": "./optuna_models/trial_49/checkpoint_1024_steps.zip",
+    "timestamp": "2025-08-03T23:41:08.504168",
+    "performance": {
+      "mean_reward": 453700.0,
+      "trial_number": 49,
+      "parameters": {
+        "learning_rate": 8.100281360989514e-05,
+        "batch_size": 153,
+        "n_steps": 1024,
+        "gamma": 0.9651127750320466,
+        "gae_lambda": 0.9541603634614437,
+        "clip_range": 0.2215847480979936,
+        "ent_coef": 0.05892179939067188,
+        "vf_coef": 0.8978096408439975,
+        "max_grad_norm": 0.9040600352028049
+      }
+    },
+    "parent_model": "./optuna_models/trial_48/checkpoint_2048_steps.zip",
+    "training_parameters": {
+      "learning_rate": 0.0003,
+      "n_steps": 2048,
+      "batch_size": 64,
+      "n_epochs": 10,
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "clip_range": 0.2,
+      "ent_coef": 0.01,
+      "vf_coef": 0.5,
+      "max_grad_norm": 0.5
+    },
+    "data_version": "202508"
+  }
+]

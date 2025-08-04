@@ -1,0 +1,87 @@
+{
+  "stages": [
+    {
+      "stage_id": 1,
+      "name": "基礎学習",
+      "description": "基本的な予測モデルの学習",
+      "difficulty_level": 0.2,
+      "parameters": {
+        "learning_rate": 0.001,
+        "batch_size": 32,
+        "epochs": 100,
+        "data_ratio": 0.3
+      },
+      "completion_criteria": {
+        "min_accuracy": 0.6,
+        "max_loss": 0.5,
+        "min_epochs": 50
+      },
+      "is_completed": false,
+      "completed_at": null,
+      "performance_metrics": null
+    },
+    {
+      "stage_id": 2,
+      "name": "中級学習",
+      "description": "より複雑な特徴量を使用した学習",
+      "difficulty_level": 0.5,
+      "parameters": {
+        "learning_rate": 0.0005,
+        "batch_size": 64,
+        "epochs": 200,
+        "data_ratio": 0.6
+      },
+      "completion_criteria": {
+        "min_accuracy": 0.7,
+        "max_loss": 0.4,
+        "min_epochs": 100
+      },
+      "is_completed": false,
+      "completed_at": null,
+      "performance_metrics": null
+    },
+    {
+      "stage_id": 3,
+      "name": "上級学習",
+      "description": "全データを使用した高度な学習",
+      "difficulty_level": 0.8,
+      "parameters": {
+        "learning_rate": 0.0001,
+        "batch_size": 128,
+        "epochs": 300,
+        "data_ratio": 1.0
+      },
+      "completion_criteria": {
+        "min_accuracy": 0.8,
+        "max_loss": 0.3,
+        "min_epochs": 150
+      },
+      "is_completed": false,
+      "completed_at": null,
+      "performance_metrics": null
+    },
+    {
+      "stage_id": 4,
+      "name": "最適化学習",
+      "description": "ハイパーパラメータ最適化による学習",
+      "difficulty_level": 1.0,
+      "parameters": {
+        "learning_rate": 5e-05,
+        "batch_size": 256,
+        "epochs": 500,
+        "data_ratio": 1.0,
+        "use_optimization": true
+      },
+      "completion_criteria": {
+        "min_accuracy": 0.85,
+        "max_loss": 0.25,
+        "min_epochs": 200
+      },
+      "is_completed": false,
+      "completed_at": null,
+      "performance_metrics": null
+    }
+  ],
+  "current_stage_index": 0,
+  "curriculum_history": []
+}

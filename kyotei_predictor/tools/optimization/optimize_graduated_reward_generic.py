@@ -26,11 +26,8 @@ from kyotei_predictor.pipelines.kyotei_env import KyoteiEnvManager
 def create_env(data_dir, bet_amount=100):
     """環境を作成"""
     def make_env():
-        env = KyoteiEnvManager(data_dir=data_dir, bet_amount=bet_amount)
-        env = Monitor(env)
-        return env
-    
-    return DummyVecEnv([make_env])
+        return KyoteiEnvManager(data_dir=data_dir, bet_amount=bet_amount)
+    return make_env
 
 def create_env_with_pairs(data_dir, pairs, bet_amount=100):
     """事前検索されたペア情報を使用して環境を作成"""
@@ -43,8 +40,12 @@ def create_env_with_pairs(data_dir, pairs, bet_amount=100):
     return DummyVecEnv([make_env])
 
 def objective(trial, data_dir, test_mode=False, data_check_env=None):
-    print(f"[objective] Trial {trial.number} started")
+    """最適化の目的関数"""
     try:
+        # 環境作成
+        train_env = create_env(data_dir, bet_amount=100)
+        eval_env = create_env(data_dir, bet_amount=100)
+        
         # ハイパーパラメータの提案
         learning_rate = trial.suggest_float('learning_rate', 1e-5, 1e-2, log=True)
         batch_size = trial.suggest_categorical('batch_size', [32, 64, 128, 256])
@@ -100,11 +101,11 @@ def objective(trial, data_dir, test_mode=False, data_check_env=None):
         
         # テストモードの場合は短時間設定
         if test_mode:
-            total_timesteps = 1000   # テスト用（少し増加）
-            n_eval_episodes = 10     # テスト用（少し増加）
+            total_timesteps = 500    # テスト用（削減）
+            n_eval_episodes = 5      # テスト用（削減）
         else:
-            total_timesteps = 500000  # 本番用（大幅増加）
-            n_eval_episodes = 200     # 本番用（元の設定）
+            total_timesteps = 50000  # 本番用（大幅削減）
+            n_eval_episodes = 50     # 本番用（大幅削減）
         
         print(f"[objective] model.learn start (timesteps: {total_timesteps})")
         model.learn(
@@ -132,7 +133,7 @@ def objective(trial, data_dir, test_mode=False, data_check_env=None):
         return -1000.0  # エラーの場合は低いスコアを返す
 
 def evaluate_model(model, env, n_eval_episodes=200):
-    """モデルの評価（改善版）"""
+    """モデルの評価（改善版・タイムアウト機能付き）"""
     rewards = []
     hit_types = []
     episode_lengths = []
@@ -147,7 +148,10 @@ def evaluate_model(model, env, n_eval_episodes=200):
         episode_bets = 0
         episode_results = []
         
-        while not done:
+        # タイムアウト設定（最大ステップ数）
+        max_steps = 10000  # 10,000ステップでタイムアウト
+        
+        while not done and episode_steps < max_steps:
             action, _ = model.predict(obs, deterministic=True)
             obs, reward, done, info = env.step(action)
             episode_reward += reward
@@ -173,6 +177,10 @@ def evaluate_model(model, env, n_eval_episodes=200):
                     'hit': info[0].get('hit', 0),
                     'reward': reward
                 })
+        
+        # タイムアウト時の処理
+        if episode_steps >= max_steps:
+            print(f"Episode {episode}: Timeout after {max_steps} steps")
         
         rewards.append(episode_reward)
         episode_lengths.append(episode_steps)
@@ -398,7 +406,7 @@ def optimize_graduated_reward_generic(
         else:
             eval_env = create_env(data_dir=data_dir)
         
-        detailed_results = evaluate_model(best_model, eval_env, n_eval_episodes=200)
+        detailed_results = evaluate_model(best_model, eval_env, n_eval_episodes=10)
         
         print(f"詳細評価結果:")
         print(f"  的中率: {detailed_results['hit_rate']:.2f}%")
@@ -437,8 +445,21 @@ def optimize_graduated_reward_generic(
         
         # 詳細評価結果を専用ディレクトリにも保存
         detailed_results_path = f"./results/{study_name}_{timestamp}_detailed.json"
+        
+        # numpy型をPythonネイティブ型に変換
+        serializable_results = {}
+        for key, value in detailed_results.items():
+            if isinstance(value, np.ndarray):
+                serializable_results[key] = value.tolist()
+            elif isinstance(value, np.float32) or isinstance(value, np.float64):
+                serializable_results[key] = float(value)
+            elif isinstance(value, np.int32) or isinstance(value, np.int64):
+                serializable_results[key] = int(value)
+            else:
+                serializable_results[key] = value
+        
         with open(detailed_results_path, 'w', encoding='utf-8') as f:
-            json.dump(detailed_results, f, indent=2, ensure_ascii=False)
+            json.dump(serializable_results, f, indent=2, ensure_ascii=False)
         
         print(f"詳細評価結果を保存しました: {detailed_results_path}")
     

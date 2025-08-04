@@ -84,16 +84,24 @@ class KyoteiEnv(gym.Env):
             logger.info(f"KyoteiEnv初期化完了: {len(self.race_files)}レース, ベット金額: {bet_amount}円")
     
     def _load_race_files(self):
-        """レースファイルの読み込み"""
+        """レースファイルの読み込み（改善版）"""
         try:
             if not self.data_dir.exists():
                 logger.warning(f"データディレクトリが存在しません: {self.data_dir}")
                 self.race_files = []
                 return
             
-            # JSONファイルを検索
-            race_files = list(self.data_dir.glob("*.json"))
-            self.race_files = [f for f in race_files if "race_data" in f.name]
+            # 月別サブディレクトリからレースファイルを検索
+            race_files = []
+            for month_dir in self.data_dir.iterdir():
+                if month_dir.is_dir() and month_dir.name.startswith('2024-'):
+                    # 月別ディレクトリ内のrace_dataファイルを検索
+                    month_race_files = list(month_dir.glob("race_data_*.json"))
+                    race_files.extend(month_race_files)
+            
+
+            
+            self.race_files = race_files
             
             logger.info(f"レースファイル読み込み完了: {len(self.race_files)}件")
             
@@ -236,15 +244,15 @@ class KyoteiEnv(gym.Env):
             return None
     
     def reset(self, seed: Optional[int] = None, options: Optional[Dict] = None) -> Tuple[np.ndarray, Dict]:
-        """環境をリセット"""
+        """環境をリセット（改善版）"""
         super().reset(seed=seed)
         
         if not self.race_files:
             logger.warning("レースファイルがありません")
             return np.zeros((6, 8), dtype=np.float32), {}
         
-        # ランダムにレースを選択
-        self.current_race_index = self.np_random.integers(0, len(self.race_files))
+        # エピソード開始：最初のレースから開始
+        self.current_race_index = 0
         race_file = self.race_files[self.current_race_index]
         
         # レースデータを読み込み
@@ -257,8 +265,8 @@ class KyoteiEnv(gym.Env):
         # 特徴量を抽出
         features = self._extract_features(self.current_race_data)
         
-        logger.debug(f"環境リセット: {race_file.name}")
-        return features, {}
+        logger.debug(f"環境リセット: {race_file.name} (エピソード開始)")
+        return features, {'episode_start': True, 'total_races': len(self.race_files)}
     
     def step(self, action: int) -> Tuple[np.ndarray, float, bool, bool, Dict]:
         """環境を1ステップ進める（改善版）"""
@@ -277,12 +285,22 @@ class KyoteiEnv(gym.Env):
         # 報酬を計算
         reward = self._calculate_reward(predicted_trifecta, actual_result)
         
-        # 観測（次のレースの特徴量）
-        next_features = self._extract_features(self.current_race_data)
+        # 次のレースに進む
+        self.current_race_index += 1
         
-        # 終了フラグ（常にTrue、1レースごとにリセット）
-        terminated = True
+        # エピソード終了条件：すべてのレースを処理した場合
+        terminated = self.current_race_index >= len(self.race_files)
         truncated = False
+        
+        # 次のレースの観測を準備
+        if not terminated:
+            # 次のレースデータを読み込み
+            next_race_file = self.race_files[self.current_race_index]
+            self.current_race_data = self._load_race_data(next_race_file)
+            next_features = self._extract_features(self.current_race_data)
+        else:
+            # エピソード終了時はゼロベクトル
+            next_features = np.zeros((6, 8), dtype=np.float32)
         
         info = {
             'predicted': predicted_trifecta,
@@ -292,7 +310,10 @@ class KyoteiEnv(gym.Env):
             'bet': 1,  # 1レースにつき1ベット
             'reward': reward,
             'predicted_trifecta': predicted_trifecta,  # 後方互換性
-            'actual_result': actual_result  # 後方互換性
+            'actual_result': actual_result,  # 後方互換性
+            'race_index': self.current_race_index,
+            'total_races': len(self.race_files),
+            'episode_ended': terminated
         }
         
         return next_features, reward, terminated, truncated, info

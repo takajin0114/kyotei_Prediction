@@ -1,0 +1,62 @@
+{
+  "optimization_time": "2025-08-03T21:32:43.105066",
+  "study_name": "integrated_continuous_opt",
+  "data_dir": "kyotei_predictor/data/raw/2024-01",
+  "n_trials": 1,
+  "test_mode": true,
+  "existing_trials": 0,
+  "total_trials": 1,
+  "best_trial": {
+    "number": 0,
+    "value": 453175.0,
+    "params": {
+      "learning_rate": 0.005908575315088267,
+      "batch_size": 256,
+      "n_steps": 1024,
+      "gamma": 0.9122473399878024,
+      "gae_lambda": 0.9663054127682281,
+      "clip_range": 0.10482483886135022,
+      "ent_coef": 0.01230763067203988,
+      "vf_coef": 0.41410325010707993,
+      "max_grad_norm": 0.8185614560361045
+    }
+  },
+  "continuous_learning_status": {
+    "continuous_learning": {
+      "latest_model": "optuna_models\\trial_0\\checkpoint_1024_steps.zip",
+      "history_count": 1
+    },
+    "curriculum_learning": {
+      "total_stages": 0,
+      "completed_stages": 0,
+      "current_stage_index": 0,
+      "progress_percentage": 0.0,
+      "current_stage": "基礎学習",
+      "is_completed": false
+    },
+    "overall_progress": {
+      "total_training_sessions": 1,
+      "completed_curriculum_stages": 0,
+      "total_curriculum_stages": 4,
+      "curriculum_completion_rate": 0.0
+    }
+  },
+  "all_trials": [
+    {
+      "number": 0,
+      "value": 453175.0,
+      "params": {
+        "learning_rate": 0.005908575315088267,
+        "batch_size": 256,
+        "n_steps": 1024,
+        "gamma": 0.9122473399878024,
+        "gae_lambda": 0.9663054127682281,
+        "clip_range": 0.10482483886135022,
+        "ent_coef": 0.01230763067203988,
+        "vf_coef": 0.41410325010707993,
+        "max_grad_norm": 0.8185614560361045
+      },
+      "state": "COMPLETE"
+    }
+  ]
+}

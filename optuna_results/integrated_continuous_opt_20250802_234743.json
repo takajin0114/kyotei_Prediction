@@ -1,0 +1,98 @@
+{
+  "optimization_time": "2025-08-02T23:47:43.253501",
+  "study_name": "integrated_continuous_opt",
+  "data_dir": "kyotei_predictor/data/raw/2024-01",
+  "n_trials": 3,
+  "test_mode": true,
+  "existing_trials": 0,
+  "total_trials": 3,
+  "best_trial": {
+    "number": 0,
+    "value": 453700.0,
+    "params": {
+      "learning_rate": 0.001178033686034351,
+      "batch_size": 128,
+      "n_steps": 1024,
+      "gamma": 0.9701626867685693,
+      "gae_lambda": 0.9428784202580696,
+      "n_epochs": 4,
+      "clip_range": 0.14208575199608203,
+      "ent_coef": 0.09946171687368362,
+      "vf_coef": 0.7397721502113382,
+      "max_grad_norm": 0.8912159123323319
+    }
+  },
+  "continuous_learning_status": {
+    "continuous_learning": {
+      "latest_model": "optuna_models\\trial_2\\checkpoint_4096_steps.zip",
+      "history_count": 0
+    },
+    "curriculum_learning": {
+      "total_stages": 4,
+      "completed_stages": 0,
+      "current_stage_index": 0,
+      "progress_percentage": 0.0,
+      "current_stage": "基礎学習",
+      "is_completed": false
+    },
+    "overall_progress": {
+      "total_training_sessions": 0,
+      "completed_curriculum_stages": 0,
+      "total_curriculum_stages": 4,
+      "curriculum_completion_rate": 0.0
+    }
+  },
+  "all_trials": [
+    {
+      "number": 0,
+      "value": 453700.0,
+      "params": {
+        "learning_rate": 0.001178033686034351,
+        "batch_size": 128,
+        "n_steps": 1024,
+        "gamma": 0.9701626867685693,
+        "gae_lambda": 0.9428784202580696,
+        "n_epochs": 4,
+        "clip_range": 0.14208575199608203,
+        "ent_coef": 0.09946171687368362,
+        "vf_coef": 0.7397721502113382,
+        "max_grad_norm": 0.8912159123323319
+      },
+      "state": "COMPLETE"
+    },
+    {
+      "number": 1,
+      "value": 366517.59375,
+      "params": {
+        "learning_rate": 0.0016814092500606502,
+        "batch_size": 128,
+        "n_steps": 4096,
+        "gamma": 0.9394666700402224,
+        "gae_lambda": 0.9486441007240443,
+        "n_epochs": 12,
+        "clip_range": 0.3489474631438357,
+        "ent_coef": 0.0426000531258683,
+        "vf_coef": 0.7008666659244267,
+        "max_grad_norm": 0.18675951191326612
+      },
+      "state": "COMPLETE"
+    },
+    {
+      "number": 2,
+      "value": 81164.75,
+      "params": {
+        "learning_rate": 0.004722035215986009,
+        "batch_size": 256,
+        "n_steps": 4096,
+        "gamma": 0.9274214706314545,
+        "gae_lambda": 0.9063118444607311,
+        "n_epochs": 19,
+        "clip_range": 0.32706822960826454,
+        "ent_coef": 0.0915627815642977,
+        "vf_coef": 0.23845280368022534,
+        "max_grad_norm": 0.34356433845073236
+      },
+      "state": "COMPLETE"
+    }
+  ]
+}

@@ -1,0 +1,143 @@
+{
+  "timestamp": "2025-08-03T23:41:12.171370",
+  "continuous_learning": {
+    "history": [
+      {
+        "model_path": "./optuna_models/trial_0/checkpoint_2048_steps.zip",
+        "timestamp": "2025-08-03T21:26:16.900694",
+        "performance": {
+          "mean_reward": -1000.0,
+          "trial_number": 0,
+          "parameters": {
+            "learning_rate": 1.1676308776831082e-05,
+            "batch_size": 76,
+            "n_steps": 2048,
+            "gamma": 0.9342984376509952,
+            "gae_lambda": 0.9671658571467053,
+            "clip_range": 0.149380247016991,
+            "ent_coef": 0.0049525818058229944,
+            "vf_coef": 0.5714553803854369,
+            "max_grad_norm": 0.4397305757550185
+          }
+        },
+        "parent_model": null,
+        "training_parameters": {
+          "learning_rate": 0.0003,
+          "n_steps": 2048,
+          "batch_size": 64,
+          "n_epochs": 10,
+          "gamma": 0.99,
+          "gae_lambda": 0.95,
+          "clip_range": 0.2,
+          "ent_coef": 0.01,
+          "vf_coef": 0.5,
+          "max_grad_norm": 0.5
+        },
+        "data_version": "202508"
+      },
+      {
+        "model_path": "./optuna_models/trial_0/checkpoint_1024_steps.zip",
+        "timestamp": "2025-08-03T21:32:39.830703",
+        "performance": {
+          "mean_reward": 453175.0,
+          "trial_number": 0,
+          "parameters": {
+            "learning_rate": 0.004254174226863553,
+            "batch_size": 153,
+            "n_steps": 1024,
+            "gamma": 0.9122473399878024,
+            "gae_lambda": 0.9663054127682281,
+            "clip_range": 0.10482483886135022,
+            "ent_coef": 0.01230763067203988,
+            "vf_coef": 0.41410325010707993,
+            "max_grad_norm": 0.8185614560361045
+          }
+        },
+        "parent_model": "./optuna_models/trial_0/checkpoint_2048_steps.zip",
+        "training_parameters": {
+          "learning_rate": 0.0003,
+          "n_steps": 2048,
+          "batch_size": 64,
+          "n_epochs": 10,
+          "gamma": 0.99,
+          "gae_lambda": 0.95,
+          "clip_range": 0.2,
+          "ent_coef": 0.01,
+          "vf_coef": 0.5,
+          "max_grad_norm": 0.5
+        },
+        "data_version": "202508"
+      }
+    ],
+    "latest_model": "optuna_models\\trial_0\\checkpoint_1024_steps.zip"
+  },
+  "curriculum_learning": {
+    "progress": {
+      "total_stages": 4,
+      "completed_stages": 0,
+      "current_stage_index": 0,
+      "progress_percentage": 0.0,
+      "current_stage": "基礎学習",
+      "is_completed": false
+    },
+    "stages": [
+      {
+        "id": 1,
+        "name": "基礎学習",
+        "description": "基本的な予測モデルの学習",
+        "difficulty_level": 0.2,
+        "is_completed": false,
+        "completed_at": null,
+        "performance_metrics": null
+      },
+      {
+        "id": 2,
+        "name": "中級学習",
+        "description": "より複雑な特徴量を使用した学習",
+        "difficulty_level": 0.5,
+        "is_completed": false,
+        "completed_at": null,
+        "performance_metrics": null
+      },
+      {
+        "id": 3,
+        "name": "上級学習",
+        "description": "全データを使用した高度な学習",
+        "difficulty_level": 0.8,
+        "is_completed": false,
+        "completed_at": null,
+        "performance_metrics": null
+      },
+      {
+        "id": 4,
+        "name": "最適化学習",
+        "description": "ハイパーパラメータ最適化による学習",
+        "difficulty_level": 1.0,
+        "is_completed": false,
+        "completed_at": null,
+        "performance_metrics": null
+      }
+    ],
+    "history": []
+  },
+  "training_status": {
+    "continuous_learning": {
+      "latest_model": "optuna_models\\trial_0\\checkpoint_1024_steps.zip",
+      "history_count": 2
+    },
+    "curriculum_learning": {
+      "total_stages": 0,
+      "completed_stages": 0,
+      "current_stage_index": 0,
+      "progress_percentage": 0.0,
+      "current_stage": "基礎学習",
+      "is_completed": false
+    },
+    "overall_progress": {
+      "total_training_sessions": 2,
+      "completed_curriculum_stages": 0,
+      "total_curriculum_stages": 4,
+      "curriculum_completion_rate": 0.0
+    }
+  }
+}

@@ -1,19 +1,19 @@
 @echo off
 chcp 65001 >nul
-REM Production optimization with cleanup
+REM Production optimization with continuous learning system
 REM Full production execution with cleanup after completion
 
 echo ========================================
-echo Production Optimization with Cleanup
+echo Production Optimization with Continuous Learning
 echo ========================================
 echo.
 
 REM Check if data month is provided as argument
 set DATA_MONTH=%1
 if "%DATA_MONTH%"=="" (
-    echo Usage: run_optimization_production_with_cleanup.bat [DATA_MONTH]
-    echo Example: run_optimization_production_with_cleanup.bat 2024-01
-    echo Example: run_optimization_production_with_cleanup.bat 2024-02
+    echo Usage: run_optimization_production_continuous.bat [DATA_MONTH]
+    echo Example: run_optimization_production_continuous.bat 2024-01
+    echo Example: run_optimization_production_continuous.bat 2024-02
     echo.
     echo Available data months:
     if exist "kyotei_predictor\data\raw" (
@@ -69,18 +69,18 @@ if not exist "kyotei_predictor\data\raw\%DATA_MONTH%" (
 )
 echo OK: %DATA_MONTH% data confirmed
 
-REM 4. Production optimization execution
+REM 4. Production optimization execution with continuous learning
 echo.
-echo [4/5] Starting production optimization...
+echo [4/5] Starting production optimization with continuous learning...
 echo Data month: %DATA_MONTH%
-echo Mode: Production
+echo Mode: Production with Continuous Learning
 echo Trials: 50
 echo Timesteps: 100000
 echo Eval episodes: 200
 echo.
 
-REM Production optimization execution
-python -m kyotei_predictor.tools.optimization.optimize_graduated_reward_generic --data-month %DATA_MONTH% --n-trials 50
+REM Production optimization execution with continuous learning system
+python kyotei_predictor\tools\optimization\integrated_continuous_optimizer.py --mode continuous --n_trials 50 --data_dir kyotei_predictor/data/raw/%DATA_MONTH%
 
 if errorlevel 1 (
     echo.
@@ -119,6 +119,13 @@ echo Results saved to:
 echo - ./optuna_models/graduated_reward_best_%DATA_MONTH%/
 echo - ./optuna_studies/
 echo - ./optuna_results/
+echo - ./final_results/ (important results)
+echo - ./results/ (detailed results)
+echo.
+echo Continuous Learning System Results:
+echo - Training history: ./optuna_results/training_history.json
+echo - Curriculum config: ./optuna_results/curriculum_config.json
+echo - Training progress: ./optuna_results/training_progress.png
 echo.
 echo Cleanup completed for:
 echo - Old log files

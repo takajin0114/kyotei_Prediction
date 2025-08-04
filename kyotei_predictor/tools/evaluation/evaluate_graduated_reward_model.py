@@ -3,8 +3,13 @@
 段階的報酬モデルの評価スクリプト
 """
 
-import argparse
+import sys
 import os
+# プロジェクトルートをパスに追加
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, project_root)
+
+import argparse
 import json
 import numpy as np
 import matplotlib.pyplot as plt
@@ -245,6 +250,11 @@ def create_evaluation_plots(rewards, hit_types, model_path):
     print(f"可視化結果を保存しました: {plot_path}")
 
 def main():
+    # プロジェクトルートをパスに追加（確実に実行）
+    project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    if project_root not in sys.path:
+        sys.path.insert(0, project_root)
+    
     parser = argparse.ArgumentParser(description='段階的報酬モデルの評価')
     parser.add_argument('--model-path', type=str, 
                        default="./optuna_models/graduated_reward_best/best_model.zip",
@@ -256,16 +266,24 @@ def main():
     
     args = parser.parse_args()
     
-    results = evaluate_graduated_reward_model(
-        model_path=args.model_path,
-        n_eval_episodes=args.n_eval_episodes,
-        data_dir=args.data_dir
-    )
-    
-    if results:
-        print(f"\n=== 評価完了 ===")
-        print(f"的中率: {results['statistics']['hit_rate']:.4f} ({results['statistics']['hit_rate']*100:.2f}%)")
-        print(f"平均報酬: {results['statistics']['mean_reward']:.2f}")
+    try:
+        results = evaluate_graduated_reward_model(
+            model_path=args.model_path,
+            n_eval_episodes=args.n_eval_episodes,
+            data_dir=args.data_dir
+        )
+        
+        if results:
+            print(f"\n=== 評価完了 ===")
+            print(f"的中率: {results['statistics']['hit_rate']:.4f} ({results['statistics']['hit_rate']*100:.2f}%)")
+            print(f"平均報酬: {results['statistics']['mean_reward']:.2f}")
+        else:
+            print("評価に失敗しました")
+            sys.exit(1)
+            
+    except Exception as e:
+        print(f"評価中にエラーが発生しました: {e}")
+        sys.exit(1)
 
 if __name__ == "__main__":
     main() 
