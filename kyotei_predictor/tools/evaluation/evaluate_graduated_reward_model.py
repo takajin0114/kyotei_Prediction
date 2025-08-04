@@ -17,7 +17,30 @@ from datetime import datetime
 from stable_baselines3 import PPO
 from stable_baselines3.common.vec_env import DummyVecEnv
 from kyotei_predictor.pipelines.kyotei_env import KyoteiEnvManager
-from kyotei_predictor.pipelines.kyotei_env import action_to_trifecta
+
+def action_to_trifecta(action: int) -> tuple:
+    """
+    アクション番号を3連単予想に変換
+    
+    Args:
+        action: アクション番号 (0-119)
+    
+    Returns:
+        3連単予想のタプル (1着, 2着, 3着)
+    """
+    # 6P3 = 120通りの組み合わせを生成
+    trifectas = []
+    for first in range(1, 7):
+        for second in range(1, 7):
+            for third in range(1, 7):
+                if first != second and second != third and first != third:
+                    trifectas.append((first, second, third))
+    
+    if 0 <= action < len(trifectas):
+        return trifectas[action]
+    else:
+        # 無効なアクションの場合はデフォルト値を返す
+        return (1, 2, 3)
 
 def evaluate_graduated_reward_model(
     model_path="./optuna_models/graduated_reward_best/best_model.zip",
@@ -65,6 +88,11 @@ def evaluate_graduated_reward_model(
     arrival_tuples = []
     hit_types = []
     
+    # 3連単予想の上位的中率分析用データ
+    top10_hits = []
+    top20_hits = []
+    all_predictions = []
+    
     for episode in range(n_eval_episodes):
         if episode % 100 == 0:
             print(f"評価進捗: {episode}/{n_eval_episodes}")
@@ -101,6 +129,24 @@ def evaluate_graduated_reward_model(
                         hit_types.append('first_only')
                     else:
                         hit_types.append('miss')
+                    
+                    # 3連単予想の上位的中率分析
+                    prediction_data = {
+                        'episode': episode,
+                        'predicted_trifecta': trifecta,
+                        'actual_arrival': arrival,
+                        'is_exact_match': is_win,
+                        'first_hit': first_hit,
+                        'second_hit': second_hit
+                    }
+                    all_predictions.append(prediction_data)
+                    
+                    # 上位10位・20位の的中判定
+                    if is_win:
+                        top10_hits.append(episode)
+                        top20_hits.append(episode)
+                    elif first_hit and second_hit:
+                        top20_hits.append(episode)
                 else:
                     hit_types.append('miss')
         
@@ -127,6 +173,17 @@ def evaluate_graduated_reward_model(
     print(f"1着的中: {hit_type_counts.get('first_only', 0)}回 ({hit_type_counts.get('first_only', 0)/len(hit_types)*100:.2f}%)")
     print(f"不的中: {hit_type_counts.get('miss', 0)}回 ({hit_type_counts.get('miss', 0)/len(hit_types)*100:.2f}%)")
     
+    # 3連単予想の上位的中率分析
+    print(f"\n=== 3連単予想上位的中率分析 ===")
+    print(f"上位10位的中: {len(top10_hits)}回 ({len(top10_hits)/len(rewards)*100:.2f}%)")
+    print(f"上位20位的中: {len(top20_hits)}回 ({len(top20_hits)/len(rewards)*100:.2f}%)")
+    
+    # 的中エピソードの詳細
+    if top10_hits:
+        print(f"\n上位10位的中エピソード: {top10_hits[:10]}...")
+    if top20_hits:
+        print(f"上位20位的中エピソード: {len(top20_hits)}回中 {len(set(top20_hits))}回のユニークエピソード")
+    
     # 報酬分布分析
     print(f"\n=== 報酬分布分析 ===")
     positive_rewards = rewards[rewards > -100]
@@ -141,7 +198,7 @@ def evaluate_graduated_reward_model(
     
     # 可視化
     print("\n=== 結果の可視化 ===")
-    create_evaluation_plots(rewards, hit_types, model_path)
+    create_evaluation_plots(rewards, hit_types, model_path, top10_hits, top20_hits)
     
     # 結果をJSONファイルに保存
     results = {
@@ -157,9 +214,14 @@ def evaluate_graduated_reward_model(
             'first_second_rate': hit_type_counts.get('first_second', 0) / len(hit_types),
             'first_only_rate': hit_type_counts.get('first_only', 0) / len(hit_types),
             'miss_rate': hit_type_counts.get('miss', 0) / len(hit_types),
-            'positive_reward_rate': len(positive_rewards) / len(rewards)
+            'positive_reward_rate': len(positive_rewards) / len(rewards),
+            'top10_hit_rate': len(top10_hits) / len(rewards),
+            'top20_hit_rate': len(top20_hits) / len(rewards)
         },
-        'hit_type_counts': hit_type_counts
+        'hit_type_counts': hit_type_counts,
+        'top10_hits': top10_hits,
+        'top20_hits': top20_hits,
+        'all_predictions': all_predictions
     }
     
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -173,13 +235,13 @@ def evaluate_graduated_reward_model(
     
     return results
 
-def create_evaluation_plots(rewards, hit_types, model_path):
+def create_evaluation_plots(rewards, hit_types, model_path, top10_hits, top20_hits):
     """評価結果の可視化"""
     
-    plt.figure(figsize=(15, 10))
+    plt.figure(figsize=(20, 12))
     
     # 報酬分布
-    plt.subplot(2, 3, 1)
+    plt.subplot(2, 4, 1)
     plt.hist(rewards, bins=50, alpha=0.7, color='blue')
     plt.title('報酬分布')
     plt.xlabel('報酬')
@@ -187,7 +249,7 @@ def create_evaluation_plots(rewards, hit_types, model_path):
     plt.grid(True)
     
     # 的中タイプの分布
-    plt.subplot(2, 3, 2)
+    plt.subplot(2, 4, 2)
     hit_type_counts = {}
     for hit_type in hit_types:
         hit_type_counts[hit_type] = hit_type_counts.get(hit_type, 0) + 1
@@ -200,8 +262,18 @@ def create_evaluation_plots(rewards, hit_types, model_path):
     plt.pie(values, labels=labels, autopct='%1.1f%%', colors=colors)
     plt.title('的中タイプ分布')
     
+    # 上位的中率の分布
+    plt.subplot(2, 4, 3)
+    top_hit_labels = ['上位10位的中', '上位20位的中', '的中なし']
+    top_hit_values = [len(top10_hits), len(top20_hits) - len(top10_hits), 
+                      len(rewards) - len(top20_hits)]
+    top_hit_colors = ['gold', 'silver', 'lightgray']
+    
+    plt.pie(top_hit_values, labels=top_hit_labels, autopct='%1.1f%%', colors=top_hit_colors)
+    plt.title('上位的中率分布')
+    
     # 報酬の時系列
-    plt.subplot(2, 3, 3)
+    plt.subplot(2, 4, 4)
     plt.plot(rewards)
     plt.title('報酬の時系列')
     plt.xlabel('エピソード')
@@ -209,7 +281,7 @@ def create_evaluation_plots(rewards, hit_types, model_path):
     plt.grid(True)
     
     # 報酬の累積平均
-    plt.subplot(2, 3, 4)
+    plt.subplot(2, 4, 5)
     cumulative_avg = np.cumsum(rewards) / np.arange(1, len(rewards) + 1)
     plt.plot(cumulative_avg)
     plt.title('報酬の累積平均')
@@ -217,26 +289,53 @@ def create_evaluation_plots(rewards, hit_types, model_path):
     plt.ylabel('累積平均報酬')
     plt.grid(True)
     
+    # 上位的中の時系列
+    plt.subplot(2, 4, 6)
+    top10_series = [1 if i in top10_hits else 0 for i in range(len(rewards))]
+    top20_series = [1 if i in top20_hits else 0 for i in range(len(rewards))]
+    
+    plt.plot(top10_series, label='上位10位的中', alpha=0.7, color='gold')
+    plt.plot(top20_series, label='上位20位的中', alpha=0.7, color='silver')
+    plt.title('上位的中の時系列')
+    plt.xlabel('エピソード')
+    plt.ylabel('的中')
+    plt.legend()
+    plt.grid(True)
+    
     # 報酬の箱ひげ図
-    plt.subplot(2, 3, 5)
+    plt.subplot(2, 4, 7)
     plt.boxplot(rewards)
     plt.title('報酬の箱ひげ図')
     plt.ylabel('報酬')
     plt.grid(True)
     
     # 的中率の推移
-    plt.subplot(2, 3, 6)
+    plt.subplot(2, 4, 8)
     window_size = 100
     hit_rates = []
+    top10_rates = []
+    top20_rates = []
+    
     for i in range(window_size, len(hit_types) + 1):
         window = hit_types[i-window_size:i]
         hit_rate = window.count('win') / len(window)
         hit_rates.append(hit_rate)
+        
+        window_top10 = top10_series[i-window_size:i]
+        top10_rate = sum(window_top10) / len(window_top10)
+        top10_rates.append(top10_rate)
+        
+        window_top20 = top20_series[i-window_size:i]
+        top20_rate = sum(window_top20) / len(window_top20)
+        top20_rates.append(top20_rate)
     
-    plt.plot(range(window_size, len(hit_types) + 1), hit_rates)
+    plt.plot(range(window_size, len(hit_types) + 1), hit_rates, label='完全的中率', color='green')
+    plt.plot(range(window_size, len(hit_types) + 1), top10_rates, label='上位10位的中率', color='gold')
+    plt.plot(range(window_size, len(hit_types) + 1), top20_rates, label='上位20位的中率', color='silver')
     plt.title(f'的中率の推移 (ウィンドウサイズ: {window_size})')
     plt.xlabel('エピソード')
     plt.ylabel('的中率')
+    plt.legend()
     plt.grid(True)
     
     plt.tight_layout()

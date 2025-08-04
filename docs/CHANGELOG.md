@@ -1,61 +1,112 @@
-# Changelog
+# 変更履歴
 
-## [Unreleased] - 2025-08-03
+## [2025-08-04] - 的中率分析システムの修正と改善
 
-### Added
-- **継続学習システム付きバッチファイル** (`run_optimization_production_continuous_with_evaluation.bat`)
-  - 自動的中率評価機能（1000エピソード）
-  - 評価結果の可視化
-  - 継続学習システムの統合
-- **軽量版バッチファイル** (`run_optimization_production_continuous.bat`)
-  - 継続学習システム（評価なし）
-  - 高速実行向け
+### 🔧 修正
+- **環境のレース結果取得ロジック修正**
+  - `_get_race_result`メソッドでarrivalでソートして正確な結果を取得
+  - arrivalがNoneの場合のエラーハンドリングを追加
+  - 有効なarrivalデータのみをフィルタリング
 
-### Changed
-- **リポジトリ整理**: 不要なバッチファイルを削除し、構造を簡潔化
-  - 削除: `run_optimization_production_simple.bat`
-  - 削除: `run_optimization_production_with_cleanup.bat`
-  - 削除: `run_optimization_production_with_cleanup_auto.bat`
-  - 削除: `run_optimization_with_setup_interactive.bat`
-  - 削除: 空ディレクトリ (`custom_models/`, `test_models/`)
-  - 削除: 一時ログファイル (`auto_cleanup.log`)
-- **ドキュメント更新**: READMEとBATCH_EXECUTION_GUIDEを最新のバッチファイルに合わせて更新
-- **推奨バッチファイルの明確化**: 星評価システムで推奨度を表示
+- **的中率分析のエラーハンドリング強化**
+  - `analyze_hit_rate_detailed`関数でactual_resultがNoneの場合のスキップ処理を追加
+  - JSONシリアライゼーションエラーの修正（numpy型をfloatに変換）
 
-### Fixed
-- バッチファイルの重複と混乱を解消
-- 古い最適化スクリプトの参照を削除
-- メンテナンス負荷の軽減
+### 📊 結果
+- **的中率の正常化**: 100%の異常値から正常な値（18.23%）に修正
+- **的中タイプ分布**:
+  - 完全的中: 6.76%
+  - 2着的中: 11.47%
+  - 1着的中: 80.77%
+  - 上位的中（完全+2着）: 18.23%
 
-### Technical Details
-- 継続学習システムの統合により的中率が大幅向上
-- 評価機能により性能測定が自動化
-- リポジトリ構造の簡潔化により保守性が向上
+### 🧹 整理
+- 不要なデバッグファイルの削除
+- ドキュメントの更新
 
-## [Previous] - 2025-07-29
+## [2025-08-03] - 継続学習システムの統合とリポジトリ整理
 
-### Added
-- 既存スタディ継続機能 (`--resume-existing` オプション) を `optimize_graduated_reward.py` に追加
-- 3月データ最適化結果の分析機能
-- 最適化スクリプトのテスト機能
+### ✨ 新機能
+- **継続学習システムの統合**
+  - `ContinuousLearningManager`: 過去の学習結果を活用した継続学習
+  - `TrainingHistoryVisualizer`: 学習履歴の可視化
+  - `CurriculumLearning`: 段階的な学習システム
+  - `EnhancedTrainingSystem`: 統合された学習システム
 
-### Changed
-- `kyotei_predictor/tools/optimization/optimize_graduated_reward.py` の `optimize_graduated_reward` 関数に `resume_existing` パラメータを追加
-- 既存スタディファイルの自動検索機能を実装
-- `load_if_exists=True` オプションで既存スタディの継続をサポート
+- **的中率分析システム**
+  - 詳細的中率分析: 上位10位・20位の中率計算
+  - 的中タイプ分析: 完全的中、2着的中、1着的中の分類
+  - 可視化機能: 的中率の推移やパターンの可視化
 
-### Fixed
-- 3月データ最適化の中断問題を解決
-- 既存スタディからの継続実行機能を実装
+### 🔧 修正
+- **環境システムの改善**
+  - 観測空間を192次元に拡張（6艇 × 8特徴量 × 4）
+  - 環境の安定性向上
 
-### Technical Details
-- Optuna SQLiteデータベースの直接クエリ機能を追加
-- 既存試行数の表示機能を追加
-- 新規スタディ作成と既存スタディ継続の両方をサポート
+### 🧹 整理
+- **不要バッチファイルの削除**
+  - `run_optimization_production_simple.bat`
+  - `run_optimization_production_with_cleanup.bat`
+  - `run_optimization_production_with_cleanup_auto.bat`
+  - `run_optimization_with_setup_interactive.bat`
 
-## [Previous] - 2025-07-28
+- **空ディレクトリの削除**
+  - `custom_models/`
+  - `test_models/`
 
-### Added
-- 2月データ最適化結果の分析
-- 最適化結果のJSON出力機能
-- 月別データでの最適化実行機能
+- **推奨バッチファイルの明確化**
+  - `run_optimization_production_continuous_with_evaluation.bat`: 完全版（評価付き）
+  - `run_optimization_production_continuous.bat`: 軽量版（評価なし）
+  - `run_cleanup.bat`: クリーンアップ専用
+
+## [2025-07-30] - 大規模リファクタリング・整理作業
+
+### 🧹 整理
+- **Phase 1: ルートディレクトリの緊急整理**
+  - 古い最適化スクリプトの移動（kyotei_predictor/tools/legacy/）
+  - 重複ファイルの削除
+  - タイポファイルの削除
+  - 約80%のファイルを適切な場所に移動
+
+- **Phase 2: 最適化データの整理・統合**
+  - 古い最適化DBファイルのアーカイブ（約5MB）
+  - 古い出力ファイルのアーカイブ（約3MB）
+  - 統合最適化スクリプトの作成
+  - 設定ファイルによる制御機能
+
+- **Phase 3: さらなる最適化**
+  - 統合最適化スクリプトの完成
+  - 依存関係の修正（psutil追加）
+  - README.mdの更新
+  - エラーハンドリング・フォールバック機能
+
+### ✨ 新機能
+- **統合最適化システム完成**
+  - 統合最適化スクリプト: 4つの最適化タイプ対応
+  - 設定ファイルによる制御: 柔軟なパラメータ設定
+
+## [2025-07-26] - 最適化バッチシステムの改善
+
+### 🔧 修正
+- **Windowsストア版Python問題**: 仮想環境構築で解決
+- **依存パッケージ問題**: numpy, optuna, stable-baselines3の正常インストール
+- **TensorBoard/ProgressBarエラー**: 無効化で回避
+- **-1000.0スコア問題**: 完全解決、正常なスコア（4.08, 8.12）を取得
+
+### ✨ 新機能
+- **エラーログ機能**: タイムスタンプ付きログファイル生成
+- **テストモード**: 短時間設定での動作確認機能
+
+## [2025-01-27] - リファクタリング完了
+
+### 🔧 修正
+- **統合ユーティリティ実装**: 設定管理・ログ機能・エラーハンドリングの統一
+- **重複コード削除**: 約30%のコード重複を削除
+- **型安全性向上**: 全関数に型ヒントを追加
+- **ドキュメント整備**: 全クラス・メソッドにdocstringを追加
+- **テスト体制整備**: 統合ユーティリティのテスト実装
+- **依存関係最適化**: オプショナル依存関係の実装
+
+---
+
+**最終更新**: 2025年8月4日

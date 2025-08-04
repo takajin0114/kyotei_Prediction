@@ -65,8 +65,9 @@ class KyoteiEnv(gym.Env):
         
         # 観測空間: 各艇の特徴量 (6艇 × 特徴量数)
         # 特徴量: 選手名, 年齢, 出身地, 級別, 全国勝率, 当地勝率, モーター番号, ボート番号
+        # stable-baselines3との互換性のため1次元配列に変更
         self.observation_space = spaces.Box(
-            low=0, high=1, shape=(6, 8), dtype=np.float32
+            low=0, high=1, shape=(192,), dtype=np.float32  # 6艇 × 8特徴量 × 4 = 192
         )
         
         # 環境状態
@@ -232,10 +233,18 @@ class KyoteiEnv(gym.Env):
             if len(records) < 3:
                 return None
             
-            # 1着、2着、3着の艇番を取得
-            first = records[0]['pit_number']
-            second = records[1]['pit_number']
-            third = records[2]['pit_number']
+            # arrivalがNoneでないレコードのみをフィルタリング
+            valid_records = [record for record in records if record.get('arrival') is not None]
+            
+            if len(valid_records) < 3:
+                logger.warning(f"有効なarrivalデータが3つ未満: {len(valid_records)}")
+                return None
+            
+            # arrivalでソートして上位3着を取得
+            sorted_records = sorted(valid_records, key=lambda x: x.get('arrival', 999))
+            first = sorted_records[0]['pit_number']
+            second = sorted_records[1]['pit_number']
+            third = sorted_records[2]['pit_number']
             
             return (first, second, third)
             
@@ -249,7 +258,7 @@ class KyoteiEnv(gym.Env):
         
         if not self.race_files:
             logger.warning("レースファイルがありません")
-            return np.zeros((6, 8), dtype=np.float32), {}
+            return np.zeros(192, dtype=np.float32), {}
         
         # エピソード開始：最初のレースから開始
         self.current_race_index = 0
@@ -260,18 +269,20 @@ class KyoteiEnv(gym.Env):
         
         if self.current_race_data is None:
             logger.warning(f"レースデータの読み込みに失敗: {race_file}")
-            return np.zeros((6, 8), dtype=np.float32), {}
+            return np.zeros(192, dtype=np.float32), {}
         
-        # 特徴量を抽出
+        # 特徴量を抽出して平坦化
         features = self._extract_features(self.current_race_data)
+        features_flat = features.flatten()  # (6, 8) -> (48,)
+        features_expanded = np.tile(features_flat, 4)  # (48,) -> (192,)
         
         logger.debug(f"環境リセット: {race_file.name} (エピソード開始)")
-        return features, {'episode_start': True, 'total_races': len(self.race_files)}
+        return features_expanded, {'episode_start': True, 'total_races': len(self.race_files)}
     
     def step(self, action: int) -> Tuple[np.ndarray, float, bool, bool, Dict]:
         """環境を1ステップ進める（改善版）"""
         if self.current_race_data is None:
-            return np.zeros((6, 8), dtype=np.float32), 0.0, True, False, {}
+            return np.zeros(192, dtype=np.float32), 0.0, True, False, {}
         
         # 行動を3着予想に変換
         predicted_trifecta = self._action_to_trifecta(action)
@@ -298,9 +309,11 @@ class KyoteiEnv(gym.Env):
             next_race_file = self.race_files[self.current_race_index]
             self.current_race_data = self._load_race_data(next_race_file)
             next_features = self._extract_features(self.current_race_data)
+            next_features_flat = next_features.flatten()  # 平坦化
+            next_features_expanded = np.tile(next_features_flat, 4)  # 192次元に拡張
         else:
             # エピソード終了時はゼロベクトル
-            next_features = np.zeros((6, 8), dtype=np.float32)
+            next_features_expanded = np.zeros(192, dtype=np.float32)
         
         info = {
             'predicted': predicted_trifecta,
@@ -316,7 +329,7 @@ class KyoteiEnv(gym.Env):
             'episode_ended': terminated
         }
         
-        return next_features, reward, terminated, truncated, info
+        return next_features_expanded, reward, terminated, truncated, info
     
     def _calculate_hit_info(self, predicted: Tuple[int, int, int], actual: Optional[Tuple[int, int, int]]) -> Dict[str, Any]:
         """的中情報を詳細に計算"""
@@ -515,7 +528,7 @@ class KyoteiEnvManager(gym.Env):
         
         if not self.pairs:
             logging.warning("No race-odds pairs found")
-            return np.zeros((6, 8), dtype=np.float32), {}
+            return np.zeros(192, dtype=np.float32), {}
         
         # 初回のみ環境を作成
         if self.env is None:
@@ -528,7 +541,7 @@ class KyoteiEnvManager(gym.Env):
 
     def step(self, action):
         if self.env is None:
-            return np.zeros((6, 8), dtype=np.float32), 0.0, True, False, {}
+            return np.zeros(192, dtype=np.float32), 0.0, True, False, {}
         
         return self.env.step(action)
 
@@ -541,5 +554,5 @@ class KyoteiEnvManager(gym.Env):
     @property
     def observation_space(self):
         if self.env is None:
-            return spaces.Box(low=0, high=1, shape=(6, 8), dtype=np.float32)
+            return spaces.Box(low=0, high=1, shape=(192,), dtype=np.float32)
         return self.env.observation_space 
