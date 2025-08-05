@@ -18,9 +18,11 @@ import logging
 import time
 
 # プロジェクトルートをパスに追加
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(project_root)
+sys.path.append(os.path.join(project_root, 'kyotei_predictor'))
 
-from kyotei_predictor.pipelines.kyotei_env import KyoteiEnvManager
+from pipelines.kyotei_env import KyoteiEnvManager
 
 def create_env(data_dir="kyotei_predictor/data/raw", bet_amount=100):
     """環境を作成"""
@@ -301,9 +303,16 @@ def main():
     parser.add_argument('--study-name', type=str, default="graduated_reward_optimization", help='Optunaスタディ名')
     parser.add_argument('--n-trials', type=int, default=50, help='試行回数')
     parser.add_argument('--test-mode', action='store_true', help='テストモード（短時間設定）')
+    parser.add_argument('--minimal', action='store_true', help='最小スコープ（試行回数1回、短時間設定）')
     parser.add_argument('--resume-existing', action='store_true', help='既存スタディを継続する')
     
     args = parser.parse_args()
+    
+    # 最小スコープの場合は設定を調整
+    if args.minimal:
+        args.n_trials = 1
+        args.test_mode = True
+        print("最小スコープモード: 試行回数1回、テストモード設定")
     
     study = optimize_graduated_reward(
         n_trials=args.n_trials,
