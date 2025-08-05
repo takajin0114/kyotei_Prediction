@@ -24,6 +24,15 @@ sys.path.append(os.path.join(project_root, 'kyotei_predictor'))
 
 from pipelines.kyotei_env import KyoteiEnvManager
 
+# 設定管理クラスをインポート
+try:
+    from config.improvement_config_manager import ImprovementConfigManager
+    CONFIG_MANAGER = ImprovementConfigManager()
+except ImportError:
+    # 設定管理クラスが利用できない場合はデフォルト値を使用
+    CONFIG_MANAGER = None
+    print("Warning: ImprovementConfigManager not available, using default values")
+
 def create_env(data_dir="kyotei_predictor/data/raw", bet_amount=100):
     """環境を作成"""
     def make_env():
@@ -33,19 +42,70 @@ def create_env(data_dir="kyotei_predictor/data/raw", bet_amount=100):
     
     return DummyVecEnv([make_env])
 
-def objective(trial, data_dir="kyotei_predictor/data/raw", test_mode=False):
+def objective(trial, data_dir="kyotei_predictor/data/raw", test_mode=False, minimal_mode=False):
     print(f"[objective] Trial {trial.number} started")
-    # ハイパーパラメータの提案（Phase 2改善）
-    learning_rate = trial.suggest_float('learning_rate', 5e-6, 5e-3, log=True)  # より細かい調整
-    batch_size = trial.suggest_categorical('batch_size', [64, 128, 256])  # 32を削除
-    n_steps = trial.suggest_categorical('n_steps', [2048, 4096, 8192])  # 1024を削除、8192を追加
-    gamma = trial.suggest_float('gamma', 0.95, 0.999)  # 範囲を調整
-    gae_lambda = trial.suggest_float('gae_lambda', 0.9, 0.99)  # 範囲を調整
-    n_epochs = trial.suggest_int('n_epochs', 10, 25)  # 3-20 → 10-25
-    clip_range = trial.suggest_float('clip_range', 0.1, 0.3)  # 0.4 → 0.3
-    ent_coef = trial.suggest_float('ent_coef', 0.0, 0.05)  # 0.1 → 0.05
-    vf_coef = trial.suggest_float('vf_coef', 0.5, 1.0)  # 0.1-1.0 → 0.5-1.0
-    max_grad_norm = trial.suggest_float('max_grad_norm', 0.3, 0.8)  # 0.1-1.0 → 0.3-0.8
+    
+    # 設定ファイルからハイパーパラメータ範囲を取得
+    if CONFIG_MANAGER is not None:
+        hyperparams = CONFIG_MANAGER.get_hyperparameters("phase2")
+        
+        # ハイパーパラメータの提案
+        learning_rate = trial.suggest_float(
+            'learning_rate', 
+            hyperparams.get("learning_rate", {}).get("min", 5e-6), 
+            hyperparams.get("learning_rate", {}).get("max", 5e-3), 
+            log=hyperparams.get("learning_rate", {}).get("log", True)
+        )
+        batch_size = trial.suggest_categorical('batch_size', hyperparams.get("batch_size", [64, 128, 256]))
+        n_steps = trial.suggest_categorical('n_steps', hyperparams.get("n_steps", [2048, 4096, 8192]))
+        gamma = trial.suggest_float(
+            'gamma', 
+            hyperparams.get("gamma", {}).get("min", 0.95), 
+            hyperparams.get("gamma", {}).get("max", 0.999)
+        )
+        gae_lambda = trial.suggest_float(
+            'gae_lambda', 
+            hyperparams.get("gae_lambda", {}).get("min", 0.9), 
+            hyperparams.get("gae_lambda", {}).get("max", 0.99)
+        )
+        n_epochs = trial.suggest_int(
+            'n_epochs', 
+            hyperparams.get("n_epochs", {}).get("min", 10), 
+            hyperparams.get("n_epochs", {}).get("max", 25)
+        )
+        clip_range = trial.suggest_float(
+            'clip_range', 
+            hyperparams.get("clip_range", {}).get("min", 0.1), 
+            hyperparams.get("clip_range", {}).get("max", 0.3)
+        )
+        ent_coef = trial.suggest_float(
+            'ent_coef', 
+            hyperparams.get("ent_coef", {}).get("min", 0.0), 
+            hyperparams.get("ent_coef", {}).get("max", 0.05)
+        )
+        vf_coef = trial.suggest_float(
+            'vf_coef', 
+            hyperparams.get("vf_coef", {}).get("min", 0.5), 
+            hyperparams.get("vf_coef", {}).get("max", 1.0)
+        )
+        max_grad_norm = trial.suggest_float(
+            'max_grad_norm', 
+            hyperparams.get("max_grad_norm", {}).get("min", 0.3), 
+            hyperparams.get("max_grad_norm", {}).get("max", 0.8)
+        )
+    else:
+        # デフォルト値（設定ファイルが利用できない場合）
+        learning_rate = trial.suggest_float('learning_rate', 5e-6, 5e-3, log=True)
+        batch_size = trial.suggest_categorical('batch_size', [64, 128, 256])
+        n_steps = trial.suggest_categorical('n_steps', [2048, 4096, 8192])
+        gamma = trial.suggest_float('gamma', 0.95, 0.999)
+        gae_lambda = trial.suggest_float('gae_lambda', 0.9, 0.99)
+        n_epochs = trial.suggest_int('n_epochs', 10, 25)
+        clip_range = trial.suggest_float('clip_range', 0.1, 0.3)
+        ent_coef = trial.suggest_float('ent_coef', 0.0, 0.05)
+        vf_coef = trial.suggest_float('vf_coef', 0.5, 1.0)
+        max_grad_norm = trial.suggest_float('max_grad_norm', 0.3, 0.8)
+    
     print(f"[objective] Hyperparams: lr={learning_rate}, batch={batch_size}, n_steps={n_steps}, gamma={gamma}")
     train_env = create_env(data_dir=data_dir)
     eval_env = create_env(data_dir=data_dir)
@@ -80,13 +140,28 @@ def objective(trial, data_dir="kyotei_predictor/data/raw", test_mode=False):
         tensorboard_log=None  # TensorBoardログを無効化
     )
     
-    # 学習時間の延長（Phase 2改善）
-    if test_mode:
-        total_timesteps = 20000   # テスト用（10000 → 20000に延長）
-        n_eval_episodes = 200     # テスト用（100 → 200に延長）
+    # 設定ファイルから学習パラメータを取得
+    if CONFIG_MANAGER is not None:
+        if minimal_mode:
+            learning_params = CONFIG_MANAGER.get_learning_params("phase2", "minimal_mode")
+        elif test_mode:
+            learning_params = CONFIG_MANAGER.get_learning_params("phase2", "test_mode")
+        else:
+            learning_params = CONFIG_MANAGER.get_learning_params("phase2", "normal")
+        
+        total_timesteps = learning_params.get("total_timesteps", 200000)
+        n_eval_episodes = learning_params.get("n_eval_episodes", 5000)
     else:
-        total_timesteps = 200000  # 通常設定（100000 → 200000に延長）
-        n_eval_episodes = 5000    # 通常設定（2000 → 5000に延長）
+        # デフォルト値（設定ファイルが利用できない場合）
+        if minimal_mode:
+            total_timesteps = 5000
+            n_eval_episodes = 50
+        elif test_mode:
+            total_timesteps = 20000
+            n_eval_episodes = 200
+        else:
+            total_timesteps = 200000
+            n_eval_episodes = 5000
     
     try:
         print(f"[objective] model.learn start (timesteps: {total_timesteps})")
@@ -171,6 +246,7 @@ def optimize_graduated_reward(
     study_name="graduated_reward_optimization",
     data_dir="kyotei_predictor/data/raw",
     test_mode=False,
+    minimal_mode=False,
     resume_existing=False
 ):
     """段階的報酬設計モデルのハイパーパラメータ最適化"""
@@ -178,6 +254,8 @@ def optimize_graduated_reward(
     print("=== 段階的報酬設計モデルのハイパーパラメータ最適化開始 ===")
     print(f"最適化開始時刻: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print(f"試行回数: {n_trials}")
+    print(f"テストモード: {test_mode}")
+    print(f"最小モード: {minimal_mode}")
     print(f"既存スタディ継続: {resume_existing}")
     
     # ディレクトリ作成
@@ -192,42 +270,44 @@ def optimize_graduated_reward(
         # 既存のスタディファイルを探す
         existing_studies = []
         for file in os.listdir("./optuna_studies"):
-            if file.startswith(study_name) and file.endswith(".db"):
+            if file.endswith(".db") and study_name in file:
                 existing_studies.append(file)
         
         if existing_studies:
             # 最新のスタディファイルを使用
-            latest_study = sorted(existing_studies)[-1]
-            storage_path = f"sqlite:///optuna_studies/{latest_study}"
-            print(f"既存スタディを継続します: {latest_study}")
+            latest_study = max(existing_studies, key=lambda x: os.path.getmtime(os.path.join("./optuna_studies", x)))
+            storage_path = f"sqlite:///./optuna_studies/{latest_study}"
+            print(f"既存スタディを使用: {latest_study}")
         else:
-            # 既存ファイルがない場合は新規作成
+            # 既存スタディが見つからない場合は新規作成
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            storage_path = f"sqlite:///optuna_studies/{study_name}_{timestamp}.db"
-            print(f"新規スタディを作成します: {study_name}_{timestamp}.db")
+            storage_path = f"sqlite:///./optuna_studies/{study_name}_{timestamp}.db"
+            print(f"新規スタディを作成: {study_name}_{timestamp}.db")
     else:
-        # 新規スタディを作成する場合
+        # 新規スタディを作成
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        storage_path = f"sqlite:///optuna_studies/{study_name}_{timestamp}.db"
-        print(f"新規スタディを作成します: {study_name}_{timestamp}.db")
+        storage_path = f"sqlite:///./optuna_studies/{study_name}_{timestamp}.db"
+        print(f"新規スタディを作成: {study_name}_{timestamp}.db")
     
-    # スタディ作成（既存スタディの継続対応）
+    # スタディの作成または読み込み
     study = optuna.create_study(
-        direction="maximize",
         study_name=study_name,
         storage=storage_path,
-        load_if_exists=True  # 既存スタディを読み込む
+        load_if_exists=True,
+        direction="maximize"
     )
     
-    # 既存の試行数を確認
     existing_trials = len(study.trials)
     print(f"既存の試行数: {existing_trials}")
     
-    # 最適化実行
-    study.optimize(lambda trial: objective(trial, data_dir, test_mode), n_trials=n_trials, show_progress_bar=True)
+    # 最適化の実行
+    study.optimize(
+        lambda trial: objective(trial, data_dir=data_dir, test_mode=test_mode, minimal_mode=minimal_mode),
+        n_trials=n_trials,
+        show_progress_bar=False
+    )
     
-    # 結果表示
-    print("\n=== 最適化結果 ===")
+    print(f"\n=== 最適化完了 ===")
     print(f"最良の試行: {study.best_trial.number}")
     print(f"最良のスコア: {study.best_value:.4f}")
     print(f"最良のパラメータ:")
@@ -241,6 +321,8 @@ def optimize_graduated_reward(
         'n_trials': n_trials,
         'existing_trials': existing_trials,
         'total_trials': len(study.trials),
+        'test_mode': test_mode,
+        'minimal_mode': minimal_mode,
         'best_trial': {
             'number': study.best_trial.number,
             'value': float(study.best_value),
@@ -303,22 +385,22 @@ def main():
     parser.add_argument('--study-name', type=str, default="graduated_reward_optimization", help='Optunaスタディ名')
     parser.add_argument('--n-trials', type=int, default=50, help='試行回数')
     parser.add_argument('--test-mode', action='store_true', help='テストモード（短時間設定）')
-    parser.add_argument('--minimal', action='store_true', help='最小スコープ（試行回数1回、短時間設定）')
+    parser.add_argument('--minimal', action='store_true', help='最小限のテストモード（1試行、非常に短い学習時間）')
     parser.add_argument('--resume-existing', action='store_true', help='既存スタディを継続する')
     
     args = parser.parse_args()
     
-    # 最小スコープの場合は設定を調整
+    # 最小限モードの場合は設定を調整
     if args.minimal:
         args.n_trials = 1
-        args.test_mode = True
-        print("最小スコープモード: 試行回数1回、テストモード設定")
+        print("最小限テストモード: 試行回数1回、非常に短い学習時間")
     
     study = optimize_graduated_reward(
         n_trials=args.n_trials,
         study_name=args.study_name,
         data_dir=args.data_dir,
         test_mode=args.test_mode,
+        minimal_mode=args.minimal,
         resume_existing=args.resume_existing
     )
     

@@ -1,12 +1,23 @@
 import gymnasium as gym
 import numpy as np
+import pandas as pd
 import json
 from itertools import permutations
-from typing import Tuple
+from typing import Tuple, List, Dict, Any
 import glob
 import random
 import os
 import logging
+from pathlib import Path
+
+# 設定管理クラスをインポート
+try:
+    from ..config.improvement_config_manager import ImprovementConfigManager
+    CONFIG_MANAGER = ImprovementConfigManager()
+except ImportError:
+    # 設定管理クラスが利用できない場合はデフォルト値を使用
+    CONFIG_MANAGER = None
+    print("Warning: ImprovementConfigManager not available, using default values")
 
 # Kyotei用ロギング設定
 ENABLE_KYOTEI_LOGGING = True  # TrueでDEBUG/INFOも表示、FalseでWARNING以上のみ
@@ -166,16 +177,26 @@ def calc_trifecta_reward(action: int, arrival_tuple: Tuple[int,int,int], odds_da
     """
     action（0-119）, 着順タプル, oddsデータ, 賭け金を受け取り、段階的報酬を返す。
     
-    元の段階的報酬設計:
-    - 的中時: (払戻金-賭け金)×1.2
-    - 2着的中時: 0（1着、2着が正解）
-    - 1着的中時: -20（1着のみ正解）
-    - 不的中時: -100（全く的中なし）
+    設定ファイルから報酬パラメータを取得し、動的に報酬を計算します。
     """
+    # 設定ファイルから報酬パラメータを取得
+    if CONFIG_MANAGER is not None:
+        reward_params = CONFIG_MANAGER.get_reward_params("phase1")
+        win_multiplier = reward_params.get("win_multiplier", 1.5)
+        partial_second_hit_reward = reward_params.get("partial_second_hit_reward", 10)
+        partial_first_hit_penalty = reward_params.get("partial_first_hit_penalty", -10)
+        no_hit_penalty = reward_params.get("no_hit_penalty", -80)
+    else:
+        # デフォルト値（設定ファイルが利用できない場合）
+        win_multiplier = 1.5
+        partial_second_hit_reward = 10
+        partial_first_hit_penalty = -10
+        no_hit_penalty = -80
+    
     # 着順タプルの妥当性チェック
     if len(arrival_tuple) != 3:
         logging.warning(f"Invalid arrival_tuple: {arrival_tuple}, length: {len(arrival_tuple)}")
-        return -100  # 不正な着順の場合は最大ペナルティ
+        return no_hit_penalty  # 不正な着順の場合はペナルティ
     
     trifecta = action_to_trifecta(action)
     
@@ -183,21 +204,21 @@ def calc_trifecta_reward(action: int, arrival_tuple: Tuple[int,int,int], odds_da
     is_win = trifecta == arrival_tuple
     
     if is_win:
-        # 的中時: 払戻金-賭け金 ×1.2
+        # 的中時: 払戻金-賭け金 × win_multiplier
         odds_map = {tuple(o['betting_numbers']): o['ratio'] for o in odds_data}
         odds = odds_map.get(trifecta, 0)
         payout = odds * bet_amount
-        reward = (payout - bet_amount) * 1.2
+        reward = (payout - bet_amount) * win_multiplier
     else:
         # 部分的中の判定
         first_hit = trifecta[0] == arrival_tuple[0]  # 1着的中
         second_hit = trifecta[1] == arrival_tuple[1]  # 2着的中
         if first_hit and second_hit:
-            reward = 0  # 2着的中は損失なし
+            reward = partial_second_hit_reward  # 2着的中の報酬
         elif first_hit:
-            reward = -20  # 1着的中のペナルティを緩和
+            reward = partial_first_hit_penalty  # 1着的中のペナルティ
         else:
-            reward = -100
+            reward = no_hit_penalty  # 不的中のペナルティ
     return reward
 
 def calc_trifecta_reward_improved(action: int, arrival_tuple: Tuple[int,int,int], odds_data: list, bet_amount: int = 100) -> float:
@@ -209,10 +230,24 @@ def calc_trifecta_reward_improved(action: int, arrival_tuple: Tuple[int,int,int]
     - 部分的中の報酬化: 2着的中を0 → +10
     - ペナルティの緩和: 1着的中を-20 → -10, 不的中を-100 → -80
     """
+    # 設定ファイルから報酬パラメータを取得
+    if CONFIG_MANAGER is not None:
+        reward_params = CONFIG_MANAGER.get_reward_params("phase1")
+        win_multiplier = reward_params.get("win_multiplier", 1.5)
+        partial_second_hit_reward = reward_params.get("partial_second_hit_reward", 10)
+        partial_first_hit_penalty = reward_params.get("partial_first_hit_penalty", -10)
+        no_hit_penalty = reward_params.get("no_hit_penalty", -80)
+    else:
+        # デフォルト値（設定ファイルが利用できない場合）
+        win_multiplier = 1.5
+        partial_second_hit_reward = 10
+        partial_first_hit_penalty = -10
+        no_hit_penalty = -80
+    
     # 着順タプルの妥当性チェック
     if len(arrival_tuple) != 3:
         logging.warning(f"Invalid arrival_tuple: {arrival_tuple}, length: {len(arrival_tuple)}")
-        return -80  # 不正な着順の場合はペナルティ
+        return no_hit_penalty  # 不正な着順の場合はペナルティ
     
     trifecta = action_to_trifecta(action)
     
@@ -220,21 +255,21 @@ def calc_trifecta_reward_improved(action: int, arrival_tuple: Tuple[int,int,int]
     is_win = trifecta == arrival_tuple
     
     if is_win:
-        # 的中時: 払戻金-賭け金 ×1.5（1.2 → 1.5に強化）
+        # 的中時: 払戻金-賭け金 × win_multiplier
         odds_map = {tuple(o['betting_numbers']): o['ratio'] for o in odds_data}
         odds = odds_map.get(trifecta, 0)
         payout = odds * bet_amount
-        reward = (payout - bet_amount) * 1.5
+        reward = (payout - bet_amount) * win_multiplier
     else:
         # 部分的中の判定
         first_hit = trifecta[0] == arrival_tuple[0]  # 1着的中
         second_hit = trifecta[1] == arrival_tuple[1]  # 2着的中
         if first_hit and second_hit:
-            reward = +10  # 2着的中を報酬化（0 → +10）
+            reward = partial_second_hit_reward  # 2着的中を報酬化
         elif first_hit:
-            reward = -10  # 1着的中のペナルティを緩和（-20 → -10）
+            reward = partial_first_hit_penalty  # 1着的中のペナルティ
         else:
-            reward = -80  # 不的中のペナルティを緩和（-100 → -80）
+            reward = no_hit_penalty  # 不的中のペナルティ
     
     return reward
 
