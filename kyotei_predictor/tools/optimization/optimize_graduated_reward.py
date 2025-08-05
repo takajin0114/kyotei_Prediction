@@ -33,17 +33,17 @@ def create_env(data_dir="kyotei_predictor/data/raw", bet_amount=100):
 
 def objective(trial, data_dir="kyotei_predictor/data/raw", test_mode=False):
     print(f"[objective] Trial {trial.number} started")
-    # ハイパーパラメータの提案
-    learning_rate = trial.suggest_float('learning_rate', 1e-5, 1e-2, log=True)
-    batch_size = trial.suggest_categorical('batch_size', [32, 64, 128, 256])
-    n_steps = trial.suggest_categorical('n_steps', [1024, 2048, 4096])
-    gamma = trial.suggest_float('gamma', 0.9, 0.999)
-    gae_lambda = trial.suggest_float('gae_lambda', 0.8, 0.99)
-    n_epochs = trial.suggest_int('n_epochs', 3, 20)
-    clip_range = trial.suggest_float('clip_range', 0.1, 0.4)
-    ent_coef = trial.suggest_float('ent_coef', 0.0, 0.1)
-    vf_coef = trial.suggest_float('vf_coef', 0.1, 1.0)
-    max_grad_norm = trial.suggest_float('max_grad_norm', 0.1, 1.0)
+    # ハイパーパラメータの提案（Phase 2改善）
+    learning_rate = trial.suggest_float('learning_rate', 5e-6, 5e-3, log=True)  # より細かい調整
+    batch_size = trial.suggest_categorical('batch_size', [64, 128, 256])  # 32を削除
+    n_steps = trial.suggest_categorical('n_steps', [2048, 4096, 8192])  # 1024を削除、8192を追加
+    gamma = trial.suggest_float('gamma', 0.95, 0.999)  # 範囲を調整
+    gae_lambda = trial.suggest_float('gae_lambda', 0.9, 0.99)  # 範囲を調整
+    n_epochs = trial.suggest_int('n_epochs', 10, 25)  # 3-20 → 10-25
+    clip_range = trial.suggest_float('clip_range', 0.1, 0.3)  # 0.4 → 0.3
+    ent_coef = trial.suggest_float('ent_coef', 0.0, 0.05)  # 0.1 → 0.05
+    vf_coef = trial.suggest_float('vf_coef', 0.5, 1.0)  # 0.1-1.0 → 0.5-1.0
+    max_grad_norm = trial.suggest_float('max_grad_norm', 0.3, 0.8)  # 0.1-1.0 → 0.3-0.8
     print(f"[objective] Hyperparams: lr={learning_rate}, batch={batch_size}, n_steps={n_steps}, gamma={gamma}")
     train_env = create_env(data_dir=data_dir)
     eval_env = create_env(data_dir=data_dir)
@@ -78,13 +78,13 @@ def objective(trial, data_dir="kyotei_predictor/data/raw", test_mode=False):
         tensorboard_log=None  # TensorBoardログを無効化
     )
     
-    # テストモードの場合は短時間設定
+    # 学習時間の延長（Phase 2改善）
     if test_mode:
-        total_timesteps = 10000  # テスト用に短縮
-        n_eval_episodes = 100    # テスト用に短縮
+        total_timesteps = 20000   # テスト用（10000 → 20000に延長）
+        n_eval_episodes = 200     # テスト用（100 → 200に延長）
     else:
-        total_timesteps = 100000  # 通常設定
-        n_eval_episodes = 2000    # 通常設定
+        total_timesteps = 200000  # 通常設定（100000 → 200000に延長）
+        n_eval_episodes = 5000    # 通常設定（2000 → 5000に延長）
     
     try:
         print(f"[objective] model.learn start (timesteps: {total_timesteps})")

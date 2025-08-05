@@ -166,16 +166,16 @@ def calc_trifecta_reward(action: int, arrival_tuple: Tuple[int,int,int], odds_da
     """
     action（0-119）, 着順タプル, oddsデータ, 賭け金を受け取り、段階的報酬を返す。
     
-    改善後の段階的報酬設計:
-    - 的中時: (払戻金-賭け金)×1.2
-    - 2着的中時: 0（1着、2着が正解）
-    - 1着的中時: -20（1着のみ正解）
-    - 不的中時: -100（全く的中なし）
+    改善された段階的報酬設計（Phase 1）:
+    - 的中時: (払戻金-賭け金)×1.5（1.2 → 1.5に強化）
+    - 2着的中時: +10（0 → +10に報酬化）
+    - 1着的中時: -10（-20 → -10にペナルティ緩和）
+    - 不的中時: -80（-100 → -80にペナルティ緩和）
     """
     # 着順タプルの妥当性チェック
     if len(arrival_tuple) != 3:
         logging.warning(f"Invalid arrival_tuple: {arrival_tuple}, length: {len(arrival_tuple)}")
-        return -100  # 不正な着順の場合は最大ペナルティ
+        return -80  # 不正な着順の場合はペナルティ（-100 → -80に緩和）
     
     trifecta = action_to_trifecta(action)
     
@@ -183,21 +183,59 @@ def calc_trifecta_reward(action: int, arrival_tuple: Tuple[int,int,int], odds_da
     is_win = trifecta == arrival_tuple
     
     if is_win:
-        # 的中時: 払戻金-賭け金 ×1.2
+        # 的中時: 払戻金-賭け金 ×1.5（1.2 → 1.5に強化）
         odds_map = {tuple(o['betting_numbers']): o['ratio'] for o in odds_data}
         odds = odds_map.get(trifecta, 0)
         payout = odds * bet_amount
-        reward = (payout - bet_amount) * 1.2
+        reward = (payout - bet_amount) * 1.5
     else:
         # 部分的中の判定
         first_hit = trifecta[0] == arrival_tuple[0]  # 1着的中
         second_hit = trifecta[1] == arrival_tuple[1]  # 2着的中
         if first_hit and second_hit:
-            reward = 0  # 2着的中は損失なし
+            reward = +10  # 2着的中を報酬化（0 → +10）
         elif first_hit:
-            reward = -20  # 1着的中のペナルティを緩和
+            reward = -10  # 1着的中のペナルティを緩和（-20 → -10）
         else:
-            reward = -100
+            reward = -80  # 不的中のペナルティを緩和（-100 → -80）
+    return reward
+
+def calc_trifecta_reward_improved(action: int, arrival_tuple: Tuple[int,int,int], odds_data: list, bet_amount: int = 100) -> float:
+    """
+    改善された段階的報酬設計（Phase 1）のテスト用関数
+    
+    改善点:
+    - 的中報酬の強化: 1.2 → 1.5
+    - 部分的中の報酬化: 2着的中を0 → +10
+    - ペナルティの緩和: 1着的中を-20 → -10, 不的中を-100 → -80
+    """
+    # 着順タプルの妥当性チェック
+    if len(arrival_tuple) != 3:
+        logging.warning(f"Invalid arrival_tuple: {arrival_tuple}, length: {len(arrival_tuple)}")
+        return -80  # 不正な着順の場合はペナルティ
+    
+    trifecta = action_to_trifecta(action)
+    
+    # 的中判定
+    is_win = trifecta == arrival_tuple
+    
+    if is_win:
+        # 的中時: 払戻金-賭け金 ×1.5（1.2 → 1.5に強化）
+        odds_map = {tuple(o['betting_numbers']): o['ratio'] for o in odds_data}
+        odds = odds_map.get(trifecta, 0)
+        payout = odds * bet_amount
+        reward = (payout - bet_amount) * 1.5
+    else:
+        # 部分的中の判定
+        first_hit = trifecta[0] == arrival_tuple[0]  # 1着的中
+        second_hit = trifecta[1] == arrival_tuple[1]  # 2着的中
+        if first_hit and second_hit:
+            reward = +10  # 2着的中を報酬化（0 → +10）
+        elif first_hit:
+            reward = -10  # 1着的中のペナルティを緩和（-20 → -10）
+        else:
+            reward = -80  # 不的中のペナルティを緩和（-100 → -80）
+    
     return reward
 
 class KyoteiEnvManager(gym.Env):
