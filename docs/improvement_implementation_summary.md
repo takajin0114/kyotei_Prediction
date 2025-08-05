@@ -236,7 +236,19 @@ class PerformanceMonitor:
 
 ## 🚀 次のステップ
 
-### **1. テスト実行**
+### **1. バッチファイルでの実行**
+```bash
+# 基本パイプライン（テストモード）
+.\run_learning_pipeline.bat --test
+
+# 高度パイプライン（最小限モード）
+.\run_advanced_learning.bat --minimal --phase 1 --cleanup
+
+# 本番実行
+.\run_advanced_learning.bat --production --phase all
+```
+
+### **2. 個別テスト実行**
 ```bash
 # Phase 1のテスト（報酬設計改善）
 python -m kyotei_predictor.tools.optimization.optimize_graduated_reward \
@@ -249,19 +261,19 @@ python -m kyotei_predictor.tools.optimization.optimize_graduated_reward \
   --data-dir kyotei_predictor/data/raw/2024-01
 ```
 
-### **2. アンサンブル学習のテスト**
+### **3. アンサンブル学習のテスト**
 ```bash
 # アンサンブル学習システムのテスト
 python kyotei_predictor/tools/ensemble/ensemble_model.py
 ```
 
-### **3. 継続的学習のテスト**
+### **4. 継続的学習のテスト**
 ```bash
 # 継続的学習システムのテスト
 python kyotei_predictor/tools/continuous/continuous_learning.py
 ```
 
-### **4. 性能監視のテスト**
+### **5. 性能監視のテスト**
 ```bash
 # 性能監視システムのテスト
 python kyotei_predictor/tools/monitoring/performance_monitor.py

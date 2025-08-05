@@ -15,10 +15,27 @@ from kyotei_predictor.pipelines.kyotei_env import KyoteiEnvManager
 from kyotei_predictor.pipelines.kyotei_env import action_to_trifecta
 
 def evaluate_graduated_reward_model(
-    model_path="./optuna_models/graduated_reward_best/best_model.zip",
+    model_path=None,
     n_eval_episodes=1000,
-    data_dir="kyotei_predictor/data/raw"
+    data_dir=None
 ):
+    """
+    段階的報酬モデルの評価を実行
+    
+    Args:
+        model_path: モデルファイルのパス（Noneの場合はデフォルトパス）
+        n_eval_episodes: 評価エピソード数
+        data_dir: データディレクトリ（Noneの場合はデフォルトパス）
+    
+    Returns:
+        評価結果の辞書
+    """
+    # デフォルトパスの設定
+    if model_path is None:
+        model_path = os.path.join(os.getcwd(), "optuna_models", "graduated_reward_best", "best_model.zip")
+    
+    if data_dir is None:
+        data_dir = os.path.join(os.getcwd(), "kyotei_predictor", "data", "raw")
     """
     段階的報酬モデルの評価を実行
     
@@ -158,9 +175,10 @@ def evaluate_graduated_reward_model(
     }
     
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    results_path = f"./outputs/graduated_reward_evaluation_{timestamp}.json"
+    output_dir = os.path.join(os.getcwd(), "outputs")
+    results_path = os.path.join(output_dir, f"graduated_reward_evaluation_{timestamp}.json")
     
-    os.makedirs("./outputs", exist_ok=True)
+    os.makedirs(output_dir, exist_ok=True)
     with open(results_path, 'w', encoding='utf-8') as f:
         json.dump(results, f, indent=2, ensure_ascii=False)
     
@@ -238,7 +256,8 @@ def create_evaluation_plots(rewards, hit_types, model_path):
     
     # 保存
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    plot_path = f"./outputs/graduated_reward_evaluation_plots_{timestamp}.png"
+    output_dir = os.path.join(os.getcwd(), "outputs")
+    plot_path = os.path.join(output_dir, f"graduated_reward_evaluation_plots_{timestamp}.png")
     plt.savefig(plot_path, dpi=300, bbox_inches='tight')
     plt.show()
     
@@ -247,8 +266,8 @@ def create_evaluation_plots(rewards, hit_types, model_path):
 def main():
     parser = argparse.ArgumentParser(description='段階的報酬モデルの評価')
     parser.add_argument('--model-path', type=str, 
-                       default="./optuna_models/graduated_reward_best/best_model.zip",
-                       help='モデルファイルのパス')
+                       default=None,
+                       help='モデルファイルのパス（Noneの場合はデフォルトパス）')
     parser.add_argument('--n-eval-episodes', type=int, default=1000,
                        help='評価エピソード数')
     parser.add_argument('--data-dir', type=str, default="kyotei_predictor/data/raw",

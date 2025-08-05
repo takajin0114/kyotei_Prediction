@@ -33,7 +33,16 @@ except ImportError:
     CONFIG_MANAGER = None
     print("Warning: ImprovementConfigManager not available, using default values")
 
-def create_env(data_dir="kyotei_predictor/data/raw", bet_amount=100):
+def create_env(data_dir=None, bet_amount=100):
+    """
+    環境を作成
+    
+    Args:
+        data_dir: データディレクトリ（Noneの場合はデフォルトパス）
+        bet_amount: ベット金額
+    """
+    if data_dir is None:
+        data_dir = os.path.join(os.getcwd(), "kyotei_predictor", "data", "raw")
     """環境を作成"""
     def make_env():
         env = KyoteiEnvManager(data_dir=data_dir, bet_amount=bet_amount)
@@ -42,7 +51,18 @@ def create_env(data_dir="kyotei_predictor/data/raw", bet_amount=100):
     
     return DummyVecEnv([make_env])
 
-def objective(trial, data_dir="kyotei_predictor/data/raw", test_mode=False, minimal_mode=False):
+def objective(trial, data_dir=None, test_mode=False, minimal_mode=False):
+    """
+    最適化の目的関数
+    
+    Args:
+        trial: Optunaの試行オブジェクト
+        data_dir: データディレクトリ（Noneの場合はデフォルトパス）
+        test_mode: テストモード
+        minimal_mode: 最小限モード
+    """
+    if data_dir is None:
+        data_dir = os.path.join(os.getcwd(), "kyotei_predictor", "data", "raw")
     print(f"[objective] Trial {trial.number} started")
     
     # 設定ファイルからハイパーパラメータ範囲を取得
@@ -244,11 +264,24 @@ def safe_savez(filepath, *args, **kwargs):
 def optimize_graduated_reward(
     n_trials=50,
     study_name="graduated_reward_optimization",
-    data_dir="kyotei_predictor/data/raw",
+    data_dir=None,
     test_mode=False,
     minimal_mode=False,
     resume_existing=False
 ):
+    """
+    段階的報酬設計モデルの最適化を実行
+    
+    Args:
+        n_trials: 試行回数
+        study_name: 研究名
+        data_dir: データディレクトリ（Noneの場合はデフォルトパス）
+        test_mode: テストモード
+        minimal_mode: 最小限モード
+        resume_existing: 既存の研究を再開するかどうか
+    """
+    if data_dir is None:
+        data_dir = os.path.join(os.getcwd(), "kyotei_predictor", "data", "raw")
     """段階的報酬設計モデルのハイパーパラメータ最適化"""
     
     print("=== 段階的報酬設計モデルのハイパーパラメータ最適化開始 ===")

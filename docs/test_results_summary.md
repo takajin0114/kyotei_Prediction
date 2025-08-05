@@ -83,11 +83,14 @@
 
 ### 1. 本格的な学習実行
 ```bash
-# 最小限の設定で学習実行
-python kyotei_predictor/tools/optimization/optimize_graduated_reward.py --test-mode --minimal
+# 基本パイプラインでの実行
+.\run_learning_pipeline.bat --test
 
-# 本格的な学習実行
-python kyotei_predictor/tools/optimization/optimize_graduated_reward.py --n-trials 10
+# 高度パイプラインでの実行
+.\run_advanced_learning.bat --minimal --phase 1 --cleanup
+
+# 本番実行
+.\run_advanced_learning.bat --production --phase all
 ```
 
 ### 2. 性能指標の測定
@@ -98,6 +101,18 @@ python kyotei_predictor/tools/optimization/optimize_graduated_reward.py --n-tria
 ### 3. 改善効果の検証
 - 改善前後の比較
 - アンサンブル学習の効果確認
+
+### 4. バッチファイルでの実行
+```bash
+# テストモード
+.\run_learning_pipeline.bat --test
+
+# 最小限モード
+.\run_learning_pipeline.bat --minimal --phase 1
+
+# 本番モード
+.\run_advanced_learning.bat --production --phase 2 --timesteps 100000
+```
 - 継続的学習の動作確認
 
 ## 結論

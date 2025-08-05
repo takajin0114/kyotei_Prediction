@@ -5,7 +5,12 @@
 
 import sys
 import os
-sys.path.append('kyotei_predictor')
+
+# プロジェクトルートをパスに追加（相対パス）
+current_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(os.path.dirname(current_dir))
+sys.path.append(project_root)
+sys.path.append(os.path.join(project_root, 'kyotei_predictor'))
 
 def test_basic_learning():
     """基本的な学習テスト"""
@@ -19,7 +24,8 @@ def test_basic_learning():
         
         # 最小限の環境作成
         print("最小限環境を作成中...")
-        env = KyoteiEnvManager(data_dir="kyotei_predictor/data/raw", bet_amount=100)
+        data_dir = os.path.join(os.getcwd(), "kyotei_predictor", "data", "raw")
+        env = KyoteiEnvManager(data_dir=data_dir, bet_amount=100)
         
         # 最小限のモデル作成
         print("最小限モデルを作成中...")

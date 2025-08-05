@@ -245,11 +245,22 @@ config_manager.update_config(updates)
 
 ## 🧪 テスト実行
 
-設定ファイルの動作確認：
-
+### 設定ファイルの動作確認
 ```bash
 cd tests/improvement_tests
 python test_config_manager.py
+```
+
+### バッチファイルでの実行
+```bash
+# 基本パイプライン実行
+.\run_learning_pipeline.bat --test
+
+# 高度パイプライン実行
+.\run_advanced_learning.bat --minimal --phase 1 --cleanup
+
+# 本番実行
+.\run_advanced_learning.bat --production --phase all
 ```
 
 ## ⚠️ 注意事項

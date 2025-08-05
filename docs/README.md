@@ -4,7 +4,7 @@
 
 ### 📊 プロジェクト概要
 - [CURRENT_STATUS_SUMMARY.md](CURRENT_STATUS_SUMMARY.md) - 現在の状況サマリー
-- [DOCUMENTATION_STANDARDS.md](DOCUMENTATION_STANDARDS.md) - ドキュメント標準
+- [config_usage_guide.md](config_usage_guide.md) - 設定ファイル使用ガイド
 
 ### 🚀 最新の改善策（2025年1月実装完了）
 - [trifecta_improvement_strategy.md](trifecta_improvement_strategy.md) - 3連単的中率改善戦略
@@ -12,8 +12,7 @@
 - [test_results_summary.md](test_results_summary.md) - テスト結果サマリー
 
 ### 🔧 開発者向けドキュメント
-- [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md) - 開発者ガイド
-- [API_SPECIFICATION.md](API_SPECIFICATION.md) - API仕様書
+- [test_results_summary.md](test_results_summary.md) - テスト結果サマリー
 
 ### 📁 運用ドキュメント
 - [operations/](operations/) - 運用関連ドキュメント
@@ -23,6 +22,60 @@
 
 ### 🌐 Web表示ドキュメント
 - [web_display/](web_display/) - Web表示関連ドキュメント
+
+---
+
+## 🚀 実行方法
+
+### 基本テスト実行
+```bash
+# 全テスト実行
+.\run_tests.bat
+
+# クイックテスト
+.\run_quick_test.bat
+
+# 個別テスト（tests/improvement_tests/ディレクトリ内）
+cd tests\improvement_tests
+.\run_all_tests.bat
+```
+
+### 本番想定パイプライン実行
+```bash
+# 基本パイプライン（オプション付き）
+.\run_learning_pipeline.bat --test
+.\run_learning_pipeline.bat --minimal --phase 1
+.\run_learning_pipeline.bat --phase 2 --timesteps 100000
+
+# 高度パイプライン（詳細オプション）
+.\run_advanced_learning.bat --test
+.\run_advanced_learning.bat --minimal --phase 1
+.\run_advanced_learning.bat --production --phase 2 --timesteps 100000
+
+# ヘルプ表示
+.\run_learning_pipeline.bat --help
+.\run_advanced_learning.bat --help
+```
+
+### オプション詳細
+
+#### 実行モード
+- `--test` - テストモード（短時間実行）
+- `--minimal` - 最小限モード（超短時間実行）
+- `--production` - 本番モード（長時間実行）
+
+#### 実行制御
+- `--phase PHASE` - 実行するPhase（1-4, all）
+- `--data-dir DIR` - データディレクトリ
+- `--timesteps N` - 学習ステップ数
+- `--eval-episodes N` - 評価エピソード数
+- `--n-trials N` - 試行回数
+
+#### オプション機能
+- `--cleanup` - 実行前のクリーンアップ（デフォルト有効）
+- `--no-cleanup` - クリーンアップを無効化
+- `--no-monitoring` - 監視機能を無効化
+- `--no-backup` - バックアップ機能を無効化
 
 ---
 

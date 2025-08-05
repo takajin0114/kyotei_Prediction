@@ -5,7 +5,12 @@
 
 import sys
 import os
-sys.path.append('kyotei_predictor')
+
+# プロジェクトルートをパスに追加（相対パス）
+current_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(os.path.dirname(current_dir))
+sys.path.append(project_root)
+sys.path.append(os.path.join(project_root, 'kyotei_predictor'))
 
 def test_config_manager():
     """設定管理クラスのテスト"""
