@@ -281,11 +281,13 @@ class KyoteiEnvManager(gym.Env):
     """
     metadata = {"render_modes": ["human"]}
     
-    def __init__(self, data_dir: str = "../data", bet_amount: int = 100):
+    def __init__(self, data_dir: str = "../data", bet_amount: int = 100, year_month: str = None):
         super().__init__()
         logging.debug(f"[KyoteiEnvManager.__init__] received data_dir: {data_dir}")
         self.data_dir = data_dir
+        self.year_month = year_month  # 年月フィルタ（例: "2024-01"）
         logging.debug(f"[KyoteiEnvManager.__init__] self.data_dir set to: {self.data_dir}")
+        logging.debug(f"[KyoteiEnvManager.__init__] year_month filter: {self.year_month}")
         self.bet_amount = bet_amount
         self.pairs = self._find_race_odds_pairs()
         self.env = None
@@ -293,6 +295,7 @@ class KyoteiEnvManager(gym.Env):
     def _find_race_odds_pairs(self) -> list:
         logging.debug(f"data_dir: {self.data_dir}")
         logging.debug(f"abspath(data_dir): {os.path.abspath(self.data_dir)}")
+        logging.debug(f"year_month filter: {self.year_month}")
         
         # サブディレクトリも含めて再帰的に検索
         race_pattern = os.path.join(self.data_dir, "**", "race_data_*.json")
@@ -301,17 +304,50 @@ class KyoteiEnvManager(gym.Env):
         logging.debug(f"race_pattern: {race_pattern}")
         logging.debug(f"odds_pattern: {odds_pattern}")
         
-        race_files = glob.glob(race_pattern, recursive=True)
-        odds_files = glob.glob(odds_pattern, recursive=True)
+        # キャッシュを完全に無効化して年月フィルタを確実に動作させる
+        print(f"[DEBUG] Cache disabled, recalculating pairs for year_month: {self.year_month}")
+        # キャッシュをクリア
+        if hasattr(self, '_pairs_cache'):
+            delattr(self, '_pairs_cache')
+        
+        # 年月フィルタのデバッグ情報を追加
+        print(f"[DEBUG] Year month filter: {self.year_month}")
+        print(f"[DEBUG] Data directory: {self.data_dir}")
+        
+        # ファイル検索を最適化
+        race_files = []
+        odds_files = []
+        
+        # ディレクトリを直接探索して高速化
+        for root, dirs, files in os.walk(self.data_dir):
+            for file in files:
+                if file.startswith('race_data_') and file.endswith('.json'):
+                    race_files.append(os.path.join(root, file))
+                elif file.startswith('odds_data_') and file.endswith('.json'):
+                    odds_files.append(os.path.join(root, file))
+        
+        # 年月フィルタリングを適用
+        if self.year_month:
+            print(f"[DEBUG] Applying year_month filter: {self.year_month}")
+            original_race_count = len(race_files)
+            original_odds_count = len(odds_files)
+            
+            race_files = [f for f in race_files if self._matches_year_month(os.path.basename(f), self.year_month)]
+            odds_files = [f for f in odds_files if self._matches_year_month(os.path.basename(f), self.year_month)]
+            
+            print(f"[DEBUG] After filtering - race_files: {len(race_files)} (from {original_race_count})")
+            print(f"[DEBUG] After filtering - odds_files: {len(odds_files)} (from {original_odds_count})")
+        else:
+            print(f"[DEBUG] No year_month filter applied")
         
         logging.debug(f"race_files count: {len(race_files)}")
         logging.debug(f"odds_files count: {len(odds_files)}")
         
         if not race_files:
-            logging.warning(f"No race files found in {self.data_dir}")
+            logging.warning(f"No race files found in {self.data_dir} with filter: {self.year_month}")
             return []
         if not odds_files:
-            logging.warning(f"No odds files found in {self.data_dir}")
+            logging.warning(f"No odds files found in {self.data_dir} with filter: {self.year_month}")
             return []
         
         # ファイル名ベースでマッピングを作成
@@ -347,29 +383,110 @@ class KyoteiEnvManager(gym.Env):
             odds_key = race_key.replace("race_data_", "odds_data_")
             pairs.append((race_map[race_key], odds_map[odds_key]))
         
+        print(f"[DEBUG] Final pairs count: {len(pairs)}")
+        if pairs:
+            print(f"[DEBUG] Sample pair: {pairs[0]}")
         logging.debug(f"pairs count: {len(pairs)}")
         if pairs:
             logging.debug(f"sample pair: {pairs[0]}")
         
+        # キャッシュを無効化（年月フィルタの確実な動作のため）
+        print(f"[DEBUG] Cache disabled, not saving pairs to cache")
+        
         return pairs
+
+    def _matches_year_month(self, filename: str, year_month: str) -> bool:
+        """
+        ファイル名が指定された年月に一致するかチェック
+        
+        Args:
+            filename: ファイル名（例: race_data_2024-01-27_OMURA_R1.json）
+            year_month: 年月（例: "2024-01"）
+        
+        Returns:
+            bool: 一致する場合True
+        """
+        if not year_month:
+            return True  # フィルタが指定されていない場合は常にTrue
+        
+        try:
+            # ファイル名から日付部分を抽出
+            # race_data_2024-01-27_OMURA_R1.json -> 2024-01-27
+            if not filename.startswith(('race_data_', 'odds_data_')):
+                return False
+            
+            # アンダースコアで分割して日付部分を取得
+            parts = filename.split('_')
+            if len(parts) >= 3:
+                date_part = parts[2]  # 2024-01-27
+                if len(date_part) >= 7:
+                    file_year_month = date_part[:7]  # 2024-01
+                    return file_year_month == year_month
+            return False
+        except Exception as e:
+            return False
 
     def reset(self, *, seed=None, options=None) -> Tuple[np.ndarray | None, dict]:
         print(f"[KyoteiEnvManager.reset] called. pairs={len(self.pairs)}")
+        # 年月フィルタの確認
+        if self.year_month:
+            print(f"[KyoteiEnvManager.reset] year_month filter: {self.year_month}")
+            # 実際のペアの年月分布を確認
+            year_month_distribution = {}
+            for pair in self.pairs:
+                race_file = os.path.basename(pair[0])
+                if race_file.startswith('race_data_'):
+                    parts = race_file.split('_')
+                    if len(parts) >= 3:
+                        date_part = parts[2]
+                        if len(date_part) >= 7:
+                            year_month = date_part[:7]
+                            year_month_distribution[year_month] = year_month_distribution.get(year_month, 0) + 1
+            print(f"[KyoteiEnvManager.reset] actual year_month distribution: {year_month_distribution}")
+        else:
+            print(f"[KyoteiEnvManager.reset] no year_month filter applied")
+        
         super().reset(seed=seed)
         
         # ペアが空の場合はエラー
         if not self.pairs:
-            error_msg = f"No valid race-odds pairs found in {self.data_dir}. Please check if data files exist."
+            error_msg = f"No valid race-odds pairs found in {self.data_dir} with filter: {self.year_month}. Please check if data files exist."
             print(f"[KyoteiEnvManager.reset] {error_msg}")
             logging.error(error_msg)
             raise ValueError(error_msg)
         
-        # 有効なレースが見つかるまで試行
-        max_attempts = 10
+        # 有効なレースが見つかるまで試行（無限ループ防止）
+        max_attempts = 50  # 試行回数を増やす
+        attempted_pairs = set()  # 既に試行したペアを記録
+        
+        # 年月フィルタが設定されている場合、フィルタに合致するペアのみを使用
+        if self.year_month:
+            filtered_pairs = []
+            for pair in self.pairs:
+                race_file = os.path.basename(pair[0])
+                if self._matches_year_month(race_file, self.year_month):
+                    filtered_pairs.append(pair)
+            if filtered_pairs:
+                available_pairs = filtered_pairs
+                print(f"[KyoteiEnvManager.reset] Using {len(filtered_pairs)} pairs filtered by year_month: {self.year_month}")
+            else:
+                print(f"[KyoteiEnvManager.reset] No pairs match year_month filter: {self.year_month}, using all pairs")
+                available_pairs = self.pairs
+        else:
+            available_pairs = self.pairs
+        
         for attempt in range(max_attempts):
             try:
-                # ランダムに1レース選択
-                race_path, odds_path = random.choice(self.pairs)
+                # ランダムに1レース選択（未試行のペアから）
+                current_available_pairs = [pair for pair in available_pairs if pair not in attempted_pairs]
+                if not current_available_pairs:
+                    # すべてのペアを試行した場合は最初からやり直し
+                    attempted_pairs.clear()
+                    current_available_pairs = available_pairs
+                
+                race_path, odds_path = random.choice(current_available_pairs)
+                attempted_pairs.add((race_path, odds_path))
+                
                 print(f"[KyoteiEnvManager.reset] attempt {attempt+1}: race={race_path}, odds={odds_path}")
                 logging.debug(f"Selected race: {race_path}")
                 logging.debug(f"Selected odds: {odds_path}")

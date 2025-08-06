@@ -21,6 +21,7 @@ set N_TRIALS=50
 set CLEANUP=true
 set MONITORING=true
 set BACKUP=true
+set YEAR_MONTH=
 
 REM コマンドライン引数の解析
 :parse_args
@@ -111,6 +112,13 @@ if "%1"=="--no-backup" (
     shift
     goto :parse_args
 )
+if "%1"=="--year-month" (
+    set YEAR_MONTH=%2
+    echo 年月フィルタを %2 に設定しました
+    shift
+    shift
+    goto :parse_args
+)
 if "%1"=="--help" (
     echo.
     echo 使用方法:
@@ -133,13 +141,15 @@ echo   --cleanup          実行前のクリーンアップ（デフォルト有
 echo   --no-cleanup       クリーンアップを無効化
 echo   --no-monitoring    監視機能を無効化
 echo   --no-backup        バックアップ機能を無効化
+echo   --year-month YYYY-MM 年月フィルタ（例: 2024-01）
 echo   --help             このヘルプを表示
     echo.
     echo 例:
-    echo   run_advanced_learning.bat --test
+echo   run_advanced_learning.bat --test
 echo   run_advanced_learning.bat --minimal --phase 1
 echo   run_advanced_learning.bat --production --phase 2 --timesteps 100000
 echo   run_advanced_learning.bat --production --no-cleanup
+echo   run_advanced_learning.bat --test --year-month 2024-01
     echo.
     exit /b 0
 )
@@ -152,6 +162,7 @@ echo 実行設定:
 echo - モード: %MODE%
 echo - Phase: %PHASE%
 echo - データディレクトリ: %DATA_DIR%
+echo - 年月フィルタ: %YEAR_MONTH%
 echo - 学習ステップ数: %TIMESTEPS%
 echo - 評価エピソード数: %EVAL_EPISODES%
 echo - 試行回数: %N_TRIALS%
@@ -234,9 +245,17 @@ REM Phase 2: 最適化テスト
 echo.
 echo 4. Phase 2: 最適化テスト実行中...
 if "%MODE%"=="minimal" (
-    python kyotei_predictor\tools\optimization\optimize_graduated_reward.py --minimal
+    if "%YEAR_MONTH%"=="" (
+        python kyotei_predictor\tools\optimization\optimize_graduated_reward.py --minimal
+    ) else (
+        python kyotei_predictor\tools\optimization\optimize_graduated_reward.py --minimal --year-month %YEAR_MONTH%
+    )
 ) else (
-    python kyotei_predictor\tools\optimization\optimize_graduated_reward.py
+    if "%YEAR_MONTH%"=="" (
+        python kyotei_predictor\tools\optimization\optimize_graduated_reward.py
+    ) else (
+        python kyotei_predictor\tools\optimization\optimize_graduated_reward.py --year-month %YEAR_MONTH%
+    )
 )
 if %ERRORLEVEL% neq 0 (
     echo ❌ Phase 2 最適化テストが失敗しました

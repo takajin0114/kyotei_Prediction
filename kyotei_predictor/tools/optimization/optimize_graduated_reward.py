@@ -17,6 +17,16 @@ import argparse
 import logging
 import time
 
+# 可視化を無効化
+import matplotlib
+matplotlib.use('Agg')  # バックエンドをAggに設定（非表示）
+import matplotlib.pyplot as plt
+plt.ioff()  # インタラクティブモードを無効化
+
+# Optunaの可視化を無効化
+os.environ['OPTUNA_DISABLE_DEFAULT_LOGGER'] = '1'
+os.environ['OPTUNA_DISABLE_LOGGING'] = '1'
+
 # プロジェクトルートをパスに追加
 project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(project_root)
@@ -33,25 +43,36 @@ except ImportError:
     CONFIG_MANAGER = None
     print("Warning: ImprovementConfigManager not available, using default values")
 
-def create_env(data_dir=None, bet_amount=100):
+def create_env(data_dir=None, bet_amount=100, year_month=None):
     """
     環境を作成
     
     Args:
         data_dir: データディレクトリ（Noneの場合はデフォルトパス）
         bet_amount: ベット金額
+        year_month: 年月フィルタ（例: "2024-01"）
     """
     if data_dir is None:
-        data_dir = os.path.join(os.getcwd(), "kyotei_predictor", "data", "raw")
+        data_dir = "kyotei_predictor/data/raw"
+    
+    print(f"[create_env] data_dir: {data_dir}")
+    print(f"[create_env] year_month: {year_month}")
+    print(f"[create_env] bet_amount: {bet_amount}")
+    print(f"[create_env] year_month type: {type(year_month)}")
+    print(f"[create_env] year_month is None: {year_month is None}")
+    
     """環境を作成"""
     def make_env():
-        env = KyoteiEnvManager(data_dir=data_dir, bet_amount=bet_amount)
+        print(f"[make_env] Creating KyoteiEnvManager with year_month: {year_month}")
+        print(f"[make_env] year_month type: {type(year_month)}")
+        print(f"[make_env] year_month is None: {year_month is None}")
+        env = KyoteiEnvManager(data_dir=data_dir, bet_amount=bet_amount, year_month=year_month)
         env = Monitor(env)
         return env
     
     return DummyVecEnv([make_env])
 
-def objective(trial, data_dir=None, test_mode=False, minimal_mode=False):
+def objective(trial, data_dir=None, test_mode=False, minimal_mode=False, year_month=None):
     """
     最適化の目的関数
     
@@ -60,10 +81,19 @@ def objective(trial, data_dir=None, test_mode=False, minimal_mode=False):
         data_dir: データディレクトリ（Noneの場合はデフォルトパス）
         test_mode: テストモード
         minimal_mode: 最小限モード
+        year_month: 年月フィルタ（例: "2024-01"）
     """
     if data_dir is None:
-        data_dir = os.path.join(os.getcwd(), "kyotei_predictor", "data", "raw")
+        data_dir = "kyotei_predictor/data/raw"
     print(f"[objective] Trial {trial.number} started")
+    
+    # データディレクトリの確認
+    if data_dir is None:
+        data_dir = "kyotei_predictor/data/raw"
+    print(f"[objective] data_dir: {data_dir}")
+    print(f"[objective] year_month filter: {year_month}")
+    print(f"[objective] year_month type: {type(year_month)}")
+    print(f"[objective] year_month is None: {year_month is None}")
     
     # 設定ファイルからハイパーパラメータ範囲を取得
     if CONFIG_MANAGER is not None:
@@ -127,8 +157,10 @@ def objective(trial, data_dir=None, test_mode=False, minimal_mode=False):
         max_grad_norm = trial.suggest_float('max_grad_norm', 0.3, 0.8)
     
     print(f"[objective] Hyperparams: lr={learning_rate}, batch={batch_size}, n_steps={n_steps}, gamma={gamma}")
-    train_env = create_env(data_dir=data_dir)
-    eval_env = create_env(data_dir=data_dir)
+    print(f"[objective] Creating train_env with year_month: {year_month}")
+    train_env = create_env(data_dir=data_dir, year_month=year_month)
+    print(f"[objective] Creating eval_env with year_month: {year_month}")
+    eval_env = create_env(data_dir=data_dir, year_month=year_month)
     print(f"[objective] Environments created")
     eval_callback = EvalCallback(
         eval_env,
@@ -267,7 +299,8 @@ def optimize_graduated_reward(
     data_dir=None,
     test_mode=False,
     minimal_mode=False,
-    resume_existing=False
+    resume_existing=False,
+    year_month=None
 ):
     """
     段階的報酬設計モデルの最適化を実行
@@ -281,7 +314,7 @@ def optimize_graduated_reward(
         resume_existing: 既存の研究を再開するかどうか
     """
     if data_dir is None:
-        data_dir = os.path.join(os.getcwd(), "kyotei_predictor", "data", "raw")
+        data_dir = "kyotei_predictor/data/raw"
     """段階的報酬設計モデルのハイパーパラメータ最適化"""
     
     print("=== 段階的報酬設計モデルのハイパーパラメータ最適化開始 ===")
@@ -333,11 +366,13 @@ def optimize_graduated_reward(
     existing_trials = len(study.trials)
     print(f"既存の試行数: {existing_trials}")
     
-    # 最適化の実行
+    # 最適化の実行（可視化を無効化）
+    print(f"最適化開始: データディレクトリ={data_dir}, 年月フィルタ={year_month}")
     study.optimize(
-        lambda trial: objective(trial, data_dir=data_dir, test_mode=test_mode, minimal_mode=minimal_mode),
+        lambda trial: objective(trial, data_dir=data_dir, test_mode=test_mode, minimal_mode=minimal_mode, year_month=year_month),
         n_trials=n_trials,
-        show_progress_bar=False
+        show_progress_bar=False,
+        callbacks=None  # コールバックを無効化して可視化を防ぐ
     )
     
     print(f"\n=== 最適化完了 ===")
@@ -387,7 +422,7 @@ def optimize_graduated_reward(
     
     if os.path.exists(best_model_path):
         best_model = PPO.load(best_model_path)
-        eval_env = create_env(data_dir=data_dir)
+        eval_env = create_env(data_dir=data_dir, year_month=year_month)
         
         detailed_results = evaluate_model(best_model, eval_env, n_eval_episodes=500)
         
@@ -415,6 +450,7 @@ def main():
     """メイン実行関数（コマンドライン引数対応）"""
     parser = argparse.ArgumentParser(description="段階的報酬設計モデルのハイパーパラメータ最適化")
     parser.add_argument('--data-dir', type=str, default="kyotei_predictor/data/raw", help='データディレクトリ')
+    parser.add_argument('--year-month', type=str, help='年月フィルタ（例: 2024-01）')
     parser.add_argument('--study-name', type=str, default="graduated_reward_optimization", help='Optunaスタディ名')
     parser.add_argument('--n-trials', type=int, default=50, help='試行回数')
     parser.add_argument('--test-mode', action='store_true', help='テストモード（短時間設定）')
@@ -422,6 +458,29 @@ def main():
     parser.add_argument('--resume-existing', action='store_true', help='既存スタディを継続する')
     
     args = parser.parse_args()
+    
+    # デバッグ情報を追加
+    print(f"[DEBUG] main() called with args:")
+    print(f"[DEBUG]   --data-dir: {args.data_dir}")
+    print(f"[DEBUG]   --year-month: {args.year_month}")
+    print(f"[DEBUG]   --minimal: {args.minimal}")
+    print(f"[DEBUG]   --test-mode: {args.test_mode}")
+    print(f"[DEBUG]   --n-trials: {args.n_trials}")
+    print(f"[DEBUG]   sys.argv: {sys.argv}")
+    
+    # 環境変数からデータディレクトリを取得、コマンドライン引数を優先
+    data_dir = os.environ.get('DATA_DIR', args.data_dir)
+    print(f"使用するデータディレクトリ: {data_dir}")
+    
+    # 年月フィルタの確認
+    year_month = args.year_month
+    print(f"[DEBUG] year_month from args: {year_month}")
+    print(f"[DEBUG] year_month type: {type(year_month)}")
+    print(f"[DEBUG] year_month is None: {year_month is None}")
+    if year_month:
+        print(f"使用する年月フィルタ: {year_month}")
+    else:
+        print("年月フィルタなし: 全期間のデータを使用")
     
     # 最小限モードの場合は設定を調整
     if args.minimal:
@@ -431,10 +490,11 @@ def main():
     study = optimize_graduated_reward(
         n_trials=args.n_trials,
         study_name=args.study_name,
-        data_dir=args.data_dir,
+        data_dir=data_dir,
         test_mode=args.test_mode,
         minimal_mode=args.minimal,
-        resume_existing=args.resume_existing
+        resume_existing=args.resume_existing,
+        year_month=year_month
     )
     
     print(f"\n=== 最適化完了 ===")
