@@ -149,3 +149,25 @@ complete_race_data_*.json
 !kyotei_predictor/optuna_tensorboard/README.md
 !kyotei_predictor/optuna_studies/README.md
 !kyotei_predictor/optuna_results/README.md
+
+# ルートディレクトリの除外
+# 学習結果・モデルファイル
+optuna_logs/
+optuna_models/
+optuna_studies/
+optuna_results/
+optuna_studies_backup_*/
+
+# バッチファイル・スクリプト（必要に応じて）
+*.bat
+*.ps1
+activate_env.ps1
+
+# 一時ファイル・ログ
+*.log
+*.tmp
+*.temp
+
+# アーカイブ・バックアップ
+archives/
+final_results/
