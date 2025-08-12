@@ -5,10 +5,29 @@
 import os
 import json
 import logging
+import sys
 from typing import Dict, Any, List, Optional, Tuple
 from datetime import datetime
 import numpy as np
 import pandas as pd
+
+# 文字化け対策: 標準出力のエンコーディングをUTF-8に設定
+if sys.platform.startswith('win'):
+    import codecs
+    # PowerShellでの文字化け対策
+    try:
+        # 環境変数でUTF-8を強制
+        os.environ['PYTHONIOENCODING'] = 'utf-8'
+        os.environ['PYTHONLEGACYWINDOWSSTDIO'] = 'utf-8'
+        
+        # 標準出力をUTF-8に設定（安全な方法）
+        if hasattr(sys.stdout, 'detach'):
+            sys.stdout = codecs.getwriter('utf-8')(sys.stdout.detach())
+            sys.stderr = codecs.getwriter('utf-8')(sys.stderr.detach())
+    except Exception:
+        # エラーが発生した場合は環境変数のみ設定
+        os.environ['PYTHONIOENCODING'] = 'utf-8'
+        os.environ['PYTHONLEGACYWINDOWSSTDIO'] = 'utf-8'
 
 # ログ設定
 logging.basicConfig(level=logging.INFO)
@@ -38,6 +57,26 @@ class KyoteiUtils:
         except Exception as e:
             logger.error(f"JSONファイル保存エラー: {file_path}, {e}")
             return False
+    
+    @staticmethod
+    def safe_print(message: str) -> None:
+        """文字化け対策付きprint関数"""
+        try:
+            # まず通常のprintを試行
+            print(message)
+        except UnicodeEncodeError:
+            try:
+                # UTF-8でエンコードして出力
+                print(message.encode('utf-8').decode('utf-8'))
+            except:
+                # 最後の手段: ASCII文字のみ出力
+                print(message.encode('ascii', 'ignore').decode('ascii'))
+        except Exception as e:
+            # その他のエラーの場合はASCII文字のみ出力
+            try:
+                print(message.encode('ascii', 'ignore').decode('ascii'))
+            except:
+                print("文字化けエラー: メッセージを表示できません")
     
     @staticmethod
     def extract_race_result(race_data: Dict[str, Any]) -> Optional[Tuple[int, int, int]]:

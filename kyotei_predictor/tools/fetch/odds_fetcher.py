@@ -1,21 +1,42 @@
 #!/usr/bin/env python3
 """
-競艇オッズ情報取得ツール
-
-metaboatrace.scrapers ライブラリを使用して
-3連単オッズ情報を取得する
+オッズ取得ツール
 """
 
-from metaboatrace.scrapers.official.website.v1707.pages.race.odds.trifecta_page import location, scraping
-from metaboatrace.models.stadium import StadiumTelCode
-from datetime import date
+import os
+import sys
+import json
 import requests
 import time
+from datetime import date
 from io import StringIO
-import json
-import argparse
-import sys
-import os
+from metaboatrace.models.stadium import StadiumTelCode
+from metaboatrace.scrapers.official.website.v1707.pages.race.odds.trifecta_page import location, scraping
+
+# 文字化け対策: 標準出力のエンコーディングをUTF-8に設定
+if sys.platform.startswith('win'):
+    import codecs
+    # PowerShellでの文字化け対策
+    try:
+        # 環境変数でUTF-8を強制
+        os.environ['PYTHONIOENCODING'] = 'utf-8'
+        os.environ['PYTHONLEGACYWINDOWSSTDIO'] = 'utf-8'
+        
+        # 標準出力をUTF-8に設定（安全な方法）
+        if hasattr(sys.stdout, 'detach'):
+            sys.stdout = codecs.getwriter('utf-8')(sys.stdout.detach())
+            sys.stderr = codecs.getwriter('utf-8')(sys.stderr.detach())
+    except Exception:
+        # エラーが発生した場合は環境変数のみ設定
+        os.environ['PYTHONIOENCODING'] = 'utf-8'
+        os.environ['PYTHONLEGACYWINDOWSSTDIO'] = 'utf-8'
+
+from kyotei_predictor.utils.common import KyoteiUtils
+
+def safe_print(message: str) -> None:
+    """文字化け対策付きprint関数"""
+    utils = KyoteiUtils()
+    utils.safe_print(message)
 
 def fetch_trifecta_odds(
     race_date: date,
@@ -33,7 +54,7 @@ def fetch_trifecta_odds(
     Returns:
         dict: 取得したオッズデータ
     """
-    print(f"🎰 3連単オッズ取得開始: {race_date} {stadium_code.name} 第{race_number}レース")
+    safe_print(f"🎰 3連単オッズ取得開始: {race_date} {stadium_code.name} 第{race_number}レース")
     
     # URLを生成
     url = location.create_odds_page_url(
@@ -42,7 +63,7 @@ def fetch_trifecta_odds(
         race_number=race_number
     )
     
-    print(f"📡 URL: {url}")
+    safe_print(f"📡 URL: {url}")
     
     # レート制限
     time.sleep(5)
@@ -58,7 +79,7 @@ def fetch_trifecta_odds(
         # オッズ情報抽出
         odds_data = scraping.extract_odds(html_file)
         
-        print(f"✅ オッズデータ取得成功: {len(odds_data)}件")
+        safe_print(f"✅ オッズデータ取得成功: {len(odds_data)}件")
         
         # データを辞書形式に変換
         formatted_odds = []
@@ -73,7 +94,7 @@ def fetch_trifecta_odds(
         # データ構造を確認
         if formatted_odds:
             sample_odds = formatted_odds[0]
-            print(f"📊 サンプルオッズ: {sample_odds['combination']} → {sample_odds['ratio']}倍")
+            safe_print(f"📊 サンプルオッズ: {sample_odds['combination']} → {sample_odds['ratio']}倍")
         
         return {
             'race_date': race_date.isoformat(),
@@ -85,10 +106,10 @@ def fetch_trifecta_odds(
         }
         
     except requests.exceptions.RequestException as e:
-        print(f"❌ リクエストエラー: {e}")
+        safe_print(f"❌ リクエストエラー: {e}")
         return None
     except Exception as e:
-        print(f"❌ スクレイピングエラー: {e}")
+        safe_print(f"❌ スクレイピングエラー: {e}")
         return None
 
 def fetch_odds_for_race(
@@ -112,13 +133,13 @@ def fetch_odds_for_race(
         }
         
         if stadium_name not in stadium_map:
-            print(f"❌ 未対応のスタジアム: {stadium_name}")
+            safe_print(f"❌ 未対応のスタジアム: {stadium_name}")
             return None
         
         stadium_code = stadium_map[stadium_name]
         
-        print(f"\n🏁 {stadium_name}競艇場 第{race_number}レース")
-        print("-" * 40)
+        safe_print(f"\n🏁 {stadium_name}競艇場 第{race_number}レース")
+        safe_print("-" * 40)
         
         odds_data = fetch_trifecta_odds(race_date, stadium_code, race_number)
         
@@ -128,25 +149,25 @@ def fetch_odds_for_race(
             filepath = os.path.join("kyotei_predictor", "data", "raw", filename)
             with open(filepath, "w", encoding="utf-8") as f:
                 json.dump(odds_data, f, ensure_ascii=False, indent=2, default=str)
-            print(f"💾 ファイル保存: {filename}")
+            safe_print(f"💾 ファイル保存: {filename}")
             
             # オッズ分析
             analyze_odds_data(odds_data)
             return odds_data
         else:
-            print("❌ オッズデータ取得失敗")
+            safe_print("❌ オッズデータ取得失敗")
             return None
             
     except Exception as e:
-        print(f"❌ エラー: {e}")
+        safe_print(f"❌ エラー: {e}")
         return None
 
 def test_odds_fetching() -> None:
     """
     オッズ取得のテスト実行
     """
-    print("🎰 競艇オッズ取得テスト")
-    print("=" * 50)
+    safe_print("🎰 競艇オッズ取得テスト")
+    safe_print("=" * 50)
     
     # テスト設定
     test_configs = [
@@ -169,8 +190,8 @@ def analyze_odds_data(odds_data: dict) -> None:
     """
     オッズデータの分析
     """
-    print(f"\n📊 オッズデータ分析:")
-    print(f"   取得件数: {odds_data['odds_count']}件")
+    safe_print(f"\n📊 オッズデータ分析:")
+    safe_print(f"   取得件数: {odds_data['odds_count']}件")
     
     if odds_data['odds_data']:
         odds_list = odds_data['odds_data']
@@ -179,14 +200,14 @@ def analyze_odds_data(odds_data: dict) -> None:
         odds_values = [odds['ratio'] for odds in odds_list]
         
         if odds_values:
-            print(f"   オッズ範囲: {min(odds_values):.1f} - {max(odds_values):.1f}")
-            print(f"   平均オッズ: {sum(odds_values)/len(odds_values):.1f}")
+            safe_print(f"   オッズ範囲: {min(odds_values):.1f} - {max(odds_values):.1f}")
+            safe_print(f"   平均オッズ: {sum(odds_values)/len(odds_values):.1f}")
             
             # 人気順表示（上位5位）
             sorted_odds = sorted(odds_list, key=lambda x: x['ratio'])
-            print(f"   人気順 (上位5位):")
+            safe_print(f"   人気順 (上位5位):")
             for i, odds in enumerate(sorted_odds[:5], 1):
-                print(f"     {i}位: {odds['combination']} → {odds['ratio']}倍")
+                safe_print(f"     {i}位: {odds['combination']} → {odds['ratio']}倍")
 
 def main() -> None:
     """

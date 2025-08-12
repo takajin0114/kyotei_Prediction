@@ -1,36 +1,57 @@
 #!/usr/bin/env python3
 """
-全24会場のバッチデータ取得スクリプト（完全並列版）
-レース情報取得も並列化して大幅高速化
+全競艇場データ一括取得ツール
 """
+
 import os
 import sys
 import json
 import time
-from datetime import date, timedelta, datetime
-from concurrent.futures import ThreadPoolExecutor, as_completed
 import requests
-from io import StringIO
-from metaboatrace.models.stadium import StadiumTelCode
-from metaboatrace.scrapers.official.website.exceptions import RaceCanceled, DataNotFound
-from kyotei_predictor.tools.fetch.race_data_fetcher import fetch_complete_race_data
-from kyotei_predictor.tools.fetch.odds_fetcher import fetch_trifecta_odds
-from metaboatrace.scrapers.official.website.v1707.pages.monthly_schedule_page.location import create_monthly_schedule_page_url
-from metaboatrace.scrapers.official.website.v1707.pages.monthly_schedule_page.scraping import extract_events
 import argparse
-import threading
-import subprocess
 import atexit
-from typing import Dict, Any
+import threading
+from datetime import date, timedelta, datetime
+from pathlib import Path
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import Dict, List, Optional, Tuple, Any
+from io import StringIO
 
-# グローバル進捗カウンタ
-progress_lock = threading.Lock()
-progress_total = 0
-progress_done = 0
-
-# 選手名取得エラーログ用
+# グローバル変数の初期化
 racer_error_log_file = None
 racer_error_log_lock = threading.Lock()
+progress_lock = threading.Lock()
+
+# 文字化け対策: 標準出力のエンコーディングをUTF-8に設定
+if sys.platform.startswith('win'):
+    import codecs
+    # PowerShellでの文字化け対策
+    try:
+        # 環境変数でUTF-8を強制
+        os.environ['PYTHONIOENCODING'] = 'utf-8'
+        os.environ['PYTHONLEGACYWINDOWSSTDIO'] = 'utf-8'
+        
+        # 標準出力をUTF-8に設定（安全な方法）
+        if hasattr(sys.stdout, 'detach'):
+            sys.stdout = codecs.getwriter('utf-8')(sys.stdout.detach())
+            sys.stderr = codecs.getwriter('utf-8')(sys.stderr.detach())
+    except Exception:
+        # エラーが発生した場合は環境変数のみ設定
+        os.environ['PYTHONIOENCODING'] = 'utf-8'
+        os.environ['PYTHONLEGACYWINDOWSSTDIO'] = 'utf-8'
+
+from metaboatrace.models.stadium import StadiumTelCode
+from metaboatrace.scrapers.official.website.v1707.pages.monthly_schedule_page.location import create_monthly_schedule_page_url
+from metaboatrace.scrapers.official.website.v1707.pages.monthly_schedule_page.scraping import extract_events
+from metaboatrace.scrapers.official.website.exceptions import RaceCanceled
+from kyotei_predictor.tools.fetch.race_data_fetcher import fetch_complete_race_data
+from kyotei_predictor.tools.fetch.odds_fetcher import fetch_trifecta_odds
+from kyotei_predictor.utils.common import KyoteiUtils
+
+def safe_print(message: str) -> None:
+    """文字化け対策付きprint関数"""
+    utils = KyoteiUtils()
+    utils.safe_print(message)
 
 def log_racer_error(error_info: dict):
     """選手名取得エラーを専用ログファイルに記録"""
@@ -74,7 +95,7 @@ def get_event_days_for_stadium(stadium: StadiumTelCode, start_date: date, end_da
                             event_days.append(day)
                     
         except Exception as e:
-            print(f"❌ {stadium.name} {current_date.year}-{current_date.month} 取得エラー: {e}")
+            safe_print(f"❌ {stadium.name} {current_date.year}-{current_date.month} 取得エラー: {e}")
         
         # 次の月へ
         if current_date.month == 12:
@@ -235,21 +256,22 @@ def fetch_race_data_parallel(
                 result['odds_success'] = True
                 log_info(f"    R{race_no}: レース中止 - 専用ファイル作成、オッズ取得をスキップ")
                 break
-            except DataNotFound as e:
-                retry_count += 1
-                result['race_error'] = f"データ未公開: {e}"
-                if retry_count < max_retries:
-                    log_info(f"    R{race_no}: データ未公開 - リトライ {retry_count}/{max_retries}")
-                    time.sleep(5)
-                else:
-                    log_info(f"    R{race_no}: データ未公開 - 次回実行時に再試行")
-                continue
             except Exception as e:
-                retry_count += 1
-                result['race_error'] = str(e)
-                if retry_count < max_retries:
-                    log_info(f"    R{race_no}: {type(e).__name__} - リトライ {retry_count}/{max_retries}")
-                    time.sleep(5)
+                if "データ未公開" in str(e) or "DataNotFound" in str(e):
+                    retry_count += 1
+                    result['race_error'] = f"データ未公開: {e}"
+                    if retry_count < max_retries:
+                        log_info(f"    R{race_no}: データ未公開 - リトライ {retry_count}/{max_retries}")
+                        time.sleep(5)
+                    else:
+                        log_info(f"    R{race_no}: データ未公開 - 次回実行時に再試行")
+                    continue
+                else:
+                    retry_count += 1
+                    result['race_error'] = str(e)
+                    if retry_count < max_retries:
+                        log_info(f"    R{race_no}: {type(e).__name__} - リトライ {retry_count}/{max_retries}")
+                        time.sleep(5)
         if not result['race_success'] and not result['canceled']:
             log_info(f"    R{race_no}: レースデータ取得失敗（{result['race_error']}）")
         time.sleep(rate_limit_seconds)
@@ -295,21 +317,22 @@ def fetch_race_data_parallel(
                     result['odds_success'] = True
                     log_info(f"    R{race_no}: レース中止（オッズ取得時） - 専用ファイル作成")
                     break
-            except DataNotFound as e:
-                retry_count += 1
-                result['odds_error'] = f"データ未公開: {e}"
-                if retry_count < max_retries:
-                    log_info(f"    R{race_no}: データ未公開（オッズ取得時） - リトライ {retry_count}/{max_retries}")
-                    time.sleep(5)
-                else:
-                    log_info(f"    R{race_no}: データ未公開（オッズ取得時） - 次回実行時に再試行")
-                continue
             except Exception as e:
-                retry_count += 1
-                result['odds_error'] = str(e)
-                if retry_count < max_retries:
-                    log_info(f"    R{race_no}: オッズ取得エラー - リトライ {retry_count}/{max_retries}")
-                    time.sleep(5)
+                if "データ未公開" in str(e) or "DataNotFound" in str(e):
+                    retry_count += 1
+                    result['odds_error'] = f"データ未公開: {e}"
+                    if retry_count < max_retries:
+                        log_info(f"    R{race_no}: データ未公開（オッズ取得時） - リトライ {retry_count}/{max_retries}")
+                        time.sleep(5)
+                    else:
+                        log_info(f"    R{race_no}: データ未公開（オッズ取得時） - 次回実行時に再試行")
+                    continue
+                else:
+                    retry_count += 1
+                    result['odds_error'] = str(e)
+                    if retry_count < max_retries:
+                        log_info(f"    R{race_no}: オッズ取得エラー - リトライ {retry_count}/{max_retries}")
+                        time.sleep(5)
         if not result['odds_success'] and not result['canceled']:
             log_info(f"    R{race_no}: オッズデータ取得失敗（{result['odds_error']}）")
         time.sleep(rate_limit_seconds)

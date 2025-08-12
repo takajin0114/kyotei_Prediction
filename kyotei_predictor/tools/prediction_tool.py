@@ -29,6 +29,37 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import cast
 
+from kyotei_predictor.utils.common import KyoteiUtils
+
+# 文字化け対策: 標準出力のエンコーディングをUTF-8に設定
+if sys.platform.startswith('win'):
+    import codecs
+    # PowerShellでの文字化け対策
+    try:
+        # 環境変数でUTF-8を強制
+        os.environ['PYTHONIOENCODING'] = 'utf-8'
+        os.environ['PYTHONLEGACYWINDOWSSTDIO'] = 'utf-8'
+        
+        # 標準出力をUTF-8に設定（安全な方法）
+        if hasattr(sys.stdout, 'detach'):
+            sys.stdout = codecs.getwriter('utf-8')(sys.stdout.detach())
+            sys.stderr = codecs.getwriter('utf-8')(sys.stderr.detach())
+    except Exception:
+        # エラーが発生した場合は環境変数のみ設定
+        os.environ['PYTHONIOENCODING'] = 'utf-8'
+        os.environ['PYTHONLEGACYWINDOWSSTDIO'] = 'utf-8'
+
+# 可視化結果の表示を無効化
+import matplotlib
+matplotlib.use('Agg')  # 非表示バックエンドを使用
+import matplotlib.pyplot as plt
+plt.ioff()  # インタラクティブモードを無効化
+
+# プロット表示を完全に無効化
+import warnings
+warnings.filterwarnings('ignore', category=UserWarning, module='matplotlib')
+warnings.filterwarnings('ignore', category=RuntimeWarning, module='matplotlib')
+
 # プロジェクトルートの設定
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 sys.path.append(str(PROJECT_ROOT))
@@ -50,18 +81,20 @@ class PredictionTool:
         self.setup_logging(log_level)
         self.model: Optional[PPO] = None
         self.model_info = {}
+        self.utils = KyoteiUtils()  # 共通ユーティリティを初期化
         
     def setup_logging(self, log_level):
         """ログ設定"""
         log_file = PROJECT_ROOT / "kyotei_predictor" / "logs" / f"prediction_tool_{datetime.now().strftime('%Y%m%d')}.log"
         log_file.parent.mkdir(exist_ok=True)
         
+        # 文字化け対策付きログ設定
         logging.basicConfig(
             level=log_level,
             format='%(asctime)s - %(levelname)s - %(message)s',
             handlers=[
                 logging.FileHandler(str(log_file), encoding='utf-8'),
-                logging.StreamHandler()
+                logging.StreamHandler(sys.stdout)  # 明示的にstdoutを指定
             ]
         )
         self.logger = logging.getLogger(__name__)
@@ -1207,13 +1240,13 @@ def main():
     venues = None
     if args.venues:
         venues = [v.strip().upper() for v in args.venues.split(',')]
-        print(f'DEBUG: venues = {venues}')
+        tool.utils.safe_print(f'DEBUG: venues = {venues}')
         tool.logger.info(f'指定会場: {venues}')
     
     # 実行モードの決定
     if args.complete_flow:
         # 完全統合フロー実行
-        print(f'DEBUG: calling run_complete_prediction with venues = {venues}')
+        tool.utils.safe_print(f'DEBUG: calling run_complete_prediction with venues = {venues}')
         result = tool.run_complete_prediction(
             target_date=args.predict_date,
             venues=venues,
@@ -1223,7 +1256,7 @@ def main():
     else:
         # 従来の予測実行（--predict-dateが必須）
         if not args.predict_date:
-            print("エラー: --predict-date が必要です")
+            tool.utils.safe_print("エラー: --predict-date が必要です")
             return
         
         result = tool.predict_races(args.predict_date, venues)
@@ -1233,19 +1266,19 @@ def main():
         output_path = tool.save_prediction_result(result, args.output_dir)
         
         if output_path:
-            print(f"\n=== 予測完了 ===")
-            print(f"予測日: {result['prediction_date']}")
-            print(f"対象レース数: {result['execution_summary']['total_races']}")
-            print(f"成功レース数: {result['execution_summary']['successful_predictions']}")
-            print(f"実行時間: {result['execution_summary']['execution_time_minutes']:.1f}分")
+            tool.utils.safe_print(f"\n=== 予測完了 ===")
+            tool.utils.safe_print(f"予測日: {result['prediction_date']}")
+            tool.utils.safe_print(f"対象レース数: {result['execution_summary']['total_races']}")
+            tool.utils.safe_print(f"成功レース数: {result['execution_summary']['successful_predictions']}")
+            tool.utils.safe_print(f"実行時間: {result['execution_summary']['execution_time_minutes']:.1f}分")
             if 'data_fetched' in result['execution_summary']:
-                print(f"データ取得: {'あり' if result['execution_summary']['data_fetched'] else 'なし'}")
-                print(f"予測のみ: {'あり' if result['execution_summary']['prediction_only'] else 'なし'}")
-            print(f"結果ファイル: {output_path}")
+                tool.utils.safe_print(f"データ取得: {'あり' if result['execution_summary']['data_fetched'] else 'なし'}")
+                tool.utils.safe_print(f"予測のみ: {'あり' if result['execution_summary']['prediction_only'] else 'なし'}")
+            tool.utils.safe_print(f"結果ファイル: {output_path}")
         else:
-            print("予測結果の保存に失敗しました")
+            tool.utils.safe_print("予測結果の保存に失敗しました")
     else:
-        print("予測の実行に失敗しました")
+        tool.utils.safe_print("予測の実行に失敗しました")
 
 if __name__ == "__main__":
     main() 
