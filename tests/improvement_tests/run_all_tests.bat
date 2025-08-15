@@ -1,4 +1,5 @@
 @echo off
+chcp 65001 >nul
 echo ========================================
 echo 全テスト実行
 echo ========================================
@@ -8,6 +9,9 @@ call venv\Scripts\activate.bat
 
 REM Pythonパスを設定
 set PYTHONPATH=%~dp0
+
+REM テスト用データディレクトリを設定
+set DATA_DIR=kyotei_predictor/data/test_raw
 
 echo.
 echo 1. 設定管理クラステスト実行中...

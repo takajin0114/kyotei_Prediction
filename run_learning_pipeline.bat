@@ -1,4 +1,5 @@
 @echo off
+chcp 65001 >nul
 setlocal enabledelayedexpansion
 
 echo ========================================
@@ -15,6 +16,7 @@ REM デフォルト設定
 set MODE=production
 set PHASE=all
 set DATA_DIR=kyotei_predictor\data\raw
+set YEAR_MONTH=
 set TIMESTEPS=200000
 set EVAL_EPISODES=5000
 set N_TRIALS=50
@@ -51,6 +53,14 @@ if "%1"=="--phase" (
 if "%1"=="--data-dir" (
     set DATA_DIR=%2
     echo データディレクトリを %2 に設定しました
+    shift
+    shift
+    goto :parse_args
+)
+if "%1"=="--year-month" (
+    set YEAR_MONTH=%2
+    echo 年月フィルタを %2 に設定しました
+    echo [DEBUG] YEAR_MONTH set to: %2
     shift
     shift
     goto :parse_args
@@ -98,6 +108,7 @@ echo   --test             テストモード（短時間実行）
 echo   --minimal          最小限モード（超短時間実行）
 echo   --phase PHASE      実行するPhase（1-4, all）
 echo   --data-dir DIR     データディレクトリ
+echo   --year-month YYYY-MM 年月フィルタ（例: 2024-01）
 echo   --timesteps N      学習ステップ数
 echo   --eval-episodes N  評価エピソード数
 echo   --n-trials N       試行回数
@@ -109,6 +120,7 @@ echo   --help             このヘルプを表示
     echo   run_learning_pipeline.bat --test
 echo   run_learning_pipeline.bat --minimal --phase 1
 echo   run_learning_pipeline.bat --phase 2 --timesteps 100000
+echo   run_learning_pipeline.bat --year-month 2024-01 --phase 2
 echo   run_learning_pipeline.bat --production --no-cleanup
     echo.
     exit /b 0
@@ -122,6 +134,11 @@ echo 実行設定:
 echo - モード: %MODE%
 echo - Phase: %PHASE%
 echo - データディレクトリ: %DATA_DIR%
+if not "%YEAR_MONTH%"=="" (
+    echo - 年月フィルタ: %YEAR_MONTH%
+) else (
+    echo - 年月フィルタ: なし（全期間）
+)
 echo - 学習ステップ数: %TIMESTEPS%
 echo - 評価エピソード数: %EVAL_EPISODES%
 echo - 試行回数: %N_TRIALS%
@@ -182,7 +199,17 @@ echo ✓ Phase 2 学習検証テスト完了
 REM Phase 2: 最適化テスト
 echo.
 echo 4. Phase 2: 最適化テスト実行中...
-python kyotei_predictor\tools\optimization\optimize_graduated_reward.py --minimal
+echo [DEBUG] YEAR_MONTH variable: "%YEAR_MONTH%"
+echo [DEBUG] YEAR_MONTH length: %YEAR_MONTH%
+if not "%YEAR_MONTH%"=="" (
+    echo [DEBUG] Executing with year-month filter: %YEAR_MONTH%
+    echo [DEBUG] Command: python kyotei_predictor\tools\optimization\optimize_graduated_reward.py --minimal --year-month "%YEAR_MONTH%"
+    python kyotei_predictor\tools\optimization\optimize_graduated_reward.py --minimal --year-month "%YEAR_MONTH%"
+) else (
+    echo [DEBUG] Executing without year-month filter
+    echo [DEBUG] Command: python kyotei_predictor\tools\optimization\optimize_graduated_reward.py --minimal
+    python kyotei_predictor\tools\optimization\optimize_graduated_reward.py --minimal
+)
 if %ERRORLEVEL% neq 0 (
     echo ❌ Phase 2 最適化テストが失敗しました
     pause

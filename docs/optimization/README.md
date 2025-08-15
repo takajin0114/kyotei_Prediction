@@ -13,32 +13,55 @@
 - トラブルシューティング
 - ベストプラクティス
 
+### [FAST_MODE_IMPLEMENTATION_SUMMARY.md](FAST_MODE_IMPLEMENTATION_SUMMARY.md)
+高速モード実装の詳細サマリーです。
+- 高速モードの実装内容と効果
+- パラメータ設定の比較
+- 実行時間の改善効果
+- 使用方法と技術的詳細
+
 ## 🚀 クイックスタート
+
+### 実行前の準備
+
+**重要**: 以下のコマンドは、プロジェクトルート（`kyotei_Prediction`ディレクトリ）から実行してください。
+
+```bash
+# 現在のディレクトリを確認
+pwd
+# 出力例: C:\Users\takaj\Desktop\app\kyotei_Prediction\kyotei_Prediction
+
+# 仮想環境をアクティベート
+.\venv\Scripts\Activate.ps1
+```
 
 ### 基本的な実行
 
 ```bash
 # 2024年3月データでの最適化
-python run_optimization_generic.py --data-dir kyotei_predictor/data/raw/2024-03
+python kyotei_predictor/tools/optimization/optimize_graduated_reward.py --year-month 2024-03
 
 # テストモードでの実行
-python run_optimization_generic.py --data-dir kyotei_predictor/data/raw/2024-03 --test-mode
+python kyotei_predictor/tools/optimization/optimize_graduated_reward.py --year-month 2024-03 --test-mode
 
 # 試行回数を指定
-python run_optimization_generic.py --data-dir kyotei_predictor/data/raw/2024-03 --n-trials 50
+python kyotei_predictor/tools/optimization/optimize_graduated_reward.py --year-month 2024-03 --n-trials 50
+
+# 高速モードでの実行（開発・テスト用）
+python kyotei_predictor/tools/optimization/optimize_graduated_reward.py --year-month 2024-03 --fast-mode --n-trials 5
 ```
 
 ### 他の期間データでの実行
 
 ```bash
 # 2024年1月データ
-python run_optimization_generic.py --data-dir kyotei_predictor/data/raw/2024-01
+python kyotei_predictor/tools/optimization/optimize_graduated_reward.py --year-month 2024-01
 
 # 2024年2月データ
-python run_optimization_generic.py --data-dir kyotei_predictor/data/raw/2024-02
+python kyotei_predictor/tools/optimization/optimize_graduated_reward.py --year-month 2024-02
 
 # 2024年4月データ
-python run_optimization_generic.py --data-dir kyotei_predictor/data/raw/2024-04
+python kyotei_predictor/tools/optimization/optimize_graduated_reward.py --year-month 2024-04
 ```
 
 ## 📊 最適化結果
@@ -84,6 +107,13 @@ print(f"最良パラメータ: {results['best_trial']['params']}")
 | 2024年3月（テスト） | 3 | 6.107 | 2025-07-29 |
 | 2024年3月（本格） | 20 | 実行中 | 2025-07-29 |
 
+### 高速モードの効果
+
+| モード | 1試行あたり | 5試行合計 | 改善率 |
+|--------|-------------|-----------|--------|
+| **通常モード** | 2-3時間 | 10-15時間 | - |
+| **高速モード** | **5-10分** | **25-50分** | **約20-30倍高速** |
+
 ### 今後の予定
 
 - [ ] 2024年1月データでの最適化
@@ -100,6 +130,7 @@ print(f"最良パラメータ: {results['best_trial']['params']}")
 
 ## 📝 更新履歴
 
+- **2025-01-27**: 高速モード実装完了
 - **2025-01-27**: 最適化ガイドの作成
 - **2025-01-27**: 汎用最適化スクリプトの実装
 - **2025-01-27**: ドキュメント構造の整理

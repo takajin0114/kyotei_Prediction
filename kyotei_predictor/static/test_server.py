@@ -11,9 +11,17 @@ import sys
 import signal
 from pathlib import Path
 
-# プロジェクトルートの設定
+# プロジェクトルートの設定（修正）
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 sys.path.append(str(PROJECT_ROOT))
+
+# デバッグ用：パス情報を出力
+print(f"スクリプトファイル: {__file__}")
+print(f"スクリプトの親ディレクトリ: {Path(__file__).parent}")
+print(f"プロジェクトルート: {PROJECT_ROOT}")
+print(f"プロジェクトルートの存在: {PROJECT_ROOT.exists()}")
+print(f"kyotei_predictorディレクトリ: {PROJECT_ROOT / 'kyotei_predictor'}")
+print(f"kyotei_predictorの存在: {(PROJECT_ROOT / 'kyotei_predictor').exists()}")
 
 class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     """カスタムHTTPリクエストハンドラー"""
@@ -45,7 +53,7 @@ def main():
     PORT = 8000
     
     # 出力ディレクトリの存在確認
-    outputs_dir = PROJECT_ROOT / "outputs"
+    outputs_dir = PROJECT_ROOT / "kyotei_predictor" / "outputs"
     if not outputs_dir.exists():
         print(f"エラー: outputsディレクトリが見つかりません: {outputs_dir}")
         return

@@ -5,7 +5,18 @@
 
 import sys
 import os
-sys.path.append('kyotei_predictor')
+from pathlib import Path
+
+# プロジェクトルートを取得
+project_root = Path(__file__).parent.parent.parent
+kyotei_predictor_path = project_root / "kyotei_predictor"
+
+# パスを追加
+sys.path.insert(0, str(project_root))
+sys.path.insert(0, str(kyotei_predictor_path))
+sys.path.insert(0, str(kyotei_predictor_path / "tools"))
+sys.path.insert(0, str(kyotei_predictor_path / "pipelines"))
+sys.path.insert(0, str(kyotei_predictor_path / "utils"))
 
 def test_phase1_reward_improvement():
     """Phase 1: 報酬設計改善テスト"""

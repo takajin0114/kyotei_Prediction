@@ -5,14 +5,31 @@
 
 import argparse
 import os
+import sys
 import json
 import numpy as np
+
+# 可視化を無効化
+import matplotlib
+matplotlib.use('Agg')  # バックエンドをAggに設定（非表示）
 import matplotlib.pyplot as plt
+plt.ioff()  # インタラクティブモードを無効化
+
+# 日本語フォント設定
+import matplotlib.font_manager as fm
+plt.rcParams['font.family'] = ['DejaVu Sans', 'Hiragino Sans', 'Yu Gothic', 'Meiryo', 'Takao', 'IPAexGothic', 'IPAPGothic', 'VL PGothic', 'Noto Sans CJK JP']
+
 from datetime import datetime
 from stable_baselines3 import PPO
 from stable_baselines3.common.vec_env import DummyVecEnv
-from kyotei_predictor.pipelines.kyotei_env import KyoteiEnvManager
-from kyotei_predictor.pipelines.kyotei_env import action_to_trifecta
+
+# プロジェクトルートをパスに追加
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(project_root)
+sys.path.append(os.path.join(project_root, 'kyotei_predictor'))
+
+from pipelines.kyotei_env import KyoteiEnvManager
+from pipelines.kyotei_env import action_to_trifecta
 
 def evaluate_graduated_reward_model(
     model_path=None,
@@ -35,7 +52,7 @@ def evaluate_graduated_reward_model(
         model_path = os.path.join(os.getcwd(), "optuna_models", "graduated_reward_best", "best_model.zip")
     
     if data_dir is None:
-        data_dir = os.path.join(os.getcwd(), "kyotei_predictor", "data", "raw")
+        data_dir = "kyotei_predictor/data/raw"
     """
     段階的報酬モデルの評価を実行
     
@@ -254,12 +271,13 @@ def create_evaluation_plots(rewards, hit_types, model_path):
     
     plt.tight_layout()
     
-    # 保存
+    # 保存（表示なし）
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     output_dir = os.path.join(os.getcwd(), "outputs")
+    os.makedirs(output_dir, exist_ok=True)
     plot_path = os.path.join(output_dir, f"graduated_reward_evaluation_plots_{timestamp}.png")
     plt.savefig(plot_path, dpi=300, bbox_inches='tight')
-    plt.show()
+    plt.close()  # メモリを解放
     
     print(f"可視化結果を保存しました: {plot_path}")
 
@@ -275,10 +293,14 @@ def main():
     
     args = parser.parse_args()
     
+    # 環境変数からデータディレクトリを取得、コマンドライン引数を優先
+    data_dir = os.environ.get('DATA_DIR', args.data_dir)
+    print(f"使用するデータディレクトリ: {data_dir}")
+    
     results = evaluate_graduated_reward_model(
         model_path=args.model_path,
         n_eval_episodes=args.n_eval_episodes,
-        data_dir=args.data_dir
+        data_dir=data_dir
     )
     
     if results:

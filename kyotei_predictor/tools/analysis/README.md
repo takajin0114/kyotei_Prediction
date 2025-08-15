@@ -1,112 +1,50 @@
 # Analysis Tools
 
-競艇データ分析ツール群です。オッズ分析・統計分析を担当します。
+競艇データ分析ツール群です。オッズ分析・統計分析・モデル評価を担当します。
 
 ## 📁 ファイル構成
 
+### 主要分析ツール
+- `analyze_graduated_reward.py` - 段階的報酬モデルの分析・評価
+- `analyze_reward_design.py` - 報酬設計の分析・最適化
+- `analyze_state_vector.py` - 状態ベクトルの分析・可視化
+- `feature_importance_analysis.py` - 特徴量重要度分析
+- `investment_value_analyzer.py` - 投資価値分析・期待値計算
+- `expected_value_threshold_optimizer.py` - 期待値閾値最適化
+
+### データ検証・品質管理
+- `bulk_prediction_validator.py` - 一括予測結果の検証
+- `real_odds_investment_analyzer.py` - 実オッズ投資分析
+- `verify_race_data.py` - レースデータ整合性チェック
+- `verify_race_data_simple.py` - シンプルなレースデータ検証
+- `check_batch_results.py` - バッチ取得結果の検証
+- `check_trifecta_hit_rate.py` - 3連単的中率チェック
+
+### 統計・分析
 - `odds_analysis.py` - オッズ分析（期待値計算・投資判定等）
+- `race_stats.py` - レース統計分析
+- `trifecta_probability_debugger.py` - 3連単確率デバッグ
+- `racer_error_analyzer.py` - 選手エラー分析
+- `simple_learning_test.py` - 学習テスト・検証
 
 ## 🚀 使用方法
 
-### オッズ分析
+### 主要分析
 ```bash
-python odds_analysis.py
+# 段階的報酬モデル分析
+python tools/analysis/analyze_graduated_reward.py
+
+# 特徴量重要度分析
+python tools/analysis/feature_importance_analysis.py
+
+# 投資価値分析
+python tools/analysis/investment_value_analyzer.py
+
+# 期待値閾値最適化
+python tools/analysis/expected_value_threshold_optimizer.py
 ```
 
-## 📊 分析機能
-
-### オッズ分析
-- 3連単・3連複の期待値計算
-- 投資価値判定（期待値ベース）
-- オッズ分布・統計分析
-- 組み合わせ別の的中率分析
-
-### 統計分析
-- オッズの時系列変化
-- 会場別・条件別の傾向分析
-- 異常値検出・外れ値分析
-
-## 🔧 技術仕様
-
-### 期待値計算
-- **期待値 = オッズ × 的中確率**
-- 的中確率はAI/強化学習モデルから取得
-- 投資判定閾値の設定可能
-
-### 出力形式
-- CSV/JSON形式での分析結果出力
-- 可視化チャート（matplotlib/plotly）
-- レポート生成（HTML/PDF）
-
-## 📈 分析指標
-
-### 投資指標
-- 期待値
-- 回収率
-- リスク指標（シャープレシオ等）
-- 最大ドローダウン
-
-### 統計指標
-- 平均・分散・標準偏差
-- 相関係数
-- 分布分析
-
-# analysis ディレクトリ
-
-**最終更新日: 2025-07-04**
-
----
-
-## 本READMEの役割
-- データ分析・検証ツール（オッズ分析、データ検証、バッチ結果チェック等）の役割・使い方・運用ルールを記載
-- 主要スクリプトの説明・設計書へのリンクを明記
-- ルートREADMEやtools/README、NEXT_STEPS.mdへのリンクも記載
-
-## 関連ドキュメント
-- [../../../README.md](../../../README.md)（全体概要・セットアップ・タスク入口）
-- [../README.md](../README.md)（tools全体の運用ルール）
-- [../../../NEXT_STEPS.md](../../../NEXT_STEPS.md)（今後のタスク・優先度・進捗管理）
-- [../../../integration_design.md](../../../integration_design.md)（統合設計・アーキテクチャ）
-- [../../../prediction_algorithm_design.md](../../../prediction_algorithm_design.md)（予測アルゴリズム設計）
-
----
-
-## 役割・用途
-- データの品質検証・分析・可視化
-- オッズやバッチ結果の統計的分析
-- データはdata/processed/やoutputs/に出力
-
----
-
-## 主要スクリプト
-- `odds_analysis.py` : オッズ分析
-- `verify_race_data.py` : データ検証
-- `check_batch_results.py` : バッチ結果チェック
-
----
-
-## 運用ルール
-- 入出力ファイルのパス・命名規則を統一
-- 分析結果はoutputs/やresults/に保存
-- 不要な一時ファイルは随時削除
-
----
-
-# 以下、従来の内容（使い方・注意点など）を現状維持・必要に応じて最新化
-
-## ファイル一覧
-
-- odds_analysis.py
-    - オッズデータの統計分析・可視化ツール
-- verify_race_data.py
-    - レースデータの整合性・欠損チェック、データ検証用スクリプト
-- verify_race_data_simple.py
-    - シンプルなレースデータ検証スクリプト（主に基本的な整合性チェック用）
-- check_batch_results.py
-    - バッチ取得結果の検証・集計・エラー検出用スクリプト
-
-## 使い方
-
+### データ検証
 ```bash
 # レースデータの検証
 python tools/analysis/verify_race_data.py data/raw/race_data_*.json
@@ -117,36 +55,90 @@ python tools/analysis/verify_race_data_simple.py data/raw/race_data_*.json
 # バッチ取得結果の検証
 python tools/analysis/check_batch_results.py data/raw/
 
-# オッズ分析
-python tools/analysis/odds_analysis.py data/raw/odds_data_*.json
+# 3連単的中率チェック
+python tools/analysis/check_trifecta_hit_rate.py
 ```
 
-## 備考
-- データ検証・バッチ検証系のスクリプトはここに集約
-- 分析・可視化系は `viz/` も参照 
+## 📊 分析機能
 
----
+### モデル分析
+- **段階的報酬設計**: 報酬関数の設計・最適化分析
+- **状態ベクトル分析**: 192次元特徴量の分布・相関分析
+- **特徴量重要度**: 機械学習モデルの特徴量重要度分析
+- **学習曲線分析**: モデル学習の収束性・安定性評価
 
-## Phase 4-1: 期待値閾値最適化 分析スクリプト設計
+### 投資分析
+- **期待値計算**: 3連単・3連複の期待値計算
+- **投資価値判定**: 期待値ベースの投資判断
+- **閾値最適化**: リスク・リターン最適化
+- **戦略比較**: 複数投資戦略のパフォーマンス比較
 
-### 目的
-- 投資判断の期待値閾値を最適化し、リスク・リターンのバランスを最大化する
+### データ品質管理
+- **整合性チェック**: レースデータの整合性・欠損チェック
+- **バッチ結果検証**: 一括データ取得結果の検証
+- **的中率分析**: 予測精度・的中率の統計分析
+- **エラー分析**: データ取得・処理エラーの分析
 
-### 入力
-- 予測確率付き3連単組み合わせデータ（outputs/trifecta_dependent_bulk_results_*.json等）
-- 実際のオッズデータ（outputs/real_odds_investment_results_*.json等）
+### 統計分析
+- **オッズ分析**: オッズ分布・統計分析・時系列変化
+- **会場別分析**: 会場別・条件別の傾向分析
+- **異常値検出**: 外れ値・異常値の検出・分析
+- **相関分析**: 特徴量間の相関・依存関係分析
 
-### 出力
-- 閾値ごとの投資件数・的中率・回収率・リスク指標（最大ドローダウン等）
-- 最適閾値とそのパフォーマンス指標
-- 戦略ごとの比較表・グラフ
+## 🔧 技術仕様
 
-### 評価指標
-- 的中率、回収率、最大ドローダウン、シャープレシオ
+### 期待値計算
+- **期待値 = オッズ × 的中確率**
+- 的中確率はAI/強化学習モデルから取得
+- 投資判定閾値の設定可能（0.8～2.0）
 
-### 実装方針
-- kyotei_predictor/utils/common.py の calculate_expected_value, is_profitable を利用
-- 閾値を0.8～2.0でグリッドサーチし、各閾値でのパフォーマンスを集計
-- 保守的（期待値>1.5）、バランス（>1.2）、積極的（>1.0）など複数戦略で比較
-- 結果をCSV/グラフで出力
-- 新規スクリプト名例: expected_value_threshold_optimizer.py 
+### 状態ベクトル
+- **192次元特徴量**: 選手成績・機材情報・オッズ情報
+- **正規化処理**: 標準化・正規化による前処理
+- **欠損値処理**: 適切な欠損値補完・除外
+
+### 出力形式
+- **CSV/JSON**: 分析結果の構造化出力
+- **可視化**: matplotlib/plotlyによるグラフ生成
+- **レポート**: HTML/PDF形式でのレポート生成
+- **ログ**: 詳細な実行ログ・エラーログ
+
+## 📈 分析指標
+
+### 投資指標
+- **期待値**: 投資判断の基本指標
+- **的中率**: 予測精度の評価
+- **回収率**: 投資効率の測定
+- **リスク指標**: シャープレシオ・最大ドローダウン
+
+### 統計指標
+- **記述統計**: 平均・分散・標準偏差
+- **相関分析**: ピアソン・スピアマン相関係数
+- **分布分析**: ヒストグラム・確率密度関数
+- **時系列分析**: トレンド・季節性・周期性
+
+### モデル評価指標
+- **学習指標**: 損失関数・報酬関数の収束
+- **汎化性能**: 過学習・アンダーフィッティングの検出
+- **特徴量重要度**: モデル性能への寄与度
+- **安定性**: 学習・予測の安定性評価
+
+## 🎯 主要用途
+
+### モデル開発・改善
+- 報酬関数の設計・最適化
+- 特徴量エンジニアリングの改善
+- ハイパーパラメータの調整
+- モデル性能の評価・比較
+
+### 運用・監視
+- データ品質の継続監視
+- 予測精度の定期的評価
+- 投資戦略の最適化
+- システム性能の監視
+
+### 研究・分析
+- 競艇データの統計分析
+- 機械学習モデルの研究
+- 投資戦略の研究・開発
+- データ駆動意思決定の支援 

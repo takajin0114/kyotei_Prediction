@@ -72,7 +72,7 @@ def create_env(data_dir=None, bet_amount=100, year_month=None):
     
     return DummyVecEnv([make_env])
 
-def objective(trial, data_dir=None, test_mode=False, minimal_mode=False, year_month=None):
+def objective(trial, data_dir=None, test_mode=False, minimal_mode=False, year_month=None, fast_mode=False):
     """
     最適化の目的関数
     
@@ -82,6 +82,7 @@ def objective(trial, data_dir=None, test_mode=False, minimal_mode=False, year_mo
         test_mode: テストモード
         minimal_mode: 最小限モード
         year_month: 年月フィルタ（例: "2024-01"）
+        fast_mode: 高速モード（学習ステップ数と評価エピソード数を大幅削減）
     """
     if data_dir is None:
         data_dir = "kyotei_predictor/data/raw"
@@ -97,64 +98,90 @@ def objective(trial, data_dir=None, test_mode=False, minimal_mode=False, year_mo
     
     # 設定ファイルからハイパーパラメータ範囲を取得
     if CONFIG_MANAGER is not None:
-        hyperparams = CONFIG_MANAGER.get_hyperparameters("phase2")
-        
-        # ハイパーパラメータの提案
-        learning_rate = trial.suggest_float(
-            'learning_rate', 
-            hyperparams.get("learning_rate", {}).get("min", 5e-6), 
-            hyperparams.get("learning_rate", {}).get("max", 5e-3), 
-            log=hyperparams.get("learning_rate", {}).get("log", True)
-        )
-        batch_size = trial.suggest_categorical('batch_size', hyperparams.get("batch_size", [64, 128, 256]))
-        n_steps = trial.suggest_categorical('n_steps', hyperparams.get("n_steps", [2048, 4096, 8192]))
-        gamma = trial.suggest_float(
-            'gamma', 
-            hyperparams.get("gamma", {}).get("min", 0.95), 
-            hyperparams.get("gamma", {}).get("max", 0.999)
-        )
-        gae_lambda = trial.suggest_float(
-            'gae_lambda', 
-            hyperparams.get("gae_lambda", {}).get("min", 0.9), 
-            hyperparams.get("gae_lambda", {}).get("max", 0.99)
-        )
-        n_epochs = trial.suggest_int(
-            'n_epochs', 
-            hyperparams.get("n_epochs", {}).get("min", 10), 
-            hyperparams.get("n_epochs", {}).get("max", 25)
-        )
-        clip_range = trial.suggest_float(
-            'clip_range', 
-            hyperparams.get("clip_range", {}).get("min", 0.1), 
-            hyperparams.get("clip_range", {}).get("max", 0.3)
-        )
-        ent_coef = trial.suggest_float(
-            'ent_coef', 
-            hyperparams.get("ent_coef", {}).get("min", 0.0), 
-            hyperparams.get("ent_coef", {}).get("max", 0.05)
-        )
-        vf_coef = trial.suggest_float(
-            'vf_coef', 
-            hyperparams.get("vf_coef", {}).get("min", 0.5), 
-            hyperparams.get("vf_coef", {}).get("max", 1.0)
-        )
-        max_grad_norm = trial.suggest_float(
-            'max_grad_norm', 
-            hyperparams.get("max_grad_norm", {}).get("min", 0.3), 
-            hyperparams.get("max_grad_norm", {}).get("max", 0.8)
-        )
+        if fast_mode:
+            # 高速モード：狭いパラメータ範囲で高速化
+            learning_rate = trial.suggest_float('learning_rate', 1e-05, 0.001, log=True)
+            batch_size = trial.suggest_categorical('batch_size', [64, 128])
+            n_steps = trial.suggest_categorical('n_steps', [1024, 2048])
+            gamma = trial.suggest_float('gamma', 0.95, 0.99)
+            gae_lambda = trial.suggest_float('gae_lambda', 0.9, 0.95)
+            n_epochs = trial.suggest_int('n_epochs', 5, 10)
+            clip_range = trial.suggest_float('clip_range', 0.1, 0.2)
+            ent_coef = trial.suggest_float('ent_coef', 0.0, 0.03)
+            vf_coef = trial.suggest_float('vf_coef', 0.5, 0.8)
+            max_grad_norm = trial.suggest_float('max_grad_norm', 0.3, 0.6)
+        else:
+            hyperparams = CONFIG_MANAGER.get_hyperparameters("phase2")
+            
+            # ハイパーパラメータの提案
+            learning_rate = trial.suggest_float(
+                'learning_rate', 
+                hyperparams.get("learning_rate", {}).get("min", 5e-6), 
+                hyperparams.get("learning_rate", {}).get("max", 5e-3), 
+                log=hyperparams.get("learning_rate", {}).get("log", True)
+            )
+            batch_size = trial.suggest_categorical('batch_size', hyperparams.get("batch_size", [64, 128, 256]))
+            n_steps = trial.suggest_categorical('n_steps', hyperparams.get("n_steps", [2048, 4096, 8192]))
+            gamma = trial.suggest_float(
+                'gamma', 
+                hyperparams.get("gamma", {}).get("min", 0.95), 
+                hyperparams.get("gamma", {}).get("max", 0.999)
+            )
+            gae_lambda = trial.suggest_float(
+                'gae_lambda', 
+                hyperparams.get("gae_lambda", {}).get("min", 0.9), 
+                hyperparams.get("gae_lambda", {}).get("max", 0.99)
+            )
+            n_epochs = trial.suggest_int(
+                'n_epochs', 
+                hyperparams.get("n_epochs", {}).get("min", 10), 
+                hyperparams.get("n_epochs", {}).get("max", 25)
+            )
+            clip_range = trial.suggest_float(
+                'clip_range', 
+                hyperparams.get("clip_range", {}).get("min", 0.1), 
+                hyperparams.get("clip_range", {}).get("max", 0.3)
+            )
+            ent_coef = trial.suggest_float(
+                'ent_coef', 
+                hyperparams.get("ent_coef", {}).get("min", 0.0), 
+                hyperparams.get("ent_coef", {}).get("max", 0.05)
+            )
+            vf_coef = trial.suggest_float(
+                'vf_coef', 
+                hyperparams.get("vf_coef", {}).get("min", 0.5), 
+                hyperparams.get("vf_coef", {}).get("max", 1.0)
+            )
+            max_grad_norm = trial.suggest_float(
+                'max_grad_norm', 
+                hyperparams.get("max_grad_norm", {}).get("min", 0.3), 
+                hyperparams.get("max_grad_norm", {}).get("max", 0.8)
+            )
     else:
         # デフォルト値（設定ファイルが利用できない場合）
-        learning_rate = trial.suggest_float('learning_rate', 5e-6, 5e-3, log=True)
-        batch_size = trial.suggest_categorical('batch_size', [64, 128, 256])
-        n_steps = trial.suggest_categorical('n_steps', [2048, 4096, 8192])
-        gamma = trial.suggest_float('gamma', 0.95, 0.999)
-        gae_lambda = trial.suggest_float('gae_lambda', 0.9, 0.99)
-        n_epochs = trial.suggest_int('n_epochs', 10, 25)
-        clip_range = trial.suggest_float('clip_range', 0.1, 0.3)
-        ent_coef = trial.suggest_float('ent_coef', 0.0, 0.05)
-        vf_coef = trial.suggest_float('vf_coef', 0.5, 1.0)
-        max_grad_norm = trial.suggest_float('max_grad_norm', 0.3, 0.8)
+        if fast_mode:
+            # 高速モード：狭いパラメータ範囲で高速化
+            learning_rate = trial.suggest_float('learning_rate', 1e-05, 0.001, log=True)
+            batch_size = trial.suggest_categorical('batch_size', [64, 128])
+            n_steps = trial.suggest_categorical('n_steps', [1024, 2048])
+            gamma = trial.suggest_float('gamma', 0.95, 0.99)
+            gae_lambda = trial.suggest_float('gae_lambda', 0.9, 0.95)
+            n_epochs = trial.suggest_int('n_epochs', 5, 10)
+            clip_range = trial.suggest_float('clip_range', 0.1, 0.2)
+            ent_coef = trial.suggest_float('ent_coef', 0.0, 0.03)
+            vf_coef = trial.suggest_float('vf_coef', 0.5, 0.8)
+            max_grad_norm = trial.suggest_float('max_grad_norm', 0.3, 0.6)
+        else:
+            learning_rate = trial.suggest_float('learning_rate', 5e-6, 5e-3, log=True)
+            batch_size = trial.suggest_categorical('batch_size', [64, 128, 256])
+            n_steps = trial.suggest_categorical('n_steps', [2048, 4096, 8192])
+            gamma = trial.suggest_float('gamma', 0.95, 0.999)
+            gae_lambda = trial.suggest_float('gae_lambda', 0.9, 0.99)
+            n_epochs = trial.suggest_int('n_epochs', 10, 25)
+            clip_range = trial.suggest_float('clip_range', 0.1, 0.3)
+            ent_coef = trial.suggest_float('ent_coef', 0.0, 0.05)
+            vf_coef = trial.suggest_float('vf_coef', 0.5, 1.0)
+            max_grad_norm = trial.suggest_float('max_grad_norm', 0.3, 0.8)
     
     print(f"[objective] Hyperparams: lr={learning_rate}, batch={batch_size}, n_steps={n_steps}, gamma={gamma}")
     print(f"[objective] Creating train_env with year_month: {year_month}")
@@ -194,18 +221,28 @@ def objective(trial, data_dir=None, test_mode=False, minimal_mode=False, year_mo
     
     # 設定ファイルから学習パラメータを取得
     if CONFIG_MANAGER is not None:
-        if minimal_mode:
+        if fast_mode:
+            # 高速モード：学習ステップ数と評価エピソード数を大幅削減
+            total_timesteps = 5000
+            n_eval_episodes = 50
+        elif minimal_mode:
             learning_params = CONFIG_MANAGER.get_learning_params("phase2", "minimal_mode")
+            total_timesteps = learning_params.get("total_timesteps", 5000)
+            n_eval_episodes = learning_params.get("n_eval_episodes", 50)
         elif test_mode:
             learning_params = CONFIG_MANAGER.get_learning_params("phase2", "test_mode")
+            total_timesteps = learning_params.get("total_timesteps", 20000)
+            n_eval_episodes = learning_params.get("n_eval_episodes", 200)
         else:
             learning_params = CONFIG_MANAGER.get_learning_params("phase2", "normal")
-        
-        total_timesteps = learning_params.get("total_timesteps", 200000)
-        n_eval_episodes = learning_params.get("n_eval_episodes", 5000)
+            total_timesteps = learning_params.get("total_timesteps", 200000)
+            n_eval_episodes = learning_params.get("n_eval_episodes", 5000)
     else:
         # デフォルト値（設定ファイルが利用できない場合）
-        if minimal_mode:
+        if fast_mode:
+            total_timesteps = 5000
+            n_eval_episodes = 50
+        elif minimal_mode:
             total_timesteps = 5000
             n_eval_episodes = 50
         elif test_mode:
@@ -299,6 +336,7 @@ def optimize_graduated_reward(
     data_dir=None,
     test_mode=False,
     minimal_mode=False,
+    fast_mode=False,
     resume_existing=False,
     year_month=None
 ):
@@ -322,6 +360,7 @@ def optimize_graduated_reward(
     print(f"試行回数: {n_trials}")
     print(f"テストモード: {test_mode}")
     print(f"最小モード: {minimal_mode}")
+    print(f"高速モード: {fast_mode}")
     print(f"既存スタディ継続: {resume_existing}")
     
     # ディレクトリ作成
@@ -369,7 +408,7 @@ def optimize_graduated_reward(
     # 最適化の実行（可視化を無効化）
     print(f"最適化開始: データディレクトリ={data_dir}, 年月フィルタ={year_month}")
     study.optimize(
-        lambda trial: objective(trial, data_dir=data_dir, test_mode=test_mode, minimal_mode=minimal_mode, year_month=year_month),
+        lambda trial: objective(trial, data_dir=data_dir, test_mode=test_mode, minimal_mode=minimal_mode, fast_mode=fast_mode, year_month=year_month),
         n_trials=n_trials,
         show_progress_bar=False,
         callbacks=None  # コールバックを無効化して可視化を防ぐ
@@ -391,6 +430,7 @@ def optimize_graduated_reward(
         'total_trials': len(study.trials),
         'test_mode': test_mode,
         'minimal_mode': minimal_mode,
+        'fast_mode': fast_mode,
         'best_trial': {
             'number': study.best_trial.number,
             'value': float(study.best_value),
@@ -455,6 +495,7 @@ def main():
     parser.add_argument('--n-trials', type=int, default=50, help='試行回数')
     parser.add_argument('--test-mode', action='store_true', help='テストモード（短時間設定）')
     parser.add_argument('--minimal', action='store_true', help='最小限のテストモード（1試行、非常に短い学習時間）')
+    parser.add_argument('--fast-mode', action='store_true', help='高速モード（学習ステップ数と評価エピソード数を大幅削減）')
     parser.add_argument('--resume-existing', action='store_true', help='既存スタディを継続する')
     
     args = parser.parse_args()
@@ -493,6 +534,7 @@ def main():
         data_dir=data_dir,
         test_mode=args.test_mode,
         minimal_mode=args.minimal,
+        fast_mode=args.fast_mode,
         resume_existing=args.resume_existing,
         year_month=year_month
     )

@@ -1,7 +1,7 @@
 # プロジェクト全体の現在の状況サマリー
 
 **最終更新日**: 2025-01-27  
-**バージョン**: 4.1（リファクタリング完了）
+**バージョン**: 4.2（高速モード実装完了）
 
 ---
 
@@ -58,6 +58,9 @@ kyotei_Predictionは、競艇レースの予測システムを構築するプロ
    - ✅ **JSON保存機能**: 予測結果のJSON形式保存
    - ✅ **状態ベクトル修正**: 192次元の正確な状態ベクトル生成
    - ✅ **テスト成功**: TAMAGAWA会場12レースでの予測成功確認
+   - ✅ **詳細購入提案**: 流し・ボックス・フォーメーション・複雑な流しパターンの8種類の提案
+   - ✅ **リスクレベル判定**: 合計確率に基づくリスク評価機能
+   - ✅ **会場別サマリー**: 予測結果の会場別集計・分析機能
 
 7. **最適化バッチシステム（2025-07-26解決）**
    - ✅ **Windowsストア版Python問題**: 仮想環境構築で解決
@@ -66,6 +69,11 @@ kyotei_Predictionは、競艇レースの予測システムを構築するプロ
    - ✅ **-1000.0スコア問題**: 完全解決、正常なスコア（4.08, 8.12）を取得
    - ✅ **エラーログ機能**: タイムスタンプ付きログファイル生成
    - ✅ **テストモード**: 短時間設定での動作確認機能
+   - ✅ **段階的報酬設計**: 10項目のハイパーパラメータ最適化
+   - ✅ **設定管理統合**: ImprovementConfigManagerによる設定管理
+   - ✅ **年月フィルタリング**: 特定期間のデータでの最適化実行
+   - ✅ **既存スタディ継続**: 中断された最適化の継続実行
+   - ✅ **最適化結果保存**: JSON形式での詳細結果保存
 
 8. **リファクタリング完了（2025-01-27）**
    - ✅ **統合ユーティリティ実装**: 設定管理・ログ機能・エラーハンドリングの統一
@@ -74,6 +82,13 @@ kyotei_Predictionは、競艇レースの予測システムを構築するプロ
    - ✅ **ドキュメント整備**: 全クラス・メソッドにdocstringを追加
    - ✅ **テスト体制整備**: 統合ユーティリティのテスト実装
    - ✅ **依存関係最適化**: オプショナル依存関係の実装
+
+9. **高速モード実装完了（2025-01-27）**
+   - ✅ **実行時間短縮**: 通常モードの20-30倍高速化を実現
+   - ✅ **開発効率向上**: テスト・開発時の大幅な時間短縮
+   - ✅ **後方互換性**: 既存の動作を完全保持
+   - ✅ **柔軟な選択**: 用途に応じて高速/通常モードを選択可能
+   - ✅ **パラメータ最適化**: 学習ステップ数・評価エピソード数の大幅削減
 
 ### 🔄 進行中
 1. **2024年3月全期間データ取得**
@@ -112,9 +127,12 @@ kyotei_predictor/
 ├── app.py                          # Webアプリケーション
 ├── config/                         # 設定ファイル
 │   ├── settings.py                 # 基本設定
-│   ├── config.json                 # デフォルト設定（新規）
-│   └── optuna_config.json          # Optuna設定
-├── utils/                          # 統合ユーティリティ（新規）
+│   ├── config.json                 # デフォルト設定
+│   ├── improvement_config.json     # 改善設定
+│   ├── improvement_config_manager.py # 改善設定管理
+│   ├── optuna_config.json          # Optuna設定
+│   └── README.md                   # 設定ドキュメント
+├── utils/                          # 統合ユーティリティ
 │   ├── __init__.py                 # 統合エントリーポイント
 │   ├── common.py                   # 基本ユーティリティ
 │   ├── config.py                   # 設定管理
@@ -127,44 +145,108 @@ kyotei_predictor/
 │   ├── results/                    # 予測・分析・評価結果
 │   ├── logs/                       # ログファイル
 │   ├── backup/                     # バックアップ
-│   └── quality_reports/            # 品質レポート
+│   └── sample/                     # サンプルデータ
 ├── pipelines/                      # データ処理パイプライン
 │   ├── kyotei_env.py              # 競艇環境（強化学習）
-│   ├── data_processor.py          # データ前処理
-│   └── feature_engineering.py     # 特徴量エンジニアリング
+│   ├── data_preprocessor.py       # データ前処理
+│   ├── feature_analysis.py        # 特徴量分析
+│   ├── trifecta_dependent_model.py # 3連単依存モデル
+│   ├── trifecta_probability.py    # 3連単確率計算
+│   ├── feature_enhancer.py        # 特徴量強化
+│   ├── db_integration.py          # データベース統合
+│   └── README.md                   # パイプライン説明
 ├── tools/                          # ツール群
 │   ├── batch/                      # バッチ処理
 │   │   ├── batch_fetch_all_venues.py
 │   │   ├── run_data_maintenance.py
 │   │   └── retry_missing_races.py
+│   ├── scheduled_data_maintenance.py # 定期データ保守
+│   ├── data_quality_checker.py    # データ品質チェッカー
+│   ├── data_acquisition_report.py # データ取得レポート
 │   ├── optimization/               # 最適化ツール
 │   │   └── optimize_graduated_reward.py  # ハイパーパラメータ最適化
 │   ├── evaluation/                 # 評価ツール
 │   │   └── evaluate_graduated_reward_model.py
 │   ├── analysis/                   # 分析ツール
-│   │   └── feature_analysis.py
-│   └── prediction/                 # 予測ツール
-│       └── predict_races.py
+│   │   ├── analyze_graduated_reward.py
+│   │   ├── analyze_reward_design.py
+│   │   ├── analyze_state_vector.py
+│   │   ├── feature_importance_analysis.py
+│   │   ├── investment_value_analyzer.py
+│   │   ├── expected_value_threshold_optimizer.py
+│   │   ├── bulk_prediction_validator.py
+│   │   ├── real_odds_investment_analyzer.py
+│   │   ├── trifecta_probability_debugger.py
+│   │   ├── racer_error_analyzer.py
+│   │   ├── odds_analysis.py
+│   │   ├── verify_race_data.py
+│   │   ├── verify_race_data_simple.py
+│   │   ├── check_batch_results.py
+│   │   ├── check_trifecta_hit_rate.py
+│   │   ├── race_stats.py
+│   │   ├── simple_learning_test.py
+│   │   └── README.md
+│   ├── prediction/                 # 予測ツール
+│   │   └── prediction_tool.py     # 統合予測ツール
+│   ├── monitoring/                 # 監視ツール
+│   │   ├── hit_rate_monitor.py
+│   │   ├── monitor_optimization.py
+│   │   └── check_optimization_status.py
+│   ├── continuous/                 # 継続学習
+│   │   └── continuous_learning.py
+│   ├── ensemble/                   # アンサンブル学習
+│   │   └── ensemble_model.py
+│   ├── ai/                        # AI・強化学習
+│   │   ├── optuna_optimizer.py
+│   │   └── rl_learn_sample.py
+│   ├── viz/                       # 可視化
+│   │   ├── data_display.py
+│   │   ├── html_display.py
+│   │   └── README.md
+│   ├── common/                     # 共通ツール
+│   │   ├── test_env.py
+│   │   └── venue_mapping.py
+│   ├── fetch/                      # データ取得
+│   │   ├── odds_fetcher.py
+│   │   ├── race_data_fetcher.py
+│   │   └── README.md
+│   ├── legacy/                     # レガシーコード
+│   │   ├── analysis_202401_results.py
+│   │   ├── colab_integration.py
+│   │   └── その他12ファイル
+│   └── README.md                   # ツール説明
 ├── static/                         # 静的ファイル
+│   ├── css/                        # スタイルシート
+│   ├── js/                         # JavaScript
+│   └── README.md
 ├── templates/                      # HTMLテンプレート
-└── tests/                          # テストファイル
-│   ├── test_utils.py               # 統合ユーティリティテスト（新規）
+├── tests/                          # テストファイル
+│   ├── test_utils.py               # 統合ユーティリティテスト
+│   ├── ai/                         # AIテスト
+│   ├── data/                       # データテスト
+│   ├── web_display/                # Web表示テスト
 │   └── README.md                   # テストドキュメント
+└── requirements.txt                # 依存関係
 ```
 
 ### 主要バッチ処理
 1. **データ取得バッチ**
    - `batch_fetch_all_venues.py`: 全会場データ取得
-   - `run_data_maintenance.py`: データ保守・欠損再取得
-   - `retry_missing_races.py`: 欠損レース再取得
+   - `scheduled_data_maintenance.py`: 定期データ保守・欠損再取得
+   - `data_quality_checker.py`: データ品質チェック
 
 2. **最適化・評価バッチ**
    - `optimize_graduated_reward.py`: ハイパーパラメータ最適化
    - `evaluate_graduated_reward_model.py`: モデル評価
-   - `feature_analysis.py`: 特徴量分析
+   - `feature_importance_analysis.py`: 特徴量重要度分析
 
 3. **予測バッチ**
-   - `predict_races.py`: レース予測実行
+   - `prediction_tool.py`: 統合予測ツール（3連単予測・購入方法提案）
+
+4. **監視・分析バッチ**
+   - `hit_rate_monitor.py`: 的中率監視
+   - `monitor_optimization.py`: 最適化監視
+   - `check_optimization_status.py`: 最適化状況確認
 
 ---
 

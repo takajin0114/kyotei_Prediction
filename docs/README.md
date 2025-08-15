@@ -5,6 +5,7 @@
 ### 📊 プロジェクト概要
 - [CURRENT_STATUS_SUMMARY.md](CURRENT_STATUS_SUMMARY.md) - 現在の状況サマリー
 - [config_usage_guide.md](config_usage_guide.md) - 設定ファイル使用ガイド
+- [WORK_COMPLETION_SUMMARY_20250127.md](WORK_COMPLETION_SUMMARY_20250127.md) - 作業完了サマリー（2025-01-27）
 
 ### 🚀 最新の改善策（2025年1月実装完了）
 - [trifecta_improvement_strategy.md](trifecta_improvement_strategy.md) - 3連単的中率改善戦略

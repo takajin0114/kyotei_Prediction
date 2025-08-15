@@ -17,29 +17,29 @@
 
 ## 実行方法
 
-### 1. 汎用最適化スクリプトの使用（推奨）
+### 1. 直接スクリプト実行（推奨）
 
 ```bash
-# 基本的な実行
-python run_optimization_generic.py --data-dir kyotei_predictor/data/raw/2024-03
+# 基本的な実行（2024年1月データ）
+python kyotei_predictor/tools/optimization/optimize_graduated_reward.py --n-trials 10 --year-month 2024-01
 
 # テストモードでの実行
-python run_optimization_generic.py --data-dir kyotei_predictor/data/raw/2024-03 --test-mode
+python kyotei_predictor/tools/optimization/optimize_graduated_reward.py --test-mode --n-trials 3
 
 # 試行回数を指定
-python run_optimization_generic.py --data-dir kyotei_predictor/data/raw/2024-03 --n-trials 50
+python kyotei_predictor/tools/optimization/optimize_graduated_reward.py --n-trials 50 --year-month 2024-03
 
-# スタディ名を指定
-python run_optimization_generic.py --data-dir kyotei_predictor/data/raw/2024-03 --study-name my_optimization
+# 最小限モードでの実行
+python kyotei_predictor/tools/optimization/optimize_graduated_reward.py --minimal --n-trials 1
 ```
 
-### 2. 直接モジュール実行
+### 2. モジュール実行（代替方法）
 
 ```bash
 # 標準的な実行
 python -m kyotei_predictor.tools.optimization.optimize_graduated_reward \
-    --data-dir kyotei_predictor/data/raw/2024-03 \
     --n-trials 20 \
+    --year-month 2024-01 \
     --test-mode
 ```
 
@@ -64,9 +64,10 @@ study = optimize_graduated_reward(
 
 | パラメータ | デフォルト | 説明 |
 |------------|------------|------|
-| `data_dir` | 必須 | データディレクトリのパス |
+| `year_month` | 必須 | 対象年月（例：2024-01） |
 | `n_trials` | 20 | 最適化の試行回数 |
 | `test_mode` | False | テストモード（短時間設定） |
+| `minimal` | False | 最小限モード（最短時間設定） |
 | `study_name` | 自動生成 | Optunaスタディ名 |
 
 ### テストモード vs 通常モード
@@ -100,8 +101,8 @@ study = optimize_graduated_reward(
 ### 例1: 2024年3月データでのテスト実行
 
 ```bash
-python run_optimization_generic.py \
-    --data-dir kyotei_predictor/data/raw/2024-03 \
+python kyotei_predictor/tools/optimization/optimize_graduated_reward.py \
+    --year-month 2024-03 \
     --n-trials 5 \
     --test-mode
 ```
@@ -109,19 +110,17 @@ python run_optimization_generic.py \
 ### 例2: 2024年1月データでの本格最適化
 
 ```bash
-python run_optimization_generic.py \
-    --data-dir kyotei_predictor/data/raw/2024-01 \
-    --n-trials 50 \
-    --study-name optimization_202401_full
+python kyotei_predictor/tools/optimization/optimize_graduated_reward.py \
+    --year-month 2024-01 \
+    --n-trials 50
 ```
 
 ### 例3: 特定の期間での最適化
 
 ```bash
-python run_optimization_generic.py \
-    --data-dir kyotei_predictor/data/raw/2024-02 \
-    --n-trials 30 \
-    --study-name february_optimization
+python kyotei_predictor/tools/optimization/optimize_graduated_reward.py \
+    --year-month 2024-02 \
+    --n-trials 30
 ```
 
 ---
@@ -190,7 +189,7 @@ print(f"最良パラメータ: {best_params}")
 ls kyotei_predictor/data/raw/
 
 # 正しいパスを指定
-python run_optimization_generic.py --data-dir kyotei_predictor/data/raw/2024-03
+python kyotei_predictor/tools/optimization/optimize_graduated_reward.py --year-month 2024-03
 ```
 
 #### 2. メモリ不足
@@ -207,10 +206,13 @@ python run_optimization_generic.py --data-dir kyotei_predictor/data/raw/2024-03
 **解決方法**:
 ```bash
 # テストモードで実行
-python run_optimization_generic.py --data-dir kyotei_predictor/data/raw/2024-03 --test-mode
+python kyotei_predictor/tools/optimization/optimize_graduated_reward.py --year-month 2024-03 --test-mode
+
+# 最小限モードで実行
+python kyotei_predictor/tools/optimization/optimize_graduated_reward.py --year-month 2024-03 --minimal
 
 # 試行回数を減らす
-python run_optimization_generic.py --data-dir kyotei_predictor/data/raw/2024-03 --n-trials 5
+python kyotei_predictor/tools/optimization/optimize_graduated_reward.py --year-month 2024-03 --n-trials 5
 ```
 
 #### 4. スコアが低い
