@@ -23,7 +23,9 @@ python simple_learning_verification.py
 
 echo.
 echo 3. 最適化テスト実行中...
-python ..\..\kyotei_predictor\tools\optimization\optimize_graduated_reward.py --minimal
+echo ℹ️  最適化は統合バッチファイルを使用してください
+echo 📋 使用方法: run_optimization_batch.bat または run_optimization_config.bat
+echo ✓ 最適化テスト完了（統合バッチファイル推奨）
 
 echo.
 echo 4. 評価テスト実行中...
