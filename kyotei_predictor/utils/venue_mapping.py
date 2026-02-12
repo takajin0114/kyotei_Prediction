@@ -31,6 +31,8 @@ except ImportError:
         MARUGAME = "MARUGAME"
         KOJIMA = "KOJIMA"
         MIYAJIMA = "MIYAJIMA"
+        TOKUYAMA = "TOKUYAMA"
+        SHIMONOSEKI = "SHIMONOSEKI"
         FUKUOKA = "FUKUOKA"
         KARATSU = "KARATSU"
         OMURA = "OMURA"
@@ -149,28 +151,8 @@ VENUE_MAPPING = {
         'opened': '1952年',
         'capacity': '約2,000人'
     },
-    StadiumTelCode.WAKAMATSU: {
-        'code': '12',
-        'name': 'WAKAMATSU',
-        'japanese_name': '若松',
-        'region': '中部',
-        'prefecture': '福島県',
-        'address': '福島県会津若松市',
-        'opened': '1952年',
-        'capacity': '約2,000人'
-    },
-    StadiumTelCode.ASHIYA: {
-        'code': '13',
-        'name': 'ASHIYA',
-        'japanese_name': '芦屋',
-        'region': '中部',
-        'prefecture': '福岡県',
-        'address': '福岡県芦屋町',
-        'opened': '1952年',
-        'capacity': '約2,000人'
-    },
     StadiumTelCode.SUMINOE: {
-        'code': '14',
+        'code': '12',
         'name': 'SUMINOE',
         'japanese_name': '住之江',
         'region': '関西',
@@ -180,7 +162,7 @@ VENUE_MAPPING = {
         'capacity': '約2,000人'
     },
     StadiumTelCode.AMAGASAKI: {
-        'code': '15',
+        'code': '13',
         'name': 'AMAGASAKI',
         'japanese_name': '尼崎',
         'region': '関西',
@@ -190,7 +172,7 @@ VENUE_MAPPING = {
         'capacity': '約2,000人'
     },
     StadiumTelCode.NARUTO: {
-        'code': '16',
+        'code': '14',
         'name': 'NARUTO',
         'japanese_name': '鳴門',
         'region': '関西',
@@ -200,7 +182,7 @@ VENUE_MAPPING = {
         'capacity': '約2,000人'
     },
     StadiumTelCode.MARUGAME: {
-        'code': '17',
+        'code': '15',
         'name': 'MARUGAME',
         'japanese_name': '丸亀',
         'region': '関西',
@@ -210,7 +192,7 @@ VENUE_MAPPING = {
         'capacity': '約2,000人'
     },
     StadiumTelCode.KOJIMA: {
-        'code': '18',
+        'code': '16',
         'name': 'KOJIMA',
         'japanese_name': '児島',
         'region': '関西',
@@ -220,7 +202,7 @@ VENUE_MAPPING = {
         'capacity': '約2,000人'
     },
     StadiumTelCode.MIYAJIMA: {
-        'code': '19',
+        'code': '17',
         'name': 'MIYAJIMA',
         'japanese_name': '宮島',
         'region': '関西',
@@ -229,8 +211,48 @@ VENUE_MAPPING = {
         'opened': '1952年',
         'capacity': '約2,000人'
     },
-    StadiumTelCode.FUKUOKA: {
+    StadiumTelCode.TOKUYAMA: {
+        'code': '18',
+        'name': 'TOKUYAMA',
+        'japanese_name': '徳山',
+        'region': '中国',
+        'prefecture': '山口県',
+        'address': '山口県周南市',
+        'opened': '1952年',
+        'capacity': '約2,000人'
+    },
+    StadiumTelCode.SHIMONOSEKI: {
+        'code': '19',
+        'name': 'SHIMONOSEKI',
+        'japanese_name': '下関',
+        'region': '中国',
+        'prefecture': '山口県',
+        'address': '山口県下関市',
+        'opened': '1952年',
+        'capacity': '約2,000人'
+    },
+    StadiumTelCode.WAKAMATSU: {
         'code': '20',
+        'name': 'WAKAMATSU',
+        'japanese_name': '若松',
+        'region': '九州',
+        'prefecture': '福岡県',
+        'address': '福岡県北九州市若松区',
+        'opened': '1952年',
+        'capacity': '約2,000人'
+    },
+    StadiumTelCode.ASHIYA: {
+        'code': '21',
+        'name': 'ASHIYA',
+        'japanese_name': '芦屋',
+        'region': '九州',
+        'prefecture': '福岡県',
+        'address': '福岡県遠賀郡芦屋町',
+        'opened': '1952年',
+        'capacity': '約2,000人'
+    },
+    StadiumTelCode.FUKUOKA: {
+        'code': '22',
         'name': 'FUKUOKA',
         'japanese_name': '福岡',
         'region': '九州',
@@ -240,7 +262,7 @@ VENUE_MAPPING = {
         'capacity': '約2,000人'
     },
     StadiumTelCode.KARATSU: {
-        'code': '21',
+        'code': '23',
         'name': 'KARATSU',
         'japanese_name': '唐津',
         'region': '九州',
@@ -250,7 +272,7 @@ VENUE_MAPPING = {
         'capacity': '約2,000人'
     },
     StadiumTelCode.OMURA: {
-        'code': '22',
+        'code': '24',
         'name': 'OMURA',
         'japanese_name': '大村',
         'region': '九州',

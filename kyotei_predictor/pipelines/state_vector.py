@@ -13,9 +13,9 @@ from typing import Dict, Any, List, Optional
 # 会場順序は venue_mapping の get_all_stadiums() に合わせる（実行時取得で一貫性を保つ）
 _FALLBACK_STADIUM_NAMES = [
     "KIRYU", "TODA", "EDOGAWA", "HEIWAJIMA", "TAMAGAWA", "HAMANAKO",
-    "GAMAGORI", "TOKONAME", "TSU", "MIKUNI", "BIWAKO", "WAKAMATSU",
-    "ASHIYA", "SUMINOE", "AMAGASAKI", "NARUTO", "MARUGAME", "KOJIMA",
-    "MIYAJIMA", "FUKUOKA", "KARATSU", "OMURA",
+    "GAMAGORI", "TOKONAME", "TSU", "MIKUNI", "BIWAKO", "SUMINOE",
+    "AMAGASAKI", "NARUTO", "MARUGAME", "KOJIMA", "MIYAJIMA", "TOKUYAMA",
+    "SHIMONOSEKI", "WAKAMATSU", "ASHIYA", "FUKUOKA", "KARATSU", "OMURA",
 ]
 
 # 会場リストは初回取得時にキャッシュし、次元の一貫性を保つ

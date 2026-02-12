@@ -922,8 +922,8 @@ class PredictionTool:
                 self.logger.info("=== ステップ3: オッズ情報取得 ===")
                 odds = self.fetch_today_odds(target_date, venues)
                 if not odds:
-                    self.logger.warning("オッズ情報が取得できませんでした")
-                    return None
+                    self.logger.warning("オッズ情報が取得できませんでした。オッズなしで予測を継続します")
+                    odds = {}
             else:
                 odds = {}
             
@@ -935,6 +935,7 @@ class PredictionTool:
             
             predictions = []
             successful_predictions = 0
+            odds_available_predictions = 0
             
             # 予測対象のレースを決定
             if prediction_only:
@@ -988,9 +989,10 @@ class PredictionTool:
                         
                         # オッズデータを取得
                         odds_data = odds.get(race_key)
-                        if not odds_data:
-                            self.logger.warning(f"オッズデータがありません: {race_key}")
-                            continue
+                        odds_available = bool(odds_data and odds_data.get('odds_data'))
+                        if not odds_available:
+                            self.logger.warning(f"オッズデータがありません（期待値は暫定値になります）: {race_key}")
+                            odds_data = {'odds_data': []}
                         
                         # 3連単予測（新規データ用）
                         top_20_combinations = self.predict_trifecta_probabilities_from_data(entry_data, odds_data)
@@ -1013,12 +1015,15 @@ class PredictionTool:
                                 'race_time': race_time,
                                 'top_20_combinations': top_20_combinations,
                                 'total_probability': total_probability,
+                                'odds_available': odds_available,
                                 'purchase_suggestions': purchase_suggestions,
                                 'risk_level': self.calculate_risk_level(total_probability)
                             }
                             
                             predictions.append(prediction)
                             successful_predictions += 1
+                            if odds_available:
+                                odds_available_predictions += 1
                         
                     except Exception as e:
                         self.logger.error(f"レース予測エラー {race_key}: {e}")
@@ -1037,6 +1042,8 @@ class PredictionTool:
                     'total_venues': len(set(p['venue'] for p in predictions)),
                     'total_races': len(predictions),
                     'successful_predictions': successful_predictions,
+                    'odds_available_predictions': odds_available_predictions,
+                    'odds_missing_predictions': max(successful_predictions - odds_available_predictions, 0),
                     'execution_time_minutes': execution_time,
                     'data_fetched': fetch_data,
                     'prediction_only': prediction_only

@@ -101,7 +101,7 @@ metaboatrace.scrapers (v1707) で HTML 取得・パース
 
 - **学習に必須**: race_info（日付・会場・レース番号・周回・進入固定）, race_entries（艇番・選手級別・勝率・艇・モーター）, race_records（着順）, odds_data（3連単 120通り）。
 - **予測で状態生成に必須**: race_info + race_entries（状態はオッズ非依存）。
-- **予測で期待値・購入提案に実質必須**: odds_data（現行フローではオッズ取得失敗時に中断）。
+- **予測で期待値・購入提案に実質必須**: odds_data（未取得でも予測は継続できるが、期待値は暫定値になる）。
 - **あるとよい**: weather_condition, start_time, total_time, winning_trick, payoffs。直前情報は追加特徴量候補。
 - **取得元の詳細**: [RACE_DATA_ACQUISITION_AND_SOURCES.md](RACE_DATA_ACQUISITION_AND_SOURCES.md) 参照。
 

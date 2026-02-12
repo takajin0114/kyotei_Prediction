@@ -38,7 +38,7 @@
 | **入口** | `prediction_tool.py`（`PredictionTool` クラス）。コマンド例: `python -m kyotei_predictor.tools.prediction_tool --predict-date 2024-07-12`（会場指定は `--venues KIRYU,TODA`、データディレクトリは `--data-dir kyotei_predictor/data/test_raw` など）。 |
 | **モデルの読み込み** | `PROJECT_ROOT / "optuna_models" / "graduated_reward_best" / "best_model.zip"` を参照。存在しなければ `optuna_models/graduated_reward_checkpoints/` 内の最新 `.zip` をフォールバック。`PROJECT_ROOT` は `prediction_tool.py` の位置から見て「プロジェクトルート（内側の kyotei_Prediction フォルダ）」を指す。 |
 | **データディレクトリ** | 未指定時は `kyotei_predictor/data/raw`。`--data-dir` で別ディレクトリ（例: `kyotei_predictor/data/test_raw`）を指定可能。リポジトリ内データで予測する場合は `--data-dir` を使用する。 |
-| **予想に使うデータ** | 指定日の出走データは **その場で取得**（`fetch_pre_race_data`）。直前情報は取得できた場合のみ含まれる。オッズは期待値・購入提案計算に使用（現行の完全統合フローではオッズ取得失敗時に中断）。学習用の `data/raw` の有無は予想実行には不要（ただしモデルが学習済みである必要あり）。 |
+| **予想に使うデータ** | 指定日の出走データは **その場で取得**（`fetch_pre_race_data`）。直前情報は取得できた場合のみ含まれる。オッズは期待値・購入提案計算に使用（未取得でも予測自体は継続し、期待値は暫定値）。学習用の `data/raw` の有無は予想実行には不要（ただしモデルが学習済みである必要あり）。 |
 | **出力** | JSON で保存（例: `outputs/predictions_YYYY-MM-DD.json`）。Web 表示用のテンプレートも利用可能。 |
 
 ### 2.3 データまわり
