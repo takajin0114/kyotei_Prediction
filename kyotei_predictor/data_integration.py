@@ -13,6 +13,7 @@ import traceback
 # 既存機能のインポート（パッケージ経由で安定したインポート）
 try:
     from kyotei_predictor.tools.fetch.race_data_fetcher import (
+        fetch_before_information,
         fetch_complete_race_data,
         fetch_race_entry_data,
         fetch_race_result_data,

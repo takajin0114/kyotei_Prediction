@@ -14,6 +14,10 @@ from typing import Any
 from metaboatrace.models.stadium import StadiumTelCode
 from metaboatrace.scrapers.official.website.v1707.pages.race.entry_page import location, scraping as entry_scraping
 from metaboatrace.scrapers.official.website.v1707.pages.race.result_page import location as result_location, scraping as result_scraping
+from metaboatrace.scrapers.official.website.v1707.pages.race.before_information_page import (
+    location as before_info_location,
+    scraping as before_info_scraping,
+)
 from metaboatrace.scrapers.official.website.exceptions import RaceCanceled
 from kyotei_predictor.tools.fetch.odds_fetcher import fetch_trifecta_odds
 from kyotei_predictor.utils.common import KyoteiUtils
@@ -500,6 +504,143 @@ def fetch_race_result_data(
         safe_print(f"エラー: {type(e).__name__}: {e}")
         safe_print(f"詳細: {traceback.format_exc()}")
         return None
+
+
+def _serialize_for_json(obj: Any) -> Any:
+    """metaboatrace のモデルを JSON 用に変換（date, Enum, リスト等）"""
+    if obj is None:
+        return None
+    if hasattr(obj, "isoformat"):  # date/datetime
+        return obj.isoformat()
+    if hasattr(obj, "name"):  # Enum
+        return obj.name
+    if isinstance(obj, (list, tuple)):
+        return [_serialize_for_json(x) for x in obj]
+    if isinstance(obj, dict):
+        return {k: _serialize_for_json(v) for k, v in obj.items()}
+    return obj
+
+
+def fetch_before_information(
+    race_date: date,
+    stadium_code: StadiumTelCode,
+    race_number: int,
+) -> dict[str, Any] | None:
+    """
+    レース前の直前情報（展示走・スタート展示・選手体重・艇設定・天候）を取得する。
+    展示走実施後にのみ公開されるため、取得できない場合は None を返す。
+
+    Args:
+        race_date: レース開催日
+        stadium_code: 競艇場コード
+        race_number: レース番号
+
+    Returns:
+        直前情報の辞書。キー: start_exhibition, circumference_exhibition,
+        racer_conditions, boat_settings, weather_condition。一部のみ取得可能な場合あり。
+    """
+    safe_print(f"直前情報取得開始: {race_date} {stadium_code.name} 第{race_number}レース")
+    url = before_info_location.create_race_before_information_page_url(
+        race_holding_date=race_date,
+        stadium_tel_code=stadium_code,
+        race_number=race_number,
+    )
+    safe_print(f"URL: {url}")
+    time.sleep(5)
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        html_file = StringIO(response.text)
+        result: dict[str, Any] = {
+            "race_info": {
+                "date": race_date.isoformat(),
+                "stadium": stadium_code.name,
+                "race_number": race_number,
+                "url": url,
+            },
+            "start_exhibition": [],
+            "circumference_exhibition": [],
+            "racer_conditions": [],
+            "boat_settings": [],
+            "weather_condition": None,
+        }
+        # スタート展示（ST 等）
+        try:
+            html_file.seek(0)
+            start_records = before_info_scraping.extract_start_exhibition_records(html_file)
+            result["start_exhibition"] = [
+                {k: _serialize_for_json(getattr(r, k)) for k in ("pit_number", "start_course", "start_time")}
+                for r in start_records
+            ]
+        except Exception as e:
+            safe_print(f"スタート展示取得スキップ: {e}")
+        # 周回展示（展示タイム）
+        try:
+            html_file.seek(0)
+            circum_records = before_info_scraping.extract_circumference_exhibition_records(html_file)
+            result["circumference_exhibition"] = [
+                {k: _serialize_for_json(getattr(r, k)) for k in ("pit_number", "exhibition_time")}
+                for r in circum_records
+            ]
+        except Exception as e:
+            safe_print(f"周回展示取得スキップ: {e}")
+        # 選手コンディション（体重・調整）
+        try:
+            html_file.seek(0)
+            conditions = before_info_scraping.extract_racer_conditions(html_file)
+            result["racer_conditions"] = [
+                {k: _serialize_for_json(getattr(c, k)) for k in ("racer_registration_number", "weight", "adjust")}
+                for c in conditions
+            ]
+        except Exception as e:
+            safe_print(f"選手コンディション取得スキップ: {e}")
+        # 艇設定（チルト・新ペラ・部品交換）
+        try:
+            html_file.seek(0)
+            boat_settings = before_info_scraping.extract_boat_settings(html_file)
+            if not isinstance(boat_settings, list):
+                boat_settings = [boat_settings] if boat_settings else []
+            serialized = []
+            for b in boat_settings:
+                d = {
+                    "pit_number": getattr(b, "pit_number", None),
+                    "tilt": getattr(b, "tilt", None),
+                    "is_new_propeller": getattr(b, "is_new_propeller", None),
+                }
+                if hasattr(b, "motor_parts_exchanges") and b.motor_parts_exchanges:
+                    d["motor_parts_exchanges"] = _serialize_for_json(b.motor_parts_exchanges)
+                serialized.append(d)
+            result["boat_settings"] = serialized
+        except Exception as e:
+            safe_print(f"艇設定取得スキップ: {e}")
+        # 天候（レース前時点）
+        try:
+            html_file.seek(0)
+            w = before_info_scraping.extract_weather_condition(html_file)
+            result["weather_condition"] = {
+                "weather": getattr(w.weather, "name", str(w.weather)) if w else None,
+                "wind_velocity": getattr(w, "wind_velocity", None) if w else None,
+                "wind_angle": getattr(w, "wind_angle", None) if w else None,
+                "air_temperature": getattr(w, "air_temperature", None) if w else None,
+                "water_temperature": getattr(w, "water_temperature", None) if w else None,
+                "wavelength": getattr(w, "wavelength", None) if w else None,
+            }
+        except Exception as e:
+            safe_print(f"天候取得スキップ: {e}")
+        if any(result["start_exhibition"]) or any(result["circumference_exhibition"]):
+            safe_print(f"直前情報取得成功: スタート展示{len(result['start_exhibition'])}件, 周回展示{len(result['circumference_exhibition'])}件")
+        else:
+            safe_print("直前情報は未公開または取得できませんでした（展示走前は空になります）")
+        return result
+    except requests.exceptions.RequestException as e:
+        safe_print(f"[HTTPエラー] {e}")
+        return None
+    except Exception as e:
+        import traceback
+        safe_print(f"直前情報エラー: {type(e).__name__}: {e}")
+        safe_print(traceback.format_exc())
+        return None
+
 
 def fetch_complete_race_data(
     race_date: date,
