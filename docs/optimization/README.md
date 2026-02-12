@@ -125,7 +125,7 @@ print(f"最良パラメータ: {results['best_trial']['params']}")
 
 - [最適化実行ガイド](OPTIMIZATION_GUIDE.md) - 詳細な実行方法
 - [現在の状況サマリー](../CURRENT_STATUS_SUMMARY.md) - プロジェクト全体の状況
-- [API仕様書](../API_SPECIFICATION.md) - API仕様
+- [要件レベル整理](../REQUIREMENTS_OVERVIEW.md) - 要件・仕様の全体像
 - [運用ガイド](../operations/README.md) - 運用に関するガイド
 
 ## 📝 更新履歴

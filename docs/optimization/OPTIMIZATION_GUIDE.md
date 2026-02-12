@@ -256,7 +256,7 @@ python kyotei_predictor/tools/optimization/optimize_graduated_reward.py --year-m
 
 ## 関連ドキュメント
 
-- [API仕様書](../API_SPECIFICATION.md)
+- [要件レベル整理](../REQUIREMENTS_OVERVIEW.md)
 - [現在の状況サマリー](../CURRENT_STATUS_SUMMARY.md)
 - [運用ガイド](../operations/README.md)
 

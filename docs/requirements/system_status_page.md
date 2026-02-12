@@ -80,5 +80,5 @@
 ---
 
 ## 📚 関連ドキュメント
-- [NEXT_STEPS.md](NEXT_STEPS.md)
-- [WEB_DISPLAY_IMPLEMENTATION_COMPLETE.md](WEB_DISPLAY_IMPLEMENTATION_COMPLETE.md) 
+- [Web表示の実装計画](../web_display/plan.md)
+- [Web表示の実装完了状況](../web_display/complete.md)

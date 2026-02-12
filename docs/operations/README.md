@@ -32,4 +32,4 @@
 - [CURRENT_STATUS_SUMMARY.md](../CURRENT_STATUS_SUMMARY.md) - プロジェクト全体の進捗・バッチ完了状況
 - [REQUIREMENTS_OVERVIEW.md](../REQUIREMENTS_OVERVIEW.md) - 要件全体（運用要件 B-005, F-O03 等）
 - [config_usage_guide.md](../config_usage_guide.md) - 設定ファイルの使用方法
-- [BATCH_USAGE_GUIDE.md](../../BATCH_USAGE_GUIDE.md) - 統合バッチファイルの使用方法（プロジェクトルート）
+- [guides/batch_usage.md](../guides/batch_usage.md) - 統合バッチファイルの使用方法
