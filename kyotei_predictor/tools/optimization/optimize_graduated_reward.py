@@ -464,7 +464,7 @@ def optimize_graduated_reward(
     _opt_logger.info("最適化結果を保存: %s", results_path)
     
     # 最良モデルの詳細評価
-        _opt_logger.info("最良モデルの詳細評価開始")
+    _opt_logger.info("最良モデルの詳細評価開始")
     best_model_path = f"./optuna_models/trial_{study.best_trial.number}/best_model.zip"
     
     if os.path.exists(best_model_path):
