@@ -212,9 +212,9 @@ python -m kyotei_predictor.tools.scheduled_data_maintenance --run-now --stadiums
 
 ## 📚 関連ドキュメント
 
-- [data_acquisition.md](data_acquisition.md) - データ取得運用の基本
-- [CURRENT_STATUS_SUMMARY.md](../CURRENT_STATUS_SUMMARY.md) - バッチ運用を含むプロジェクト全体の現状
-- [PREDICTION_ACCURACY_IMPROVEMENT_TODO.md](../PREDICTION_ACCURACY_IMPROVEMENT_TODO.md) - 今後の改善タスク
+- [データ取得運用ガイド](data_acquisition.md) - データ取得バッチの実行手順と運用ノウハウ
+- [全体状況サマリー](../CURRENT_STATUS_SUMMARY.md) - バッチ運用を含むプロジェクト全体の現状
+- [予測精度向上TODO](../PREDICTION_ACCURACY_IMPROVEMENT_TODO.md) - 今後の改善タスク
 
 ---
 

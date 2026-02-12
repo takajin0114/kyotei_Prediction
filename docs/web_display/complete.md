@@ -270,10 +270,10 @@ python kyotei_predictor/tests/test_phase3_purchase_suggestions.py
 
 ## 📚 関連ドキュメント
 
-- [Web表示機能要件定義](requirements.md)
-- [Web表示機能タスク詳細](plan.md)
-- [テスト結果サマリー](../test_results_summary.md)
-- [運用ガイド](../operations/README.md)
+- [Web表示機能要件定義](requirements.md) - 画面要件・非機能要件
+- [Web表示実装計画](plan.md) - Phase別タスク一覧
+- [テスト結果サマリー](../test_results_summary.md) - テスト実行結果のまとめ
+- [運用ガイド索引](../operations/README.md) - 運用ドキュメントの入口
 
 ---
 

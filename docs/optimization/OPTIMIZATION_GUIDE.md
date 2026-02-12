@@ -256,9 +256,9 @@ python kyotei_predictor/tools/optimization/optimize_graduated_reward.py --year-m
 
 ## 関連ドキュメント
 
-- [要件レベル整理](../REQUIREMENTS_OVERVIEW.md)
-- [現在の状況サマリー](../CURRENT_STATUS_SUMMARY.md)
-- [運用ガイド](../operations/README.md)
+- [要件レベル整理](../REQUIREMENTS_OVERVIEW.md) - 最適化機能の位置づけと要件の全体像
+- [全体状況サマリー](../CURRENT_STATUS_SUMMARY.md) - 現在の実装状況・運用状況
+- [運用ガイド索引](../operations/README.md) - 定期運用・保守手順の入口
 
 ---
 

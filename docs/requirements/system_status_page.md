@@ -80,5 +80,5 @@
 ---
 
 ## 📚 関連ドキュメント
-- [Web表示の実装計画](../web_display/plan.md)
-- [Web表示の実装完了状況](../web_display/complete.md)
+- [Web表示実装計画](../web_display/plan.md) - Phase別タスクと実装ロードマップ
+- [Web表示実装完了状況](../web_display/complete.md) - 実装済み機能とテスト結果
