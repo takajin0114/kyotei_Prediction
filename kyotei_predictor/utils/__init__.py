@@ -7,6 +7,7 @@ from .common import KyoteiUtils
 from .config import Config
 from .logger import setup_logger, get_logger, LoggerMixin
 from .venue_mapping import VenueMapper, VENUE_MAPPING
+from .compression import DataCompressor
 from .exceptions import (
     KyoteiError, DataError, APIError, ValidationError, 
     ConfigError, PredictionError, handle_exception, safe_execute
@@ -27,6 +28,7 @@ __all__ = [
     # 会場マッピング
     'VenueMapper',
     'VENUE_MAPPING',
+    'DataCompressor',
     
     # エラーハンドリング
     'KyoteiError',

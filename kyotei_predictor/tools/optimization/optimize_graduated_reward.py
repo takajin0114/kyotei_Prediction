@@ -34,14 +34,24 @@ sys.path.append(os.path.join(project_root, 'kyotei_predictor'))
 
 from pipelines.kyotei_env import KyoteiEnvManager
 
-# 設定管理クラスをインポート
+# 学習用ロガー（main内でファイルハンドラを付与。UTF-8でファイル出力し文字化けを避ける）
+_opt_logger = logging.getLogger("kyotei_predictor.tools.optimization.optimize_graduated_reward")
+
+# 設定管理クラスをインポート（パッケージ基準で実行ディレクトリに依存しない）
 try:
-    from config.improvement_config_manager import ImprovementConfigManager
+    from kyotei_predictor.config.improvement_config_manager import ImprovementConfigManager
     CONFIG_MANAGER = ImprovementConfigManager()
 except ImportError:
-    # 設定管理クラスが利用できない場合はデフォルト値を使用
     CONFIG_MANAGER = None
     print("Warning: ImprovementConfigManager not available, using default values")
+
+def _log_debug(msg, *args):
+    """UTF-8ファイルにのみ出す詳細ログ（コンソールはサマリーのみでログ量・文字化けを抑える）"""
+    if args:
+        _opt_logger.debug(msg, *args)
+    else:
+        _opt_logger.debug(msg)
+
 
 def create_env(data_dir=None, bet_amount=100, year_month=None):
     """
@@ -54,25 +64,16 @@ def create_env(data_dir=None, bet_amount=100, year_month=None):
     """
     if data_dir is None:
         data_dir = "kyotei_predictor/data/raw"
-    
-    print(f"[create_env] data_dir: {data_dir}")
-    print(f"[create_env] year_month: {year_month}")
-    print(f"[create_env] bet_amount: {bet_amount}")
-    print(f"[create_env] year_month type: {type(year_month)}")
-    print(f"[create_env] year_month is None: {year_month is None}")
-    
+    _log_debug("[create_env] data_dir: %s year_month: %s bet_amount: %s", data_dir, year_month, bet_amount)
     """環境を作成"""
     def make_env():
-        print(f"[make_env] Creating KyoteiEnvManager with year_month: {year_month}")
-        print(f"[make_env] year_month type: {type(year_month)}")
-        print(f"[make_env] year_month is None: {year_month is None}")
+        _log_debug("[make_env] Creating KyoteiEnvManager year_month: %s", year_month)
         env = KyoteiEnvManager(data_dir=data_dir, bet_amount=bet_amount, year_month=year_month)
         env = Monitor(env)
         return env
-    
     return DummyVecEnv([make_env])
 
-def objective(trial, data_dir=None, test_mode=False, minimal_mode=False, year_month=None, fast_mode=False):
+def objective(trial, data_dir=None, test_mode=False, minimal_mode=False, year_month=None, fast_mode=False, medium_mode=False):
     """
     最適化の目的関数
     
@@ -83,23 +84,28 @@ def objective(trial, data_dir=None, test_mode=False, minimal_mode=False, year_mo
         minimal_mode: 最小限モード
         year_month: 年月フィルタ（例: "2024-01"）
         fast_mode: 高速モード（学習ステップ数と評価エピソード数を大幅削減）
+        medium_mode: 中速モード（学習ステップ数と評価エピソード数を中程度に設定）
     """
     if data_dir is None:
         data_dir = "kyotei_predictor/data/raw"
-    print(f"[objective] Trial {trial.number} started")
-    
-    # データディレクトリの確認
-    if data_dir is None:
-        data_dir = "kyotei_predictor/data/raw"
-    print(f"[objective] data_dir: {data_dir}")
-    print(f"[objective] year_month filter: {year_month}")
-    print(f"[objective] year_month type: {type(year_month)}")
-    print(f"[objective] year_month is None: {year_month is None}")
+    _log_debug("[objective] Trial %s started data_dir=%s year_month=%s", trial.number, data_dir, year_month)
     
     # 設定ファイルからハイパーパラメータ範囲を取得
     if CONFIG_MANAGER is not None:
         if fast_mode:
             # 高速モード：狭いパラメータ範囲で高速化
+            learning_rate = trial.suggest_float('learning_rate', 1e-05, 0.001, log=True)
+            batch_size = trial.suggest_categorical('batch_size', [64, 128])
+            n_steps = trial.suggest_categorical('n_steps', [1024, 2048])
+            gamma = trial.suggest_float('gamma', 0.95, 0.99)
+            gae_lambda = trial.suggest_float('gae_lambda', 0.9, 0.95)
+            n_epochs = trial.suggest_int('n_epochs', 5, 10)
+            clip_range = trial.suggest_float('clip_range', 0.1, 0.2)
+            ent_coef = trial.suggest_float('ent_coef', 0.0, 0.03)
+            vf_coef = trial.suggest_float('vf_coef', 0.5, 0.8)
+            max_grad_norm = trial.suggest_float('max_grad_norm', 0.3, 0.6)
+        elif medium_mode:
+            # 中速モード：学習ステップ数と評価エピソード数を中程度に設定
             learning_rate = trial.suggest_float('learning_rate', 1e-05, 0.001, log=True)
             batch_size = trial.suggest_categorical('batch_size', [64, 128])
             n_steps = trial.suggest_categorical('n_steps', [1024, 2048])
@@ -171,6 +177,18 @@ def objective(trial, data_dir=None, test_mode=False, minimal_mode=False, year_mo
             ent_coef = trial.suggest_float('ent_coef', 0.0, 0.03)
             vf_coef = trial.suggest_float('vf_coef', 0.5, 0.8)
             max_grad_norm = trial.suggest_float('max_grad_norm', 0.3, 0.6)
+        elif medium_mode:
+            # 中速モード：学習ステップ数と評価エピソード数を中程度に設定
+            learning_rate = trial.suggest_float('learning_rate', 1e-05, 0.001, log=True)
+            batch_size = trial.suggest_categorical('batch_size', [64, 128])
+            n_steps = trial.suggest_categorical('n_steps', [1024, 2048])
+            gamma = trial.suggest_float('gamma', 0.95, 0.99)
+            gae_lambda = trial.suggest_float('gae_lambda', 0.9, 0.95)
+            n_epochs = trial.suggest_int('n_epochs', 5, 10)
+            clip_range = trial.suggest_float('clip_range', 0.1, 0.2)
+            ent_coef = trial.suggest_float('ent_coef', 0.0, 0.03)
+            vf_coef = trial.suggest_float('vf_coef', 0.5, 0.8)
+            max_grad_norm = trial.suggest_float('max_grad_norm', 0.3, 0.6)
         else:
             learning_rate = trial.suggest_float('learning_rate', 5e-6, 5e-3, log=True)
             batch_size = trial.suggest_categorical('batch_size', [64, 128, 256])
@@ -183,12 +201,9 @@ def objective(trial, data_dir=None, test_mode=False, minimal_mode=False, year_mo
             vf_coef = trial.suggest_float('vf_coef', 0.5, 1.0)
             max_grad_norm = trial.suggest_float('max_grad_norm', 0.3, 0.8)
     
-    print(f"[objective] Hyperparams: lr={learning_rate}, batch={batch_size}, n_steps={n_steps}, gamma={gamma}")
-    print(f"[objective] Creating train_env with year_month: {year_month}")
+    _log_debug("[objective] Hyperparams: lr=%s batch=%s n_steps=%s gamma=%s", learning_rate, batch_size, n_steps, gamma)
     train_env = create_env(data_dir=data_dir, year_month=year_month)
-    print(f"[objective] Creating eval_env with year_month: {year_month}")
     eval_env = create_env(data_dir=data_dir, year_month=year_month)
-    print(f"[objective] Environments created")
     eval_callback = EvalCallback(
         eval_env,
         best_model_save_path=f"./optuna_models/trial_{trial.number}/",
@@ -225,6 +240,10 @@ def objective(trial, data_dir=None, test_mode=False, minimal_mode=False, year_mo
             # 高速モード：学習ステップ数と評価エピソード数を大幅削減
             total_timesteps = 5000
             n_eval_episodes = 50
+        elif medium_mode:
+            # 中速モード：学習ステップ数と評価エピソード数を中程度に設定
+            total_timesteps = 25000
+            n_eval_episodes = 250
         elif minimal_mode:
             learning_params = CONFIG_MANAGER.get_learning_params("phase2", "minimal_mode")
             total_timesteps = learning_params.get("total_timesteps", 5000)
@@ -242,6 +261,9 @@ def objective(trial, data_dir=None, test_mode=False, minimal_mode=False, year_mo
         if fast_mode:
             total_timesteps = 5000
             n_eval_episodes = 50
+        elif medium_mode:
+            total_timesteps = 25000
+            n_eval_episodes = 250
         elif minimal_mode:
             total_timesteps = 5000
             n_eval_episodes = 50
@@ -253,20 +275,18 @@ def objective(trial, data_dir=None, test_mode=False, minimal_mode=False, year_mo
             n_eval_episodes = 5000
     
     try:
-        print(f"[objective] model.learn start (timesteps: {total_timesteps})")
+        _log_debug("[objective] model.learn start timesteps=%s", total_timesteps)
         model.learn(
             total_timesteps=total_timesteps,
             callback=[eval_callback, checkpoint_callback],
             progress_bar=False  # ProgressBarを無効化
         )
-        print(f"[objective] model.learn end")
-        print(f"[objective] evaluate_model start (episodes: {n_eval_episodes})")
+        _log_debug("[objective] model.learn end; evaluate_model start episodes=%s", n_eval_episodes)
         eval_results = evaluate_model(model, eval_env, n_eval_episodes=n_eval_episodes)
-        print(f"[objective] evaluate_model end: {eval_results}")
         hit_rate = eval_results['hit_rate']
         mean_reward = eval_results['mean_reward']
         score = hit_rate * 100 + mean_reward / 1000
-        print(f"[objective] Trial {trial.number} score: {score}")
+        _log_debug("[objective] Trial %s score: %s eval=%s", trial.number, score, eval_results)
         return score
     except Exception as e:
         import traceback
@@ -337,6 +357,7 @@ def optimize_graduated_reward(
     test_mode=False,
     minimal_mode=False,
     fast_mode=False,
+    medium_mode=False,
     resume_existing=False,
     year_month=None
 ):
@@ -355,13 +376,9 @@ def optimize_graduated_reward(
         data_dir = "kyotei_predictor/data/raw"
     """段階的報酬設計モデルのハイパーパラメータ最適化"""
     
-    print("=== 段階的報酬設計モデルのハイパーパラメータ最適化開始 ===")
-    print(f"最適化開始時刻: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    print(f"試行回数: {n_trials}")
-    print(f"テストモード: {test_mode}")
-    print(f"最小モード: {minimal_mode}")
-    print(f"高速モード: {fast_mode}")
-    print(f"既存スタディ継続: {resume_existing}")
+    print("=== Optimization start ===")
+    _opt_logger.info("最適化開始時刻: %s 試行回数: %s test=%s minimal=%s fast=%s medium=%s resume=%s",
+                    datetime.now().strftime('%Y-%m-%d %H:%M:%S'), n_trials, test_mode, minimal_mode, fast_mode, medium_mode, resume_existing)
     
     # ディレクトリ作成
     os.makedirs("./optuna_models", exist_ok=True)
@@ -379,20 +396,17 @@ def optimize_graduated_reward(
                 existing_studies.append(file)
         
         if existing_studies:
-            # 最新のスタディファイルを使用
             latest_study = max(existing_studies, key=lambda x: os.path.getmtime(os.path.join("./optuna_studies", x)))
             storage_path = f"sqlite:///./optuna_studies/{latest_study}"
-            print(f"既存スタディを使用: {latest_study}")
+            _opt_logger.info("既存スタディを使用: %s", latest_study)
         else:
-            # 既存スタディが見つからない場合は新規作成
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             storage_path = f"sqlite:///./optuna_studies/{study_name}_{timestamp}.db"
-            print(f"新規スタディを作成: {study_name}_{timestamp}.db")
+            _opt_logger.info("新規スタディを作成: %s", study_name + "_" + timestamp + ".db")
     else:
-        # 新規スタディを作成
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         storage_path = f"sqlite:///./optuna_studies/{study_name}_{timestamp}.db"
-        print(f"新規スタディを作成: {study_name}_{timestamp}.db")
+        _opt_logger.info("新規スタディを作成: %s", study_name + "_" + timestamp + ".db")
     
     # スタディの作成または読み込み
     study = optuna.create_study(
@@ -403,24 +417,16 @@ def optimize_graduated_reward(
     )
     
     existing_trials = len(study.trials)
-    print(f"既存の試行数: {existing_trials}")
-    
-    # 最適化の実行（可視化を無効化）
-    print(f"最適化開始: データディレクトリ={data_dir}, 年月フィルタ={year_month}")
+    _opt_logger.info("既存の試行数: %s", existing_trials)
+    _opt_logger.info("最適化開始: データディレクトリ=%s 年月フィルタ=%s", data_dir, year_month)
     study.optimize(
-        lambda trial: objective(trial, data_dir=data_dir, test_mode=test_mode, minimal_mode=minimal_mode, fast_mode=fast_mode, year_month=year_month),
+        lambda trial: objective(trial, data_dir=data_dir, test_mode=test_mode, minimal_mode=minimal_mode, fast_mode=fast_mode, medium_mode=medium_mode, year_month=year_month),
         n_trials=n_trials,
         show_progress_bar=False,
         callbacks=None  # コールバックを無効化して可視化を防ぐ
     )
     
-    print(f"\n=== 最適化完了 ===")
-    print(f"最良の試行: {study.best_trial.number}")
-    print(f"最良のスコア: {study.best_value:.4f}")
-    print(f"最良のパラメータ:")
-    for key, value in study.best_params.items():
-        print(f"  {key}: {value}")
-    
+    _opt_logger.info("最適化完了 最良試行=%s 最良スコア=%s 最良パラメータ=%s", study.best_trial.number, study.best_value, study.best_params)
     # 結果をJSONファイルに保存
     results = {
         'optimization_time': datetime.now().isoformat(),
@@ -431,6 +437,7 @@ def optimize_graduated_reward(
         'test_mode': test_mode,
         'minimal_mode': minimal_mode,
         'fast_mode': fast_mode,
+        'medium_mode': medium_mode,
         'best_trial': {
             'number': study.best_trial.number,
             'value': float(study.best_value),
@@ -454,10 +461,10 @@ def optimize_graduated_reward(
     with open(results_path, 'w', encoding='utf-8') as f:
         json.dump(results, f, indent=2, ensure_ascii=False)
     
-    print(f"最適化結果を保存しました: {results_path}")
+    _opt_logger.info("最適化結果を保存: %s", results_path)
     
     # 最良モデルの詳細評価
-    print("\n=== 最良モデルの詳細評価 ===")
+        _opt_logger.info("最良モデルの詳細評価開始")
     best_model_path = f"./optuna_models/trial_{study.best_trial.number}/best_model.zip"
     
     if os.path.exists(best_model_path):
@@ -486,6 +493,20 @@ def optimize_graduated_reward(
     
     return study
 
+def _setup_optimization_log(project_root):
+    """学習ログをUTF-8ファイルに出力（コンソール文字化け・ログ量抑制のため）"""
+    log_dir = os.path.join(project_root, "kyotei_predictor", "logs")
+    os.makedirs(log_dir, exist_ok=True)
+    log_file = os.path.join(log_dir, f"optimize_graduated_reward_{datetime.now().strftime('%Y%m%d')}.log")
+    fh = logging.FileHandler(log_file, encoding="utf-8")
+    fh.setLevel(logging.DEBUG)
+    fh.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
+    _opt_logger.setLevel(logging.DEBUG)
+    _opt_logger.addHandler(fh)
+    _opt_logger.info("Log file: %s", log_file)
+    return log_file
+
+
 def main():
     """メイン実行関数（コマンドライン引数対応）"""
     parser = argparse.ArgumentParser(description="段階的報酬設計モデルのハイパーパラメータ最適化")
@@ -496,38 +517,30 @@ def main():
     parser.add_argument('--test-mode', action='store_true', help='テストモード（短時間設定）')
     parser.add_argument('--minimal', action='store_true', help='最小限のテストモード（1試行、非常に短い学習時間）')
     parser.add_argument('--fast-mode', action='store_true', help='高速モード（学習ステップ数と評価エピソード数を大幅削減）')
+    parser.add_argument('--medium-mode', action='store_true', help='中速モード（学習ステップ数と評価エピソード数を中程度に設定）')
     parser.add_argument('--resume-existing', action='store_true', help='既存スタディを継続する')
     
     args = parser.parse_args()
-    
-    # デバッグ情報を追加
-    print(f"[DEBUG] main() called with args:")
-    print(f"[DEBUG]   --data-dir: {args.data_dir}")
-    print(f"[DEBUG]   --year-month: {args.year_month}")
-    print(f"[DEBUG]   --minimal: {args.minimal}")
-    print(f"[DEBUG]   --test-mode: {args.test_mode}")
-    print(f"[DEBUG]   --n-trials: {args.n_trials}")
-    print(f"[DEBUG]   sys.argv: {sys.argv}")
-    
-    # 環境変数からデータディレクトリを取得、コマンドライン引数を優先
+    _setup_optimization_log(project_root)
+
+    _log_debug("main() args: data_dir=%s year_month=%s minimal=%s n_trials=%s", args.data_dir, args.year_month, args.minimal, args.n_trials)
     data_dir = os.environ.get('DATA_DIR', args.data_dir)
-    print(f"使用するデータディレクトリ: {data_dir}")
-    
-    # 年月フィルタの確認
+    print("Data dir: " + data_dir)
+    _opt_logger.info("使用するデータディレクトリ: %s", data_dir)
+
     year_month = args.year_month
-    print(f"[DEBUG] year_month from args: {year_month}")
-    print(f"[DEBUG] year_month type: {type(year_month)}")
-    print(f"[DEBUG] year_month is None: {year_month is None}")
     if year_month:
-        print(f"使用する年月フィルタ: {year_month}")
+        print("Year-month: " + year_month)
+        _opt_logger.info("使用する年月フィルタ: %s", year_month)
     else:
-        print("年月フィルタなし: 全期間のデータを使用")
-    
-    # 最小限モードの場合は設定を調整
+        print("Year-month: (all)")
+        _opt_logger.info("年月フィルタなし: 全期間のデータを使用")
+
     if args.minimal:
         args.n_trials = 1
-        print("最小限テストモード: 試行回数1回、非常に短い学習時間")
-    
+        print("Minimal mode: 1 trial")
+        _opt_logger.info("最小限テストモード: 試行回数1回")
+
     study = optimize_graduated_reward(
         n_trials=args.n_trials,
         study_name=args.study_name,
@@ -535,15 +548,16 @@ def main():
         test_mode=args.test_mode,
         minimal_mode=args.minimal,
         fast_mode=args.fast_mode,
+        medium_mode=args.medium_mode,
         resume_existing=args.resume_existing,
         year_month=year_month
     )
     
-    print(f"\n=== 最適化完了 ===")
-    print(f"最良の試行: {study.best_trial.number}")
-    print(f"最良のスコア: {study.best_value:.4f}")
-    print(f"総試行数: {len(study.trials)}")
-    
+    print("\n=== Optimization done ===")
+    print("Best trial: " + str(study.best_trial.number))
+    print("Best score: " + str(round(study.best_value, 4)))
+    print("Total trials: " + str(len(study.trials)))
+    _opt_logger.info("最適化完了 最良試行=%s 最良スコア=%s 総試行数=%s", study.best_trial.number, study.best_value, len(study.trials))
     return study
 
 if __name__ == "__main__":

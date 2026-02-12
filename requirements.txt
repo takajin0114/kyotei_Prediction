@@ -1,11 +1,43 @@
+# Kyotei Prediction - Unified dependencies (UTF-8, no BOM)
+# Install once in venv: pip install -r requirements.txt
+# Use same venv for both learning and prediction.
+
+# === Core ===
 numpy==1.26.4
+pandas==2.2.3
+pyarrow>=4.0.0,<15.0.0
+
+# === ML / RL ===
 torch==2.3.0
 stable-baselines3==2.3.2
-tensorboard==2.16.2
-pandas==2.2.2
-pyarrow==15.0.2
-tqdm
-rich
+gymnasium==0.29.1
+optuna==3.4.0
+mlflow==2.8.1
+
+# === Viz / Analysis ===
 matplotlib
 seaborn
-scipy 
+scipy
+tensorboard==2.16.2
+
+# === Web ===
+Flask==3.1.1
+Flask-Caching
+requests==2.32.3
+
+# === Data / Scraping ===
+metaboatrace.scrapers==3.3.1
+python-dateutil==2.9.0.post0
+
+# === Utils ===
+tqdm
+rich
+
+# === Test ===
+pytest==7.4.3
+pytest-cov==4.1.0
+pytest-html==4.1.1
+
+# Optional (uncomment if needed):
+# selenium==4.15.2
+# webdriver-manager==4.0.1

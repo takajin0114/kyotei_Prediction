@@ -7,20 +7,26 @@
 ## 🗂️ プロジェクト概要
 
 - [README.md](../README.md) - プロジェクトの概要とクイックスタート
-- [BATCH_USAGE_GUIDE.md](../BATCH_USAGE_GUIDE.md) - 統合バッチファイルの使用方法
-- [REPOSITORY_ORGANIZATION_GUIDE.md](REPOSITORY_ORGANIZATION_GUIDE.md) - リポジトリ整理ガイド（新規追加）
-- [WORK_COMPLETION_SUMMARY_20250127.md](WORK_COMPLETION_SUMMARY_20250127.md) - 作業完了サマリー（2025-01-27）
+- **[PROJECT_LAYOUT.md](PROJECT_LAYOUT.md)** - **ディレクトリ構成・エントリポイント・新規コードの置き場所**
+- **[LEARNING_AND_PREDICTION_STATUS.md](LEARNING_AND_PREDICTION_STATUS.md)** - **学習・予想を動かすための現状と手順**
+- [LEARNING_PREDICTION_CYCLE_IMPROVEMENTS.md](LEARNING_PREDICTION_CYCLE_IMPROVEMENTS.md) - 学習→予測サイクル実施結果と改善点一覧
+- [guides/batch_usage.md](guides/batch_usage.md) - バッチの使い方（scripts/）
+- [guides/optimization_script.md](guides/optimization_script.md) - 最適化スクリプト
+- [guides/powershell.md](guides/powershell.md) - PowerShell メモ
 
 ## 🚀 最適化・学習
 
 - [optimization/README.md](optimization/README.md) - 最適化の概要
-- [optimization/FAST_MODE_IMPLEMENTATION_SUMMARY.md](optimization/FAST_MODE_IMPLEMENTATION_SUMMARY.md) - 高速モード実装詳細
+- [optimization/FAST_MODE_IMPLEMENTATION_SUMMARY.md](optimization/FAST_MODE_IMPLEMENTATION_SUMMARY.md) - 3段階モード実装詳細
 - [optimization/OPTIMIZATION_GUIDE.md](optimization/OPTIMIZATION_GUIDE.md) - 最適化の詳細ガイド
 - [optimization/EXECUTION_EXAMPLES.md](optimization/EXECUTION_EXAMPLES.md) - 実行例とサンプル
 
 ## 📊 システム状況・進捗
 
 - [CURRENT_STATUS_SUMMARY.md](CURRENT_STATUS_SUMMARY.md) - 現在の状況サマリー
+- [REPO_STATUS_20250212.md](REPO_STATUS_20250212.md) - リポジトリ現状サマリー（2025-02-12）
+- [DEEP_CLEANUP_REPORT_20250212.md](DEEP_CLEANUP_REPORT_20250212.md) - ソース深堀り整理レポート（2025-02-12）
+- [REFACTORING_REPORT_20250212.md](REFACTORING_REPORT_20250212.md) - リファクタリング・整理レポート（2025-02-12）
 - [improvement_implementation_summary.md](improvement_implementation_summary.md) - 改善策の実装状況
 - [test_results_summary.md](test_results_summary.md) - テスト結果の詳細
 - [monthly_learning_guide.md](monthly_learning_guide.md) - 月次学習ガイド
@@ -43,29 +49,33 @@
 - [operations/data_acquisition.md](operations/data_acquisition.md) - データ取得の運用
 - [operations/scheduled_maintenance.md](operations/scheduled_maintenance.md) - 定期メンテナンス
 
-## 📋 要件・仕様
+## 📋 要件・仕様（要件レベルはここから）
 
-- [requirements/README.md](requirements/README.md) - 要件の概要
+- **[REQUIREMENTS_OVERVIEW.md](REQUIREMENTS_OVERVIEW.md)** - **要件全体の整理**（目的・業務/機能/非機能・ドキュメント対応表）
+- [requirements/README.md](requirements/README.md) - 要件ディレクトリの索引
 - [requirements/system_status_page.md](requirements/system_status_page.md) - システム状況ページの要件
 - [requirements/ux_improvement.md](requirements/ux_improvement.md) - UX改善の要件
+- [web_display/requirements.md](web_display/requirements.md) - Web表示機能の要件定義書
 
 ---
 
-## 🆕 最近の更新（2025年1月）
+## 🆕 最近の更新
 
-### **新規追加ドキュメント**
-- **REPOSITORY_ORGANIZATION_GUIDE.md** - リポジトリ整理の完了状況と統合バッチファイルの説明
-- **BATCH_USAGE_GUIDE.md** - 統合バッチファイルの詳細使用方法
+### **2025年2月**
+- **PROJECT_LAYOUT.md** - プロジェクト構成・エントリポイント・新規コードの置き場所
+- **REFACTORING_REPORT_20250212.md** - リファクタリング（config パッケージ化、optuna_optimizer 整理、ドキュメント追加）
+- **REQUIREMENTS_OVERVIEW.md** - 要件レベルで全体を整理（目的・業務/機能/非機能・ドキュメント対応表）
+- **REPO_STATUS_20250212.md** - リポジトリ構成・現状サマリー
+- **DEEP_CLEANUP_REPORT_20250212.md** - ソース深堀り整理（インポート統一・会場マッピング一元化・不足モジュール追加等）
+- **docs/README.md** - 要件・進捗セクションの見直し、PROJECT_LAYOUT・REFACTORING へのリンク追加
 
-### **更新されたドキュメント**
-- **README.md** - リポジトリ整理後の新しい構造を反映
-- **CURRENT_STATUS_SUMMARY.md** - 高速モード実装と統合バッチファイルの完了を反映
+### **2025年2月（構成整理）**
+- **scripts/** - バッチを一本化。**docs/guides/** - 実行ガイドを集約
+- **logs/** - ルートにログ用ディレクトリ。analysis_results 削除、冗長ドキュメント整理
 
-### **整理完了項目**
-- ✅ 不要なバッチファイルの削除（90%以上の削減）
-- ✅ 統合バッチファイルによる機能統合
-- ✅ 明確なファイル構造と責任分担
-- ✅ 包括的なドキュメント整備
+### **2025年1月**
+- **3段階モード**: 高速・中速・通常モードの完全実装
+- 重複ファイル削除、requirements.txt 統合、ドキュメント整備
 
 ---
 
@@ -73,12 +83,13 @@
 
 ### **初回利用者**
 1. [README.md](../README.md) - プロジェクトの概要を確認
-2. [BATCH_USAGE_GUIDE.md](../BATCH_USAGE_GUIDE.md) - 統合バッチファイルの使用方法を学習
-3. [REPOSITORY_ORGANIZATION_GUIDE.md](REPOSITORY_ORGANIZATION_GUIDE.md) - 整理された構造を理解
+2. **[REQUIREMENTS_OVERVIEW.md](REQUIREMENTS_OVERVIEW.md)** - 要件レベルで何を実現するか・どの doc に書いてあるかを把握
+3. [guides/batch_usage.md](guides/batch_usage.md) - バッチ（scripts/）の使い方
+4. [PROJECT_LAYOUT.md](PROJECT_LAYOUT.md) - ディレクトリ構成を理解
 
 ### **最適化実行者**
 1. [optimization/README.md](optimization/README.md) - 最適化の概要を確認
-2. [optimization/FAST_MODE_IMPLEMENTATION_SUMMARY.md](optimization/FAST_MODE_IMPLEMENTATION_SUMMARY.md) - 高速モードの詳細を理解
+2. [optimization/FAST_MODE_IMPLEMENTATION_SUMMARY.md](optimization/FAST_MODE_IMPLEMENTATION_SUMMARY.md) - 3段階モードの詳細を理解
 3. [optimization/EXECUTION_EXAMPLES.md](optimization/EXECUTION_EXAMPLES.md) - 実行例を参考に実行
 
 ### **システム管理者**
@@ -88,7 +99,6 @@
 
 ---
 
-**最終更新**: 2025-01-27  
-**更新者**: AI Assistant  
-**バージョン**: 2.0  
-**主要改善**: リポジトリ整理完了、統合バッチファイル、包括的ドキュメント整備 
+**最終更新**: 2025-02-12  
+**バージョン**: 3.1  
+**主要改善**: 要件レベル整理（REQUIREMENTS_OVERVIEW）、docs 索引・リンク整備、2025-02 整理レポート追加

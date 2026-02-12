@@ -157,10 +157,13 @@ optuna_models/
 optuna_studies/
 optuna_results/
 optuna_studies_backup_*/
+# ログ（scripts/ のバッチが書き出す先）
+logs/*.log
 
-# バッチファイル・スクリプト（必要に応じて）
+# バッチ・スクリプト（scripts/ 内はリポジトリで管理するため除外しない）
 *.bat
 *.ps1
+!scripts/*.bat
 activate_env.ps1
 
 # 一時ファイル・ログ

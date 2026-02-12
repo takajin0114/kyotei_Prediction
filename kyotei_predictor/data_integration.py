@@ -10,9 +10,13 @@ from datetime import datetime, date
 from typing import Dict, List, Optional, Union
 import traceback
 
-# 既存機能のインポート
+# 既存機能のインポート（パッケージ経由で安定したインポート）
 try:
-    from race_data_fetcher import fetch_complete_race_data, fetch_race_entry_data, fetch_race_result_data
+    from kyotei_predictor.tools.fetch.race_data_fetcher import (
+        fetch_complete_race_data,
+        fetch_race_entry_data,
+        fetch_race_result_data,
+    )
     from metaboatrace.models.stadium import StadiumTelCode
     LIVE_DATA_AVAILABLE = True
     print("✅ 既存データ取得機能をインポートしました")

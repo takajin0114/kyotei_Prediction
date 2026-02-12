@@ -1,23 +1,25 @@
 
-
 import sys
+import json
+import os
 from pathlib import Path
 from datetime import timedelta
 
-# プロジェクトルートとtoolsディレクトリをパスに追加
-project_root = Path(__file__).parent
-sys.path.append(str(project_root))
-sys.path.append(str(project_root / "tools"))
-sys.path.append(str(project_root / "tools" / "fetch"))
-sys.path.append(str(project_root / "tools" / "viz"))
+# kyotei_predictor の親を path に追加（python app.py で実行した場合でも import 可能にする）
+_project_root = Path(__file__).resolve().parent
+_parent_root = _project_root.parent
+if str(_parent_root) not in sys.path:
+    sys.path.insert(0, str(_parent_root))
 
 from flask import Flask, render_template, request, jsonify
 from flask_caching import Cache
-import json
-import os
-from tools.fetch.race_data_fetcher import fetch_race_entry_data
-from tools.viz.html_display import generate_html_display as generate_race_html
-from errors import APIError, register_error_handlers
+
+from kyotei_predictor.tools.fetch.race_data_fetcher import fetch_race_entry_data
+from kyotei_predictor.tools.viz.html_display import generate_html_display as generate_race_html
+from kyotei_predictor.errors import APIError, register_error_handlers
+
+# アプリルート（静的ファイル・データパス解決用）
+project_root = _project_root
 
 app = Flask(__name__, static_folder='static')
 register_error_handlers(app)  # エラーハンドラーを登録
@@ -29,7 +31,10 @@ cache = Cache(config={
 })
 cache.init_app(app)
 
-SAMPLE_DATA = Path('data/complete_race_data_20240615_KIRYU_R1.json')
+# データパスは kyotei_predictor ルート基準（実行時の CWD に依存しない）
+DATA_DIR = project_root / "data"
+SAMPLE_DATA = DATA_DIR / "complete_race_data_20240615_KIRYU_R1.json"
+OUTPUTS_DIR = project_root.parent / "outputs"
 
 
 @app.route('/')
@@ -47,9 +52,8 @@ def predictions():
 @app.route('/outputs/<filename>')
 def serve_output_file(filename):
     """outputsディレクトリのファイルを提供"""
-    import os
-    file_path = os.path.join('outputs', filename)
-    if os.path.exists(file_path) and filename.endswith('.json'):
+    file_path = OUTPUTS_DIR / filename
+    if file_path.exists() and filename.endswith('.json'):
         with open(file_path, 'r', encoding='utf-8') as f:
             return f.read(), 200, {'Content-Type': 'application/json'}
     return "File not found", 404
@@ -58,9 +62,9 @@ def serve_output_file(filename):
 @app.route('/kyotei_predictor/data/raw/<filename>')
 def serve_raw_data_file(filename):
     """data/rawディレクトリのファイルを提供"""
-    import os
-    file_path = os.path.join('kyotei_predictor', 'data', 'raw', filename)
-    if os.path.exists(file_path) and filename.endswith('.json'):
+    raw_dir = project_root / "data" / "raw"
+    file_path = raw_dir / filename
+    if file_path.exists() and filename.endswith('.json'):
         with open(file_path, 'r', encoding='utf-8') as f:
             return f.read(), 200, {'Content-Type': 'application/json'}
     return "File not found", 404
@@ -95,7 +99,7 @@ def predict():
 def get_races():
     try:
         # サンプルデータからレース一覧を生成
-        sample_files = list(Path('data').glob('complete_race_data_*.json'))
+        sample_files = list(DATA_DIR.glob('complete_race_data_*.json'))
         if not sample_files:
             raise APIError('No race data available', status_code=404)
             
@@ -132,7 +136,7 @@ def get_weather():
             raise APIError('date and stadium parameters are required', status_code=400)
         
         # 該当するデータファイルを検索
-        file_path = Path(f'data/complete_race_data_{date}_{stadium}_R1.json')
+        file_path = DATA_DIR / f'complete_race_data_{date}_{stadium}_R1.json'
         if not file_path.exists():
             raise APIError('Weather data not found', status_code=404)
         

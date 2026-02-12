@@ -324,4 +324,5 @@ get_venue_region = VenueMapper.get_venue_region
 get_all_stadiums = VenueMapper.get_all_stadiums
 get_stadium_info = VenueMapper.get_stadium_info
 get_stadium_by_code = VenueMapper.get_stadium_by_code
-get_stadiums_by_region = VenueMapper.get_stadiums_by_region 
+get_stadiums_by_region = VenueMapper.get_stadiums_by_region
+print_venue_mapping = VenueMapper.print_venue_mapping

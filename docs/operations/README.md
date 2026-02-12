@@ -29,6 +29,7 @@
 
 ## 🔗 関連ドキュメント
 
-- [BATCH_SYSTEM_CURRENT_STATUS.md](../BATCH_SYSTEM_CURRENT_STATUS.md) - バッチシステム現状
-- [NEXT_STEPS.md](../NEXT_STEPS.md) - 直近のTODO・優先度
-- [DOCUMENTATION_STANDARDS.md](../DOCUMENTATION_STANDARDS.md) - ドキュメント記載方法 
+- [CURRENT_STATUS_SUMMARY.md](../CURRENT_STATUS_SUMMARY.md) - プロジェクト全体の進捗・バッチ完了状況
+- [REQUIREMENTS_OVERVIEW.md](../REQUIREMENTS_OVERVIEW.md) - 要件全体（運用要件 B-005, F-O03 等）
+- [config_usage_guide.md](../config_usage_guide.md) - 設定ファイルの使用方法
+- [BATCH_USAGE_GUIDE.md](../../BATCH_USAGE_GUIDE.md) - 統合バッチファイルの使用方法（プロジェクトルート）

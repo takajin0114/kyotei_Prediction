@@ -31,23 +31,10 @@ from typing import cast
 
 from kyotei_predictor.utils.common import KyoteiUtils
 
-# 文字化け対策: 標準出力のエンコーディングをUTF-8に設定
+# Windows: UTF-8 環境変数のみ設定（stdout の detach は logging と競合するため行わない）
 if sys.platform.startswith('win'):
-    import codecs
-    # PowerShellでの文字化け対策
-    try:
-        # 環境変数でUTF-8を強制
-        os.environ['PYTHONIOENCODING'] = 'utf-8'
-        os.environ['PYTHONLEGACYWINDOWSSTDIO'] = 'utf-8'
-        
-        # 標準出力をUTF-8に設定（安全な方法）
-        if hasattr(sys.stdout, 'detach'):
-            sys.stdout = codecs.getwriter('utf-8')(sys.stdout.detach())
-            sys.stderr = codecs.getwriter('utf-8')(sys.stderr.detach())
-    except Exception:
-        # エラーが発生した場合は環境変数のみ設定
-        os.environ['PYTHONIOENCODING'] = 'utf-8'
-        os.environ['PYTHONLEGACYWINDOWSSTDIO'] = 'utf-8'
+    os.environ.setdefault('PYTHONIOENCODING', 'utf-8')
+    os.environ.setdefault('PYTHONLEGACYWINDOWSSTDIO', 'utf-8')
 
 # 可視化結果の表示を無効化
 import matplotlib
@@ -77,25 +64,25 @@ from io import StringIO
 class PredictionTool:
     """予想ツールのメインクラス"""
     
-    def __init__(self, log_level=logging.INFO):
+    def __init__(self, log_level=logging.INFO, data_dir: Optional[Union[str, Path]] = None):
         self.setup_logging(log_level)
         self.model: Optional[PPO] = None
         self.model_info = {}
         self.utils = KyoteiUtils()  # 共通ユーティリティを初期化
+        self.data_dir: Optional[Path] = Path(data_dir) if data_dir else None
         
     def setup_logging(self, log_level):
-        """ログ設定"""
+        """ログ設定（Windows ではファイルのみ。コンソールは safe_print で出力）"""
         log_file = PROJECT_ROOT / "kyotei_predictor" / "logs" / f"prediction_tool_{datetime.now().strftime('%Y%m%d')}.log"
         log_file.parent.mkdir(exist_ok=True)
-        
-        # 文字化け対策付きログ設定
+        handlers = [logging.FileHandler(str(log_file), encoding='utf-8')]
+        # Windows で StreamHandler(sys.stdout) を使うと "raw stream has been detached" が出るため、ファイルのみにする
+        if not sys.platform.startswith('win'):
+            handlers.append(logging.StreamHandler(sys.stdout))
         logging.basicConfig(
             level=log_level,
             format='%(asctime)s - %(levelname)s - %(message)s',
-            handlers=[
-                logging.FileHandler(str(log_file), encoding='utf-8'),
-                logging.StreamHandler(sys.stdout)  # 明示的にstdoutを指定
-            ]
+            handlers=handlers,
         )
         self.logger = logging.getLogger(__name__)
     
@@ -357,7 +344,16 @@ class PredictionTool:
     
     def get_race_data_paths(self, predict_date: str, venues: Optional[List[str]] = None) -> List[Tuple[str, str, str, str]]:
         """予測対象のレースデータパスを取得"""
-        race_data_dir = PROJECT_ROOT / "kyotei_predictor" / "data" / "raw"
+        if self.data_dir is not None:
+            d = Path(self.data_dir)
+            if not d.is_absolute():
+                d = PROJECT_ROOT / d
+            if d.exists():
+                race_data_dir = d
+            else:
+                race_data_dir = PROJECT_ROOT / "kyotei_predictor" / "data" / "raw"
+        else:
+            race_data_dir = PROJECT_ROOT / "kyotei_predictor" / "data" / "raw"
         
         race_paths = []
         
@@ -1220,6 +1216,7 @@ def main():
     parser.add_argument('--venues', type=str, help='対象会場 (カンマ区切り)')
     parser.add_argument('--model-path', type=str, help='モデルファイルパス')
     parser.add_argument('--output-dir', type=str, help='出力ディレクトリ')
+    parser.add_argument('--data-dir', type=str, help='レースデータのディレクトリ（未指定時は kyotei_predictor/data/raw）')
     parser.add_argument('--verbose', action='store_true', help='詳細ログ出力')
     
     # 新規引数の追加
@@ -1233,8 +1230,8 @@ def main():
     # ログレベル設定
     log_level = logging.DEBUG if args.verbose else logging.INFO
     
-    # 予想ツール初期化
-    tool = PredictionTool(log_level)
+    # 予想ツール初期化（--data-dir で test_raw 等を指定可能）
+    tool = PredictionTool(log_level, data_dir=args.data_dir)
     
     # 会場リスト（正規化）
     venues = None
