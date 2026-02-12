@@ -47,7 +47,8 @@
 
 ```bash
 cd kyotei_Prediction
-py scripts/verify_pre_race_fetch.py
+python scripts/verify_pre_race_fetch.py
+# Linux では python3 でも可
 ```
 
 - デフォルトで「明日」の開催会場を取得し、先頭会場の第1レースで出走表・直前情報・オッズを取得します。

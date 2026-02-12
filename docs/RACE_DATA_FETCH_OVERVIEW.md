@@ -1,7 +1,7 @@
 # レースデータ取得処理 — 確認結果・詰めどころ
 
 **目的**: レースデータ取得の処理を詰めるための現状整理。  
-**確認日**: 2025-02-12
+**確認日**: 2026-02-12
 
 ---
 
@@ -39,7 +39,7 @@ metaboatrace.scrapers (v1707) で HTML 取得・パース
 |------------|----------|------|
 | batch_fetch_all_venues.py | fetch_complete_race_data, fetch_trifecta_odds | 過去一括取得（race + odds） |
 | retry_missing_races.py | 同上 | 欠損レースの再取得 |
-| prediction_tool.py | fetch_race_entry_data, fetch_trifecta_odds | 本番予測用（出走表＋オッズ） |
+| prediction_tool.py | fetch_pre_race_data, fetch_trifecta_odds | 本番予測用（出走表＋直前情報＋オッズ） |
 | data_integration.py | fetch_complete_race_data | Web のライブデータ取得 |
 | app.py | fetch_race_entry_data | Web 用 |
 | fast_future_entries_fetcher.py | fetch_race_entry_data | 出走表のみ先行取得 |
@@ -50,7 +50,7 @@ metaboatrace.scrapers (v1707) で HTML 取得・パース
 - **レート制限**: 現状 5秒/リクエスト。バッチでは 1秒に短縮しているが、単体・予測ツールは 5秒のまま。用途別に引数で指定できるようにするか検討。
 - **エラー・リトライ**: race_data_fetcher 内の `safe_extract_*` は最大3回リトライ。選手名パース失敗時は「不明」で継続し成績・艇・モーターは保存。バッチ側でも max_retries=3。
 - **レース中止**: `RaceCanceled` を raise。バッチでは `race_canceled_*.json` を書きスキップ。
-- **直前情報**: 展示走前は空。予測パイプラインでは未必須（取得できたら追加特徴量候補）。本番取得フローに組み込むか要検討。
+- **直前情報**: 展示走前は空。予測パイプラインでは本番取得フローに組み込み済み（`fetch_pre_race_data`）。ただし現状の状態ベクトルには未組み込みで、追加特徴量候補として扱う。
 
 ---
 
@@ -85,21 +85,23 @@ metaboatrace.scrapers (v1707) で HTML 取得・パース
 
 - 指定日の開催会場を月間スケジュールで取得。
 - 各会場・各レースで:
-  - **出走表**: `fetch_race_entry_data`
+  - **レース前統合データ**: `fetch_pre_race_data`（出走表 + 取得できる場合は直前情報）
   - **オッズ**: `fetch_trifecta_odds`（締切後）
 - 保存は prediction 結果（outputs/）。race_data / odds_data はメモリ上で使用し、raw には保存しない想定（必要ならオプションで保存を検討）。
 
 ### 4.2 詰めどころ（予測）
 
 - **本番時刻**: 締切前はオッズ未公開のため、オッズ取得失敗を許容するか・リトライ時刻を分けるか検討。
-- **直前情報**: 現状は未使用。使う場合は `fetch_before_information` を呼び、vectorize_race_state 等で特徴量に組み込む必要あり。
+- **直前情報**: 取得自体は `fetch_pre_race_data` で実施済み。使う場合は `build_race_state_vector` に特徴量を組み込む必要あり。
 - **会場コード**: prediction_tool が StadiumTelCode をどう列挙しているか（全会場 or 指定会場）を確認。batch と同一マッピングか確認。
 
 ---
 
 ## 5. データ仕様・必須項目（再掲）
 
-- **学習・予測に必須**: race_info（日付・会場・レース番号・周回・進入固定）, race_entries（艇番・選手級別・勝率・艇・モーター）, race_records（着順）, odds_data（3連単 120通り）。
+- **学習に必須**: race_info（日付・会場・レース番号・周回・進入固定）, race_entries（艇番・選手級別・勝率・艇・モーター）, race_records（着順）, odds_data（3連単 120通り）。
+- **予測で状態生成に必須**: race_info + race_entries（状態はオッズ非依存）。
+- **予測で期待値・購入提案に実質必須**: odds_data（現行フローではオッズ取得失敗時に中断）。
 - **あるとよい**: weather_condition, start_time, total_time, winning_trick, payoffs。直前情報は追加特徴量候補。
 - **取得元の詳細**: [RACE_DATA_ACQUISITION_AND_SOURCES.md](RACE_DATA_ACQUISITION_AND_SOURCES.md) 参照。
 

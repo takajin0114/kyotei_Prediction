@@ -2,7 +2,7 @@
 
 **目的**: レースデータ取得処理の流れ、実際に参照しているサイト、取得できているデータ・必要なデータを洗い出す。  
 **前提**: 最終的には**レース前に取得できる情報**を使って予測する。サイトで取得可能なデータの一覧は [SITE_DATA_AND_FETCH_STATUS.md](SITE_DATA_AND_FETCH_STATUS.md) を参照。  
-**最終更新**: 2025-02-12
+**最終更新**: 2026-02-12
 
 ---
 
@@ -34,7 +34,7 @@
 | **一括ダウンロード** | https://www.boatrace.jp/owpc/pc/extra/data/download.html | 選手・成績・結果の CSV/LZH 等。別ツール（例: cstenmt/boatrace）で利用例あり。 |
 | **アプリ用データ** | http://app.boatrace.jp/data/ 等 | BoatRaceDataCollector 等で利用例あり。 |
 
-本プロジェクトでは **metaboatrace 経由の「出走表・結果・3連単オッズ・月間スケジュール」のみ**使用。
+本プロジェクトでは **metaboatrace 経由の「出走表・結果・3連単オッズ・直前情報・月間スケジュール」**を使用。
 
 ---
 
@@ -109,7 +109,7 @@
 
 | 種別 | 関数・ファイル | 取得タイミング | 内容 |
 |------|----------------|----------------|------|
-| **出走表** | `fetch_race_entry_data` | 締切前〜当日 | 選手・級別・勝率・艇・モーター・race_info |
+| **レース前統合** | `fetch_pre_race_data` | 締切前〜当日 | 出走表 + （取得できる場合）直前情報 |
 | **3連単オッズ** | `fetch_trifecta_odds` | 締切後 | 120通りのオッズ（締切時） |
 | **直前情報** | `fetch_before_information` | **展示走実施後のみ** | スタート展示（ST）・周回展示（展示タイム）・選手体重・調整・艇設定（チルト・新ペラ）・天候 |
 
@@ -124,7 +124,7 @@
 | boat_settings | [{ pit_number, tilt, is_new_propeller, motor_parts_exchanges? }] |
 | weather_condition | weather, wind_velocity, wind_angle, air_temperature, water_temperature, wavelength |
 
-展示走がまだ実施されていない・ページが空の場合は `fetch_before_information` は空の配列や None を返す。予測パイプラインでは**出走表＋3連単オッズ**を必須とし、直前情報は**取得できた場合にのみ**追加特徴量として利用可能（現状の状態ベクトルには未組み込み）。
+展示走がまだ実施されていない・ページが空の場合は `fetch_before_information` は空の配列や None を返す。予測パイプラインでは直前情報は**取得できた場合のみ**利用し、状態ベクトル自体は出走表＋レース情報から生成する（オッズは状態に含めない）。
 
 ---
 
@@ -135,9 +135,9 @@
 | データ | 使っている場所 | 用途 |
 |--------|-----------------|------|
 | race_records（arrival, pit_number） | kyotei_env, verify_predictions, trifecta_dependent_model | 正解ラベル（3連単着順）・報酬計算・検証 |
-| race_entries（各艇の pit_number, racer.current_rating, performance, boat, motor） | kyotei_env.vectorize_race_state, data_preprocessor | 状態ベクトル（192次元）の元 |
-| race_info（stadium, race_number, number_of_laps, is_course_fixed） | kyotei_env.vectorize_race_state | レース全体特徴・会場 one-hot |
-| odds_data（betting_numbers, ratio） | kyotei_env, calc_trifecta_reward, prediction_tool | オッズ特徴・払戻計算 |
+| race_entries（各艇の pit_number, racer.current_rating, performance, boat, motor） | pipelines/state_vector.py, data_preprocessor | 状態ベクトル（48次元の艇特徴）の元 |
+| race_info（stadium, race_number, number_of_laps, is_course_fixed） | pipelines/state_vector.py | レース全体特徴・会場 one-hot（状態次元は `48 + 会場数 + 3`） |
+| odds_data（betting_numbers, ratio） | kyotei_env, calc_trifecta_reward, prediction_tool | 報酬計算（払戻）・期待値/回収率計算 |
 
 ### 4.2 あるとよい（精度・分析用）
 
@@ -190,7 +190,7 @@
 3. **運用**: 公式の **利用規約・アクセス頻度** を確認し、レート制限（現状 5 秒/1 秒）を守る。  
 4. **公式一括DL**: 大量の過去データが必要な場合は、https://www.boatrace.jp/owpc/pc/extra/data/download.html の CSV/LZH と現行 JSON の役割分担を検討する。  
 5. **進入コース別・オッズ変動**: 進入コース別は公式「レース場データ」ページ要確認。オッズ変動は締切時のみ取得のため、変動履歴は自前で複数時刻取得・蓄積が必要。  
-6. **レース前情報**: 本番予測では**出走表＋3連単オッズ**で予測可能。**直前情報**（`fetch_before_information`）は展示走実施後に取得でき、スタート展示ST・展示タイム等を追加特徴量にできる（現状の状態ベクトルには未組み込み。必要に応じて `vectorize_race_state` 等で利用を検討）。**`fetch_pre_race_data`** で出走表と直前情報を統合取得し、予測ツール（`prediction_tool`）の本番取得ではこの関数を使用してレース前に取得できる情報をまとめて利用している。
+6. **レース前情報**: 状態ベクトルは出走表＋レース情報で生成し、オッズは状態に含めない。`fetch_pre_race_data` で出走表と直前情報を統合取得し、予測ツール（`prediction_tool`）の本番取得で利用している。なお現行の `run_complete_prediction(fetch_data=True)` はオッズ取得に失敗すると処理を中断するため、締切前運用ではフロー分岐の設計が必要。
 
 ---
 
@@ -198,4 +198,5 @@
 - `kyotei_predictor/tools/fetch/race_data_fetcher.py`  
 - `kyotei_predictor/tools/fetch/odds_fetcher.py`（3連単オッズのみ。2連単・2連複・3連複は使用しない）  
 - `kyotei_predictor/tools/batch/batch_fetch_all_venues.py`  
-- `kyotei_predictor/pipelines/kyotei_env.py`（vectorize_race_state, 報酬計算）
+- `kyotei_predictor/pipelines/kyotei_env.py`（報酬計算・環境）
+- `kyotei_predictor/pipelines/state_vector.py`（共通状態ベクトル定義）

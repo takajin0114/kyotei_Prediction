@@ -72,7 +72,7 @@
 | C1 | **アンサンブル予測の接続** | 複数 best_model（別試行 or 別月学習）を `ensemble_model` で読み込み、`prediction_tool` からアンサンブル予測を出せるようにする。 | 未接続 |
 | C2 | **予測ツールのモデル指定** | コマンドラインで「どの best_model（またはアンサンブル設定）を使うか」を指定できるようにする。 | 現状は固定パス |
 | C3 | **継続学習のパイプライン化** | 既存 best_model を初期値にした継続学習を、`run_learning_prediction_cycle.bat` や月次バッチのオプションとして組み込む。 | 未 |
-| C4 | **特徴量・状態ベクトルの見直し** | 192次元の状態ベクトルに、会場・天候・調子・オッズ変動等の追加特徴があるか検討し、あればパイプラインに組み込む（[trifecta_improvement_strategy](trifecta_improvement_strategy.md) の「統計的学習」「艇間相関」等を参照）。 | 要調査 |
+| C4 | **特徴量・状態ベクトルの見直し** | 現行の共通状態ベクトル（`get_state_dim() = 48 + 会場数 + 3`、オッズ非入力）に、会場・天候・調子・展示走情報等の追加特徴があるか検討し、あれば `state_vector.py` に組み込む（[trifecta_improvement_strategy](trifecta_improvement_strategy.md) の「統計的学習」「艇間相関」等を参照）。 | 要調査 |
 
 **成果**: 単一モデル以上の精度・安定性を狙える。
 

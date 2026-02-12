@@ -32,7 +32,7 @@ kyotei_Prediction/                    # プロジェクトルート（ここで 
 │   ├── run_optimization_simple.bat
 │   ├── run_learning_prediction_cycle.bat
 │   ├── cleanup_old_files.bat
-│   └── verify_pre_race_fetch.py    # レース前情報取得確認（新規・未追跡）
+│   └── verify_pre_race_fetch.py    # レース前情報取得確認
 ├── logs/                            # 実行ログ（.gitkeep のみコミット）
 ├── outputs/                         # 予測結果 JSON（predictions_*.json）
 ├── kyotei_predictor/                # メイン Python パッケージ
@@ -89,9 +89,9 @@ kyotei_Prediction/                    # プロジェクトルート（ここで 
 ## 5. Git 状態（2025-02-12 時点）
 
 - **ブランチ**: feature/pre-race-before-information
-- **変更あり**: .gitattributes, .gitignore, docs 複数, data_integration.py, tools/fetch（odds_fetcher, race_data_fetcher）, requirements.txt, scripts/README.md 等
-- **削除済み**: optuna_results/*.json（複数）, optuna_studies/*.db, optuna_studies_backup/*.db, ppo_tensorboard, simple_test_tensorboard 配下, tests/web_display/requirements.txt
-- **未追跡**: docs/PREDICTION_ACCURACY_IMPROVEMENT_TODO.md, docs/PRE_RACE_FETCH_VERIFICATION.md, outputs/, scripts/verify_pre_race_fetch.py
+- **origin/main との差分**: 2コミット先行（`feature/pre-race-before-information`）
+- **主な変更**: docs 追加/更新、`fetch_pre_race_data`・`fetch_before_information` 追加、`state_vector.py` 新設、最適化成果物（db/json/tensorboard）の整理
+- **作業ツリー**: クリーン（未コミット差分なし）
 
 ---
 
@@ -104,7 +104,7 @@ kyotei_Prediction/                    # プロジェクトルート（ここで 
 | 予測のみ | `python -m kyotei_predictor.tools.prediction_tool --predict-date 2024-05-01 --data-dir kyotei_predictor/data/test_raw` |
 | 予測検証 | `python -m kyotei_predictor.tools.verify_predictions --prediction outputs/predictions_2024-05-01.json --data-dir kyotei_predictor/data/test_raw` |
 | Web | `python -m kyotei_predictor.app` |
-| レース前情報確認 | `py scripts/verify_pre_race_fetch.py` |
+| レース前情報確認 | `python scripts/verify_pre_race_fetch.py`（Windows では `py` でも可） |
 
 ※ いずれもプロジェクトルート（kyotei_Prediction/）で実行。
 
@@ -128,9 +128,8 @@ kyotei_Prediction/                    # プロジェクトルート（ここで 
 
 1. **README.md 文字化け**: ルート README が UTF-16 BOM 等の可能性。UTF-8（BOM なし）推奨。
 2. **REPO_STATUS_20250212.md**: バッチが「ルート直下」と書かれているが、現在は **scripts/** に集約済み（DIRECTORY_RESTRUCTURE_20250212 実施済み）。
-3. **未追跡ファイル**: 必要なら `docs/PREDICTION_ACCURACY_IMPROVEMENT_TODO.md`, `docs/PRE_RACE_FETCH_VERIFICATION.md`, `scripts/verify_pre_race_fetch.py` をコミット対象に。
-4. **outputs/**: 予測 JSON は .gitignore で無視するか、サンプルのみコミットするか方針を決めるとよい。
-5. **次の優先**: 深夜自動実行の開始、運用ルールの明文化、予測精度のベースライン計測（PREDICTION_ACCURACY_IMPROVEMENT_TODO フェーズ A）。
+3. **outputs/**: 予測 JSON の取り扱い（`.gitignore` で無視するか、サンプルのみ管理するか）を方針化するとよい。
+4. **次の優先**: 深夜自動実行の開始、運用ルールの明文化、予測精度のベースライン計測（PREDICTION_ACCURACY_IMPROVEMENT_TODO フェーズ A）。
 
 ---
 
