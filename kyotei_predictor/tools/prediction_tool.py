@@ -52,9 +52,10 @@ PROJECT_ROOT = Path(__file__).parent.parent.parent
 sys.path.append(str(PROJECT_ROOT))
 
 from stable_baselines3 import PPO
-from kyotei_predictor.pipelines.kyotei_env import vectorize_race_state, action_to_trifecta
+from kyotei_predictor.pipelines.kyotei_env import action_to_trifecta, vectorize_race_state
+from kyotei_predictor.pipelines.state_vector import build_race_state_vector, get_state_dim
 from metaboatrace.models.stadium import StadiumTelCode
-from kyotei_predictor.tools.fetch.race_data_fetcher import fetch_race_entry_data
+from kyotei_predictor.tools.fetch.race_data_fetcher import fetch_race_entry_data, fetch_pre_race_data
 from kyotei_predictor.tools.fetch.odds_fetcher import fetch_trifecta_odds
 from metaboatrace.scrapers.official.website.v1707.pages.monthly_schedule_page.location import create_monthly_schedule_page_url
 from metaboatrace.scrapers.official.website.v1707.pages.monthly_schedule_page.scraping import extract_events
@@ -266,16 +267,16 @@ class PredictionTool:
         return entries
     
     def _fetch_single_race_entry(self, target_date: date, stadium: StadiumTelCode, race_no: int) -> Optional[Dict]:
-        """単一レースの選手情報を取得"""
+        """単一レースのレース前データを取得（出走表＋直前情報。展示走後なら直前情報も含む）"""
         try:
-            entry_data = fetch_race_entry_data(target_date, stadium, race_no)
-            if entry_data:
-                return entry_data
+            pre_race_data = fetch_pre_race_data(target_date, stadium, race_no)
+            if pre_race_data:
+                return pre_race_data
             else:
-                self.logger.warning(f"選手情報取得失敗: {stadium.name} R{race_no}")
+                self.logger.warning(f"レース前データ取得失敗: {stadium.name} R{race_no}")
                 return None
         except Exception as e:
-            self.logger.error(f"選手情報取得エラー {stadium.name} R{race_no}: {e}")
+            self.logger.error(f"レース前データ取得エラー {stadium.name} R{race_no}: {e}")
             return None
     
     def fetch_today_odds(self, target_date: Optional[str] = None, venues: Optional[List[str]] = None) -> Dict[str, Dict]:
@@ -1104,91 +1105,14 @@ class PredictionTool:
             return []
     
     def vectorize_race_state_from_data(self, race_data: Dict, odds_data: Dict) -> List[float]:
-        """新規データから状態ベクトルを生成（192次元）"""
+        """新規データから状態ベクトルを生成（共通モジュール・オッズは状態に含めない）"""
         try:
-            # 1. 各艇ごとの特徴量ベクトル（6艇 × 8特徴量 = 48次元）
-            rating_map = {'A1': [1,0,0,0], 'A2': [0,1,0,0], 'B1': [0,0,1,0], 'B2': [0,0,0,1]}
-            boats = []
-            
-            entries = race_data.get('race_entries', [])
-            for entry in entries:
-                pit = (entry['pit_number'] - 1) / 5  # 1-6→0-1
-                rating = rating_map.get(entry['racer']['current_rating'], [0,0,0,0])
-                
-                # None/NaNチェックとfillna(0)を追加
-                perf_all = entry['performance']['rate_in_all_stadium'] / 10 if entry['performance']['rate_in_all_stadium'] is not None else 0
-                perf_local = entry['performance']['rate_in_event_going_stadium'] / 10 if entry['performance']['rate_in_event_going_stadium'] is not None else 0
-                boat2 = entry['boat']['quinella_rate'] / 100 if entry['boat']['quinella_rate'] is not None else 0
-                boat3 = entry['boat']['trio_rate'] / 100 if entry['boat']['trio_rate'] is not None else 0
-                motor2 = entry['motor']['quinella_rate'] / 100 if entry['motor']['quinella_rate'] is not None else 0
-                motor3 = entry['motor']['trio_rate'] / 100 if entry['motor']['trio_rate'] is not None else 0
-                
-                # 正確に8次元のベクトルを作成
-                vec = [pit] + rating + [perf_all, perf_local, boat2, boat3, motor2, motor3]
-                # 次元チェック
-                if len(vec) != 8:
-                    self.logger.warning(f"艇特徴量次元エラー: {len(vec)} != 8, 艇{entry['pit_number']}")
-                    # 強制的に8次元に調整
-                    if len(vec) > 8:
-                        vec = vec[:8]
-                    else:
-                        vec = vec + [0.0] * (8 - len(vec))
-                boats.append(vec)
-            
-            # 6艇分のデータを確保（不足分はゼロで補完）
-            while len(boats) < 6:
-                boats.append([0.0] * 8)
-            boats = boats[:6]  # 最大6艇まで
-            boats = np.array(boats).flatten()  # shape: (48,)
-            self.logger.debug(f"boats次元: {len(boats)}")
-
-            # 2. レース全体特徴量（9次元に削減）
-            stadiums = ['KIRYU','TODA','EDOGAWA','HEIWAJIMA','TAMAGAWA','HAMANAKO','GAMAGORI','TOKONAME','TSU','MIKUNI','BIWAKO','SUMINOE','AMAGASAKI','NARUTO','MARUGAME','KOJIMA','MIYAJIMA','TOKUYAMA','SHIMONOSEKI','WAKAMATSU','ASHIYA','FUKUOKA','KARATSU','OMURA']
-            stadium_onehot = [1 if race_data['race_info']['stadium']==s else 0 for s in stadiums[:9]]  # 9会場のみ使用
-            race_num = (race_data['race_info']['race_number']-1)/11
-            laps = (race_data['race_info']['number_of_laps']-1)/4 if 'number_of_laps' in race_data['race_info'] and race_data['race_info']['number_of_laps'] is not None else 0
-            is_fixed = 1 if race_data['race_info'].get('is_course_fixed') else 0
-            race_feat = stadium_onehot + [race_num, laps, is_fixed]  # 9 + 3 = 12次元
-            self.logger.debug(f"race_feat次元: {len(race_feat)}")
-
-            # 3. オッズ特徴量（3連単120通り, log+minmax）
-            trifecta_list = list(permutations(range(1,7), 3))  # 1-indexed
-            odds_map = {tuple(o['betting_numbers']): o['ratio'] for o in odds_data.get('odds_data', [])}
-            odds_vec = [np.log(odds_map.get(t, 1)+1) for t in trifecta_list]  # log(odds+1)
-            # None/NaNチェックを追加
-            odds_vec = [o if o is not None and not np.isnan(o) else 0 for o in odds_vec]
-            odds_min, odds_max = min(odds_vec), max(odds_vec)
-            # ゼロ除算を防ぐ
-            if odds_max > odds_min:
-                odds_vec = [(o-odds_min)/(odds_max-odds_min) for o in odds_vec]
-            else:
-                odds_vec = [0 for o in odds_vec]
-            self.logger.debug(f"odds_vec次元: {len(odds_vec)}")
-
-            # 4. 結合（正確に192次元に調整）
-            # boats: 48次元, race_feat: 12次元, odds_vec: 120次元
-            # 合計: 48 + 12 + 120 = 180次元 → 192次元に調整
-            state_vec = np.concatenate([boats, race_feat, odds_vec])  # 48 + 12 + 120 = 180次元
-            self.logger.debug(f"結合後次元: {len(state_vec)}")
-            # 残り12次元をゼロで補完
-            state_vec = np.concatenate([state_vec, [0.0] * 12])
-            self.logger.debug(f"ゼロパディング後次元: {len(state_vec)}")
-            
-            # 次元チェック
-            if len(state_vec) != 192:
-                self.logger.error(f"状態ベクトル次元エラー: {len(state_vec)} != 192")
-                # 強制的に192次元に調整
-                if len(state_vec) > 192:
-                    state_vec = state_vec[:192]
-                else:
-                    state_vec = np.concatenate([state_vec, [0.0] * (192 - len(state_vec))])
-            
-            return state_vec.tolist()
-            
+            state = build_race_state_vector(race_data, None)
+            self.logger.debug(f"状態ベクトル次元: {len(state)}")
+            return state.tolist()
         except Exception as e:
             self.logger.error(f"状態ベクトル生成エラー: {e}")
-            # エラー時は192次元のゼロベクトルを返す
-            return [0.0] * 192
+            return [0.0] * get_state_dim()
     
     def calculate_expected_value_from_data(self, trifecta: Tuple[int, int, int], odds_data: Dict) -> float:
         """新規データから期待値を計算"""

@@ -9,6 +9,8 @@
 - [README.md](../README.md) - プロジェクトの概要とクイックスタート
 - **[PROJECT_LAYOUT.md](PROJECT_LAYOUT.md)** - **ディレクトリ構成・エントリポイント・新規コードの置き場所**
 - **[LEARNING_AND_PREDICTION_STATUS.md](LEARNING_AND_PREDICTION_STATUS.md)** - **学習・予想を動かすための現状と手順**
+- **[LEARNING_INPUT_OUTPUT.md](LEARNING_INPUT_OUTPUT.md)** - **学習のインプットとアウトプットの整理**
+- **[ODDS_AND_STATE_DESIGN.md](ODDS_AND_STATE_DESIGN.md)** - **オッズの扱い（回収率専用）と状態定義の共通化**
 - [LEARNING_PREDICTION_CYCLE_IMPROVEMENTS.md](LEARNING_PREDICTION_CYCLE_IMPROVEMENTS.md) - 学習→予測サイクル実施結果と改善点一覧
 - [guides/batch_usage.md](guides/batch_usage.md) - バッチの使い方（scripts/）
 - [guides/optimization_script.md](guides/optimization_script.md) - 最適化スクリプト
@@ -25,16 +27,21 @@
 
 - [CURRENT_STATUS_SUMMARY.md](CURRENT_STATUS_SUMMARY.md) - 現在の状況サマリー
 - [REPO_STATUS_20250212.md](REPO_STATUS_20250212.md) - リポジトリ現状サマリー（2025-02-12）
+- **[CURRENT_REPO_STATUS_20250212.md](CURRENT_REPO_STATUS_20250212.md)** - **現状整理（構成・機能・Git・実行入口・注意点）**
 - [DEEP_CLEANUP_REPORT_20250212.md](DEEP_CLEANUP_REPORT_20250212.md) - ソース深堀り整理レポート（2025-02-12）
 - [REFACTORING_REPORT_20250212.md](REFACTORING_REPORT_20250212.md) - リファクタリング・整理レポート（2025-02-12）
 - [improvement_implementation_summary.md](improvement_implementation_summary.md) - 改善策の実装状況
 - [test_results_summary.md](test_results_summary.md) - テスト結果の詳細
 - [monthly_learning_guide.md](monthly_learning_guide.md) - 月次学習ガイド
 
+- [RACE_DATA_ACQUISITION_AND_SOURCES.md](RACE_DATA_ACQUISITION_AND_SOURCES.md) - レースデータ取得処理・参照サイト・取得/必要データの洗い出し
+- **[SITE_DATA_AND_FETCH_STATUS.md](SITE_DATA_AND_FETCH_STATUS.md)** - **サイトで取得できるデータ一覧と現状の取得状況（レース前予測前提）**
+
 ## 🔧 設定・運用
 
 - [config_usage_guide.md](config_usage_guide.md) - 設定ファイルの使用方法
 - [trifecta_improvement_strategy.md](trifecta_improvement_strategy.md) - 3連単的中率改善戦略
+- **[PREDICTION_ACCURACY_IMPROVEMENT_TODO.md](PREDICTION_ACCURACY_IMPROVEMENT_TODO.md)** - **予測精度向上のやること整理**（優先度・フェーズ別）
 
 ## 🌐 Web表示・UI
 

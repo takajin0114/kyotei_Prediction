@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """
-オッズ取得ツール
+オッズ取得ツール（3連単のみ。2連単・2連複・3連複は取得できないため使用しない）
 """
 
+import argparse
 import os
 import sys
 import json
@@ -10,6 +11,7 @@ import requests
 import time
 from datetime import date
 from io import StringIO
+
 from metaboatrace.models.stadium import StadiumTelCode
 from metaboatrace.scrapers.official.website.v1707.pages.race.odds.trifecta_page import location, scraping
 

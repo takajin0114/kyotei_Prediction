@@ -1,6 +1,7 @@
 # レースデータ取得の処理とデータソース整理
 
 **目的**: レースデータ取得処理の流れ、実際に参照しているサイト、取得できているデータ・必要なデータを洗い出す。  
+**前提**: 最終的には**レース前に取得できる情報**を使って予測する。サイトで取得可能なデータの一覧は [SITE_DATA_AND_FETCH_STATUS.md](SITE_DATA_AND_FETCH_STATUS.md) を参照。  
 **最終更新**: 2025-02-12
 
 ---
@@ -48,6 +49,7 @@
 | 統合 | 同上 | `fetch_complete_race_data(...)` | 上記2つを実行し `{ ...entry_data, ...result_data }` でマージ |
 | 3連単オッズ | `tools/fetch/odds_fetcher.py` | `fetch_trifecta_odds(race_date, stadium_code, race_number)` | オッズURL取得 → 120通り分の combination / ratio を返す |
 | 直前情報 | `tools/fetch/race_data_fetcher.py` | `fetch_before_information(race_date, stadium_code, race_number)` | 直前情報URL取得 → スタート展示・周回展示・選手コンディション・艇設定・天候（展示走実施後のみ取得可） |
+| **レース前統合** | 同上 | **`fetch_pre_race_data(race_date, stadium_code, race_number)`** | 出走表＋直前情報をマージ。展示走前は出走表のみ。**予測ツールの本番取得で使用**。 |
 
 - レート制限: 各リクエスト後に `time.sleep(5)`（race_data_fetcher）/ `time.sleep(5)`（odds_fetcher）。  
 - バッチでは `batch_fetch_all_venues.py` 内で 1 秒間隔等に短縮可能。
@@ -188,7 +190,7 @@
 3. **運用**: 公式の **利用規約・アクセス頻度** を確認し、レート制限（現状 5 秒/1 秒）を守る。  
 4. **公式一括DL**: 大量の過去データが必要な場合は、https://www.boatrace.jp/owpc/pc/extra/data/download.html の CSV/LZH と現行 JSON の役割分担を検討する。  
 5. **進入コース別・オッズ変動**: 進入コース別は公式「レース場データ」ページ要確認。オッズ変動は締切時のみ取得のため、変動履歴は自前で複数時刻取得・蓄積が必要。  
-6. **レース前情報**: 本番予測では**出走表＋3連単オッズ**で予測可能。**直前情報**（`fetch_before_information`）は展示走実施後に取得でき、スタート展示ST・展示タイム等を追加特徴量にできる（現状は未組み込み。必要に応じて `vectorize_race_state` 等で利用を検討）。
+6. **レース前情報**: 本番予測では**出走表＋3連単オッズ**で予測可能。**直前情報**（`fetch_before_information`）は展示走実施後に取得でき、スタート展示ST・展示タイム等を追加特徴量にできる（現状の状態ベクトルには未組み込み。必要に応じて `vectorize_race_state` 等で利用を検討）。**`fetch_pre_race_data`** で出走表と直前情報を統合取得し、予測ツール（`prediction_tool`）の本番取得ではこの関数を使用してレース前に取得できる情報をまとめて利用している。
 
 ---
 

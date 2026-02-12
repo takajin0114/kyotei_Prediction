@@ -16,11 +16,14 @@ from kyotei_predictor.pipelines.kyotei_env import (
     vectorize_race_state,
     action_to_trifecta,
 )
+from kyotei_predictor.pipelines.state_vector import build_race_state_vector, get_state_dim
 from kyotei_predictor.pipelines.trifecta_probability import TrifectaProbabilityCalculator
 
 __all__ = [
     "KyoteiEnvManager",
     "vectorize_race_state",
     "action_to_trifecta",
+    "build_race_state_vector",
+    "get_state_dim",
     "TrifectaProbabilityCalculator",
 ]

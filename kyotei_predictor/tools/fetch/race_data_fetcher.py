@@ -642,6 +642,49 @@ def fetch_before_information(
         return None
 
 
+def fetch_pre_race_data(
+    race_date: date,
+    stadium_code: StadiumTelCode,
+    race_number: int,
+) -> dict[str, Any] | None:
+    """
+    レース前に取得できる情報を統合して返す。
+    出走表は必須。直前情報は展示走実施後のみ取得可能で、取得できた場合にマージする。
+
+    Args:
+        race_date: レース開催日
+        stadium_code: 競艇場コード
+        race_number: レース番号
+
+    Returns:
+        出走表 + 直前情報（取得時のみ）をマージした辞書。
+        出走表が取得できない場合は None。
+    """
+    safe_print(f"レース前データ取得: {race_date} {stadium_code.name} 第{race_number}レース")
+    entry_data = fetch_race_entry_data(race_date, stadium_code, race_number)
+    if not entry_data:
+        return None
+    before_info = fetch_before_information(race_date, stadium_code, race_number)
+    if before_info:
+        # 直前情報の項目のみマージ（race_info は出走表のものを維持）
+        entry_data = dict(entry_data)
+        entry_data["start_exhibition"] = before_info.get("start_exhibition", [])
+        entry_data["circumference_exhibition"] = before_info.get("circumference_exhibition", [])
+        entry_data["racer_conditions"] = before_info.get("racer_conditions", [])
+        entry_data["boat_settings"] = before_info.get("boat_settings", [])
+        if before_info.get("weather_condition") is not None:
+            entry_data["weather_condition"] = before_info["weather_condition"]
+        safe_print("レース前データ取得完了（出走表＋直前情報）")
+    else:
+        entry_data = dict(entry_data)
+        entry_data.setdefault("start_exhibition", [])
+        entry_data.setdefault("circumference_exhibition", [])
+        entry_data.setdefault("racer_conditions", [])
+        entry_data.setdefault("boat_settings", [])
+        safe_print("レース前データ取得完了（出走表のみ。直前情報は未公開）")
+    return entry_data
+
+
 def fetch_complete_race_data(
     race_date: date,
     stadium_code: StadiumTelCode,

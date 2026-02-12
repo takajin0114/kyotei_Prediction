@@ -151,6 +151,8 @@ complete_race_data_*.json
 !kyotei_predictor/optuna_results/README.md
 
 # ルートディレクトリの除外
+# 予測結果・出力
+outputs/
 # 学習結果・モデルファイル
 optuna_logs/
 optuna_models/

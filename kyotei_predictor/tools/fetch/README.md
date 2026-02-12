@@ -64,7 +64,7 @@ python race_data_fetcher.py --date 2024-07-01 --stadium KIRYU --race 1
 ## 📁 ファイル構成
 
 - `race_data_fetcher.py` - レースデータ取得（出走表・結果・条件等）
-- `odds_fetcher.py` - オッズデータ取得（3連単・3連複等）
+- `odds_fetcher.py` - オッズデータ取得（3連単のみ。2連単・2連複・3連複は取得できないため使用しない）
 - `fetch_new_race.py` - 新規レース取得（統合ツール）
 
 ## 🚀 使用方法

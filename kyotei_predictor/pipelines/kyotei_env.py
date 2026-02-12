@@ -10,6 +10,9 @@ import os
 import logging
 from pathlib import Path
 
+# 共通状態ベクトル（オッズは状態に含めない）
+from kyotei_predictor.pipelines.state_vector import build_race_state_vector, get_state_dim
+
 # 設定管理クラスをインポート
 try:
     from ..config.improvement_config_manager import ImprovementConfigManager
@@ -40,7 +43,7 @@ class KyoteiEnv(gym.Env):
         self.race_data_path = race_data_path
         self.odds_data_path = odds_data_path
         self.bet_amount = bet_amount
-        self.observation_space = gym.spaces.Box(low=0, high=1, shape=(192,), dtype=np.float32)
+        self.observation_space = gym.spaces.Box(low=0, high=1, shape=(get_state_dim(),), dtype=np.float32)
         self.action_space = gym.spaces.Discrete(120)
         self.state = None
         self.terminated = False
@@ -69,7 +72,8 @@ class KyoteiEnv(gym.Env):
             print(f"[KyoteiEnv.reset] Skipping race with invalid arrival_tuple: {self.arrival_tuple}")
             logging.warning(f"Skipping race with invalid arrival_tuple: {self.arrival_tuple}")
             raise ValueError(f"Invalid arrival_tuple: {self.arrival_tuple}, length: {len(self.arrival_tuple)}")
-        self.state = vectorize_race_state(self.race_data_path, self.odds_data_path)
+        # 状態は出走表＋レース情報のみ（オッズは含めない）。報酬計算では self.odds_data を使用
+        self.state = build_race_state_vector(race, None)
         self.terminated = False
         info = {}
         print(f"[KyoteiEnv.reset] state shape={self.state.shape if hasattr(self.state, 'shape') else type(self.state)}")
@@ -90,76 +94,15 @@ class KyoteiEnv(gym.Env):
     def close(self) -> None:
         pass
 
-# --- サンプル: 1レース分の状態ベクトル生成関数 ---
+# --- 状態ベクトル生成（共通モジュール利用・オッズは状態に含めない） ---
 def vectorize_race_state(race_data_path: str, odds_data_path: str) -> np.ndarray:
     """
-    race_data/odds_dataのjsonから状態ベクトルを生成するサンプル関数。
-    特徴量・前処理はrepo.mdの方針に従う。
+    ファイルパスから状態ベクトルを生成する。状態にはオッズを含めない。
+    odds_data_path は互換用に受け取るが、状態の計算では使用しない。
     """
-    # 1. データ読み込み
     with open(race_data_path, encoding='utf-8') as f:
         race = json.load(f)
-    with open(odds_data_path, encoding='utf-8') as f:
-        odds = json.load(f)
-
-    # 2. 各艇ごとの特徴量ベクトル
-    rating_map = {'A1': [1,0,0,0], 'A2': [0,1,0,0], 'B1': [0,0,1,0], 'B2': [0,0,0,1]}
-    boats = []
-    
-    # race_entriesがある場合はそれを使用、ない場合はrace_recordsから基本情報を構築
-    if 'race_entries' in race:
-        entries = race['race_entries']
-    else:
-        # race_recordsから基本情報を構築（エントリーデータがない場合のフォールバック）
-        entries = []
-        for record in race['race_records']:
-            entry = {
-                'pit_number': record['pit_number'],
-                'racer': {'current_rating': 'B1'},  # デフォルト
-                'performance': {'rate_in_all_stadium': 5.0, 'rate_in_event_going_stadium': 5.0},  # デフォルト
-                'boat': {'quinella_rate': 50.0, 'trio_rate': 50.0},  # デフォルト
-                'motor': {'quinella_rate': 50.0, 'trio_rate': 50.0}  # デフォルト
-            }
-            entries.append(entry)
-    
-    for entry in entries:
-        pit = (entry['pit_number'] - 1) / 5  # 1-6→0-1
-        rating = rating_map.get(entry['racer']['current_rating'], [0,0,0,0])
-        # None/NaNチェックとfillna(0)を追加
-        perf_all = entry['performance']['rate_in_all_stadium'] / 10 if entry['performance']['rate_in_all_stadium'] is not None else 0
-        perf_local = entry['performance']['rate_in_event_going_stadium'] / 10 if entry['performance']['rate_in_event_going_stadium'] is not None else 0
-        boat2 = entry['boat']['quinella_rate'] / 100 if entry['boat']['quinella_rate'] is not None else 0
-        boat3 = entry['boat']['trio_rate'] / 100 if entry['boat']['trio_rate'] is not None else 0
-        motor2 = entry['motor']['quinella_rate'] / 100 if entry['motor']['quinella_rate'] is not None else 0
-        motor3 = entry['motor']['trio_rate'] / 100 if entry['motor']['trio_rate'] is not None else 0
-        vec = [pit] + rating + [perf_all, perf_local, boat2, boat3, motor2, motor3]
-        boats.append(vec)
-    boats = np.array(boats)  # shape: (6, 特徴量数)
-
-    # 3. レース全体特徴量
-    stadiums = ['KIRYU','TODA','EDOGAWA']  # 必要に応じて拡張
-    stadium_onehot = [1 if race['race_info']['stadium']==s else 0 for s in stadiums]
-    race_num = (race['race_info']['race_number']-1)/11
-    laps = (race['race_info']['number_of_laps']-1)/4 if 'number_of_laps' in race['race_info'] and race['race_info']['number_of_laps'] is not None else 0
-    is_fixed = 1 if race['race_info'].get('is_course_fixed') else 0
-    race_feat = stadium_onehot + [race_num, laps, is_fixed]
-
-    # 4. オッズ特徴量（3連単120通り, log+minmax）
-    trifecta_list = list(permutations(range(1,7), 3))  # 1-indexed
-    odds_map = {tuple(o['betting_numbers']): o['ratio'] for o in odds['odds_data']}
-    odds_vec = [np.log(odds_map.get(t, 1)+1) for t in trifecta_list]  # log(odds+1)
-    # None/NaNチェックを追加
-    odds_vec = [o if o is not None and not np.isnan(o) else 0 for o in odds_vec]
-    odds_min, odds_max = min(odds_vec), max(odds_vec)
-    # ゼロ除算を防ぐ
-    if odds_max > odds_min:
-        odds_vec = [(o-odds_min)/(odds_max-odds_min) for o in odds_vec]
-    else:
-        odds_vec = [0 for o in odds_vec]
-
-    # 5. 結合
-    state_vec = np.concatenate([boats.flatten(), race_feat, odds_vec])
-    return state_vec 
+    return build_race_state_vector(race, None) 
 
 # --- 3連単actionと買い目の相互変換関数 ---
 TRIFECTA_LIST = list(permutations(range(1,7), 3))  # 1-indexed, 120通り
@@ -538,4 +481,4 @@ class KyoteiEnvManager(gym.Env):
         if self.env is not None:
             return self.env.observation_space
         # デフォルトのobservation_spaceを返す（初期化前）
-        return gym.spaces.Box(low=0, high=1, shape=(192,), dtype=np.float32) 
+        return gym.spaces.Box(low=0, high=1, shape=(get_state_dim(),), dtype=np.float32) 
