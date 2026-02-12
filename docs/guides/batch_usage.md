@@ -1,10 +1,10 @@
-# 統合バッチファイル使用ガイド
+# 統合実行スクリプト使用ガイド
 
 ## 概要
 
-競艇予測最適化の統合バッチの使い方です。バッチは **`scripts/`** にまとまっています。実行時はプロジェクトルートに自動で移動します。
+競艇予測最適化の統合実行スクリプトの使い方です。スクリプトは **`scripts/`** にまとまっています。実行時はプロジェクトルートに自動で移動します。
 
-## 利用可能なバッチ（scripts/）
+## 利用可能なスクリプト（scripts/）
 
 | ファイル | 説明 |
 |----------|------|
@@ -12,6 +12,7 @@
 | **run_optimization_batch.bat** | 中速モード・20試行で即実行 |
 | **run_optimization_simple.bat** | 簡易版・設定ファイル読み込み |
 | **run_learning_prediction_cycle.bat** | 学習→予測を一括（test_raw） |
+| **run_learning_prediction_cycle.sh** | 学習→予測を一括（test_raw, Linux/macOS向け） |
 | **cleanup_old_files.bat** | 古いログ・Optuna ファイルの削除 |
 
 ## 実行方法
@@ -21,6 +22,9 @@
 scripts\run_optimization_config.bat
 scripts\run_learning_prediction_cycle.bat
 scripts\cleanup_old_files.bat
+
+# Linux / macOS
+./scripts/run_learning_prediction_cycle.sh
 
 # または scripts フォルダ内でダブルクリック
 ```
@@ -39,6 +43,12 @@ scripts\cleanup_old_files.bat
 
 ## トラブルシューティング
 
-- 仮想環境がない場合: バッチが `venv` を自動作成します
-- 依存不足: `pip install -r requirements.txt` をバッチが実行します
-- 設定: ルートの `optimization_config.ini` を編集してください
+- `run_learning_prediction_cycle.sh` は `VENV_PATH`（既定: `.venv`）を自動で探して有効化します。存在しない場合はシステム Python を使用します。
+- 依存不足の場合は事前に `pip install -r requirements.txt` を実行してください。
+- `.bat` 系の設定はルートの `optimization_config.ini` を編集してください。
+
+### Linux/macOS 向け `.sh` の上書き例
+
+```bash
+VENV_PATH=.venv-cycle YEAR_MONTH=2024-05 PREDICT_DATE=2024-05-01 ./scripts/run_learning_prediction_cycle.sh
+```
