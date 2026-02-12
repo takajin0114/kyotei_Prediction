@@ -27,7 +27,12 @@
 
 `git branch -r --merged main` で main に完全にマージされているリモートブランチを確認し、上記 2 本のみ削除しました。
 
-**残しているリモートブランチ**（いずれも `main..origin/<branch>` にコミットあり＝未マージ）  
-docs-cleanup, docs/api-tasks-update-20240625, docs/update-20250703, docs/update-repo-md-20250626, feature/add-data-acquisition-docs, feature/algorithm-docs-b123, feature/api-caching, feature/api-endpoints-refactor, feature/api-error-handling-refactor, feature/b1-trifecta-extensions, feature/batch-data-fetcher-docs, feature/batch-system-improvements, feature/docs-update-20250627, feature/investment-value-trifecta, feature/next-steps-update, feature/optimization-batch-fix-and-docs-cleanup, feature/phase3-complete, feature/prediction-tool-e2e-test-and-doc-update, feature/refactoring-phase1-4, feature/refactoring-phase1-4-clean, feature/repository-cleanup-and-optimization, feature/repository-cleanup-and-optimization-new, feature/repository-refactoring, feature/rl-ppo-sample, feature/rl-roadmap-update, feature/rl-state-action-vectorization, feature/statistics-b5, feature/update-roadmap-v2, fix/conditional-learn-dir-support, refactor/dir-structure-20250704, web-display-implementation
+---
 
-これらは main に未マージのコミットを含むため、意図的に削除していません。不要と判断したブランチは、マージ or 破棄を決めたうえで `git push origin --delete <branch>` で削除してください。
+## 第三回：不要ブランチの一括削除
+
+ユーザー指示に基づき、上記で「残している」としていた未マージのリモートブランチを**すべて削除**しました（34 本）。
+
+削除したブランチ: docs-cleanup, docs/api-tasks-update-20240625, docs/update-20250703, docs/update-repo-md-20250626, feature/add-data-acquisition-docs, feature/algorithm-docs-b123, feature/api-caching, feature/api-endpoints-refactor, feature/api-error-handling-refactor, feature/b1-trifecta-extensions, feature/batch-data-fetcher-docs, feature/batch-system-improvements, feature/docs-update-20250627, feature/investment-value-trifecta, feature/next-steps-update, feature/optimization-batch-fix-and-docs-cleanup, feature/phase3-complete, feature/prediction-tool-e2e-test-and-doc-update, feature/refactoring-phase1-4, feature/refactoring-phase1-4-clean, feature/repository-cleanup-and-optimization, feature/repository-cleanup-and-optimization-new, feature/repository-refactoring, feature/rl-ppo-sample, feature/rl-roadmap-update, feature/rl-state-action-vectorization, feature/statistics-b5, feature/update-roadmap-v2, fix/conditional-learn-dir-support, refactor/dir-structure-20250704, web-display-implementation
+
+**現在のリモート**: `origin/main` のみ（origin/HEAD → origin/main）。
