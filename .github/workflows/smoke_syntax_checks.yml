@@ -1,0 +1,36 @@
+name: Smoke Syntax Checks
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Check syntax of critical Python entrypoints
+        run: |
+          python -m py_compile \
+            kyotei_predictor/tools/optimization/optimize_graduated_reward.py \
+            kyotei_predictor/tools/prediction_tool.py \
+            scripts/verify_pre_race_fetch.py
+
+      - name: Compile key modules
+        run: |
+          python -m compileall -q \
+            kyotei_predictor/tools \
+            kyotei_predictor/pipelines \
+            kyotei_predictor/utils
+
+      - name: Check Linux cycle script syntax
+        run: |
+          bash -n scripts/run_learning_prediction_cycle.sh
