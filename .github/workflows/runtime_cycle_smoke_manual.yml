@@ -1,0 +1,76 @@
+name: Runtime Cycle Smoke (Manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      year_month:
+        description: "Training data month filter (YYYY-MM)"
+        required: true
+        default: "2024-05"
+      predict_date:
+        description: "Prediction date (YYYY-MM-DD)"
+        required: true
+        default: "2024-05-01"
+      data_dir:
+        description: "Race/Odds data directory"
+        required: true
+        default: "kyotei_predictor/data/test_raw"
+
+jobs:
+  runtime-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository (with LFS)
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Ensure git-lfs and download LFS objects
+        run: |
+          git lfs version || (sudo apt-get update && sudo apt-get install -y git-lfs)
+          git lfs install
+          git lfs pull
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run minimal learning
+        run: |
+          python -m kyotei_predictor.tools.optimization.optimize_graduated_reward \
+            --data-dir "${{ inputs.data_dir }}" \
+            --year-month "${{ inputs.year_month }}" \
+            --minimal \
+            --n-trials 1
+
+      - name: Run prediction
+        run: |
+          python -m kyotei_predictor.tools.prediction_tool \
+            --predict-date "${{ inputs.predict_date }}" \
+            --data-dir "${{ inputs.data_dir }}"
+
+      - name: Verify prediction artifact
+        run: |
+          test -f "outputs/predictions_${{ inputs.predict_date }}.json"
+
+      - name: Upload smoke run artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: runtime-cycle-smoke-artifacts
+          if-no-files-found: warn
+          path: |
+            outputs/predictions_*.json
+            optuna_results/*.json
+            optuna_logs/**/*
