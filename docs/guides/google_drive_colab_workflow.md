@@ -29,6 +29,14 @@ python -m kyotei_predictor.tools.storage.drive_data_sync \
 
 ## 2) Colabで学習/予測
 
+### テンプレートノートブック
+
+リポジトリにはそのまま実行できる Colab テンプレートを用意しています。
+
+- `colab_drive_learning_cycle_template.ipynb`
+
+ノートブックを Colab で開き、上から順に実行してください。
+
 ### 事前準備（Colabセル）
 
 ```python
