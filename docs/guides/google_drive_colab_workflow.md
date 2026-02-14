@@ -38,6 +38,13 @@ python -m kyotei_predictor.tools.storage.drive_data_sync \
 
 ノートブックを Colab で開き、上から順に実行してください。
 
+GPU向けテンプレートでは、パラメータセルでプリセットを切り替えられます。
+
+- `quick_check`: 短時間の疎通確認（`--minimal` 相当）
+- `night_train`: 夜間の長時間学習向け（試行回数を増加）
+
+`PROFILE_NAME` を変更するだけで主要設定（試行回数/最小モード/取得期間）が切り替わります。
+
 ### 事前準備（Colabセル）
 
 ```python
