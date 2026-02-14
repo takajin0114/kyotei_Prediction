@@ -265,7 +265,13 @@ def _to_float(value: str | None) -> float | None:
     """文字列を安全に float へ変換"""
     if value is None:
         return None
-    text = value.strip().replace(",", "")
+    z2h = str.maketrans({
+        "０": "0", "１": "1", "２": "2", "３": "3", "４": "4",
+        "５": "5", "６": "6", "７": "7", "８": "8", "９": "9",
+        "．": ".", "，": ",", "−": "-", "－": "-", "ー": "-",
+        "＋": "+", "　": " ",
+    })
+    text = value.translate(z2h).strip().replace(",", "")
     if not text or text in {"-", "—", "―"}:
         return None
     try:
@@ -278,11 +284,36 @@ def _to_int(value: str | None) -> int | None:
     """文字列を安全に int へ変換"""
     if value is None:
         return None
-    text = value.strip().replace(",", "")
+    z2h = str.maketrans({
+        "０": "0", "１": "1", "２": "2", "３": "3", "４": "4",
+        "５": "5", "６": "6", "７": "7", "８": "8", "９": "9",
+        "．": ".", "，": ",", "−": "-", "－": "-", "ー": "-",
+        "＋": "+", "　": " ",
+    })
+    text = value.translate(z2h).strip().replace(",", "")
     if not text or text in {"-", "—", "―"}:
         return None
     try:
         return int(text)
+    except Exception:
+        return None
+
+
+def _extract_first_int(value: str | None) -> int | None:
+    """文字列内の先頭整数を抽出（例: '11R' -> 11, '３' -> 3）"""
+    if value is None:
+        return None
+    z2h = str.maketrans({
+        "０": "0", "１": "1", "２": "2", "３": "3", "４": "4",
+        "５": "5", "６": "6", "７": "7", "８": "8", "９": "9",
+        "　": " ",
+    })
+    text = value.translate(z2h)
+    m = re.search(r"\d+", text)
+    if not m:
+        return None
+    try:
+        return int(m.group(0))
     except Exception:
         return None
 
@@ -352,14 +383,31 @@ def _extract_extended_entry_stats(html_text: str) -> dict[int, dict[str, Any]]:
         if not rows:
             rows = target_table.select("tbody tr")
 
-        for row in rows:
+        # 今節成績の列ヘッダ（slotごとの日ラベル）を展開
+        series_day_labels: list[str | None] = []
+        header_rows = target_table.select("thead tr")
+        if header_rows:
+            last_header_cells = header_rows[-1].find_all("th", recursive=False)
+            for cell in last_header_cells:
+                label = cell.get_text(" ", strip=True) or None
+                try:
+                    span = int(cell.get("colspan") or 1)
+                except Exception:
+                    span = 1
+                series_day_labels.extend([label] * max(span, 1))
+
+        row_index = 0
+        while row_index < len(rows):
+            row = rows[row_index]
             tds = row.find_all("td", recursive=False)
             # 各艇の先頭行は rowspan=4 になっている
             if len(tds) < 8 or tds[0].get("rowspan") != "4":
+                row_index += 1
                 continue
 
             pit_number = _to_int(tds[0].get_text(strip=True))
             if pit_number is None:
+                row_index += 1
                 continue
 
             # 3番目セル: 登録番号/級別, 氏名, 支部/出身地, 年齢/体重
@@ -414,6 +462,52 @@ def _extract_extended_entry_stats(html_text: str) -> dict[int, dict[str, Any]]:
             motor_no, motor_q, motor_t = _parse_number_and_rates(_extract_text_lines(tds[6]))
             boat_no, boat_q, boat_t = _parse_number_and_rates(_extract_text_lines(tds[7]))
 
+            # 今節成績（4行ブロック）
+            race_no_cells = tds[9:23] if len(tds) >= 23 else []
+            course_cells = rows[row_index + 1].find_all("td", recursive=False) if row_index + 1 < len(rows) else []
+            start_cells = rows[row_index + 2].find_all("td", recursive=False) if row_index + 2 < len(rows) else []
+            arrival_cells = rows[row_index + 3].find_all("td", recursive=False) if row_index + 3 < len(rows) else []
+
+            next_race_number = _extract_first_int(_extract_text_lines(tds[23])[0]) if len(tds) > 23 and _extract_text_lines(tds[23]) else None
+
+            slot_count = max(len(race_no_cells), len(course_cells), len(start_cells), len(arrival_cells))
+            current_series_records: list[dict[str, Any]] = []
+            for slot in range(slot_count):
+                race_td = race_no_cells[slot] if slot < len(race_no_cells) else None
+                course_td = course_cells[slot] if slot < len(course_cells) else None
+                start_td = start_cells[slot] if slot < len(start_cells) else None
+                arrival_td = arrival_cells[slot] if slot < len(arrival_cells) else None
+
+                race_text = race_td.get_text(" ", strip=True) if race_td is not None else ""
+                course_text = course_td.get_text(" ", strip=True) if course_td is not None else ""
+                start_text = start_td.get_text(" ", strip=True) if start_td is not None else ""
+                arrival_text = arrival_td.get_text(" ", strip=True) if arrival_td is not None else ""
+
+                if not any([race_text, course_text, start_text, arrival_text]):
+                    continue
+
+                race_classes = race_td.get("class", []) if race_td is not None else []
+                frame_number = None
+                for cls in race_classes:
+                    if cls.startswith("is-boatColor"):
+                        frame_number = _extract_first_int(cls.replace("is-boatColor", ""))
+                        break
+
+                day_label = series_day_labels[slot] if slot < len(series_day_labels) else None
+                current_series_records.append({
+                    "slot_index": slot + 1,
+                    "day_label": day_label,
+                    "race_number": _extract_first_int(race_text),
+                    "frame_number": frame_number,
+                    "start_course": _to_int(course_text),
+                    "start_time": _to_float(start_text),
+                    "arrival": _to_int(arrival_text),
+                    "race_number_raw": race_text or None,
+                    "start_course_raw": course_text or None,
+                    "start_time_raw": start_text or None,
+                    "arrival_raw": arrival_text or None,
+                })
+
             result[pit_number] = {
                 "branch": branch,
                 "born_prefecture": born_prefecture,
@@ -434,7 +528,10 @@ def _extract_extended_entry_stats(html_text: str) -> dict[int, dict[str, Any]]:
                 "boat_number_html": boat_no,
                 "boat_quinella_rate_html": boat_q,
                 "boat_trio_rate_html": boat_t,
+                "current_series_records": current_series_records,
+                "next_race_number": next_race_number,
             }
+            row_index += 4
     except Exception as e:
         safe_print(f"⚠️ 追加成績項目の抽出に失敗しました: {type(e).__name__}: {e}")
 
@@ -582,7 +679,9 @@ def fetch_race_entry_data(
                     "number": motor_perf.number if motor_perf else extended.get("motor_number_html"),
                     "quinella_rate": motor_perf.quinella_rate if motor_perf else extended.get("motor_quinella_rate_html"),
                     "trio_rate": motor_perf.trio_rate if motor_perf else extended.get("motor_trio_rate_html"),
-                }
+                },
+                "current_series_records": extended.get("current_series_records", []),
+                "next_race_number": extended.get("next_race_number"),
             }
             result["race_entries"].append(entry_data)
         
