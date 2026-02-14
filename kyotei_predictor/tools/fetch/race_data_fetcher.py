@@ -7,10 +7,12 @@ import os
 import sys
 import json
 import time
+import re
 import requests
 from datetime import date, datetime
 from io import StringIO
 from typing import Any
+from bs4 import BeautifulSoup
 from metaboatrace.models.stadium import StadiumTelCode
 from metaboatrace.scrapers.official.website.v1707.pages.race.entry_page import location, scraping as entry_scraping
 from metaboatrace.scrapers.official.website.v1707.pages.race.result_page import location as result_location, scraping as result_scraping
@@ -258,6 +260,186 @@ def safe_extract_motor_performances(html_file: StringIO, max_retries: int = 3) -
     
     return []
 
+
+def _to_float(value: str | None) -> float | None:
+    """文字列を安全に float へ変換"""
+    if value is None:
+        return None
+    text = value.strip().replace(",", "")
+    if not text or text in {"-", "—", "―"}:
+        return None
+    try:
+        return float(text)
+    except Exception:
+        return None
+
+
+def _to_int(value: str | None) -> int | None:
+    """文字列を安全に int へ変換"""
+    if value is None:
+        return None
+    text = value.strip().replace(",", "")
+    if not text or text in {"-", "—", "―"}:
+        return None
+    try:
+        return int(text)
+    except Exception:
+        return None
+
+
+def _extract_text_lines(td: Any) -> list[str]:
+    """td要素内の文字列を行単位で抽出"""
+    if td is None:
+        return []
+    return [s.replace("\u3000", " ").strip() for s in td.stripped_strings if s and s.strip()]
+
+
+def _parse_rate_triplet(lines: list[str]) -> tuple[float | None, float | None, float | None]:
+    """
+    勝率/2連率/3連率の3項目を抽出
+    例: ["4.74", "28.05", "42.68"]
+    """
+    if not lines:
+        return None, None, None
+    values = [_to_float(x) for x in lines]
+    return (
+        values[0] if len(values) > 0 else None,
+        values[1] if len(values) > 1 else None,
+        values[2] if len(values) > 2 else None,
+    )
+
+
+def _parse_number_and_rates(lines: list[str]) -> tuple[int | None, float | None, float | None]:
+    """
+    枠番/モーター番号 + 2連率/3連率を抽出
+    例: ["24", "29.07", "45.35"]
+    """
+    if not lines:
+        return None, None, None
+    return (
+        _to_int(lines[0]) if len(lines) > 0 else None,
+        _to_float(lines[1]) if len(lines) > 1 else None,
+        _to_float(lines[2]) if len(lines) > 2 else None,
+    )
+
+
+def _extract_extended_entry_stats(html_text: str) -> dict[int, dict[str, Any]]:
+    """
+    出走表HTMLから追加成績項目を抽出する。
+
+    取得対象（pit_number単位）:
+      - F数 / L数 / 平均ST
+      - 全国/当地 勝率・2連率・3連率
+      - モーター/ボート 番号・2連率・3連率（HTML値）
+      - 支部/出身地、年齢、体重
+    """
+    result: dict[int, dict[str, Any]] = {}
+    try:
+        soup = BeautifulSoup(html_text, "html.parser")
+
+        # 「F数」「平均ST」等を持つ表を探す
+        target_table = None
+        for table in soup.select("table"):
+            headers = " ".join(th.get_text(" ", strip=True) for th in table.select("th"))
+            if "F数" in headers and "平均ST" in headers and "全国" in headers and "当地" in headers:
+                target_table = table
+                break
+
+        if target_table is None:
+            return result
+
+        rows = target_table.select("tbody.is-fs12 tr")
+        if not rows:
+            rows = target_table.select("tbody tr")
+
+        for row in rows:
+            tds = row.find_all("td", recursive=False)
+            # 各艇の先頭行は rowspan=4 になっている
+            if len(tds) < 8 or tds[0].get("rowspan") != "4":
+                continue
+
+            pit_number = _to_int(tds[0].get_text(strip=True))
+            if pit_number is None:
+                continue
+
+            # 3番目セル: 登録番号/級別, 氏名, 支部/出身地, 年齢/体重
+            profile_lines = _extract_text_lines(tds[2])
+            branch = None
+            born_prefecture = None
+            age = None
+            weight = None
+
+            branch_line = None
+            for line in profile_lines:
+                if "歳" in line:
+                    age_match = re.search(r"(\d+)歳", line)
+                    if age_match:
+                        age = _to_int(age_match.group(1))
+                    weight_match = re.search(r"([0-9]+(?:\.[0-9]+)?)kg", line)
+                    if weight_match:
+                        weight = _to_float(weight_match.group(1))
+                    continue
+
+                # 例: "佐賀/佐賀"（登録番号行 "3284 / B1" は除外）
+                if "/" in line and not re.match(r"^\d+\s*/", line):
+                    branch_line = line
+
+            if branch_line and "/" in branch_line:
+                parts = [p.strip() for p in branch_line.split("/", 1)]
+                branch = parts[0] if parts else None
+                born_prefecture = parts[1] if len(parts) > 1 else None
+
+            # 4番目セル: F数, L数, 平均ST
+            fl_lines = _extract_text_lines(tds[3])
+            flying_count = None
+            late_start_count = None
+            average_start_timing = None
+            for token in fl_lines:
+                f_match = re.fullmatch(r"F\s*(\d+)", token)
+                if f_match:
+                    flying_count = _to_int(f_match.group(1))
+                    continue
+                l_match = re.fullmatch(r"L\s*(\d+)", token)
+                if l_match:
+                    late_start_count = _to_int(l_match.group(1))
+                    continue
+                if average_start_timing is None:
+                    average_start_timing = _to_float(token)
+
+            # 5/6番目セル: 全国・当地 勝率/2連率/3連率
+            nat_win, nat_q, nat_t = _parse_rate_triplet(_extract_text_lines(tds[4]))
+            loc_win, loc_q, loc_t = _parse_rate_triplet(_extract_text_lines(tds[5]))
+
+            # 7/8番目セル: モーター/ボート 番号+2連率+3連率
+            motor_no, motor_q, motor_t = _parse_number_and_rates(_extract_text_lines(tds[6]))
+            boat_no, boat_q, boat_t = _parse_number_and_rates(_extract_text_lines(tds[7]))
+
+            result[pit_number] = {
+                "branch": branch,
+                "born_prefecture": born_prefecture,
+                "age": age,
+                "weight": weight,
+                "flying_count": flying_count,
+                "late_start_count": late_start_count,
+                "average_start_timing": average_start_timing,
+                "rate_in_all_stadium": nat_win,
+                "quinella_rate_in_all_stadium": nat_q,
+                "trio_rate_in_all_stadium": nat_t,
+                "rate_in_event_going_stadium": loc_win,
+                "quinella_rate_in_event_going_stadium": loc_q,
+                "trio_rate_in_event_going_stadium": loc_t,
+                "motor_number_html": motor_no,
+                "motor_quinella_rate_html": motor_q,
+                "motor_trio_rate_html": motor_t,
+                "boat_number_html": boat_no,
+                "boat_quinella_rate_html": boat_q,
+                "boat_trio_rate_html": boat_t,
+            }
+    except Exception as e:
+        safe_print(f"⚠️ 追加成績項目の抽出に失敗しました: {type(e).__name__}: {e}")
+
+    return result
+
 def fetch_race_entry_data(
     race_date: date,
     stadium_code: StadiumTelCode,
@@ -295,6 +477,7 @@ def fetch_race_entry_data(
         
         # スクレイピング実行
         html_file = StringIO(response.text)
+        extended_stats_by_pit = _extract_extended_entry_stats(response.text)
         
         race_information = entry_scraping.extract_race_information(html_file)
         html_file.seek(0)
@@ -362,6 +545,8 @@ def fetch_race_entry_data(
                 except (AttributeError, ValueError) as e:
                     safe_print(f"⚠️  艇番{entry.pit_number}の選手名解析エラー: {e}")
                     racer_name = "不明"
+
+            extended = extended_stats_by_pit.get(entry.pit_number, {})
             
             entry_data = {
                 "pit_number": entry.pit_number,
@@ -369,25 +554,34 @@ def fetch_race_entry_data(
                     "name": racer_name,
                     "registration_number": racer.registration_number if racer else None,
                     "current_rating": racer.current_rating.name if racer and racer.current_rating else None,
-                    "branch": racer.branch if racer else None,
-                    "born_prefecture": racer.born_prefecture if racer else None,
+                    "branch": racer.branch if racer and racer.branch else extended.get("branch"),
+                    "born_prefecture": racer.born_prefecture if racer and racer.born_prefecture else extended.get("born_prefecture"),
                     "birth_date": racer.birth_date.isoformat() if racer and racer.birth_date else None,
                     "height": racer.height if racer else None,
-                    "gender": racer.gender.name if racer and racer.gender else None
+                    "gender": racer.gender.name if racer and racer.gender else None,
+                    "age": extended.get("age"),
+                    "weight": extended.get("weight"),
                 },
                 "performance": {
-                    "rate_in_all_stadium": racer_perf.rate_in_all_stadium if racer_perf else None,
-                    "rate_in_event_going_stadium": racer_perf.rate_in_event_going_stadium if racer_perf else None
+                    "rate_in_all_stadium": racer_perf.rate_in_all_stadium if racer_perf else extended.get("rate_in_all_stadium"),
+                    "rate_in_event_going_stadium": racer_perf.rate_in_event_going_stadium if racer_perf else extended.get("rate_in_event_going_stadium"),
+                    "quinella_rate_in_all_stadium": extended.get("quinella_rate_in_all_stadium"),
+                    "trio_rate_in_all_stadium": extended.get("trio_rate_in_all_stadium"),
+                    "quinella_rate_in_event_going_stadium": extended.get("quinella_rate_in_event_going_stadium"),
+                    "trio_rate_in_event_going_stadium": extended.get("trio_rate_in_event_going_stadium"),
+                    "flying_count": extended.get("flying_count"),
+                    "late_start_count": extended.get("late_start_count"),
+                    "average_start_timing": extended.get("average_start_timing"),
                 },
                 "boat": {
-                    "number": boat_perf.number if boat_perf else None,
-                    "quinella_rate": boat_perf.quinella_rate if boat_perf else None,
-                    "trio_rate": boat_perf.trio_rate if boat_perf else None
+                    "number": boat_perf.number if boat_perf else extended.get("boat_number_html"),
+                    "quinella_rate": boat_perf.quinella_rate if boat_perf else extended.get("boat_quinella_rate_html"),
+                    "trio_rate": boat_perf.trio_rate if boat_perf else extended.get("boat_trio_rate_html"),
                 },
                 "motor": {
-                    "number": motor_perf.number if motor_perf else None,
-                    "quinella_rate": motor_perf.quinella_rate if motor_perf else None,
-                    "trio_rate": motor_perf.trio_rate if motor_perf else None
+                    "number": motor_perf.number if motor_perf else extended.get("motor_number_html"),
+                    "quinella_rate": motor_perf.quinella_rate if motor_perf else extended.get("motor_quinella_rate_html"),
+                    "trio_rate": motor_perf.trio_rate if motor_perf else extended.get("motor_trio_rate_html"),
                 }
             }
             result["race_entries"].append(entry_data)
