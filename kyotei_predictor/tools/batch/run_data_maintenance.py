@@ -52,6 +52,7 @@ def main():
     parser.add_argument('--stadiums', type=str, help='対象会場 (ALLまたはカンマ区切り)', default='ALL')
     parser.add_argument('--schedule-workers', type=int, default=8, help='開催日取得の並列数（デフォルト: 8）')
     parser.add_argument('--race-workers', type=int, default=16, help='レース取得の並列数（デフォルト: 16）')
+    parser.add_argument('--output-data-dir', type=str, default=os.path.join("kyotei_predictor", "data", "raw"), help='取得データ保存先ディレクトリ')
     args = parser.parse_args()
 
     # 1. データ取得
@@ -66,11 +67,13 @@ def main():
         fetch_cmd += ["--schedule-workers", str(args.schedule_workers)]
     if args.race_workers:
         fetch_cmd += ["--race-workers", str(args.race_workers)]
+    if args.output_data_dir:
+        fetch_cmd += ["--output-data-dir", args.output_data_dir]
     fetch_cmd += ["--is-child"]
     run_step(fetch_cmd, "データ取得（batch_fetch_all_venues）")
 
     # 2. 取得状況サマリ
-    run_step(["python", "-m", "kyotei_predictor.tools.batch.list_fetched_data_summary"], "取得状況サマリ（list_fetched_data_summary）")
+    run_step(["python", "-m", "kyotei_predictor.tools.batch.list_fetched_data_summary", "--raw-dir", args.output_data_dir], "取得状況サマリ（list_fetched_data_summary）")
 
     # 3. 欠損データ再取得
     retry_cmd = ["python", "-m", "kyotei_predictor.tools.batch.retry_missing_races"]
@@ -78,10 +81,11 @@ def main():
         retry_cmd += ["--start-date", args.start_date]
     if args.end_date:
         retry_cmd += ["--end-date", args.end_date]
+    retry_cmd += ["--raw-data-dir", args.output_data_dir]
     run_step(retry_cmd, "欠損データ再取得（retry_missing_races）")
 
     # 4. データ品質チェック
-    run_step(["python", "-m", "kyotei_predictor.tools.analysis.data_availability_checker"], "データ品質チェック（data_availability_checker）")
+    run_step(["python", "-m", "kyotei_predictor.tools.analysis.data_availability_checker", "--data-dir", args.output_data_dir], "データ品質チェック（data_availability_checker）")
 
     log("\n=== データメンテナンス一括実行 完了 ===")
     log(f"ログファイル: {LOG_FILE}")

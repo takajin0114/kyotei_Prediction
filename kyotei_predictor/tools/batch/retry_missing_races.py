@@ -45,16 +45,16 @@ def collect_missing_races(existing):
             missing.append((date, venue, race_no))
     return missing
 
-def get_month_dir(date_str):
+def get_month_dir(date_str, raw_data_dir=RAW_DATA_DIR):
     month = date_str[:7]  # YYYY-MM
-    return os.path.join(RAW_DATA_DIR, month)
+    return os.path.join(raw_data_dir, month)
 
-def create_canceled_file(date_str, venue, race_no):
+def create_canceled_file(date_str, venue, race_no, raw_data_dir=RAW_DATA_DIR):
     """
     レース中止ファイルを作成（月ごとサブディレクトリ対応）
     """
     canceled_fname = f"race_canceled_{date_str}_{venue}_R{race_no}.json"
-    month_dir = get_month_dir(date_str)
+    month_dir = get_month_dir(date_str, raw_data_dir)
     os.makedirs(month_dir, exist_ok=True)
     canceled_fpath = os.path.join(month_dir, canceled_fname)
     canceled_data = {
@@ -93,7 +93,9 @@ def main():
         parser = argparse.ArgumentParser(description="欠損レース自動再取得バッチ（日付範囲指定対応）")
         parser.add_argument('--start-date', type=str, help='取得開始日 (YYYY-MM-DD)', default=None)
         parser.add_argument('--end-date', type=str, help='取得終了日 (YYYY-MM-DD)', default=None)
+        parser.add_argument('--raw-data-dir', type=str, default=os.environ.get('KYOTEI_RAW_DATA_DIR', RAW_DATA_DIR), help='rawデータディレクトリ')
         args = parser.parse_args()
+        raw_data_dir = args.raw_data_dir
         
         start_date = None
         end_date = None
@@ -103,7 +105,7 @@ def main():
             end_date = datetime.strptime(args.end_date, "%Y-%m-%d").date()
 
         print(f"[INFO] 欠損レース自動再取得バッチ開始")
-        existing = collect_existing_races(RAW_DATA_DIR)
+        existing = collect_existing_races(raw_data_dir)
         missing = collect_missing_races(existing)
         # 日付範囲でフィルタ
         if start_date and end_date:
@@ -133,7 +135,7 @@ def main():
             
             # レース中止ファイルの事前チェック
             canceled_fname = f"race_canceled_{date_str}_{venue}_R{race_no}.json"
-            canceled_fpath = os.path.join(RAW_DATA_DIR, canceled_fname)
+            canceled_fpath = os.path.join(get_month_dir(date_str, raw_data_dir), canceled_fname)
             if os.path.exists(canceled_fpath):
                 print(f"  ⏭️ レース中止済み - スキップ: {canceled_fname}")
                 continue
@@ -144,7 +146,7 @@ def main():
                 if race_data:
                     # レースデータ保存
                     race_fname = f"race_data_{date_str}_{venue}_R{race_no}.json"
-                    month_dir = get_month_dir(date_str)
+                    month_dir = get_month_dir(date_str, raw_data_dir)
                     os.makedirs(month_dir, exist_ok=True)
                     race_fpath = os.path.join(month_dir, race_fname)
                     with open(race_fpath, 'w', encoding='utf-8') as f:
@@ -163,14 +165,14 @@ def main():
                 else:
                     # レースデータが取得できない場合（レース中止の可能性）
                     print(f"  🚫 レースデータ取得失敗: {date_str} {venue} R{race_no}")
-                    create_canceled_file(date_str, venue, race_no)
+                    create_canceled_file(date_str, venue, race_no, raw_data_dir)
                     
             except Exception as e:
                 error_msg = str(e)
                 # レース中止エラーの検出
                 if "RaceCanceled" in error_msg or "レース中止" in error_msg:
                     print(f"  🚫 レース中止検出: {date_str} {venue} R{race_no}")
-                    create_canceled_file(date_str, venue, race_no)
+                    create_canceled_file(date_str, venue, race_no, raw_data_dir)
                 else:
                     print(f"  取得失敗: {date_str} {venue} R{race_no} - {error_msg}")
         print(f"[INFO] 欠損レース再取得バッチ完了")

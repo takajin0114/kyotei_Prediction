@@ -112,7 +112,7 @@ def verify_installation():
     print("=== インストール検証完了 ===\n")
     return True
 
-def run_data_maintenance(start_date, end_date, stadiums, schedule_workers, race_workers):
+def run_data_maintenance(start_date, end_date, stadiums, schedule_workers, race_workers, output_data_dir):
     """データメンテナンスの実行"""
     print(f"\n=== データメンテナンス実行開始 ===")
     print(f"期間: {start_date} 〜 {end_date}")
@@ -130,13 +130,15 @@ def run_data_maintenance(start_date, end_date, stadiums, schedule_workers, race_
         fetch_cmd += ["--schedule-workers", str(schedule_workers)]
     if race_workers:
         fetch_cmd += ["--race-workers", str(race_workers)]
+    if output_data_dir:
+        fetch_cmd += ["--output-data-dir", output_data_dir]
     fetch_cmd += ["--is-child"]
     
     if not run_step(fetch_cmd, "データ取得（batch_fetch_all_venues）"):
         return False
 
     # 2. 取得状況サマリ
-    if not run_step(["python", "-m", "kyotei_predictor.tools.batch.list_fetched_data_summary"], "取得状況サマリ（list_fetched_data_summary）"):
+    if not run_step(["python", "-m", "kyotei_predictor.tools.batch.list_fetched_data_summary", "--raw-dir", output_data_dir], "取得状況サマリ（list_fetched_data_summary）"):
         return False
 
     # 3. 欠損データ再取得
@@ -145,12 +147,13 @@ def run_data_maintenance(start_date, end_date, stadiums, schedule_workers, race_
         retry_cmd += ["--start-date", start_date]
     if end_date:
         retry_cmd += ["--end-date", end_date]
+    retry_cmd += ["--raw-data-dir", output_data_dir]
     
     if not run_step(retry_cmd, "欠損データ再取得（retry_missing_races）"):
         return False
 
     # 4. データ品質チェック
-    if not run_step(["python", "-m", "kyotei_predictor.tools.analysis.data_availability_checker"], "データ品質チェック（data_availability_checker）"):
+    if not run_step(["python", "-m", "kyotei_predictor.tools.analysis.data_availability_checker", "--data-dir", output_data_dir], "データ品質チェック（data_availability_checker）"):
         return False
 
     print("=== データメンテナンス実行完了 ===\n")
@@ -188,6 +191,7 @@ def main():
     parser.add_argument('--stadiums', type=str, help='対象会場 (ALLまたはカンマ区切り)', default='ALL')
     parser.add_argument('--schedule-workers', type=int, default=8, help='開催日取得の並列数（デフォルト: 8）')
     parser.add_argument('--race-workers', type=int, default=16, help='レース取得の並列数（デフォルト: 16）')
+    parser.add_argument('--output-data-dir', type=str, default=os.path.join("kyotei_predictor", "data", "raw"), help='取得データ保存先ディレクトリ')
     parser.add_argument('--skip-setup', action='store_true', help='前準備（依存関係インストール）をスキップ')
     parser.add_argument('--is-child', action='store_true', help='サブプロセス起動時の多重起動判定除外用フラグ')
     
@@ -220,7 +224,7 @@ def main():
         # 3. データメンテナンス実行
         if not run_data_maintenance(
             args.start_date, args.end_date, args.stadiums, 
-            args.schedule_workers, args.race_workers
+            args.schedule_workers, args.race_workers, args.output_data_dir
         ):
             print("[警告] データメンテナンスの一部が失敗しました")
 

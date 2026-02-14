@@ -53,6 +53,7 @@ VENV_PATH=.venv-cycle YEAR_MONTH=2024-05 PREDICT_DATE=2024-05-01 ./scripts/run_l
 - [docs/README.md](docs/README.md): ドキュメント全体の入口
 - [docs/PROJECT_LAYOUT.md](docs/PROJECT_LAYOUT.md): ディレクトリ構成
 - [docs/guides/batch_usage.md](docs/guides/batch_usage.md): 実行スクリプトの使い方
+- [docs/guides/google_drive_colab_workflow.md](docs/guides/google_drive_colab_workflow.md): Google Drive保存とColab学習の手順
 - [docs/guides/git_staging_safety.md](docs/guides/git_staging_safety.md): 大量変更時の安全なステージング運用
 - [docs/LEARNING_AND_PREDICTION_STATUS.md](docs/LEARNING_AND_PREDICTION_STATUS.md): 学習/予測の現状
 

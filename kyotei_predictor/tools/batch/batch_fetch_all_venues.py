@@ -131,11 +131,16 @@ def log_info(message: str) -> None:
     """標準出力に情報を出す（flush付き）"""
     print(message, flush=True)
 
-def make_race_file_paths(day: date, stadium: StadiumTelCode, race_no: int) -> Dict[str, str]:
+def make_race_file_paths(
+    day: date,
+    stadium: StadiumTelCode,
+    race_no: int,
+    output_data_dir: str = os.path.join("kyotei_predictor", "data", "raw"),
+) -> Dict[str, str]:
     """レース・オッズ・中止ファイルのパスをまとめて返す（月ごとサブディレクトリ対応）"""
     ymd = day.strftime('%Y-%m-%d')
     month = ymd[:7]  # YYYY-MM
-    base_dir = os.path.join("kyotei_predictor", "data", "raw", month)
+    base_dir = os.path.join(output_data_dir, month)
     os.makedirs(base_dir, exist_ok=True)
     return {
         'race': os.path.join(base_dir, f"race_data_{ymd}_{stadium.name}_R{race_no}.json"),
@@ -148,7 +153,8 @@ def fetch_race_data_parallel(
     stadium: StadiumTelCode,
     race_no: int,
     rate_limit_seconds: int = 1,
-    max_retries: int = 3
+    max_retries: int = 3,
+    output_data_dir: str = os.path.join("kyotei_predictor", "data", "raw"),
 ) -> Dict[str, Any]:
     """
     1レースのデータを取得（並列用）
@@ -161,7 +167,7 @@ def fetch_race_data_parallel(
     Returns:
         結果情報dict
     """
-    paths = make_race_file_paths(day, stadium, race_no)
+    paths = make_race_file_paths(day, stadium, race_no, output_data_dir=output_data_dir)
     ymd = day.strftime('%Y-%m-%d')
     result = {
         'stadium': stadium.name,
@@ -347,7 +353,8 @@ def fetch_day_races_parallel(
     race_numbers: range,
     rate_limit_seconds: int = 1,
     max_retries: int = 3,
-    max_workers: int = 6
+    max_workers: int = 6,
+    output_data_dir: str = os.path.join("kyotei_predictor", "data", "raw"),
 ) -> list[dict]:
     """
     1日分の全レースを並列取得
@@ -368,7 +375,15 @@ def fetch_day_races_parallel(
     results = []
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         future_to_race = {
-            executor.submit(fetch_race_data_parallel, day, stadium, race_no, rate_limit_seconds, max_retries): race_no
+            executor.submit(
+                fetch_race_data_parallel,
+                day,
+                stadium,
+                race_no,
+                rate_limit_seconds,
+                max_retries,
+                output_data_dir,
+            ): race_no
             for race_no in race_numbers
         }
         for future in as_completed(future_to_race):
@@ -432,6 +447,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--stadiums', type=str, required=True, help='対象会場名（カンマ区切り, 例: KIRYU,EDOGAWA）')
     parser.add_argument('--schedule-workers', type=int, default=8, help='開催日取得の並列数（デフォルト: 8）')
     parser.add_argument('--race-workers', type=int, default=8, help='レース取得の並列数（デフォルト: 8）')
+    parser.add_argument('--output-data-dir', type=str, default=os.path.join("kyotei_predictor", "data", "raw"), help='出力先データディレクトリ（デフォルト: kyotei_predictor/data/raw）')
     parser.add_argument('--is-child', action='store_true', help='サブプロセス起動時の多重起動判定除外用フラグ')
     return parser.parse_args()
 
@@ -479,9 +495,11 @@ def main() -> None:
     MAX_RETRIES = 3
     SCHEDULE_WORKERS = args.schedule_workers
     RACE_WORKERS = args.race_workers
+    output_data_dir = args.output_data_dir
     log_info(f"全{len(stadiums)}会場バッチフェッチ開始（完全並列版）")
     log_info(f"期間: {start_date} 〜 {end_date}")
     log_info(f"対象会場数: {len(stadiums)}")
+    log_info(f"出力先データディレクトリ: {output_data_dir}")
     log_info(f"レート制限: {RATE_LIMIT_SECONDS}秒")
     log_info(f"開催日取得並列数: {SCHEDULE_WORKERS}")
     log_info(f"レース取得並列数: {RACE_WORKERS}")
@@ -511,7 +529,7 @@ def main() -> None:
         for day in event_days:
             day_results = fetch_day_races_parallel(
                 day, stadium, race_numbers, 
-                RATE_LIMIT_SECONDS, MAX_RETRIES, RACE_WORKERS
+                RATE_LIMIT_SECONDS, MAX_RETRIES, RACE_WORKERS, output_data_dir
             )
             for result in day_results:
                 total_races += 1

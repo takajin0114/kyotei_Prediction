@@ -1,5 +1,6 @@
 import os
 import re
+import argparse
 from collections import defaultdict
 
 RAW_DIR = os.path.join(os.path.dirname(__file__), '../../data/raw')
@@ -7,11 +8,11 @@ RAW_DIR = os.path.join(os.path.dirname(__file__), '../../data/raw')
 race_pattern = re.compile(r'race_data_(\d{4}-\d{2}-\d{2})_([A-Z0-9]+)_R\d+\.json')
 odds_pattern = re.compile(r'odds_data_(\d{4}-\d{2}-\d{2})_([A-Z0-9]+)_R\d+\.json')
 
-def collect_summary(pattern):
+def collect_summary(pattern, raw_dir):
     import os
     from collections import defaultdict
     summary = defaultdict(set)
-    for root, dirs, files in os.walk(RAW_DIR):
+    for root, dirs, files in os.walk(raw_dir):
         for fname in files:
             m = pattern.match(fname)
             if m:
@@ -29,8 +30,14 @@ def print_summary(summary, label):
             print(f'{stadium}: データなし')
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='取得済みデータ一覧（期間・会場ごと）')
+    parser.add_argument('--raw-dir', type=str, default=os.environ.get('KYOTEI_RAW_DATA_DIR', RAW_DIR), help='rawデータディレクトリ')
+    args = parser.parse_args()
+
+    raw_dir = args.raw_dir
     print('取得済みデータ一覧（期間・会場ごと）')
-    race_summary = collect_summary(race_pattern)
-    odds_summary = collect_summary(odds_pattern)
+    print(f'対象ディレクトリ: {raw_dir}')
+    race_summary = collect_summary(race_pattern, raw_dir)
+    odds_summary = collect_summary(odds_pattern, raw_dir)
     print_summary(race_summary, 'レースデータ')
     print_summary(odds_summary, 'オッズデータ') 

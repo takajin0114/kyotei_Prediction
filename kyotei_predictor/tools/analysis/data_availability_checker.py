@@ -8,6 +8,7 @@
 import os
 import json
 import sys
+import argparse
 from typing import Dict, List, Any, Optional
 
 def extract_actual_result(race_data: Dict[str, Any]) -> Optional[str]:
@@ -42,15 +43,17 @@ def extract_actual_result(race_data: Dict[str, Any]) -> Optional[str]:
     except Exception as e:
         return None
 
-def check_data_availability():
+def check_data_availability(data_dir: Optional[str] = None):
     """データ可用性チェック"""
-    data_dir = os.path.join('kyotei_predictor', 'data')
+    if data_dir is None:
+        data_dir = os.environ.get('KYOTEI_RAW_DATA_DIR', os.path.join('kyotei_predictor', 'data', 'raw'))
     
     # レースデータファイル一覧
     race_files = []
-    for file in os.listdir(data_dir):
-        if file.startswith('race_data_') and file.endswith('.json'):
-            race_files.append(os.path.join(data_dir, file))
+    for root, _, files in os.walk(data_dir):
+        for file in files:
+            if file.startswith('race_data_') and file.endswith('.json'):
+                race_files.append(os.path.join(root, file))
     
     print(f"総レースデータファイル数: {len(race_files)}")
     print("=" * 60)
@@ -96,4 +99,7 @@ def check_data_availability():
             print(f"  ... 他 {len(error_details) - 10} 件")
 
 if __name__ == "__main__":
-    check_data_availability() 
+    parser = argparse.ArgumentParser(description="データ可用性チェッカー")
+    parser.add_argument('--data-dir', type=str, default=None, help='チェック対象のレースデータディレクトリ')
+    args = parser.parse_args()
+    check_data_availability(args.data_dir)
