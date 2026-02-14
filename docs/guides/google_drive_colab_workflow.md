@@ -34,6 +34,7 @@ python -m kyotei_predictor.tools.storage.drive_data_sync \
 リポジトリにはそのまま実行できる Colab テンプレートを用意しています。
 
 - `colab_drive_learning_cycle_template.ipynb`
+- `colab_drive_learning_cycle_gpu_template.ipynb`（GPUランタイム向け）
 
 ノートブックを Colab で開き、上から順に実行してください。
 
