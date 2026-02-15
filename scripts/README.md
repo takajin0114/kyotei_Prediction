@@ -10,10 +10,23 @@
 | run_learning_prediction_cycle.bat | 学習→予測一括（test_raw） |
 | run_learning_prediction_cycle.sh | 学習→予測一括（test_raw, Linux/macOS向け） |
 | run_colab_learning_cycle.py | Google Drive上データで学習/予測（Colab向け） |
+| **fetch_one_race.bat** | **1R のみデータ取得（桐生 1日・1R・疎通確認用）** |
+| **fetch_one_race.ps1** | **上記の PowerShell 版** |
+| **run_fetch_one_race.py** | **1R 取得の Python ランチャー（どこからでも実行可）** |
+| **fetch_reperiod.bat** | **期間を指定してデータ再取得（中身の日付・会場を編集して使用）** |
 | cleanup_old_files.bat | 古いログ・Optuna ファイルの削除 |
 
 **実行例**（プロジェクトルートで）:
 ```bash
+# 1R だけ取得（実行確認用）
+# 方法A: エクスプローラーで scripts\fetch_one_race.bat をダブルクリック（日本語パスでも可）
+# 方法B: プロジェクトフォルダでターミナルを開いてから
+scripts\fetch_one_race.bat
+# または PowerShell
+.\scripts\fetch_one_race.ps1
+# または Python ランチャー（venv 有効化後）
+python scripts/run_fetch_one_race.py
+
 scripts\run_optimization_config.bat
 scripts\run_learning_prediction_cycle.bat
 

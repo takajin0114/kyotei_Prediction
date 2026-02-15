@@ -155,6 +155,7 @@ def fetch_race_data_parallel(
     rate_limit_seconds: int = 1,
     max_retries: int = 3,
     output_data_dir: str = os.path.join("kyotei_predictor", "data", "raw"),
+    overwrite: bool = False,
 ) -> Dict[str, Any]:
     """
     1レースのデータを取得（並列用）
@@ -190,8 +191,8 @@ def fetch_race_data_parallel(
         log_info(f"    R{race_no}: レース中止済み - スキップ")
         return result
 
-    # race_data取得
-    if not os.path.exists(paths['race']):
+    # race_data取得（overwrite 時は既存ファイルがあっても再取得）
+    if overwrite or not os.path.exists(paths['race']):
         retry_count = 0
         while retry_count < max_retries:
             try:
@@ -288,7 +289,7 @@ def fetch_race_data_parallel(
     if result['canceled']:
         result['odds_success'] = True
         log_info(f"    R{race_no}: レース中止のためオッズ取得をスキップ")
-    elif not os.path.exists(paths['odds']):
+    elif overwrite or not os.path.exists(paths['odds']):
         retry_count = 0
         while retry_count < max_retries:
             try:
@@ -350,11 +351,12 @@ def fetch_race_data_parallel(
 def fetch_day_races_parallel(
     day: date,
     stadium: StadiumTelCode,
-    race_numbers: range,
+    race_numbers: list,
     rate_limit_seconds: int = 1,
     max_retries: int = 3,
     max_workers: int = 6,
     output_data_dir: str = os.path.join("kyotei_predictor", "data", "raw"),
+    overwrite: bool = False,
 ) -> list[dict]:
     """
     1日分の全レースを並列取得
@@ -383,6 +385,7 @@ def fetch_day_races_parallel(
                 rate_limit_seconds,
                 max_retries,
                 output_data_dir,
+                overwrite,
             ): race_no
             for race_no in race_numbers
         }
@@ -448,6 +451,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--schedule-workers', type=int, default=8, help='開催日取得の並列数（デフォルト: 8）')
     parser.add_argument('--race-workers', type=int, default=8, help='レース取得の並列数（デフォルト: 8）')
     parser.add_argument('--output-data-dir', type=str, default=os.path.join("kyotei_predictor", "data", "raw"), help='出力先データディレクトリ（デフォルト: kyotei_predictor/data/raw）')
+    parser.add_argument('--races', type=str, default=None, help='取得するレース番号（カンマ区切り, 例: 1 または 1,2,3）。未指定時は1-12R全て')
+    parser.add_argument('--overwrite', action='store_true', help='既存ファイルがあっても上書きして再取得する（過去分の取り直し用）')
     parser.add_argument('--is-child', action='store_true', help='サブプロセス起動時の多重起動判定除外用フラグ')
     return parser.parse_args()
 
@@ -490,7 +495,14 @@ def main() -> None:
 
     start_time = datetime.now()
     log_info(f"バッチ処理開始: {start_time}")
-    race_numbers = range(1, 13)
+    if args.races is None:
+        race_numbers = list(range(1, 13))
+    else:
+        parts = [int(x.strip()) for x in args.races.split(',') if x.strip()]
+        if not parts or any(r < 1 or r > 12 for r in parts):
+            log_info('--races は 1〜12 のカンマ区切りで指定してください')
+            sys.exit(1)
+        race_numbers = sorted(set(parts))
     RATE_LIMIT_SECONDS = 1
     MAX_RETRIES = 3
     SCHEDULE_WORKERS = args.schedule_workers
@@ -499,7 +511,10 @@ def main() -> None:
     log_info(f"全{len(stadiums)}会場バッチフェッチ開始（完全並列版）")
     log_info(f"期間: {start_date} 〜 {end_date}")
     log_info(f"対象会場数: {len(stadiums)}")
+    log_info(f"対象レース: R{race_numbers[0]}" if len(race_numbers) == 1 else f"対象レース: R{race_numbers[0]}-R{race_numbers[-1]} ({len(race_numbers)}R)")
     log_info(f"出力先データディレクトリ: {output_data_dir}")
+    if args.overwrite:
+        log_info("上書きモード: 既存ファイルも再取得します")
     log_info(f"レート制限: {RATE_LIMIT_SECONDS}秒")
     log_info(f"開催日取得並列数: {SCHEDULE_WORKERS}")
     log_info(f"レース取得並列数: {RACE_WORKERS}")
@@ -510,7 +525,7 @@ def main() -> None:
     log_info(f"総開催日数: {total_days}日")
     log_info(f"平均開催日数: {total_days/len(stadiums):.1f}日/会場")
 
-    progress_total = sum(len(days) * 12 for days in all_event_days.values())
+    progress_total = sum(len(days) * len(race_numbers) for days in all_event_days.values())
     progress_done = 0
     log_info(f"全体レース数: {progress_total}")
 
@@ -528,8 +543,9 @@ def main() -> None:
         log_info(f"\n=== {stadium.name} 並列データ取得開始 ===")
         for day in event_days:
             day_results = fetch_day_races_parallel(
-                day, stadium, race_numbers, 
-                RATE_LIMIT_SECONDS, MAX_RETRIES, RACE_WORKERS, output_data_dir
+                day, stadium, race_numbers,
+                RATE_LIMIT_SECONDS, MAX_RETRIES, RACE_WORKERS, output_data_dir,
+                args.overwrite,
             )
             for result in day_results:
                 total_races += 1

@@ -12,7 +12,9 @@
 - **[LEARNING_INPUT_OUTPUT.md](LEARNING_INPUT_OUTPUT.md)** - **学習のインプットとアウトプットの整理**
 - **[ODDS_AND_STATE_DESIGN.md](ODDS_AND_STATE_DESIGN.md)** - **オッズの扱い（回収率専用）と状態定義の共通化**
 - [LEARNING_PREDICTION_CYCLE_IMPROVEMENTS.md](LEARNING_PREDICTION_CYCLE_IMPROVEMENTS.md) - 学習→予測サイクル実施結果と改善点一覧
+- **[guides/processing_flow.md](guides/processing_flow.md)** - **処理の流れ（Cursorで取得・保管 → Colabで学習 → Cursorで取得・予測）**
 - [guides/batch_usage.md](guides/batch_usage.md) - バッチの使い方（scripts/）
+- [guides/google_drive_colab_workflow.md](guides/google_drive_colab_workflow.md) - Google Drive保存とColab学習の手順
 - [guides/optimization_script.md](guides/optimization_script.md) - 最適化スクリプト
 - [guides/powershell.md](guides/powershell.md) - PowerShell メモ
 
