@@ -39,6 +39,7 @@
 
 日本語パス（マイドライブ等）の環境でも実行できるよう、**スクリプトの場所を基準に動く**バッチを用意しています。
 
+- **日本語パスを避けたい場合**: Windows の **Junction** で `C:\GDrive` などをマイドライブにリンクしておくと、`C:\GDrive\app\kyotei_Prediction\kyotei_Prediction` から実行できます。詳細は [Junction による日本語パス回避](junction_setup.md) を参照。
 - **エクスプローラーでダブルクリック**: `scripts\fetch_one_race.bat`
 - **PowerShell**: プロジェクトルートで `.\scripts\fetch_one_race.ps1`
 
@@ -101,6 +102,11 @@ python -m kyotei_predictor.tools.batch.batch_fetch_all_venues ^
   --output-data-dir "kyotei_predictor/data/raw" ^
   --overwrite
 ```
+
+**過去5年分をまとめて取得する**
+
+- 専用バッチ: **`scripts\fetch_5years.bat`** を実行する（2021-01-01 〜 2026-02-14・全会場）。既存ファイルはスキップし、欠けている分だけ取得する。全て取り直す場合はバッチ内で `OVERWRITE=1` に変更する。
+- 実行時間の目安: 件数が多いため、完了まで数時間〜終日かかることがある。夜間・休日の実行を推奨。
 
 - `--overwrite` を**付けない**場合: 既存のレース/オッズファイルはスキップされ、欠けている分だけ取得される。
 - `--overwrite` を**付ける**場合: 指定期間の既存ファイルも上書きして再取得する（過去分の取り直し向け）。
@@ -177,8 +183,18 @@ python -m kyotei_predictor.tools.prediction_tool \
 
 ---
 
+## Cursor Web でデータ取得した場合
+
+Cursor Web でプロジェクトを開いているときは、ワークスペースがクラウド上にあるため、取得結果はそのワークスペース内に保存されます。**結果を Google Drive に保存する**手順は別ガイドにまとめています。
+
+- **[Cursor Web で取得したデータを Drive に保存する](cursor_web_drive_upload.md)** … 手動（ダウンロード→アップロード）または Drive API スクリプトでアップロード
+
+---
+
 ## 関連ドキュメント
 
 - [Google Drive保存 + Colab学習ワークフロー](google_drive_colab_workflow.md)
+- [Cursor Web で取得したデータを Drive に保存する](cursor_web_drive_upload.md)
+- [Junction による日本語パス回避](junction_setup.md)
 - [データ取得運用ガイド](../operations/data_acquisition.md)
 - [バッチの使い方](batch_usage.md)

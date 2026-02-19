@@ -10,6 +10,7 @@
 |----------|------|
 | **run_optimization_config.bat** | `optimization_config.ini` に基づいて最適化（推奨） |
 | **run_optimization_batch.bat** | 中速モード・20試行で即実行 |
+| **fetch_1month.bat** | 過去1か月分のデータ取得 |
 | **run_optimization_simple.bat** | 簡易版・設定ファイル読み込み |
 | **run_learning_prediction_cycle.bat** | 学習→予測を一括（test_raw） |
 | **run_learning_prediction_cycle.sh** | 学習→予測を一括（test_raw, Linux/macOS向け） |
@@ -40,6 +41,10 @@ scripts\cleanup_old_files.bat
 - 最適化結果: `optuna_results/`
 - ログ: `logs/`（ルート）、`kyotei_predictor/logs/`（学習・予測の詳細）
 - モデル: `optuna_models/`
+
+## 日本語パス（マイドライブ等）の場合
+
+プロジェクトが Google Drive の日本語パスにある場合、Junction を使って `C:\GDrive` などからアクセスできます。詳細は [Junction による日本語パス回避](junction_setup.md) を参照してください。
 
 ## トラブルシューティング
 

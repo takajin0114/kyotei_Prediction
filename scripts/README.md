@@ -14,13 +14,16 @@
 | **fetch_one_race.ps1** | **上記の PowerShell 版** |
 | **run_fetch_one_race.py** | **1R 取得の Python ランチャー（どこからでも実行可）** |
 | **fetch_reperiod.bat** | **期間を指定してデータ再取得（中身の日付・会場を編集して使用）** |
+| **fetch_5years.bat** | **過去5年分（2021-01-01〜2026-02-14）を取得。欠けている分のみ（OVERWRITE=0）。** |
+| **fetch_1month.bat** | **過去1か月分（2026年1月）を取得。欠けている分のみ。** |
 | cleanup_old_files.bat | 古いログ・Optuna ファイルの削除 |
 
 **実行例**（プロジェクトルートで）:
 ```bash
 # 1R だけ取得（実行確認用）
 # 方法A: エクスプローラーで scripts\fetch_one_race.bat をダブルクリック（日本語パスでも可）
-# 方法B: プロジェクトフォルダでターミナルを開いてから
+# 方法B: Junction（C:\GDrive 等）経由で日本語パスを回避する場合は docs/guides/junction_setup.md を参照
+# 方法C: プロジェクトフォルダでターミナルを開いてから
 scripts\fetch_one_race.bat
 # または PowerShell
 .\scripts\fetch_one_race.ps1

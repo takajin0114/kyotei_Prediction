@@ -14,6 +14,7 @@
 - [LEARNING_PREDICTION_CYCLE_IMPROVEMENTS.md](LEARNING_PREDICTION_CYCLE_IMPROVEMENTS.md) - 学習→予測サイクル実施結果と改善点一覧
 - **[guides/processing_flow.md](guides/processing_flow.md)** - **処理の流れ（Cursorで取得・保管 → Colabで学習 → Cursorで取得・予測）**
 - [guides/batch_usage.md](guides/batch_usage.md) - バッチの使い方（scripts/）
+- [guides/junction_setup.md](guides/junction_setup.md) - Windows Junction による日本語パス回避
 - [guides/google_drive_colab_workflow.md](guides/google_drive_colab_workflow.md) - Google Drive保存とColab学習の手順
 - [guides/optimization_script.md](guides/optimization_script.md) - 最適化スクリプト
 - [guides/powershell.md](guides/powershell.md) - PowerShell メモ
