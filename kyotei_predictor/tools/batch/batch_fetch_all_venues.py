@@ -107,8 +107,8 @@ def get_event_days_for_stadium(stadium: StadiumTelCode, start_date: date, end_da
 
 def get_all_event_days_parallel(stadiums, start_date: date, end_date: date, max_workers: int = 8):
     """全会場の開催日を並列取得（高速化版）"""
-    print(f"=== 全{len(stadiums)}会場 並列開催日取得開始 ===")
-    print(f"並列度: {max_workers}")
+    print(f"=== 全{len(stadiums)}会場 並列開催日取得開始 ===", flush=True)
+    print(f"並列度: {max_workers}", flush=True)
     
     all_event_days = {}
     
@@ -123,7 +123,7 @@ def get_all_event_days_parallel(stadiums, start_date: date, end_date: date, max_
         for future in as_completed(future_to_stadium):
             stadium, event_days = future.result()
             all_event_days[stadium] = event_days
-            print(f"{stadium.name}: {len(event_days)}日分の開催日")
+            print(f"{stadium.name}: {len(event_days)}日分の開催日", flush=True)
     
     return all_event_days
 
@@ -453,6 +453,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--output-data-dir', type=str, default=os.path.join("kyotei_predictor", "data", "raw"), help='出力先データディレクトリ（デフォルト: kyotei_predictor/data/raw）')
     parser.add_argument('--races', type=str, default=None, help='取得するレース番号（カンマ区切り, 例: 1 または 1,2,3）。未指定時は1-12R全て')
     parser.add_argument('--overwrite', action='store_true', help='既存ファイルがあっても上書きして再取得する（過去分の取り直し用）')
+    parser.add_argument('--rate-limit', type=float, default=1.0, help='リクエスト間の待機秒数（デフォルト: 1。短くするほど速いがサーバ負荷に注意）')
     parser.add_argument('--is-child', action='store_true', help='サブプロセス起動時の多重起動判定除外用フラグ')
     return parser.parse_args()
 
@@ -503,7 +504,8 @@ def main() -> None:
             log_info('--races は 1〜12 のカンマ区切りで指定してください')
             sys.exit(1)
         race_numbers = sorted(set(parts))
-    RATE_LIMIT_SECONDS = 1
+    rate_limit = max(0.1, float(args.rate_limit))
+    RATE_LIMIT_SECONDS = rate_limit
     MAX_RETRIES = 3
     SCHEDULE_WORKERS = args.schedule_workers
     RACE_WORKERS = args.race_workers

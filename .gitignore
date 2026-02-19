@@ -173,6 +173,9 @@ activate_env.ps1
 *.tmp
 *.temp
 
+# バッチ実行時のロックファイル
+batch_fetch_all_venues.lock
+
 # アーカイブ・バックアップ
 archives/
 final_results/

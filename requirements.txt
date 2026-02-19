@@ -41,3 +41,6 @@ pytest-html==4.1.1
 # Optional (uncomment if needed):
 # selenium==4.15.2
 # webdriver-manager==4.0.1
+
+# Optional: Cursor Web で取得データを Drive にアップロードする場合（drive_upload.py 使用時）
+# pip install google-api-python-client google-auth-httplib2 google-auth-oauthlib

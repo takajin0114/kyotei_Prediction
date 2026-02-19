@@ -15,6 +15,7 @@
 - **[guides/processing_flow.md](guides/processing_flow.md)** - **処理の流れ（Cursorで取得・保管 → Colabで学習 → Cursorで取得・予測）**
 - [guides/batch_usage.md](guides/batch_usage.md) - バッチの使い方（scripts/）
 - [guides/junction_setup.md](guides/junction_setup.md) - Windows Junction による日本語パス回避
+- [guides/cursor_web_drive_upload.md](guides/cursor_web_drive_upload.md) - Cursor Web で取得したデータを Drive に保存する
 - [guides/google_drive_colab_workflow.md](guides/google_drive_colab_workflow.md) - Google Drive保存とColab学習の手順
 - [guides/optimization_script.md](guides/optimization_script.md) - 最適化スクリプト
 - [guides/powershell.md](guides/powershell.md) - PowerShell メモ
