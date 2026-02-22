@@ -2,6 +2,7 @@
 """
 全競艇場データ一括取得ツール
 """
+import kyotei_predictor.utils.common  # noqa: F401 -- Windows UTF-8 stdio
 
 import os
 import sys
@@ -21,24 +22,6 @@ from io import StringIO
 racer_error_log_file = None
 racer_error_log_lock = threading.Lock()
 progress_lock = threading.Lock()
-
-# 文字化け対策: 標準出力のエンコーディングをUTF-8に設定
-if sys.platform.startswith('win'):
-    import codecs
-    # PowerShellでの文字化け対策
-    try:
-        # 環境変数でUTF-8を強制
-        os.environ['PYTHONIOENCODING'] = 'utf-8'
-        os.environ['PYTHONLEGACYWINDOWSSTDIO'] = 'utf-8'
-        
-        # 標準出力をUTF-8に設定（安全な方法）
-        if hasattr(sys.stdout, 'detach'):
-            sys.stdout = codecs.getwriter('utf-8')(sys.stdout.detach())
-            sys.stderr = codecs.getwriter('utf-8')(sys.stderr.detach())
-    except Exception:
-        # エラーが発生した場合は環境変数のみ設定
-        os.environ['PYTHONIOENCODING'] = 'utf-8'
-        os.environ['PYTHONLEGACYWINDOWSSTDIO'] = 'utf-8'
 
 from metaboatrace.models.stadium import StadiumTelCode
 from metaboatrace.scrapers.official.website.v1707.pages.monthly_schedule_page.location import create_monthly_schedule_page_url
@@ -107,8 +90,8 @@ def get_event_days_for_stadium(stadium: StadiumTelCode, start_date: date, end_da
 
 def get_all_event_days_parallel(stadiums, start_date: date, end_date: date, max_workers: int = 8):
     """全会場の開催日を並列取得（高速化版）"""
-    print(f"=== 全{len(stadiums)}会場 並列開催日取得開始 ===", flush=True)
-    print(f"並列度: {max_workers}", flush=True)
+    log_info(f"=== 全{len(stadiums)}会場 並列開催日取得開始 ===")
+    log_info(f"並列度: {max_workers}")
     
     all_event_days = {}
     
@@ -123,12 +106,17 @@ def get_all_event_days_parallel(stadiums, start_date: date, end_date: date, max_
         for future in as_completed(future_to_stadium):
             stadium, event_days = future.result()
             all_event_days[stadium] = event_days
-            print(f"{stadium.name}: {len(event_days)}日分の開催日", flush=True)
+            log_info(f"{stadium.name}: {len(event_days)}日分の開催日")
     
     return all_event_days
 
-def log_info(message: str) -> None:
-    """標準出力に情報を出す（flush付き）"""
+# --quiet 時に進捗を抑制（エラー・サマリは常に表示）
+_QUIET_MODE = False
+
+def log_info(message: str, force: bool = False) -> None:
+    """標準出力に情報を出す（flush付き）。--quiet時はforceでない限り進捗系をスキップ"""
+    if _QUIET_MODE and not force:
+        return
     print(message, flush=True)
 
 def make_race_file_paths(
@@ -196,7 +184,7 @@ def fetch_race_data_parallel(
         retry_count = 0
         while retry_count < max_retries:
             try:
-                race_data = fetch_complete_race_data(day, stadium, race_no)
+                race_data = fetch_complete_race_data(day, stadium, race_no, rate_limit_seconds)
                 if race_data:
                     os.makedirs(os.path.dirname(paths['race']), exist_ok=True)
                     with open(paths['race'], 'w', encoding='utf-8') as f:
@@ -293,7 +281,7 @@ def fetch_race_data_parallel(
         retry_count = 0
         while retry_count < max_retries:
             try:
-                odds_data = fetch_trifecta_odds(day, stadium, race_no)
+                odds_data = fetch_trifecta_odds(day, stadium, race_no, rate_limit_seconds)
                 if odds_data:
                     os.makedirs(os.path.dirname(paths['odds']), exist_ok=True)
                     with open(paths['odds'], 'w', encoding='utf-8') as f:
@@ -372,7 +360,8 @@ def fetch_day_races_parallel(
     """
     global progress_done
     ymd = day.strftime('%Y-%m-%d')
-    log_info(f"\n  {stadium.name} {ymd} の並列処理開始: {datetime.now()}")
+    if not _QUIET_MODE:
+        log_info(f"\n  {stadium.name} {ymd} の並列処理開始: {datetime.now()}")
 
     results = []
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
@@ -392,35 +381,38 @@ def fetch_day_races_parallel(
         for future in as_completed(future_to_race):
             result = future.result()
             results.append(result)
-            # 進捗表示
+            # 進捗表示（--quiet時は50件ごと）
             with progress_lock:
                 progress_done += 1
                 if progress_total > 0:
                     percent = progress_done / progress_total * 100
-                    log_info(f"[進捗] {progress_done}/{progress_total} ({percent:.1f}%) 完了")
+                    if not _QUIET_MODE or progress_done % 50 == 0 or progress_done == progress_total:
+                        log_info(f"[進捗] {progress_done}/{progress_total} ({percent:.1f}%) 完了")
                 else:
                     log_info(f"[進捗] {progress_done} 完了")
-            if result['canceled']:
-                log_info(f"    R{result['race_no']}: レース中止")
-            else:
-                race_status = "成功" if result['race_success'] else "失敗"
-                odds_status = "成功" if result['odds_success'] else "失敗"
-                log_info(f"    R{result['race_no']}: {race_status}race {odds_status}odds")
+            if not _QUIET_MODE:
+                if result['canceled']:
+                    log_info(f"    R{result['race_no']}: レース中止")
+                else:
+                    race_status = "成功" if result['race_success'] else "失敗"
+                    odds_status = "成功" if result['odds_success'] else "失敗"
+                    log_info(f"    R{result['race_no']}: {race_status}race {odds_status}odds")
 
     # 統計
     race_success = sum(1 for r in results if r['race_success'])
     odds_success = sum(1 for r in results if r['odds_success'])
     canceled_count = sum(1 for r in results if r['canceled'])
 
-    log_info(f"  {stadium.name} {ymd} の並列処理終了: {datetime.now()}")
-    if canceled_count > 0:
-        log_info(f"    結果: レース{race_success}/12, オッズ{odds_success}/12, 中止{canceled_count}件")
-    else:
-        log_info(f"    結果: レース{race_success}/12, オッズ{odds_success}/12")
+    if not _QUIET_MODE:
+        log_info(f"  {stadium.name} {ymd} の並列処理終了: {datetime.now()}")
+        if canceled_count > 0:
+            log_info(f"    結果: レース{race_success}/12, オッズ{odds_success}/12, 中止{canceled_count}件")
+        else:
+            log_info(f"    結果: レース{race_success}/12, オッズ{odds_success}/12")
 
-    # 会場ごと進捗
+    # 会場ごと進捗（--quiet時は会場完了時のみ）
     with progress_lock:
-        if progress_total > 0:
+        if progress_total > 0 and (not _QUIET_MODE or progress_done % 200 == 0 or progress_done == progress_total):
             percent = progress_done / progress_total * 100
             log_info(f"[会場進捗] {stadium.name} {progress_done}/{progress_total} ({percent:.1f}%)")
         else:
@@ -449,11 +441,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--end-date', type=str, required=True, help='取得終了日 (YYYY-MM-DD)')
     parser.add_argument('--stadiums', type=str, required=True, help='対象会場名（カンマ区切り, 例: KIRYU,EDOGAWA）')
     parser.add_argument('--schedule-workers', type=int, default=8, help='開催日取得の並列数（デフォルト: 8）')
-    parser.add_argument('--race-workers', type=int, default=8, help='レース取得の並列数（デフォルト: 8）')
+    parser.add_argument('--race-workers', type=int, default=6, help='レース取得の並列数（デフォルト: 6。増やすと速いがサーバ負荷に注意）')
     parser.add_argument('--output-data-dir', type=str, default=os.path.join("kyotei_predictor", "data", "raw"), help='出力先データディレクトリ（デフォルト: kyotei_predictor/data/raw）')
     parser.add_argument('--races', type=str, default=None, help='取得するレース番号（カンマ区切り, 例: 1 または 1,2,3）。未指定時は1-12R全て')
     parser.add_argument('--overwrite', action='store_true', help='既存ファイルがあっても上書きして再取得する（過去分の取り直し用）')
-    parser.add_argument('--rate-limit', type=float, default=1.0, help='リクエスト間の待機秒数（デフォルト: 1。短くするほど速いがサーバ負荷に注意）')
+    parser.add_argument('--rate-limit', type=float, default=1.0, help='リクエスト間の待機秒数（デフォルト: 1。0.5〜1.0推奨。短くするほど速いがサーバ負荷に注意）')
+    parser.add_argument('--quiet', '-q', action='store_true', help='進捗出力を抑制（エラーとサマリのみ表示）')
     parser.add_argument('--is-child', action='store_true', help='サブプロセス起動時の多重起動判定除外用フラグ')
     return parser.parse_args()
 
@@ -461,8 +454,9 @@ def main() -> None:
     """
     バッチ全体のエントリポイント。引数パース、ロックファイル、進捗カウンタ、全体フローを管理。
     """
-    global progress_total, progress_done
+    global progress_total, progress_done, _QUIET_MODE
     args = parse_args()
+    _QUIET_MODE = getattr(args, 'quiet', False)
     lockfile = 'batch_fetch_all_venues.lock'
     is_child = args.is_child
     if not is_child:
@@ -517,9 +511,11 @@ def main() -> None:
     log_info(f"出力先データディレクトリ: {output_data_dir}")
     if args.overwrite:
         log_info("上書きモード: 既存ファイルも再取得します")
-    log_info(f"レート制限: {RATE_LIMIT_SECONDS}秒")
-    log_info(f"開催日取得並列数: {SCHEDULE_WORKERS}")
-    log_info(f"レース取得並列数: {RACE_WORKERS}")
+    log_info(f"レート制限: {RATE_LIMIT_SECONDS}秒", force=True)
+    log_info(f"開催日取得並列数: {SCHEDULE_WORKERS}", force=True)
+    log_info(f"レース取得並列数: {RACE_WORKERS}", force=True)
+    if _QUIET_MODE:
+        log_info("--quiet: 進捗出力を抑制します", force=True)
     all_event_days = get_all_event_days_parallel(stadiums, start_date, end_date, SCHEDULE_WORKERS)
 
     total_days = sum(len(days) for days in all_event_days.values())
@@ -560,14 +556,14 @@ def main() -> None:
                 if result.get('race_error') and '選手名解析エラー' in result['race_error']:
                     racer_parse_errors += 1
 
-    log_info(f"\n=== バッチフェッチ完了（完全並列版） ===")
-    log_info(f"対象期間: {start_date} 〜 {end_date}")
+    log_info(f"\n=== バッチフェッチ完了（完全並列版） ===", force=True)
+    log_info(f"対象期間: {start_date} 〜 {end_date}", force=True)
     log_info(f"対象会場: {len(stadiums)}会場")
-    log_info(f"総リクエスト数: レース{total_races}件, オッズ{total_odds}件")
-    log_info(f"成功数: レース{success_races}件, オッズ{success_odds}件")
+    log_info(f"総リクエスト数: レース{total_races}件, オッズ{total_odds}件", force=True)
+    log_info(f"成功数: レース{success_races}件, オッズ{success_odds}件", force=True)
     if total_races > 0 and total_odds > 0:
-        log_info(f"成功率: レース{success_races/total_races*100:.1f}%, オッズ{success_odds/total_odds*100:.1f}%")
-        log_info(f"失敗数: レース{total_races-success_races}件, オッズ{total_odds-success_odds}件")
+        log_info(f"成功率: レース{success_races/total_races*100:.1f}%, オッズ{success_odds/total_odds*100:.1f}%", force=True)
+        log_info(f"失敗数: レース{total_races-success_races}件, オッズ{total_odds-success_odds}件", force=True)
     else:
         log_info("成功率: 計算不可")
     
@@ -586,8 +582,8 @@ def main() -> None:
     log_info(f"  - レート制限: {RATE_LIMIT_SECONDS}秒間隔")
 
     end_time = datetime.now()
-    log_info(f"バッチ処理終了: {end_time}")
-    log_info(f"所要時間: {end_time - start_time}")
+    log_info(f"バッチ処理終了: {end_time}", force=True)
+    log_info(f"所要時間: {end_time - start_time}", force=True)
 
 if __name__ == "__main__":
     main() 

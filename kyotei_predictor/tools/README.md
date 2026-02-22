@@ -13,14 +13,14 @@
 - 詳細な設計・運用ルールはdocs/配下に集約
 
 ## 主なサブディレクトリ・ツール
-- `batch/` : データ取得・再取得・一括運用バッチ
+- `batch/` : データ取得・再取得・一括運用バッチ（batch_fetch_all_venues, fetch_5year_chunked, retry_missing_races）
 - `analysis/` : 分析・可視化・統計ツール
 - `fetch/` : データ取得用API・スクレイパ
-- `optimization/` : Optuna等の最適化ツール
-- `ai/` : AI学習・評価用ツール
-- `common/` : 共通処理・ユーティリティ
+- `optimization/` : **本流** Optuna 最適化（optimize_graduated_reward）。optimize_graduated_reward_202403 は 2024年3月版・参照用
+- `ai/` : AI学習・評価（optuna_optimizer）。tools/optuna_optimizer.py は ai の再エクスポート
+- `legacy/` : 本番未使用・参照用（旧最適化・Colab）。新規は optimization/・batch/ を参照
+- `common/` : 共通処理・ユーティリティ（venue_mapping は utils.venue_mapping のラッパー）
 - `viz/` : 可視化・グラフ生成
-- `data/` : サンプル・補助データ
 
 ## 主要バッチ・ツールの使い方
 - 各サブディレクトリのREADMEやdocstringを参照

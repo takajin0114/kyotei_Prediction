@@ -170,8 +170,7 @@ kyotei_Predictionは、競艇レースの予測システムを構築するプロ
 kyotei_predictor/
 ├── app.py                          # Webアプリケーション
 ├── config/                         # 設定ファイル
-│   ├── settings.py                 # 基本設定
-│   ├── config.json                 # デフォルト設定
+│   ├── config.json                 # 基本設定（データ・API・予測・バッチ・Web）
 │   ├── improvement_config.json     # 改善設定
 │   ├── improvement_config_manager.py # 改善設定管理
 │   ├── optuna_config.json          # Optuna設定

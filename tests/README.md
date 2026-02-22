@@ -1,20 +1,33 @@
 # テストディレクトリ
 
-このディレクトリには、競艇予測システムの各種テストが含まれています。
+このディレクトリには、**改善策の手動・バッチテスト**が含まれています。  
+**パッケージ内の単体・統合テスト**は `kyotei_predictor/tests/` にあります。
 
-## 📁 ディレクトリ構造
+## 📁 テストの二系統
+
+| 場所 | 役割 | 実行方法 |
+|------|------|----------|
+| **tests/**（このディレクトリ） | 改善策（Phase1–4）の手動検証・学習サイクル確認 | `python quick_test.py` 等（improvement_tests 内） |
+| **kyotei_predictor/tests/** | 単体・統合テスト（pytest） | プロジェクトルートで `pytest kyotei_predictor/tests/` |
+
+プロジェクトルートから全テストを実行する例:
+```bash
+pytest kyotei_predictor/tests/ -v
+# 改善策の軽量テストのみ
+python tests/improvement_tests/quick_test.py
+```
+
+## 📁 ディレクトリ構造（このディレクトリ）
 
 ```
 tests/
 ├── README.md                    # このファイル
-├── improvement_tests/           # 3連単的中率改善策のテスト
-│   ├── quick_test.py           # 軽量テスト
-│   ├── simple_learning_verification.py  # 学習検証テスト
-│   ├── minimal_learning_test.py # 最小限学習テスト
-│   ├── test_improvements.bat   # テスト用バッチ
-│   └── run_all_tests.bat       # 包括的テスト
-└── kyotei_predictor/           # kyotei_predictorモジュールのテスト
-    └── tests/                  # 既存のテストファイル
+└── improvement_tests/           # 3連単的中率改善策のテスト
+    ├── README.md
+    ├── quick_test.py            # 軽量テスト
+    ├── simple_learning_verification.py
+    ├── minimal_learning_test.py
+    └── run_*.bat                # バッチ実行
 ```
 
 ## 🧪 テストの種類
@@ -55,9 +68,10 @@ tests/
 - **test_improvements.bat**: 基本的な改善策テスト
 - **run_all_tests.bat**: 包括的なテスト実行
 
-### 2. 既存テスト (kyotei_predictor/tests/)
+### 2. パッケージ内テスト (kyotei_predictor/tests/)
 
-既存のkyotei_predictorモジュールのテストファイルが含まれています。
+単体・統合テスト（pytest）。Web表示・AI・データ取得・予測ツール等。  
+プロジェクトルートで: `pytest kyotei_predictor/tests/`
 
 ## 🚀 テスト実行方法
 

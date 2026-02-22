@@ -15,8 +15,8 @@
 ### データ検証・品質管理
 - `bulk_prediction_validator.py` - 一括予測結果の検証
 - `real_odds_investment_analyzer.py` - 実オッズ投資分析
-- `verify_race_data.py` - レースデータ整合性チェック
-- `verify_race_data_simple.py` - シンプルなレースデータ検証
+- `verify_race_data.py` - レースデータ整合性チェック（詳細版・walk と集計）
+- `verify_race_data_simple.py` - シンプルなレースデータ検証（軽量・単一ディレクトリ向け）
 - `check_batch_results.py` - バッチ取得結果の検証
 - `check_trifecta_hit_rate.py` - 3連単的中率チェック
 

@@ -2,6 +2,7 @@
 """
 競艇レースデータ取得ツール
 """
+import kyotei_predictor.utils.common  # noqa: F401 -- Windows UTF-8 stdio
 
 import os
 import sys
@@ -24,24 +25,6 @@ from metaboatrace.scrapers.official.website.exceptions import RaceCanceled
 from kyotei_predictor.tools.fetch.odds_fetcher import fetch_trifecta_odds
 from kyotei_predictor.utils.common import KyoteiUtils
 
-
-# 文字化け対策: 標準出力のエンコーディングをUTF-8に設定
-if sys.platform.startswith('win'):
-    import codecs
-    # PowerShellでの文字化け対策
-    try:
-        # 環境変数でUTF-8を強制
-        os.environ['PYTHONIOENCODING'] = 'utf-8'
-        os.environ['PYTHONLEGACYWINDOWSSTDIO'] = 'utf-8'
-        
-        # 標準出力をUTF-8に設定（安全な方法）
-        if hasattr(sys.stdout, 'detach'):
-            sys.stdout = codecs.getwriter('utf-8')(sys.stdout.detach())
-            sys.stderr = codecs.getwriter('utf-8')(sys.stderr.detach())
-    except Exception:
-        # エラーが発生した場合は環境変数のみ設定
-        os.environ['PYTHONIOENCODING'] = 'utf-8'
-        os.environ['PYTHONLEGACYWINDOWSSTDIO'] = 'utf-8'
 
 def safe_print(message: str) -> None:
     """文字化け対策付きprint関数"""
@@ -540,7 +523,8 @@ def _extract_extended_entry_stats(html_text: str) -> dict[int, dict[str, Any]]:
 def fetch_race_entry_data(
     race_date: date,
     stadium_code: StadiumTelCode,
-    race_number: int
+    race_number: int,
+    rate_limit_seconds: float = 1.0,
 ) -> dict[str, Any] | None:
     """
     レース前情報（出走表）を取得する関数
@@ -564,8 +548,8 @@ def fetch_race_entry_data(
     
     safe_print(f"URL: {url}")
     
-    # レート制限
-    time.sleep(5)
+    # レート制限（相手サイト負荷配慮、最小0.5秒）
+    time.sleep(max(0.5, rate_limit_seconds))
     
     try:
         # データ取得
@@ -707,7 +691,8 @@ def fetch_race_entry_data(
 def fetch_race_result_data(
     race_date: date,
     stadium_code: StadiumTelCode,
-    race_number: int
+    race_number: int,
+    rate_limit_seconds: float = 1.0,
 ) -> dict[str, Any] | None:
     """
     レース結果を取得する関数
@@ -731,8 +716,8 @@ def fetch_race_result_data(
     
     safe_print(f"URL: {url}")
     
-    # レート制限
-    time.sleep(5)
+    # レート制限（相手サイト負荷配慮、最小0.5秒）
+    time.sleep(max(0.5, rate_limit_seconds))
     
     try:
         # データ取得
@@ -818,6 +803,7 @@ def fetch_before_information(
     race_date: date,
     stadium_code: StadiumTelCode,
     race_number: int,
+    rate_limit_seconds: float = 1.0,
 ) -> dict[str, Any] | None:
     """
     レース前の直前情報（展示走・スタート展示・選手体重・艇設定・天候）を取得する。
@@ -839,7 +825,7 @@ def fetch_before_information(
         race_number=race_number,
     )
     safe_print(f"URL: {url}")
-    time.sleep(5)
+    time.sleep(max(0.5, rate_limit_seconds))
     try:
         response = requests.get(url)
         response.raise_for_status()
@@ -981,7 +967,8 @@ def fetch_pre_race_data(
 def fetch_complete_race_data(
     race_date: date,
     stadium_code: StadiumTelCode,
-    race_number: int
+    race_number: int,
+    rate_limit_seconds: float = 1.0,
 ) -> dict[str, Any]:
     """
     1レースの完全なデータ（出走表 + 結果）を取得する関数
@@ -998,13 +985,13 @@ def fetch_complete_race_data(
     safe_print("=" * 60)
     
     # 出走表データ取得
-    entry_data = fetch_race_entry_data(race_date, stadium_code, race_number)
+    entry_data = fetch_race_entry_data(race_date, stadium_code, race_number, rate_limit_seconds)
     if not entry_data:
         # レース中止の場合は例外を再発生
         raise RaceCanceled(f"レース中止: {race_date} {stadium_code.name} 第{race_number}レース")
     
     # レース結果データ取得
-    result_data = fetch_race_result_data(race_date, stadium_code, race_number)
+    result_data = fetch_race_result_data(race_date, stadium_code, race_number, rate_limit_seconds)
     if not result_data:
         # レース中止の場合は例外を再発生
         raise RaceCanceled(f"レース中止: {race_date} {stadium_code.name} 第{race_number}レース")

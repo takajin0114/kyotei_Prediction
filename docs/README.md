@@ -4,6 +4,15 @@
 
 このディレクトリには、競艇予測システムの詳細なドキュメントが含まれています。
 
+### まず読むもの（ロール別）
+
+| ロール | 1本目 | 2本目 |
+|--------|--------|--------|
+| **初回利用** | [README.md](../README.md)（プロジェクト概要） | [guides/batch_usage.md](guides/batch_usage.md)（バッチの使い方） |
+| **データ取得** | [guides/batch_usage.md](guides/batch_usage.md) | [guides/fetch_5year_chunked.md](guides/fetch_5year_chunked.md)（5年分を分けて取得） |
+| **最適化** | [optimization/README.md](optimization/README.md) | [optimization/EXECUTION_EXAMPLES.md](optimization/EXECUTION_EXAMPLES.md) |
+| **構成把握** | [PROJECT_LAYOUT.md](PROJECT_LAYOUT.md) | [REQUIREMENTS_OVERVIEW.md](REQUIREMENTS_OVERVIEW.md) |
+
 ## 🗂️ プロジェクト概要
 
 - [README.md](../README.md) - プロジェクトの概要とクイックスタート

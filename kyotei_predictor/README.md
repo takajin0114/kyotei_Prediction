@@ -38,8 +38,9 @@
 kyotei_predictor/
 ├── app.py                          # Webアプリケーション
 ├── config/                         # 設定ファイル
-│   ├── settings.py                 # 基本設定
-│   └── optuna_config.json         # Optuna設定
+│   ├── config.json                 # 基本設定（データ・API・予測・バッチ・Web）
+│   ├── optuna_config.json         # Optuna 学習・ハイパーパラメータ
+│   └── improvement_config.json    # 報酬設計・学習パラメータ
 ├── data/                          # データディレクトリ
 │   ├── raw/                       # 生データ
 │   ├── processed/                 # 処理済みデータ
@@ -126,7 +127,7 @@ mkdir -p kyotei_predictor/data/results
 ```
 
 ### 3. 設定ファイル
-`kyotei_predictor/config/settings.py` を環境に合わせて編集してください。
+`kyotei_predictor/config/config.json`（および必要に応じて `optuna_config.json`・`improvement_config.json`）を環境に合わせて編集してください。
 
 ## 使用方法
 

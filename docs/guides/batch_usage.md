@@ -46,6 +46,16 @@ scripts\cleanup_old_files.bat
 
 プロジェクトが Google Drive の日本語パスにある場合、Junction を使って `C:\GDrive` などからアクセスできます。詳細は [Junction による日本語パス回避](junction_setup.md) を参照してください。
 
+## 5年分を数回に分けて取得する場合
+
+計画に基づいて「取得済み月」と「未取得月」を判定し、欠けている期間だけ取得する仕組みがあります。
+
+- **進捗確認**: `./scripts/run_fetch_5year_chunked.sh check` または `python -m kyotei_predictor.tools.batch.fetch_5year_chunked --check`
+- **次の N ヶ月を取得**: `./scripts/run_fetch_5year_chunked.sh next 1`（既存はスキップ）
+- **指定期間を取得**: `./scripts/run_fetch_5year_chunked.sh range 2023-01-01 2023-12-31`
+
+詳細は [fetch_5year_chunked.md](fetch_5year_chunked.md) を参照してください。
+
 ## トラブルシューティング
 
 - `run_learning_prediction_cycle.sh` は `VENV_PATH`（既定: `.venv`）を自動で探して有効化します。存在しない場合はシステム Python を使用します。

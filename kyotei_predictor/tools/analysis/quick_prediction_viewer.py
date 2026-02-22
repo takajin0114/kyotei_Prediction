@@ -2,6 +2,7 @@
 """
 予測結果クイックビューアー
 """
+import kyotei_predictor.utils.common  # noqa: F401 -- Windows UTF-8 stdio
 
 import os
 import sys
@@ -9,24 +10,6 @@ import json
 import argparse
 from pathlib import Path
 from typing import Dict, List, Optional
-
-# 文字化け対策: 標準出力のエンコーディングをUTF-8に設定
-if sys.platform.startswith('win'):
-    import codecs
-    # PowerShellでの文字化け対策
-    try:
-        # 環境変数でUTF-8を強制
-        os.environ['PYTHONIOENCODING'] = 'utf-8'
-        os.environ['PYTHONLEGACYWINDOWSSTDIO'] = 'utf-8'
-        
-        # 標準出力をUTF-8に設定（安全な方法）
-        if hasattr(sys.stdout, 'detach'):
-            sys.stdout = codecs.getwriter('utf-8')(sys.stdout.detach())
-            sys.stderr = codecs.getwriter('utf-8')(sys.stderr.detach())
-    except Exception:
-        # エラーが発生した場合は環境変数のみ設定
-        os.environ['PYTHONIOENCODING'] = 'utf-8'
-        os.environ['PYTHONLEGACYWINDOWSSTDIO'] = 'utf-8'
 
 from kyotei_predictor.utils.common import KyoteiUtils
 

@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """
-共通ユーティリティ関数
+共通ユーティリティ関数。
+
+Windows では標準出力の UTF-8 化を ensure_windows_utf8_stdio() で行う。
+他モジュールではこのモジュールを最優先で import するか、ensure_windows_utf8_stdio() を呼ぶこと。
 """
 import os
 import json
@@ -11,23 +14,25 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 
-# 文字化け対策: 標準出力のエンコーディングをUTF-8に設定
-if sys.platform.startswith('win'):
+
+def ensure_windows_utf8_stdio() -> None:
+    """Windows で標準入出力を UTF-8 に設定（PowerShell 等の文字化け対策）。他プラットフォームでは no-op。"""
+    if not sys.platform.startswith('win'):
+        return
     import codecs
-    # PowerShellでの文字化け対策
     try:
-        # 環境変数でUTF-8を強制
-        os.environ['PYTHONIOENCODING'] = 'utf-8'
-        os.environ['PYTHONLEGACYWINDOWSSTDIO'] = 'utf-8'
-        
-        # 標準出力をUTF-8に設定（安全な方法）
+        os.environ.setdefault('PYTHONIOENCODING', 'utf-8')
+        os.environ.setdefault('PYTHONLEGACYWINDOWSSTDIO', 'utf-8')
         if hasattr(sys.stdout, 'detach'):
             sys.stdout = codecs.getwriter('utf-8')(sys.stdout.detach())
             sys.stderr = codecs.getwriter('utf-8')(sys.stderr.detach())
     except Exception:
-        # エラーが発生した場合は環境変数のみ設定
-        os.environ['PYTHONIOENCODING'] = 'utf-8'
-        os.environ['PYTHONLEGACYWINDOWSSTDIO'] = 'utf-8'
+        os.environ.setdefault('PYTHONIOENCODING', 'utf-8')
+        os.environ.setdefault('PYTHONLEGACYWINDOWSSTDIO', 'utf-8')
+
+
+# このモジュールが import された時点で Windows の場合は UTF-8 化を適用
+ensure_windows_utf8_stdio()
 
 # ログ設定
 logging.basicConfig(level=logging.INFO)

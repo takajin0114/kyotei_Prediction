@@ -44,7 +44,7 @@
 
 | ディレクトリ | 役割 |
 |-------------|------|
-| **config/** | 設定（settings.py, config.json, improvement_config, optuna_config, ImprovementConfigManager） |
+| **config/** | 設定（config.json, improvement_config, optuna_config, ImprovementConfigManager） |
 | **utils/** | 共通ユーティリティ（common, config, logger, venue_mapping, exceptions） |
 | **pipelines/** | データ処理・強化学習（kyotei_env, data_preprocessor, feature_analysis, trifecta_*, feature_enhancer, db_integration） |
 | **data/** | データ格納（sample, test_raw にサンプル・テスト用JSONあり） |

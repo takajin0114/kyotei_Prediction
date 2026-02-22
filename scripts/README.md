@@ -11,11 +11,12 @@
 | run_learning_prediction_cycle.sh | 学習→予測一括（test_raw, Linux/macOS向け） |
 | run_colab_learning_cycle.py | Google Drive上データで学習/予測（Colab向け） |
 | **fetch_one_race.bat** | **1R のみデータ取得（桐生 1日・1R・疎通確認用）** |
-| **fetch_one_race.ps1** | **上記の PowerShell 版** |
-| **run_fetch_one_race.py** | **1R 取得の Python ランチャー（どこからでも実行可）** |
+| **run_fetch_one_race.py** | **1R 取得の Python ランチャー（推奨・どこからでも実行可）** |
 | **fetch_reperiod.bat** | **期間を指定してデータ再取得（中身の日付・会場を編集して使用）** |
 | **fetch_5years.bat** | **過去5年分（2021-01-01〜2026-02-14）を取得。欠けている分のみ（OVERWRITE=0）。** |
 | **fetch_1month.bat** | **過去1か月分（2026年1月）を取得。欠けている分のみ。** |
+| **run_fetch_5year_chunked.sh** | **5年分を数回に分けて取得（進捗確認・次に取るNヶ月・指定期間）。** |
+| **fetch_5year_plan.json** | **5年分取得の対象月一覧（2021-01〜2026-02）。** |
 | cleanup_old_files.bat | 古いログ・Optuna ファイルの削除 |
 
 **実行例**（プロジェクトルートで）:
@@ -25,9 +26,7 @@
 # 方法B: Junction（C:\GDrive 等）経由で日本語パスを回避する場合は docs/guides/junction_setup.md を参照
 # 方法C: プロジェクトフォルダでターミナルを開いてから
 scripts\fetch_one_race.bat
-# または PowerShell
-.\scripts\fetch_one_race.ps1
-# または Python ランチャー（venv 有効化後）
+# または Python ランチャー（venv 有効化後・推奨）
 python scripts/run_fetch_one_race.py
 
 scripts\run_optimization_config.bat
@@ -41,6 +40,28 @@ VENV_PATH=.venv-cycle YEAR_MONTH=2024-05 PREDICT_DATE=2024-05-01 ./scripts/run_l
 
 # Colab（Driveマウント済み想定）
 python scripts/run_colab_learning_cycle.py --drive-root /content/drive/MyDrive/kyotei_prediction --year-month 2024-05 --minimal --predict-date 2024-05-01
+
+# 1ヶ月分取得（最適化オプション）
+python -m kyotei_predictor.tools.batch.batch_fetch_all_venues \
+  --start-date 2026-01-01 --end-date 2026-01-31 --stadiums ALL \
+  --output-data-dir kyotei_predictor/data/raw --overwrite \
+  --rate-limit 1 --race-workers 6 --quiet
+
+# 5年分を数回に分けて取得（過不足なく）
+./scripts/run_fetch_5year_chunked.sh check              # 進捗確認
+./scripts/run_fetch_5year_chunked.sh next 1              # 未取得の次の1ヶ月
+./scripts/run_fetch_5year_chunked.sh next 3              # 未取得の次の3ヶ月
+./scripts/run_fetch_5year_chunked.sh range 2023-01-01 2023-12-31  # 指定期間
+# または Python から
+python -m kyotei_predictor.tools.batch.fetch_5year_chunked --check
+python -m kyotei_predictor.tools.batch.fetch_5year_chunked --next 1
 ```
+
+**データ取得の最適化オプション**:
+- `--rate-limit 1`: リクエスト間の待機秒数（0.5〜1.0推奨。相手サイト負荷に配慮）
+- `--race-workers 6`: レース取得の並列数（増やすと速いがサーバ負荷に注意）
+- `--quiet` / `-q`: 進捗出力を抑制（エラーとサマリのみ表示）
+
+**5年分を数回に分けて取得する手順**: [docs/guides/fetch_5year_chunked.md](../docs/guides/fetch_5year_chunked.md)
 
 詳細: [docs/guides/batch_usage.md](../docs/guides/batch_usage.md)
