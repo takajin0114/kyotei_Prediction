@@ -118,6 +118,7 @@ Thumbs.db
 # Project specific
 kyotei_predictor/logs/*.log
 kyotei_predictor/__pycache__/
+kyotei_predictor/results/*.json
 *.pyc
 
 # --- kyotei_predictorプロジェクト固有の除外 ---

@@ -10,8 +10,10 @@ improvement_tests/
 ├── quick_test.py                       # 軽量テスト（推奨）
 ├── simple_learning_verification.py     # 学習検証テスト
 ├── minimal_learning_test.py            # 最小限学習テスト
-├── test_improvements.bat               # 基本的なテスト用バッチ
-└── run_all_tests.bat                  # 包括的テスト用バッチ
+├── run_config_test.bat                 # 設定・構成テスト
+├── run_evaluation.bat                  # 評価テスト
+├── run_learning_test.bat               # 学習テスト
+└── run_all_tests.bat                   # 包括的テスト（全テスト実行）
 ```
 
 ## 🧪 テストの詳細
@@ -118,15 +120,14 @@ python minimal_learning_test.py
 
 ### 4. バッチファイル
 
-#### test_improvements.bat
-- **目的**: 基本的な改善策テスト
-- **内容**: 仮想環境の有効化と軽量テストの実行
-- **実行方法**: ダブルクリックまたはコマンドラインから実行
+| バッチ | 目的 |
+|--------|------|
+| `run_config_test.bat` | 設定・構成のテスト |
+| `run_evaluation.bat` | 評価テスト |
+| `run_learning_test.bat` | 学習テスト |
+| `run_all_tests.bat` | 全テストの包括実行 |
 
-#### run_all_tests.bat
-- **目的**: 包括的なテスト実行
-- **内容**: すべてのテストを順次実行
-- **実行方法**: ダブルクリックまたはコマンドラインから実行
+いずれも仮想環境を有効化してから、ダブルクリックまたはコマンドラインで実行。
 
 ## 🚀 推奨実行順序
 

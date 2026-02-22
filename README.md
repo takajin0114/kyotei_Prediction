@@ -31,11 +31,19 @@ VENV_PATH=.venv-cycle YEAR_MONTH=2024-05 PREDICT_DATE=2024-05-01 ./scripts/run_l
 
 ## 主要スクリプト（scripts/）
 
-- `run_optimization_config.bat`: 最適化（`optimization_config.ini` 参照）
-- `run_optimization_batch.bat`: 最適化（中速・20試行）
-- `run_learning_prediction_cycle.bat`: 学習→予測一括（Windows）
-- `run_learning_prediction_cycle.sh`: 学習→予測一括（Linux/macOS）
-- `cleanup_old_files.bat`: 古いログやOptuna成果物の整理
+| スクリプト | 用途 |
+|------------|------|
+| `run_optimization_config.bat` | 最適化（`optimization_config.ini` 参照） |
+| `run_optimization_batch.bat` | 最適化（中速・20試行） |
+| `run_optimization_simple.bat` | 最適化（簡易版） |
+| `run_learning_prediction_cycle.bat` | 学習→予測一括（Windows） |
+| `run_learning_prediction_cycle.sh` | 学習→予測一括（Linux/macOS） |
+| `fetch_one_race.bat` | 1R のみデータ取得（疎通確認用） |
+| `fetch_reperiod.bat` | 期間指定でデータ再取得 |
+| `fetch_5years.bat` | 過去5年分のデータ取得 |
+| `cleanup_old_files.bat` | 古いログやOptuna成果物の整理 |
+
+一覧・詳細: [scripts/README.md](scripts/README.md)
 
 ## 安全な Git 運用（重要）
 

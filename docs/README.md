@@ -30,16 +30,15 @@
 ## 📊 システム状況・進捗
 
 - [CURRENT_STATUS_SUMMARY.md](CURRENT_STATUS_SUMMARY.md) - 現在の状況サマリー
-- [REPO_STATUS_20250212.md](REPO_STATUS_20250212.md) - リポジトリ現状サマリー（2025-02-12）
-- **[CURRENT_REPO_STATUS_20250212.md](CURRENT_REPO_STATUS_20250212.md)** - **現状整理（構成・機能・Git・実行入口・注意点）**
-- [DEEP_CLEANUP_REPORT_20250212.md](DEEP_CLEANUP_REPORT_20250212.md) - ソース深堀り整理レポート（2025-02-12）
-- [REFACTORING_REPORT_20250212.md](REFACTORING_REPORT_20250212.md) - リファクタリング・整理レポート（2025-02-12）
+- **[archive/20250212/](archive/20250212/)** - 2025-02-12 整理レポート（6件のアーカイブ）
 - [improvement_implementation_summary.md](improvement_implementation_summary.md) - 改善策の実装状況
 - [test_results_summary.md](test_results_summary.md) - テスト結果の詳細
 - [monthly_learning_guide.md](monthly_learning_guide.md) - 月次学習ガイド
 
+**データ取得**:
 - [RACE_DATA_ACQUISITION_AND_SOURCES.md](RACE_DATA_ACQUISITION_AND_SOURCES.md) - レースデータ取得処理・参照サイト・取得/必要データの洗い出し
-- **[SITE_DATA_AND_FETCH_STATUS.md](SITE_DATA_AND_FETCH_STATUS.md)** - **サイトで取得できるデータ一覧と現状の取得状況（レース前予測前提）**
+- **[SITE_DATA_AND_FETCH_STATUS.md](SITE_DATA_AND_FETCH_STATUS.md)** - サイトで取得できるデータ一覧と現状の取得状況（レース前予測前提）
+- [operations/data_acquisition.md](operations/data_acquisition.md) - データ取得の運用
 
 ## 🔧 設定・運用
 
@@ -74,11 +73,8 @@
 
 ### **2025年2月**
 - **PROJECT_LAYOUT.md** - プロジェクト構成・エントリポイント・新規コードの置き場所
-- **REFACTORING_REPORT_20250212.md** - リファクタリング（config パッケージ化、optuna_optimizer 整理、ドキュメント追加）
 - **REQUIREMENTS_OVERVIEW.md** - 要件レベルで全体を整理（目的・業務/機能/非機能・ドキュメント対応表）
-- **REPO_STATUS_20250212.md** - リポジトリ構成・現状サマリー
-- **DEEP_CLEANUP_REPORT_20250212.md** - ソース深堀り整理（インポート統一・会場マッピング一元化・不足モジュール追加等）
-- **docs/README.md** - 要件・進捗セクションの見直し、PROJECT_LAYOUT・REFACTORING へのリンク追加
+- **archive/20250212/** - 2025-02-12 整理レポート（6件）をアーカイブ化
 
 ### **2025年2月（構成整理）**
 - **scripts/** - バッチを一本化。**docs/guides/** - 実行ガイドを集約
