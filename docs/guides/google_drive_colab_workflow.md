@@ -1,5 +1,11 @@
 # Google Drive保存 + Google Colab学習ワークフロー
 
+## 準備チェックリスト
+
+**データ取得を待っている間に進められる手順**は [Colab学習の準備チェックリスト](colab_learning_prep.md) にまとめています。
+
+---
+
 ## 目的
 
 - 取得データを Google Drive 側に保存

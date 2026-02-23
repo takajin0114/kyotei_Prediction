@@ -84,6 +84,38 @@ def create_timestamped_logger(
         log_file=log_file
     )
 
+# ログ出力先の既定ディレクトリ（プロジェクトルートの logs/ を想定）
+DEFAULT_LOG_DIR = "logs"
+
+
+def format_timestamp() -> str:
+    """現在時刻を YYYY-MM-DD HH:MM:SS で返す（ログ用）"""
+    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+
+def format_log_line(message: str) -> str:
+    """1行ログを [日付 時:分:秒] 付きで返す。バッチ等の標準出力ログで共通利用。"""
+    return f"[{format_timestamp()}] {message}"
+
+
+def get_daily_log_path(prefix: str, log_dir: Optional[str] = None) -> str:
+    """
+    1日ごとのログファイルパスを返す。ディレクトリが無ければ作成する。
+    例: prefix="batch_fetch" -> "logs/batch_fetch_2026-02-24.log"
+
+    Args:
+        prefix: ファイル名のプレフィックス（例: batch_fetch, retry_missing）
+        log_dir: ログディレクトリ（未指定時は DEFAULT_LOG_DIR）
+
+    Returns:
+        絶対パスまたはカレント基準のログファイルパス
+    """
+    directory = log_dir if log_dir is not None else DEFAULT_LOG_DIR
+    os.makedirs(directory, exist_ok=True)
+    date_str = datetime.now().strftime("%Y-%m-%d")
+    return os.path.join(directory, f"{prefix}_{date_str}.log")
+
+
 def get_logger(name: str = "kyotei_predictor") -> logging.Logger:
     """
     既存のロガーを取得（設定されていない場合はデフォルト設定）

@@ -15,7 +15,8 @@
 | **fetch_reperiod.bat** | **期間を指定してデータ再取得（中身の日付・会場を編集して使用）** |
 | **fetch_5years.bat** | **過去5年分（2021-01-01〜2026-02-14）を取得。欠けている分のみ（OVERWRITE=0）。** |
 | **fetch_1month.bat** | **過去1か月分（2026年1月）を取得。欠けている分のみ。** |
-| **run_fetch_5year_chunked.sh** | **5年分を数回に分けて取得（進捗確認・次に取るNヶ月・指定期間）。** |
+| **run_fetch_5year_chunked.sh** | **5年分を数回に分けて取得（進捗確認・次に取るNヶ月・指定期間）。venv自動使用。** |
+| **run_batch_fetch_1month.sh** | **1ヶ月分取得（YYYY-MM 指定可）。venv自動使用。activate不要。** |
 | **fetch_5year_plan.json** | **5年分取得の対象月一覧（2021-01〜2026-02）。** |
 | cleanup_old_files.bat | 古いログ・Optuna ファイルの削除 |
 
@@ -47,7 +48,12 @@ python -m kyotei_predictor.tools.batch.batch_fetch_all_venues \
   --output-data-dir kyotei_predictor/data/raw --overwrite \
   --rate-limit 1 --race-workers 6 --quiet
 
-# 5年分を数回に分けて取得（過不足なく）
+# 1ヶ月分取得（venv自動使用・activate不要）
+./scripts/run_batch_fetch_1month.sh                     # 今月
+./scripts/run_batch_fetch_1month.sh 2026-02             # 指定月
+RACE_WORKERS=8 ./scripts/run_batch_fetch_1month.sh 2026-02
+
+# 5年分を数回に分けて取得（過不足なく・venv自動使用）
 ./scripts/run_fetch_5year_chunked.sh check              # 進捗確認
 ./scripts/run_fetch_5year_chunked.sh next 1              # 未取得の次の1ヶ月
 ./scripts/run_fetch_5year_chunked.sh next 3              # 未取得の次の3ヶ月

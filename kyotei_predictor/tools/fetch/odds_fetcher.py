@@ -17,8 +17,14 @@ from metaboatrace.models.stadium import StadiumTelCode
 from metaboatrace.scrapers.official.website.v1707.pages.race.odds.trifecta_page import location, scraping
 from kyotei_predictor.utils.common import KyoteiUtils
 
+# バッチ実行時にTrueにすると進捗系のprintを抑制（batch_fetch_all_venuesから設定）
+_BATCH_QUIET = False
+
+
 def safe_print(message: str) -> None:
-    """文字化け対策付きprint関数"""
+    """文字化け対策付きprint関数（バッチ時は抑制）"""
+    if _BATCH_QUIET:
+        return
     utils = KyoteiUtils()
     utils.safe_print(message)
 

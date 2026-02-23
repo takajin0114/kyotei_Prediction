@@ -3,9 +3,9 @@
 Google Colab向け 学習→予測 実行ラッパー。
 
 想定:
-  1) Colabでこのリポジトリをclone
-  2) Google Driveを /content/drive にマウント
-  3) 本スクリプトを実行して Drive 上データで学習/予測し、成果物を Drive 側へ同期
+  1) Colab で Google Drive をマウントし、Drive 上のリポジトリで実行（clone 不要）
+  2) または Colab で clone して実行
+  3) 本スクリプトで Drive 上データで学習/予測し、成果物を Drive 側へ同期
 """
 
 from __future__ import annotations

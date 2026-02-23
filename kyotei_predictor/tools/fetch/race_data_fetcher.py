@@ -25,9 +25,14 @@ from metaboatrace.scrapers.official.website.exceptions import RaceCanceled
 from kyotei_predictor.tools.fetch.odds_fetcher import fetch_trifecta_odds
 from kyotei_predictor.utils.common import KyoteiUtils
 
+# バッチ実行時にTrueにすると進捗系のprintを抑制（batch_fetch_all_venuesから設定）
+_BATCH_QUIET = False
+
 
 def safe_print(message: str) -> None:
-    """文字化け対策付きprint関数"""
+    """文字化け対策付きprint関数（バッチ時は抑制）"""
+    if _BATCH_QUIET:
+        return
     utils = KyoteiUtils()
     utils.safe_print(message)
 

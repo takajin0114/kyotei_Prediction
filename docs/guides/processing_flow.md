@@ -136,6 +136,8 @@ python -m kyotei_predictor.tools.batch.batch_fetch_all_venues ^
 
 詳細: [Google Drive保存 + Colab学習ワークフロー](google_drive_colab_workflow.md)
 
+**Colab 学習の準備チェックリスト**（取得待ちの間に進められる）: [colab_learning_prep.md](colab_learning_prep.md)
+
 ---
 
 ## フェーズ3: データ取得と予測実行（Cursor）

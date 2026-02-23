@@ -1,0 +1,33 @@
+# Colab 用: 既存の torch / tensorboard はそのまま利用（GPU 対応のため上書きしない）
+# ローカルでは requirements.txt を使用してください。
+
+# === Core ===
+numpy>=1.26.4,<2.0.0
+pandas>=2.2.0
+pyarrow>=4.0.0,<15.0.0
+
+# === ML / RL（torch は Colab プリインストールを使用）===
+stable-baselines3==2.3.2
+gymnasium==0.29.1
+optuna==3.4.0
+mlflow==2.8.1
+
+# === Viz / Analysis（tensorboard は Colab のものを使用）===
+matplotlib
+seaborn
+scipy
+
+# === Web ===
+Flask>=3.0.0
+Flask-Caching
+requests>=2.31.0
+
+# === Data / Scraping ===
+metaboatrace.scrapers==3.3.1
+python-dateutil==2.9.0.post0
+
+# === Utils ===
+tqdm
+rich
+
+# テストは Colab では省略可（必要なら pytest 等を追加）

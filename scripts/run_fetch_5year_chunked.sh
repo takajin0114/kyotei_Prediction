@@ -6,7 +6,12 @@
 
 set -e
 cd "$(dirname "$0")/.."
-PYTHON="${VENV_PYTHON:-python}"
+# venv を自動で使う（activate し忘れても動く）
+if [[ -x "./.venv/bin/python" ]]; then
+  PYTHON="${VENV_PYTHON:-./.venv/bin/python}"
+else
+  PYTHON="${VENV_PYTHON:-$(command -v python3 2>/dev/null || command -v python)}"
+fi
 
 case "${1:-}" in
   check)

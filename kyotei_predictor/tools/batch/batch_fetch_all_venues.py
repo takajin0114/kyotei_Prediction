@@ -27,9 +27,17 @@ from metaboatrace.models.stadium import StadiumTelCode
 from metaboatrace.scrapers.official.website.v1707.pages.monthly_schedule_page.location import create_monthly_schedule_page_url
 from metaboatrace.scrapers.official.website.v1707.pages.monthly_schedule_page.scraping import extract_events
 from metaboatrace.scrapers.official.website.exceptions import RaceCanceled
+from kyotei_predictor.tools.fetch import race_data_fetcher
 from kyotei_predictor.tools.fetch.race_data_fetcher import fetch_complete_race_data
+from kyotei_predictor.tools.fetch import odds_fetcher
 from kyotei_predictor.tools.fetch.odds_fetcher import fetch_trifecta_odds
 from kyotei_predictor.utils.common import KyoteiUtils
+from kyotei_predictor.utils.logger import format_log_line, get_daily_log_path
+
+# 進捗表示の間隔（レース数）
+# 日次ログファイル（main で開き、同一日の出力を1ファイルにまとめる）
+_daily_log_file = None
+PROGRESS_INTERVAL = 50
 
 def safe_print(message: str) -> None:
     """文字化け対策付きprint関数"""
@@ -110,14 +118,24 @@ def get_all_event_days_parallel(stadiums, start_date: date, end_date: date, max_
     
     return all_event_days
 
-# --quiet 時に進捗を抑制（エラー・サマリは常に表示）
+# --quiet 時は進捗をさらに抑制（エラー・サマリは常に表示）
 _QUIET_MODE = False
 
+
 def log_info(message: str, force: bool = False) -> None:
-    """標準出力に情報を出す（flush付き）。--quiet時はforceでない限り進捗系をスキップ"""
+    """標準出力と日次ログファイルに情報を出す（日時付き・flush付き）。--quiet時はforceでない限り進捗系をスキップ"""
     if _QUIET_MODE and not force:
         return
-    print(message, flush=True)
+    line = format_log_line(message)
+    safe_print(line)
+    sys.stdout.flush()
+    global _daily_log_file
+    if _daily_log_file is not None:
+        try:
+            _daily_log_file.write(line + "\n")
+            _daily_log_file.flush()
+        except Exception:
+            pass
 
 def make_race_file_paths(
     day: date,
@@ -176,7 +194,8 @@ def fetch_race_data_parallel(
         result['canceled'] = True
         result['race_success'] = True
         result['odds_success'] = True
-        log_info(f"    R{race_no}: レース中止済み - スキップ")
+        if not _QUIET_MODE:
+            log_info(f"    R{race_no}: レース中止済み - スキップ")
         return result
 
     # race_data取得（overwrite 時は既存ファイルがあっても再取得）
@@ -193,14 +212,15 @@ def fetch_race_data_parallel(
                     break
                 else:
                     retry_count += 1
-                    if retry_count < max_retries:
+                    if retry_count < max_retries and not _QUIET_MODE:
                         log_info(f"    R{race_no}: レースデータ取得失敗（リトライ {retry_count}/{max_retries}）")
             except ValueError as e:
                 if "not enough values to unpack" in str(e):
                     # 選手名解析エラーは既にfetch_race_entry_data内で処理されているため、
                     # ここでは正常にデータが取得できているはずです
                     result['race_error'] = f"予期しない選手名解析エラー: {e}"
-                    log_info(f"    R{race_no}: 予期しない選手名解析エラー - 詳細情報を記録")
+                    if not _QUIET_MODE:
+                        log_info(f"    R{race_no}: 予期しない選手名解析エラー - 詳細情報を記録")
                     
                     # エラーの詳細ログを記録
                     error_log_info = {
@@ -219,17 +239,18 @@ def fetch_race_data_parallel(
                     
                     # 予期しないエラーの場合はリトライ
                     retry_count += 1
-                    if retry_count < max_retries:
+                    if retry_count < max_retries and not _QUIET_MODE:
                         log_info(f"    R{race_no}: 予期しない選手名解析エラー - リトライ {retry_count}/{max_retries}")
                         time.sleep(5)
                     else:
                         result['race_error'] = f"予期しない選手名解析エラー: {e}"
-                        log_info(f"    R{race_no}: 予期しない選手名解析エラー - 最大リトライ回数に達しました")
+                        if not _QUIET_MODE:
+                            log_info(f"    R{race_no}: 予期しない選手名解析エラー - 最大リトライ回数に達しました")
                     continue
                 else:
                     retry_count += 1
                     result['race_error'] = str(e)
-                    if retry_count < max_retries:
+                    if retry_count < max_retries and not _QUIET_MODE:
                         log_info(f"    R{race_no}: ValueError - リトライ {retry_count}/{max_retries}")
                         time.sleep(5)
             except RaceCanceled as e:
@@ -249,26 +270,28 @@ def fetch_race_data_parallel(
                 result['canceled'] = True
                 result['race_success'] = True
                 result['odds_success'] = True
-                log_info(f"    R{race_no}: レース中止 - 専用ファイル作成、オッズ取得をスキップ")
+                if not _QUIET_MODE:
+                    log_info(f"    R{race_no}: レース中止 - 専用ファイル作成、オッズ取得をスキップ")
                 break
             except Exception as e:
                 if "データ未公開" in str(e) or "DataNotFound" in str(e):
                     retry_count += 1
                     result['race_error'] = f"データ未公開: {e}"
-                    if retry_count < max_retries:
+                    if retry_count < max_retries and not _QUIET_MODE:
                         log_info(f"    R{race_no}: データ未公開 - リトライ {retry_count}/{max_retries}")
                         time.sleep(5)
                     else:
-                        log_info(f"    R{race_no}: データ未公開 - 次回実行時に再試行")
+                        if not _QUIET_MODE:
+                            log_info(f"    R{race_no}: データ未公開 - 次回実行時に再試行")
                     continue
                 else:
                     retry_count += 1
                     result['race_error'] = str(e)
-                    if retry_count < max_retries:
+                    if retry_count < max_retries and not _QUIET_MODE:
                         log_info(f"    R{race_no}: {type(e).__name__} - リトライ {retry_count}/{max_retries}")
                         time.sleep(5)
         if not result['race_success'] and not result['canceled']:
-            log_info(f"    R{race_no}: レースデータ取得失敗（{result['race_error']}）")
+            log_info(f"    R{race_no}: レースデータ取得失敗（{result['race_error']}）", force=True)
         time.sleep(rate_limit_seconds)
     else:
         result['race_success'] = True
@@ -276,7 +299,8 @@ def fetch_race_data_parallel(
     # odds_data取得（レース中止でない場合のみ）
     if result['canceled']:
         result['odds_success'] = True
-        log_info(f"    R{race_no}: レース中止のためオッズ取得をスキップ")
+        if not _QUIET_MODE:
+            log_info(f"    R{race_no}: レース中止のためオッズ取得をスキップ")
     elif overwrite or not os.path.exists(paths['odds']):
         retry_count = 0
         while retry_count < max_retries:
@@ -290,7 +314,7 @@ def fetch_race_data_parallel(
                     break
                 else:
                     retry_count += 1
-                    if retry_count < max_retries:
+                    if retry_count < max_retries and not _QUIET_MODE:
                         log_info(f"    R{race_no}: オッズデータ取得失敗（リトライ {retry_count}/{max_retries}）")
             except RaceCanceled as e:
                 if not result['canceled']:
@@ -310,26 +334,28 @@ def fetch_race_data_parallel(
                     result['canceled'] = True
                     result['race_success'] = True
                     result['odds_success'] = True
-                    log_info(f"    R{race_no}: レース中止（オッズ取得時） - 専用ファイル作成")
+                    if not _QUIET_MODE:
+                        log_info(f"    R{race_no}: レース中止（オッズ取得時） - 専用ファイル作成")
                     break
             except Exception as e:
                 if "データ未公開" in str(e) or "DataNotFound" in str(e):
                     retry_count += 1
                     result['odds_error'] = f"データ未公開: {e}"
-                    if retry_count < max_retries:
+                    if retry_count < max_retries and not _QUIET_MODE:
                         log_info(f"    R{race_no}: データ未公開（オッズ取得時） - リトライ {retry_count}/{max_retries}")
                         time.sleep(5)
                     else:
-                        log_info(f"    R{race_no}: データ未公開（オッズ取得時） - 次回実行時に再試行")
+                        if not _QUIET_MODE:
+                            log_info(f"    R{race_no}: データ未公開（オッズ取得時） - 次回実行時に再試行")
                     continue
                 else:
                     retry_count += 1
                     result['odds_error'] = str(e)
-                    if retry_count < max_retries:
+                    if retry_count < max_retries and not _QUIET_MODE:
                         log_info(f"    R{race_no}: オッズ取得エラー - リトライ {retry_count}/{max_retries}")
                         time.sleep(5)
         if not result['odds_success'] and not result['canceled']:
-            log_info(f"    R{race_no}: オッズデータ取得失敗（{result['odds_error']}）")
+            log_info(f"    R{race_no}: オッズデータ取得失敗（{result['odds_error']}）", force=True)
         time.sleep(rate_limit_seconds)
     else:
         result['odds_success'] = True
@@ -360,8 +386,6 @@ def fetch_day_races_parallel(
     """
     global progress_done
     ymd = day.strftime('%Y-%m-%d')
-    if not _QUIET_MODE:
-        log_info(f"\n  {stadium.name} {ymd} の並列処理開始: {datetime.now()}")
 
     results = []
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
@@ -381,42 +405,19 @@ def fetch_day_races_parallel(
         for future in as_completed(future_to_race):
             result = future.result()
             results.append(result)
-            # 進捗表示（--quiet時は50件ごと）
+            # 進捗表示（50レースごとに全体進捗率と現在処理中を表示）
             with progress_lock:
                 progress_done += 1
                 if progress_total > 0:
                     percent = progress_done / progress_total * 100
-                    if not _QUIET_MODE or progress_done % 50 == 0 or progress_done == progress_total:
-                        log_info(f"[進捗] {progress_done}/{progress_total} ({percent:.1f}%) 完了")
-                else:
+                    do_show = progress_done % PROGRESS_INTERVAL == 0 or progress_done == progress_total
+                    if do_show and not _QUIET_MODE:
+                        stad = result.get('stadium', stadium.name)
+                        d = result.get('day', ymd)
+                        log_info(f"[進捗] {progress_done}/{progress_total} ({percent:.1f}%) - {stad} {d} レース・オッズ取得中")
+                elif not _QUIET_MODE:
                     log_info(f"[進捗] {progress_done} 完了")
-            if not _QUIET_MODE:
-                if result['canceled']:
-                    log_info(f"    R{result['race_no']}: レース中止")
-                else:
-                    race_status = "成功" if result['race_success'] else "失敗"
-                    odds_status = "成功" if result['odds_success'] else "失敗"
-                    log_info(f"    R{result['race_no']}: {race_status}race {odds_status}odds")
 
-    # 統計
-    race_success = sum(1 for r in results if r['race_success'])
-    odds_success = sum(1 for r in results if r['odds_success'])
-    canceled_count = sum(1 for r in results if r['canceled'])
-
-    if not _QUIET_MODE:
-        log_info(f"  {stadium.name} {ymd} の並列処理終了: {datetime.now()}")
-        if canceled_count > 0:
-            log_info(f"    結果: レース{race_success}/12, オッズ{odds_success}/12, 中止{canceled_count}件")
-        else:
-            log_info(f"    結果: レース{race_success}/12, オッズ{odds_success}/12")
-
-    # 会場ごと進捗（--quiet時は会場完了時のみ）
-    with progress_lock:
-        if progress_total > 0 and (not _QUIET_MODE or progress_done % 200 == 0 or progress_done == progress_total):
-            percent = progress_done / progress_total * 100
-            log_info(f"[会場進捗] {stadium.name} {progress_done}/{progress_total} ({percent:.1f}%)")
-        else:
-            log_info(f"[会場進捗] {stadium.name} {progress_done}")
     return results
 
 def get_all_stadiums():
@@ -454,9 +455,32 @@ def main() -> None:
     """
     バッチ全体のエントリポイント。引数パース、ロックファイル、進捗カウンタ、全体フローを管理。
     """
-    global progress_total, progress_done, _QUIET_MODE
+    global progress_total, progress_done, _QUIET_MODE, _daily_log_file
     args = parse_args()
     _QUIET_MODE = getattr(args, 'quiet', False)
+
+    # ログ出力先を統一: 1日ごとに logs/batch_fetch_YYYY-MM-DD.log に追記
+    log_path = get_daily_log_path("batch_fetch")
+    try:
+        _daily_log_file = open(log_path, "a", encoding="utf-8")
+    except Exception:
+        _daily_log_file = None
+
+    # バッチ時は fetcher の verbose 出力を抑制
+    race_data_fetcher._BATCH_QUIET = True
+    odds_fetcher._BATCH_QUIET = True
+
+    def _close_daily_log() -> None:
+        global _daily_log_file
+        if _daily_log_file is not None:
+            try:
+                _daily_log_file.close()
+            except Exception:
+                pass
+            _daily_log_file = None
+
+    atexit.register(_close_daily_log)
+
     lockfile = 'batch_fetch_all_venues.lock'
     is_child = args.is_child
     if not is_child:
@@ -466,6 +490,7 @@ def main() -> None:
             sys.exit(1)
         create_lockfile(lockfile)
     log_info("[INFO] このウィンドウで進捗がリアルタイム表示されます。")
+    log_info(f"[INFO] ログファイル: {log_path}", force=True)
 
     try:
         start_date = datetime.strptime(args.start_date, '%Y-%m-%d').date()

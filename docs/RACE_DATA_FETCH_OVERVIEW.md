@@ -67,7 +67,24 @@ metaboatrace.scrapers (v1707) で HTML 取得・パース
   - `race_data_YYYY-MM-DD_会場名_R{n}.json`
   - `odds_data_YYYY-MM-DD_会場名_R{n}.json`
   - `race_canceled_YYYY-MM-DD_会場名_R{n}.json`
+- **ログ出力先（統一）**: 標準出力に加え、**1日ごとに** `logs/batch_fetch_YYYY-MM-DD.log` に追記。日付が変わると翌日のファイルが新規作成される。共通モジュール `kyotei_predictor.utils.logger` の `get_daily_log_path("batch_fetch")` を使用。
 - **多重起動防止**: `batch_fetch_all_venues.lock`
+
+### 3.3 バッチの「止まり」検知（check_batch_fetch_stuck.sh）
+
+長時間バッチを回すと、プロセスは生きているがログが更新されず実質ハングすることがある。以下で検知できる。
+
+- **スクリプト**: `scripts/check_batch_fetch_stuck.sh`
+- **検知条件**: (1) batch_fetch_all_venues 実行中 (2) 紐づくログの最終更新が N 分以上前 (3) Python 子プロセスの CPU 時間が数秒間増えていない → 止まっていると判断。
+- **使い方**:
+  - チェックのみ（止まっていたら exit 1）: `./scripts/check_batch_fetch_stuck.sh`
+  - 止まっていたらプロセスを落とす: `./scripts/check_batch_fetch_stuck.sh --kill`
+  - 閾値変更: `STALE_MINUTES=60 ./scripts/check_batch_fetch_stuck.sh`
+- **定期実行例**（cron で 30 分ごと）:  
+  `0,30 * * * * cd /path/to/kyotei_Prediction && ./scripts/check_batch_fetch_stuck.sh >> logs/check_stuck.log 2>&1`  
+  止まったら自動で落としたい場合は `--kill` を付ける。
+
+---
 
 ### 3.2 詰めどころ（バッチ）
 
