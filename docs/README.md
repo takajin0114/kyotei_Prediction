@@ -44,9 +44,10 @@
 - [test_results_summary.md](test_results_summary.md) - テスト結果の詳細
 - [monthly_learning_guide.md](monthly_learning_guide.md) - 月次学習ガイド
 
-**データ取得**:
+**データ取得・保管**:
 - [RACE_DATA_ACQUISITION_AND_SOURCES.md](RACE_DATA_ACQUISITION_AND_SOURCES.md) - レースデータ取得処理・参照サイト・取得/必要データの洗い出し
 - **[SITE_DATA_AND_FETCH_STATUS.md](SITE_DATA_AND_FETCH_STATUS.md)** - サイトで取得できるデータ一覧と現状の取得状況（レース前予測前提）
+- **[DATA_STORAGE_AND_DB.md](DATA_STORAGE_AND_DB.md)** - **データ保管と DB 化**（JSON → SQLite 方針・スキーマ・移行）
 - [operations/data_acquisition.md](operations/data_acquisition.md) - データ取得の運用
 
 ## 🔧 設定・運用

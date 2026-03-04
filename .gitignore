@@ -138,6 +138,10 @@ kyotei_predictor/optuna_results/
 kyotei_predictor/data/*.json
 complete_race_data_*.json
 
+# データ保管用 SQLite（DATA_STORAGE_AND_DB.md 参照）
+kyotei_predictor/data/*.sqlite
+kyotei_predictor/data/*.sqlite3
+
 # サンプル・README・テンプレートは除外しない
 !kyotei_predictor/data/README.md
 !kyotei_predictor/data/raw/README.md

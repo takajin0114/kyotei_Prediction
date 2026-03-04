@@ -53,7 +53,7 @@ kyotei_Prediction/                    # プロジェクトルート（ここで 
 | **config/** | 設定（ImprovementConfigManager, improvement_config.json, optuna_config.json） |
 | **utils/** | 共通（common, compression, logger, venue_mapping, exceptions） |
 | **pipelines/** | 強化学習・前処理（kyotei_env, data_preprocessor, feature_analysis, trifecta_*） |
-| **data/** | raw, test_raw, sample 等（race_data_* / odds_data_* のペアが学習に必要） |
+| **data/** | raw, test_raw, sample 等（race_data_* / odds_data_* のペアが学習に必要）。DB 化方針は [DATA_STORAGE_AND_DB.md](DATA_STORAGE_AND_DB.md) 参照。 |
 | **results/** | 最適化結果 JSON |
 | **static/, templates/** | Web 用 |
 | **tools/** | 全ツール（予測・最適化・取得・分析・監視・legacy） |

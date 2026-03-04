@@ -46,8 +46,9 @@
 | 場所 | 役割 | 現状 |
 |------|------|------|
 | `kyotei_predictor/data/raw/` | 学習用のレース＋オッズ JSON。`race_data_*` と `odds_data_*` のペアが必要。 | .gitignore で除外。中身は手元で取得して配置する必要あり。 |
+| `kyotei_predictor/data/kyotei_races.sqlite`（予定） | 学習用のレース＋オッズを SQLite DB で保管。 | DB 化方針は [DATA_STORAGE_AND_DB.md](DATA_STORAGE_AND_DB.md) を参照。実装後は `--data-source db` 等で参照予定。 |
 | `kyotei_predictor/data/test_raw/` | テスト用サンプル（例: 2024-05-01 の BIWAKO, GAMAGORI 等）。 | サンプルが入っている。学習の試験用に `--data-dir` でここを指定可能。 |
-| 取得コマンド例 | 全会場・指定日: `batch_fetch_all_venues.py` やデータ取得バッチ。 | 別途実行してから学習を行う。 |
+| 取得コマンド例 | 全会場・指定日: `batch_fetch_all_venues.py` やデータ取得バッチ。 | 別途実行してから学習を行う。取得結果は JSON；DB を使う場合は別途 JSON→DB 投入を行う。 |
 
 ### 2.4 学習データの前提（重要）
 

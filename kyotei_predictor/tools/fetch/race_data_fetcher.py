@@ -558,7 +558,7 @@ def fetch_race_entry_data(
     
     try:
         # データ取得
-        response = requests.get(url)
+        response = requests.get(url, timeout=60)
         response.raise_for_status()
         
         # スクレイピング実行
@@ -726,7 +726,7 @@ def fetch_race_result_data(
     
     try:
         # データ取得
-        response = requests.get(url)
+        response = requests.get(url, timeout=60)
         response.raise_for_status()
         
         # スクレイピング実行
@@ -832,7 +832,7 @@ def fetch_before_information(
     safe_print(f"URL: {url}")
     time.sleep(max(0.5, rate_limit_seconds))
     try:
-        response = requests.get(url)
+        response = requests.get(url, timeout=60)
         response.raise_for_status()
         html_file = StringIO(response.text)
         result: dict[str, Any] = {

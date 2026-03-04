@@ -71,7 +71,7 @@ def get_event_days_for_stadium(stadium: StadiumTelCode, start_date: date, end_da
             # レート制限短縮
             time.sleep(0.5)  # 1秒 → 0.5秒に短縮
             
-            response = requests.get(url)
+            response = requests.get(url, timeout=30)
             response.raise_for_status()
             
             html_file = StringIO(response.text)

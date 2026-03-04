@@ -77,7 +77,8 @@ python -m kyotei_predictor.tools.storage.drive_data_sync \
   --drive-dir "/path/to/GoogleDrive/kyotei_prediction/data/raw"
 ```
 
-**保管先**: 上記のいずれかで **Google Drive** の `kyotei_prediction/data/raw` に取得データを置く。Colab はここを参照する。
+**保管先**: 上記のいずれかで **Google Drive** の `kyotei_prediction/data/raw` に取得データを置く。Colab はここを参照する。  
+**DB 化**: データ数増加と学習のしやすさのため、raw の JSON を SQLite DB に投入して学習で DB を参照する方針を検討・整備中。詳細は [DATA_STORAGE_AND_DB.md](../DATA_STORAGE_AND_DB.md) を参照。
 
 ### 1-3. 過去分のデータを取り直す（再取得）
 

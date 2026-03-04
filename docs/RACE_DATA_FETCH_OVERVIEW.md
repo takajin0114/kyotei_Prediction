@@ -67,8 +67,10 @@ metaboatrace.scrapers (v1707) で HTML 取得・パース
   - `race_data_YYYY-MM-DD_会場名_R{n}.json`
   - `odds_data_YYYY-MM-DD_会場名_R{n}.json`
   - `race_canceled_YYYY-MM-DD_会場名_R{n}.json`
+- **DB 化**: 上記 JSON を SQLite に投入して学習で DB を参照する方針を [DATA_STORAGE_AND_DB.md](DATA_STORAGE_AND_DB.md) で整理している。取得フローは従来どおり JSON 出力で変更なし。
 - **ログ出力先（統一）**: 標準出力に加え、**1日ごとに** `logs/batch_fetch_YYYY-MM-DD.log` に追記。日付が変わると翌日のファイルが新規作成される。共通モジュール `kyotei_predictor.utils.logger` の `get_daily_log_path("batch_fetch")` を使用。
 - **多重起動防止**: `batch_fetch_all_venues.lock`
+- **スタックの主因と対策**: 過去にバッチが「プロセスは生きているがログが止まる」状態になった原因は、**HTTP の `requests.get()` に timeout を付けていなかった**ため。サーバーやネットが応答しないと永久にブロックする。対策として、開催日取得・レース取得・オッズ取得の全 `requests.get()` に **timeout=30 または 60 秒** を付与済み。タイムアウト時は例外となり、バッチ側のリトライまたはスキップで次に進む。
 
 ### 3.3 バッチの「止まり」検知（check_batch_fetch_stuck.sh）
 

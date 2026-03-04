@@ -61,7 +61,7 @@ def fetch_trifecta_odds(
     
     try:
         # データ取得
-        response = requests.get(url)
+        response = requests.get(url, timeout=60)
         response.raise_for_status()
         
         # スクレイピング実行
