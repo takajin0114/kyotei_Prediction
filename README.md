@@ -84,3 +84,16 @@ Linux/macOS の場合:
 ```bash
 source venv/bin/activate
 ```
+
+## テスト
+
+プロジェクトルートで実行（仮想環境 `.venv` を使う場合）:
+
+```bash
+.venv/bin/python -m pytest kyotei_predictor/tests/ -v --tb=short
+```
+
+仮想環境を有効化している場合は `pytest kyotei_predictor/tests/` でも可。
+
+**実行手順・メインのみの実行・除外オプションなど**  
+→ [kyotei_predictor/tests/README_TESTS.md](kyotei_predictor/tests/README_TESTS.md)

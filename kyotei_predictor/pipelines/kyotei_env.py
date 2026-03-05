@@ -141,7 +141,7 @@ def calc_trifecta_reward(action: int, arrival_tuple: Tuple[int,int,int], odds_da
     """
     # 設定ファイルから報酬パラメータを取得
     if CONFIG_MANAGER is not None:
-        reward_params = CONFIG_MANAGER.get_reward_params("phase1")
+        reward_params = CONFIG_MANAGER.get_reward_params()
         win_multiplier = reward_params.get("win_multiplier", 1.5)
         partial_second_hit_reward = reward_params.get("partial_second_hit_reward", 10)
         partial_first_hit_penalty = reward_params.get("partial_first_hit_penalty", -10)
@@ -192,7 +192,7 @@ def calc_trifecta_reward_improved(action: int, arrival_tuple: Tuple[int,int,int]
     """
     # 設定ファイルから報酬パラメータを取得
     if CONFIG_MANAGER is not None:
-        reward_params = CONFIG_MANAGER.get_reward_params("phase1")
+        reward_params = CONFIG_MANAGER.get_reward_params()
         win_multiplier = reward_params.get("win_multiplier", 1.5)
         partial_second_hit_reward = reward_params.get("partial_second_hit_reward", 10)
         partial_first_hit_penalty = reward_params.get("partial_first_hit_penalty", -10)

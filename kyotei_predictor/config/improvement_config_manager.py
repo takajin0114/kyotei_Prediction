@@ -67,16 +67,22 @@ class ImprovementConfigManager:
             }
         }
     
-    def get_reward_params(self, phase: str = "phase1") -> Dict[str, Any]:
+    def get_active_reward_phase(self) -> str:
+        """設定で指定された報酬フェーズ（phase1 / original）を返す。"""
+        return self.config.get("active_reward_phase", "phase1")
+
+    def get_reward_params(self, phase: Optional[str] = None) -> Dict[str, Any]:
         """
-        報酬設計パラメータを取得
-        
+        報酬設計パラメータを取得。
+
         Args:
-            phase: フェーズ名（"phase1" または "original"）
-        
+            phase: フェーズ名（"phase1" または "original"）。None のときは active_reward_phase を使用。
+
         Returns:
             報酬設計パラメータの辞書
         """
+        if phase is None:
+            phase = self.get_active_reward_phase()
         return self.config.get("reward_design", {}).get(phase, {})
     
     def get_learning_params(self, phase: str = "phase2", mode: str = "normal") -> Dict[str, Any]:

@@ -1,0 +1,41 @@
+# CI: pytest 実行（PR・push でテストが通らないとブロック）
+# 詳細: kyotei_predictor/tests/README_TESTS.md
+name: Pytest
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-mock
+
+      - name: Run pytest（Selenium/Web 除外）
+        run: |
+          python -m pytest kyotei_predictor/tests/ \
+            --ignore=kyotei_predictor/tests/web_display/ \
+            --ignore=kyotei_predictor/tests/ai/ \
+            --ignore=kyotei_predictor/tests/data/ \
+            --ignore=kyotei_predictor/tests/test_web_display.py \
+            --ignore=kyotei_predictor/tests/test_web_display_simple.py \
+            --ignore=kyotei_predictor/tests/test_web_display_phase3_fixes.py \
+            --ignore=kyotei_predictor/tests/test_system_status_page.py \
+            -v --tb=short

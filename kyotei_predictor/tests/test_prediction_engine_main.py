@@ -99,3 +99,27 @@ class TestPredictionEngineMain:
         assert "score_distribution" in summary
         assert "max" in summary["score_distribution"]
         assert "min" in summary["score_distribution"]
+
+    def test_predict_equipment_focused_returns_expected_structure(self):
+        engine = PredictionEngine()
+        race_data = _minimal_race_data()
+        result = engine.predict(race_data, algorithm="equipment_focused")
+        assert result["algorithm"] == "equipment_focused"
+        assert len(result["predictions"]) == 6
+        assert result["validation"]["data_quality"] == "good"
+
+    def test_predict_comprehensive_returns_expected_structure(self):
+        engine = PredictionEngine()
+        race_data = _minimal_race_data()
+        result = engine.predict(race_data, algorithm="comprehensive")
+        assert result["algorithm"] == "comprehensive"
+        assert len(result["predictions"]) == 6
+        assert "predictions" in result and "summary" in result
+
+    def test_predict_relative_strength_returns_expected_structure(self):
+        engine = PredictionEngine()
+        race_data = _minimal_race_data()
+        result = engine.predict(race_data, algorithm="relative_strength")
+        assert result["algorithm"] == "relative_strength"
+        assert len(result["predictions"]) == 6
+        assert "predictions" in result and "summary" in result

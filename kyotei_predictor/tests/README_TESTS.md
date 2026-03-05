@@ -22,7 +22,7 @@
 | 1 | `prediction_engine.py` | 予測エンジン（アルゴリズム実行・検証・結果整形） | `test_prediction_engine_main.py` |
 | 2 | `data_integration.py` | データ取得・検証・統合（sample/file/live） | `test_data_integration_main.py` |
 | 3 | `tools/prediction_tool.py` | 予測CLI（run_complete_prediction, predict_races, データパス取得） | `test_prediction_tool_main.py` |
-| 4 | `app.py` | Web エントリ（ルート・API） | （Flask test_client 等で実施） |
+| 4 | `app.py` | Web エントリ（ルート・API） | `test_app_flask.py` |
 
 ### 第2優先：メイン処理の依存・パイプライン
 
@@ -43,20 +43,49 @@
 
 ---
 
-## 実行方法
+## 実行方法（今後この手順で実行できる）
+
+### 1. 環境準備（初回のみ）
+
+プロジェクトルートで仮想環境を作成し、依存と pytest を入れます。
+
+```bash
+# プロジェクトルートに移動
+cd /path/to/kyotei_Prediction
+
+# 仮想環境作成（.venv または venv）
+python3 -m venv .venv
+
+# 有効化（実行のたびに不要。有効化すると pytest を直接叩ける）
+source .venv/bin/activate   # macOS/Linux
+# .venv\Scripts\activate    # Windows
+
+# 依存インストール（requirements.txt に pytest が無い場合は追加で入れる）
+.venv/bin/pip install -r requirements.txt
+.venv/bin/pip install pytest pytest-mock
+```
+
+### 2. テスト実行コマンド
+
+**推奨: 仮想環境の Python で pytest を直接指定（有効化していなくても動く）**
 
 ```bash
 # プロジェクトルートで
 .venv/bin/python -m pytest kyotei_predictor/tests/ -v --tb=short
 ```
 
-**メイン処理のテストのみ実行:**
+**メイン処理のテストのみ（Flask・PredictionEngine・PredictionTool・DataIntegration）:**
 
 ```bash
-.venv/bin/python -m pytest kyotei_predictor/tests/test_prediction_engine_main.py kyotei_predictor/tests/test_data_integration_main.py kyotei_predictor/tests/test_prediction_tool_main.py -v --tb=short
+.venv/bin/python -m pytest \
+  kyotei_predictor/tests/test_app_flask.py \
+  kyotei_predictor/tests/test_prediction_engine_main.py \
+  kyotei_predictor/tests/test_prediction_tool_main.py \
+  kyotei_predictor/tests/test_data_integration_main.py \
+  -v --tb=short
 ```
 
-Selenium 依存の Web テストを除く場合:
+**全テスト（Selenium 依存の Web テストを除く）:**
 
 ```bash
 .venv/bin/python -m pytest kyotei_predictor/tests/ \
@@ -66,8 +95,18 @@ Selenium 依存の Web テストを除く場合:
   --ignore=kyotei_predictor/tests/test_web_display.py \
   --ignore=kyotei_predictor/tests/test_web_display_simple.py \
   --ignore=kyotei_predictor/tests/test_web_display_phase3_fixes.py \
-  --ignore=kyotei_predictor/tests/test_system_status_page.py
+  --ignore=kyotei_predictor/tests/test_system_status_page.py \
+  -v --tb=short
 ```
+
+**有効化している場合の例:**
+
+```bash
+source .venv/bin/activate
+pytest kyotei_predictor/tests/ -v --tb=short
+```
+
+**CI**: `main` / `master` への push および PR で `.github/workflows/pytest.yml` が実行され、上記と同様の除外オプションで pytest が走ります。失敗するとマージをブロックする想定です。
 
 ---
 
@@ -89,9 +128,10 @@ Selenium 依存の Web テストを除く場合:
 
 | ファイル | 対象 | 内容 |
 |----------|------|------|
-| `test_prediction_engine_main.py` | `prediction_engine.PredictionEngine` | predict(), データ検証, 未知アルゴリズム, basic/rating_weighted |
+| `test_app_flask.py` | `app.py` (Flask) | GET /, /predictions, /api/race_data, POST /api/predict, /api/races, /api/weather, 静的ファイル 404 |
+| `test_prediction_engine_main.py` | `prediction_engine.PredictionEngine` | predict(), データ検証, 未知アルゴリズム, basic / rating_weighted / equipment_focused / comprehensive / relative_strength |
 | `test_data_integration_main.py` | `data_integration.DataIntegration` | 検証, race_id 抽出, get_race_entries_summary, get_race_data(source=file) |
-| `test_prediction_tool_main.py` | `tools.prediction_tool.PredictionTool` | 初期化, get_race_data_paths |
+| `test_prediction_tool_main.py` | `tools.prediction_tool.PredictionTool` | 初期化, get_race_data_paths, run_complete_prediction(prediction_only=True) のモックテスト |
 
 ### 周辺・インフラ
 
@@ -113,15 +153,51 @@ Selenium 依存の Web テストを除く場合:
 
 これらはリファクタ前からある要因です。
 
+## カバレッジ目標と計測（3.2.1）
+
+**目標（README_TESTS 上の目安）**
+
+| 対象 | 目標 | 備考 |
+|------|------|------|
+| メイン処理 | 80% 以上 | prediction_engine, data_integration, prediction_tool, app |
+| プロジェクト全体 | 50% 以上 | kyotei_predictor 配下の本番コード |
+
+**計測方法**
+
+プロジェクトルートで実行。`.coveragerc` により `kyotei_predictor` の本番コードのみ計測（`tests` は omit）されます。
+
+```bash
+# カバレッジ付きでテスト実行（pytest-cov が必要: pip install pytest-cov）
+.venv/bin/python -m pytest kyotei_predictor/tests/ \
+  --cov=kyotei_predictor \
+  --cov-report=term-missing \
+  --cov-report=html:htmlcov \
+  --ignore=kyotei_predictor/tests/web_display/ \
+  --ignore=kyotei_predictor/tests/ai/ \
+  --ignore=kyotei_predictor/tests/data/ \
+  --ignore=kyotei_predictor/tests/test_web_display.py \
+  --ignore=kyotei_predictor/tests/test_web_display_simple.py \
+  --ignore=kyotei_predictor/tests/test_web_display_phase3_fixes.py \
+  --ignore=kyotei_predictor/tests/test_system_status_page.py \
+  -v --tb=short
+```
+
+- `--cov-report=term-missing`: ターミナルに未カバー行を表示
+- `--cov-report=html:htmlcov`: `htmlcov/index.html` でブラウザ確認可能
+
+目標に届かない場合は、メイン処理のテスト拡充や pipelines・utils の単体追加で計測を続ける。
+
+---
+
 ## カバー状況の目安
 
 | レベル | 内容 | 例 |
 |--------|------|-----|
-| **メイン処理（第1優先）** | 予測エンジン・データ統合・予測ツールの単体テスト | test_prediction_engine_main, test_data_integration_main, test_prediction_tool_main |
+| **メイン処理（第1優先）** | 予測エンジン・データ統合・予測ツールの単体テスト | test_prediction_engine_main, test_data_integration_main, test_prediction_tool_main, test_app_flask |
 | **単体テストあり** | 関数・クラスの挙動を assert で検証 | config.settings, data.race_db, utils.compression, errors |
 | **インポートのみ（smoke）** | 「import できる」ことだけ確認 | test_imports_smoke |
 
 ## カバレッジ 100% を目指す場合
 
-- **計測**: プロジェクトルートで `.coveragerc` を使用。`pytest --cov=kyotei_predictor` で本番コードのみ計測（tests は omit）。
-- **100% に近づけるには**: メイン処理（prediction_engine, data_integration, prediction_tool）のテストを拡充したうえで、pipelines・utils・tools 各所の単体テストを追加する必要があります。
+- **計測**: 上記「カバレッジ目標と計測」のコマンドを使用。`pytest-cov` で本番コードのみ計測（tests は omit）。
+- **100% に近づけるには**: メイン処理のテストを拡充したうえで、pipelines・utils・tools 各所の単体テストを追加する必要があります。
