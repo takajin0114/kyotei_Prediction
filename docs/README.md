@@ -36,17 +36,17 @@
 
 ---
 
-## 4. タスク・「次にやること」（役割で使い分け）
+## 4. タスク・「次にやること」
 
-**「次にやること」系のドキュメントは役割ごとに分かれています。**
+**全体の一覧（優先度順）**: [NEXT_TASKS_OVERVIEW.md](NEXT_TASKS_OVERVIEW.md) — 即時・短期・中期のチェックリストと参照リンク。
+
+**役割別の詳細**:
 
 | ドキュメント | 役割 |
 |--------------|------|
 | [LEARNING_NEXT_STEPS.md](LEARNING_NEXT_STEPS.md) | **学習**の次にやること（評価・検証、ステップ数延長、Optuna、運用） |
 | [NEXT_STEPS.md](NEXT_STEPS.md) | **テスト・CI・リポジトリ**の次にやること（失敗テスト修正、カバレッジ、pytest-mock 等） |
 | [PREDICTION_ACCURACY_IMPROVEMENT_TODO.md](PREDICTION_ACCURACY_IMPROVEMENT_TODO.md) | **精度向上**のフェーズ別タスク（測定・学習強化・モデル拡張・運用監視） |
-
-※ 学習まわりは LEARNING_NEXT_STEPS → 詳細は PREDICTION_ACCURACY_IMPROVEMENT_TODO を参照。
 
 ---
 

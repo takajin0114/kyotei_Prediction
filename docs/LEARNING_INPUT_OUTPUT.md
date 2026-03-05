@@ -174,7 +174,25 @@ PPO.learn()（Optuna でハイパーパラメータ探索）
 
 ---
 
-## 6. 参照
+## 6. 予測フェーズとの対応（学習 In/Out がそのまま予測で使えるか）
+
+**結論: はい。学習の「入力（状態）」と「出力（方策＝3連単確率）」は、最終予測フェーズと同一定義で揃っている。**
+
+| 項目 | 学習時 | 予測時 | 一致 |
+|------|--------|--------|------|
+| **状態（入力）** | `build_race_state_vector(race_data, None)`（`state_vector.py`） | `vectorize_race_state_from_data()` → 内部で **同じ** `build_race_state_vector(race_data, None)` | ✅ 同一 |
+| **次元** | `get_state_dim()`（75 = 艇48 + 会場数 + 3） | 同上 | ✅ |
+| **アクション空間** | `Discrete(120)`。0〜119 = 3連単 120 通り（`permutations(1..6, 3)` の固定順） | モデル出力は 120 次元の確率分布。同じ順で 3連単にマッピング | ✅ |
+| **オッズ** | 状態には**含めない**。報酬計算（払戻）のみに使用 | 状態には**含めない**。予測後の期待値・回収率計算に使用 | ✅ 設計一致 |
+| **モデル** | PPO の `policy`: state → 120 次元の確率分布 | 同じ `best_model.zip` の `policy.get_distribution(state).probs` をそのまま使用 | ✅ |
+
+- **学習で使うデータ**: `race_data`（race_info, race_entries, **race_records＝着順**）と `odds_data`。着順は報酬計算用のみで、**状態ベクトルには入れていない**。そのため「結果が出る前の情報だけ」が状態になっており、予測時（結果なし）でも同じ状態が作れる。
+- **予測時**: レース前の `race_data`（race_info, race_entries のみでよい）から同じ `build_race_state_vector` で状態を作り、学習済みモデルに渡して 3連単 120 通りの確率を得る。オッズは取得できれば期待値・購入提案に使う。
+- **注意**: 展示走・天候などの「直前情報」は現状どちらも状態に含んでいない。追加する場合は `state_vector.py` を拡張し、学習・予測の両方で同じ定義にする必要がある。
+
+---
+
+## 7. 参照
 
 - [LEARNING_AND_PREDICTION_STATUS.md](LEARNING_AND_PREDICTION_STATUS.md) — 学習・予想の手順と前提
 - [optimization/OPTIMIZATION_GUIDE.md](optimization/OPTIMIZATION_GUIDE.md) — 最適化の詳細
@@ -182,5 +200,7 @@ PPO.learn()（Optuna でハイパーパラメータ探索）
 - `kyotei_predictor/pipelines/kyotei_env.py` — 環境・状態ベクトル・報酬
 - `kyotei_predictor/pipelines/state_vector.py` — 学習・予測で共通の状態定義
 - `kyotei_predictor/config/improvement_config.json` — 報酬・ハイパーパラメータ
+- `kyotei_predictor/pipelines/state_vector.py` — **学習・予測共通**の状態定義（`build_race_state_vector`, `get_state_dim`）
+- `kyotei_predictor/tools/prediction_tool.py` — `vectorize_race_state_from_data()` が `build_race_state_vector(race_data, None)` を呼び出し
 
 （上記「5. 方向性の評価」は現状の設計に対する所感であり、今後の拡張の参考用です。）
