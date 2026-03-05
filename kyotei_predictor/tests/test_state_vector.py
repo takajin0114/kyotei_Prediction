@@ -102,6 +102,34 @@ class TestStateVector(unittest.TestCase):
         self.assertEqual(state.shape, (get_state_dim(),))
         self.assertFalse(np.any(np.isnan(state)))
 
+    def test_build_from_race_records_fallback(self):
+        """race_entries が無く race_records のみの場合にエントリが構築されること"""
+        race = {
+            "race_info": {"stadium": "KIRYU", "race_number": 1, "is_course_fixed": False},
+            "race_records": [{"pit_number": i} for i in range(1, 7)],
+        }
+        state = build_race_state_vector(race, None)
+        self.assertEqual(state.shape, (get_state_dim(),))
+        self.assertFalse(np.any(np.isnan(state)))
+
+    def test_build_with_number_of_laps_none(self):
+        """number_of_laps が無い場合 laps=0 で計算されること"""
+        race = {
+            "race_info": {"stadium": "EDOGAWA", "race_number": 2, "is_course_fixed": False},
+            "race_entries": [
+                {
+                    "pit_number": i,
+                    "racer": {"current_rating": "B1"},
+                    "performance": {},
+                    "boat": {},
+                    "motor": {},
+                }
+                for i in range(1, 7)
+            ],
+        }
+        state = build_race_state_vector(race, None)
+        self.assertEqual(state.shape, (get_state_dim(),))
+
 
 if __name__ == "__main__":
     unittest.main()

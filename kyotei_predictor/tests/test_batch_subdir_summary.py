@@ -12,10 +12,10 @@ def test_collect_summary_with_subdirs(tmp_path):
     fpath = subdir / fname
     with open(fpath, 'w', encoding='utf-8') as f:
         json.dump({"test": True}, f)
-    # RAW_DIRを一時ディレクトリに差し替え
-    list_fetched_data_summary.RAW_DIR = str(tmp_path)
-    # 集計実行
-    summary = list_fetched_data_summary.collect_summary(list_fetched_data_summary.race_pattern)
+    # 集計実行（raw_dir を渡す）
+    summary = list_fetched_data_summary.collect_summary(
+        list_fetched_data_summary.race_pattern, str(tmp_path)
+    )
     # サマリに正しく反映されているか
     assert "TESTVENUE" in summary
     assert "2025-07-20" in summary["TESTVENUE"] 

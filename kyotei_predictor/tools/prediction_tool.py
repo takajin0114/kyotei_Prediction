@@ -48,7 +48,9 @@ warnings.filterwarnings('ignore', category=UserWarning, module='matplotlib')
 warnings.filterwarnings('ignore', category=RuntimeWarning, module='matplotlib')
 
 # プロジェクトルートの設定
-PROJECT_ROOT = Path(__file__).parent.parent.parent
+from kyotei_predictor.config.settings import Settings
+
+PROJECT_ROOT = Settings.PROJECT_ROOT
 sys.path.append(str(PROJECT_ROOT))
 
 from stable_baselines3 import PPO
@@ -80,9 +82,11 @@ class PredictionTool:
         # Windows で StreamHandler(sys.stdout) を使うと "raw stream has been detached" が出るため、ファイルのみにする
         if not sys.platform.startswith('win'):
             handlers.append(logging.StreamHandler(sys.stdout))
+        from kyotei_predictor.utils.logger import get_logging_format, get_logging_datefmt
         logging.basicConfig(
             level=log_level,
-            format='%(asctime)s - %(levelname)s - %(message)s',
+            format=get_logging_format(),
+            datefmt=get_logging_datefmt(),
             handlers=handlers,
         )
         self.logger = logging.getLogger(__name__)

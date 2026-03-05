@@ -50,7 +50,7 @@ kyotei_Prediction/                    # プロジェクトルート（ここで 
 | **prediction_engine.py** | 予測エンジン |
 | **data_integration.py** | データ統合 |
 | **errors.py** | Flask 用エラーハンドラ |
-| **config/** | 設定（ImprovementConfigManager, improvement_config.json, optuna_config.json） |
+| **config/** | 設定（config.json, improvement_config.json, optuna_config.json, alert_config.json.sample）。パスは config/settings.py で一元管理。 |
 | **utils/** | 共通（common, compression, logger, venue_mapping, exceptions） |
 | **pipelines/** | 強化学習・前処理（kyotei_env, data_preprocessor, feature_analysis, trifecta_*） |
 | **data/** | raw, test_raw, sample 等（race_data_* / odds_data_* のペアが学習に必要）。DB 化方針は [DATA_STORAGE_AND_DB.md](DATA_STORAGE_AND_DB.md) 参照。 |
@@ -68,7 +68,6 @@ kyotei_Prediction/                    # プロジェクトルート（ここで 
 | **prediction_tool.py** | 統合予測ツール（3連単上位20・購入提案） |
 | **verify_predictions.py** | 予測結果の検証（的中率・回収率） |
 | **optimization/optimize_graduated_reward.py** | 本流の学習・最適化 |
-| **optimization/optimize_graduated_reward_202403.py** | 2024年3月版（参照用） |
 | **fetch/** | レース・オッズ取得 |
 | **batch/** | 一括取得・データ保守・学習スクリプト |
 | **evaluation/** | モデル評価 |
@@ -76,7 +75,7 @@ kyotei_Prediction/                    # プロジェクトルート（ここで 
 | **monitoring/** | 的中率・最適化状況・パフォーマンス |
 | **ai/optuna_optimizer.py** | Optuna 最適化（KyoteiOptunaOptimizer） |
 | **optuna_optimizer.py** | ai の再エクスポート（後方互換） |
-| **legacy/** | 旧最適化・Colab 等（参照用） |
+| **legacy/** | 旧最適化・Colab 等（参照用）。optimize_graduated_reward_202403.py はここに移動済み。 |
 | **viz/, continuous/, ensemble/** | 可視化・継続学習・アンサンブル |
 
 ---
@@ -94,9 +93,9 @@ kyotei_Prediction/                    # プロジェクトルート（ここで 
 
 ## 6. ログの出力先
 
-- **バッチ・最適化のログ**: ルートの `logs/`（optimization_*.log 等）
-- **学習の詳細ログ**: `kyotei_predictor/logs/`（optimize_graduated_reward_*.log）
-- **予測ツールのログ**: `kyotei_predictor/logs/`（prediction_tool_*.log）
+- **ルートの logs/**: バッチ取得（batch_fetch_YYYY-MM-DD.log）、最適化の tee 出力（optimize_*.log）など
+- **kyotei_predictor/logs/**: 学習の詳細（optimize_graduated_reward_YYYYMMDD.log）、予測ツール（prediction_tool_*.log）、データ品質・スケジュール保守など
+- 日時形式は `config.json` の `logging.datefmt` で統一（`utils/logger.py` 経由）
 
 ## 7. 新規コードを置く場所
 

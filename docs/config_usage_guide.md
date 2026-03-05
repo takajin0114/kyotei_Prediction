@@ -8,8 +8,19 @@
 
 ### メイン設定ファイル
 - **`kyotei_predictor/config/improvement_config.json`**: 改善策の全パラメータ
-- **`kyotei_predictor/config/config.json`**: 基本設定
+- **`kyotei_predictor/config/config.json`**: 基本設定（データパス・API・**ログ**・予測・バッチ等）
 - **`kyotei_predictor/config/optuna_config.json`**: Optuna最適化設定
+- **`kyotei_predictor/config/alert_config.json.sample`**: アラート（メール）通知のサンプル。コピーして `alert_config.json` として編集すると、scheduled_data_maintenance で利用される。無い場合はメール無効。
+
+### プロジェクトルート・データパス（settings.py で一元管理）
+- **`kyotei_predictor/config/settings.py`**: `Settings.PROJECT_ROOT`, `Settings.RAW_DATA_DIR`, `get_raw_data_dir()` 等を定義。ツール類はここから import してパスを揃える。
+- 環境変数 `KYOTEI_RAW_DATA_DIR` で raw データディレクトリを上書き可能。
+
+### ログの日時形式（config.json で一律管理）
+`config.json` の `logging` に `format` と **`datefmt`** を指定すると、学習・バッチ・予測などの実行ログに共通で反映されます。
+
+- **`datefmt`**: `"%Y-%m-%d %H:%M:%S"`（日時分秒）。変更すると `kyotei_predictor/utils/logger.py` 経由で全ログに適用されます。
+- **`format`**: 例 `"%(asctime)s [%(levelname)s] %(name)s: %(message)s"`（`%(asctime)s` が datefmt でフォーマットされます）。
 
 ### 設定管理クラス
 - **`kyotei_predictor/config/improvement_config_manager.py`**: 改善策設定の管理クラス

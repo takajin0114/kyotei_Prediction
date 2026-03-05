@@ -89,12 +89,16 @@ python -m kyotei_predictor.tools.storage.drive_data_sync \
 
 ### 2-2. Colab でノートブックの変数を合わせる
 
-- **DRIVE_ROOT**: `'/content/drive/MyDrive/kyotei_prediction'`（Drive のフォルダ名が `kyotei_prediction` の場合）
-- **DATA_DIR**: `f'{DRIVE_ROOT}/data/raw'`
-- **YEAR_MONTH**: 使いたい年月（例: `'2026-02'`）
+- **DRIVE_ROOT**: `'/content/drive/MyDrive/app/kyotei_Prediction'` など、Drive 上のリポジトリルート
+- **DATA_SOURCE**: `'file'`（JSON の raw）または `'db'`（SQLite）
+- **DATA_DIR**: `f'{DRIVE_ROOT}/kyotei_predictor/data/raw'`（DATA_SOURCE=file のとき）
+- **DB_PATH**: `f'{DRIVE_ROOT}/kyotei_predictor/data/kyotei_races.sqlite'`（DATA_SOURCE=db のとき。Drive に DB を置く）
+- **YEAR_MONTH**: 使いたい年月（例: `'2025-01'`）
 - **PREDICT_DATE**: 予測したい日（例: `'2026-02-14'`）
 - **N_TRIALS**: Optuna の試行回数（最初は `1` で確認推奨）
 - **MINIMAL**: `True` で短時間検証、本番は `False`
+
+**DB で学習する場合**: ローカルで `import_raw_to_db` で作成した `kyotei_races.sqlite` を Drive の `kyotei_predictor/data/` にアップロードし、`DATA_SOURCE = 'db'` にします。予測は従来どおり JSON（data/raw）を参照するため、DB のみの場合は `--skip-prediction` を付けるか、予測用に raw を別途用意します。
 
 ### 2-3. Colab で上から順に実行
 

@@ -12,6 +12,7 @@ from kyotei_predictor.utils import (
     KyoteiUtils, Config, setup_logger, VenueMapper,
     KyoteiError, DataError, APIError
 )
+from kyotei_predictor.utils.logger import get_logger
 from metaboatrace.models.stadium import StadiumTelCode
 
 class TestKyoteiUtils:

@@ -29,9 +29,11 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 # プロジェクトルートの設定
-PROJECT_ROOT = Path(__file__).parent.parent.parent
-LOGS_DIR = PROJECT_ROOT / "kyotei_predictor" / "logs"
-OUTPUTS_DIR = PROJECT_ROOT / "outputs"
+from kyotei_predictor.config.settings import Settings
+
+PROJECT_ROOT = Settings.PROJECT_ROOT
+LOGS_DIR = PROJECT_ROOT / Settings.LOGS_DIR.replace("/", os.sep)
+OUTPUTS_DIR = PROJECT_ROOT / getattr(Settings, "ROOT_OUTPUTS_DIR", "outputs")
 
 # 予想ツールのインポート
 sys.path.append(str(PROJECT_ROOT))
@@ -50,9 +52,11 @@ class ScheduledDataMaintenance:
         log_file = LOGS_DIR / f"scheduled_maintenance_{datetime.now().strftime('%Y%m%d')}.log"
         log_file.parent.mkdir(exist_ok=True)
         
+        from kyotei_predictor.utils.logger import get_logging_format, get_logging_datefmt
         logging.basicConfig(
             level=log_level,
-            format='%(asctime)s - %(levelname)s - %(message)s',
+            format=get_logging_format(),
+            datefmt=get_logging_datefmt(),
             handlers=[
                 logging.FileHandler(log_file, encoding='utf-8'),
                 logging.StreamHandler()

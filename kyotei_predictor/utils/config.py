@@ -75,7 +75,7 @@ class Config:
         return overrides
     
     def get(self, key: str, default: Any = None) -> Any:
-        """設定値を取得（ドット記法対応）"""
+        """設定値を取得（ドット記法対応）。環境変数は KYOTEI_DATA_RAW_DIR のようにアンダースコアで格納されるため、両形式を参照する。"""
         keys = key.split('.')
         value = self._config
         
@@ -83,9 +83,11 @@ class Config:
             if isinstance(value, dict) and k in value:
                 value = value[k]
             else:
-                return self._env_overrides.get(key, default)
+                env_val = self._env_overrides.get(key) or self._env_overrides.get(key.replace(".", "_"))
+                return env_val if env_val is not None else default
         
-        return self._env_overrides.get(key, value)
+        env_val = self._env_overrides.get(key) or self._env_overrides.get(key.replace(".", "_"))
+        return env_val if env_val is not None else value
     
     def get_data_dir(self) -> str:
         """データディレクトリを取得"""

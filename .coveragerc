@@ -1,0 +1,13 @@
+[run]
+source = kyotei_predictor
+omit =
+    */tests/*
+    */test_*
+    */__pycache__/*
+    .venv/*
+
+[report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    raise NotImplementedError

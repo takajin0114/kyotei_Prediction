@@ -4,7 +4,9 @@ import collections
 from datetime import datetime
 import csv
 
-RAW_DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'raw')
+from kyotei_predictor.config.settings import get_raw_data_dir
+
+RAW_DATA_DIR = str(get_raw_data_dir())
 RACE_FILE_PATTERN = re.compile(r"race_data_(\d{4}-\d{2}-\d{2})_([A-Z0-9]+)_R(\d{1,2})\.json")
 
 

@@ -10,15 +10,15 @@
 | run_learning_prediction_cycle.bat | 学習→予測一括（test_raw） |
 | run_learning_prediction_cycle.sh | 学習→予測一括（test_raw, Linux/macOS向け） |
 | run_colab_learning_cycle.py | Google Drive上データで学習/予測（Colab向け） |
-| **fetch_one_race.bat** | **1R のみデータ取得（桐生 1日・1R・疎通確認用）** |
-| **run_fetch_one_race.py** | **1R 取得の Python ランチャー（推奨・どこからでも実行可）** |
-| **fetch_reperiod.bat** | **期間を指定してデータ再取得（中身の日付・会場を編集して使用）** |
-| **fetch_5years.bat** | **過去5年分（2021-01-01〜2026-02-14）を取得。欠けている分のみ（OVERWRITE=0）。** |
-| **fetch_1month.bat** | **過去1か月分（2026年1月）を取得。欠けている分のみ。** |
-| **run_fetch_5year_chunked.sh** | **5年分を数回に分けて取得（進捗確認・次に取るNヶ月・指定期間）。venv自動使用。** |
-| **run_batch_fetch_1month.sh** | **1ヶ月分取得（YYYY-MM 指定可）。venv自動使用。activate不要。** |
+| **fetch_one_race.bat** | 1R のみデータ取得（桐生 1日・1R・疎通確認用） |
+| **run_fetch_one_race.py** | 1R 取得の Python ランチャー（推奨） |
+| **run_fetch_5year_chunked.sh** | 5年分を数回に分けて取得（進捗確認・次に取るNヶ月・指定期間）。venv自動使用。 |
+| **run_batch_fetch_1month.sh** | 1ヶ月分取得（YYYY-MM 指定可）。venv自動使用。 |
 | **fetch_5year_plan.json** | **5年分取得の対象月一覧（2021-01〜2026-02）。** |
+| check_batch_fetch_stuck.sh | バッチ取得のスタック検知（ログ・プロセス監視） |
 | cleanup_old_files.bat | 古いログ・Optuna ファイルの削除 |
+
+**削除済み（.sh または Python で代替）**: fetch_1month.bat, fetch_5years.bat, fetch_reperiod.bat → 1ヶ月は `run_batch_fetch_1month.sh`、期間・5年は `run_fetch_5year_chunked.sh` または `python -m kyotei_predictor.tools.batch.fetch_5year_chunked` を使用。
 
 **実行例**（プロジェクトルートで）:
 ```bash

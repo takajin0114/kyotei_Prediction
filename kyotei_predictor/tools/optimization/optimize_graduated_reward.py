@@ -27,12 +27,18 @@ plt.ioff()  # インタラクティブモードを無効化
 os.environ['OPTUNA_DISABLE_DEFAULT_LOGGER'] = '1'
 os.environ['OPTUNA_DISABLE_LOGGING'] = '1'
 
-# プロジェクトルートをパスに追加
+# プロジェクトルートをパスに追加（bootstrap 後は Settings を利用）
 project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(project_root)
 sys.path.append(os.path.join(project_root, 'kyotei_predictor'))
+try:
+    from kyotei_predictor.config.settings import Settings
+    project_root = str(Settings.PROJECT_ROOT)
+except Exception:
+    pass
 
 from pipelines.kyotei_env import KyoteiEnvManager
+from kyotei_predictor.utils.logger import get_logging_formatter
 
 # 学習用ロガー（main内でファイルハンドラを付与。UTF-8でファイル出力し文字化けを避ける）
 _opt_logger = logging.getLogger("kyotei_predictor.tools.optimization.optimize_graduated_reward")
@@ -53,42 +59,46 @@ def _log_debug(msg, *args):
         _opt_logger.debug(msg)
 
 
-def create_env(data_dir=None, bet_amount=100, year_month=None):
+def create_env(data_dir=None, bet_amount=100, year_month=None, data_source="file", db_path=None):
     """
     環境を作成
-    
+
     Args:
-        data_dir: データディレクトリ（Noneの場合はデフォルトパス）
+        data_dir: データディレクトリ（data_source=file のとき）
         bet_amount: ベット金額
         year_month: 年月フィルタ（例: "2024-01"）
+        data_source: "file" または "db"
+        db_path: data_source=db のときの SQLite パス
     """
     if data_dir is None:
         data_dir = "kyotei_predictor/data/raw"
-    _log_debug("[create_env] data_dir: %s year_month: %s bet_amount: %s", data_dir, year_month, bet_amount)
-    """環境を作成"""
+    _log_debug("[create_env] data_dir: %s year_month: %s data_source: %s", data_dir, year_month, data_source)
     def make_env():
-        _log_debug("[make_env] Creating KyoteiEnvManager year_month: %s", year_month)
-        env = KyoteiEnvManager(data_dir=data_dir, bet_amount=bet_amount, year_month=year_month)
+        _log_debug("[make_env] Creating KyoteiEnvManager year_month: %s data_source: %s", year_month, data_source)
+        env = KyoteiEnvManager(
+            data_dir=data_dir,
+            bet_amount=bet_amount,
+            year_month=year_month,
+            data_source=data_source,
+            db_path=db_path,
+        )
         env = Monitor(env)
         return env
     return DummyVecEnv([make_env])
 
-def objective(trial, data_dir=None, test_mode=False, minimal_mode=False, year_month=None, fast_mode=False, medium_mode=False):
+def objective(trial, data_dir=None, test_mode=False, minimal_mode=False, year_month=None, fast_mode=False, medium_mode=False, data_source="file", db_path=None):
     """
     最適化の目的関数
-    
+
     Args:
         trial: Optunaの試行オブジェクト
-        data_dir: データディレクトリ（Noneの場合はデフォルトパス）
-        test_mode: テストモード
-        minimal_mode: 最小限モード
-        year_month: 年月フィルタ（例: "2024-01"）
-        fast_mode: 高速モード（学習ステップ数と評価エピソード数を大幅削減）
-        medium_mode: 中速モード（学習ステップ数と評価エピソード数を中程度に設定）
+        data_dir: データディレクトリ（data_source=file のとき）
+        data_source: "file" または "db"
+        db_path: data_source=db のときの SQLite パス
     """
     if data_dir is None:
         data_dir = "kyotei_predictor/data/raw"
-    _log_debug("[objective] Trial %s started data_dir=%s year_month=%s", trial.number, data_dir, year_month)
+    _log_debug("[objective] Trial %s started data_dir=%s year_month=%s data_source=%s", trial.number, data_dir, year_month, data_source)
     
     # 設定ファイルからハイパーパラメータ範囲を取得
     if CONFIG_MANAGER is not None:
@@ -202,8 +212,8 @@ def objective(trial, data_dir=None, test_mode=False, minimal_mode=False, year_mo
             max_grad_norm = trial.suggest_float('max_grad_norm', 0.3, 0.8)
     
     _log_debug("[objective] Hyperparams: lr=%s batch=%s n_steps=%s gamma=%s", learning_rate, batch_size, n_steps, gamma)
-    train_env = create_env(data_dir=data_dir, year_month=year_month)
-    eval_env = create_env(data_dir=data_dir, year_month=year_month)
+    train_env = create_env(data_dir=data_dir, year_month=year_month, data_source=data_source, db_path=db_path)
+    eval_env = create_env(data_dir=data_dir, year_month=year_month, data_source=data_source, db_path=db_path)
     eval_callback = EvalCallback(
         eval_env,
         best_model_save_path=f"./optuna_models/trial_{trial.number}/",
@@ -354,6 +364,8 @@ def optimize_graduated_reward(
     n_trials=50,
     study_name="graduated_reward_optimization",
     data_dir=None,
+    data_source="file",
+    db_path=None,
     test_mode=False,
     minimal_mode=False,
     fast_mode=False,
@@ -420,7 +432,7 @@ def optimize_graduated_reward(
     _opt_logger.info("既存の試行数: %s", existing_trials)
     _opt_logger.info("最適化開始: データディレクトリ=%s 年月フィルタ=%s", data_dir, year_month)
     study.optimize(
-        lambda trial: objective(trial, data_dir=data_dir, test_mode=test_mode, minimal_mode=minimal_mode, fast_mode=fast_mode, medium_mode=medium_mode, year_month=year_month),
+        lambda trial: objective(trial, data_dir=data_dir, data_source=data_source, db_path=db_path, test_mode=test_mode, minimal_mode=minimal_mode, fast_mode=fast_mode, medium_mode=medium_mode, year_month=year_month),
         n_trials=n_trials,
         show_progress_bar=False,
         callbacks=None  # コールバックを無効化して可視化を防ぐ
@@ -469,7 +481,7 @@ def optimize_graduated_reward(
     
     if os.path.exists(best_model_path):
         best_model = PPO.load(best_model_path)
-        eval_env = create_env(data_dir=data_dir, year_month=year_month)
+        eval_env = create_env(data_dir=data_dir, year_month=year_month, data_source=data_source, db_path=db_path)
         
         detailed_results = evaluate_model(best_model, eval_env, n_eval_episodes=500)
         
@@ -500,7 +512,7 @@ def _setup_optimization_log(project_root):
     log_file = os.path.join(log_dir, f"optimize_graduated_reward_{datetime.now().strftime('%Y%m%d')}.log")
     fh = logging.FileHandler(log_file, encoding="utf-8")
     fh.setLevel(logging.DEBUG)
-    fh.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
+    fh.setFormatter(get_logging_formatter())
     _opt_logger.setLevel(logging.DEBUG)
     _opt_logger.addHandler(fh)
     _opt_logger.info("Log file: %s", log_file)
@@ -510,7 +522,9 @@ def _setup_optimization_log(project_root):
 def main():
     """メイン実行関数（コマンドライン引数対応）"""
     parser = argparse.ArgumentParser(description="段階的報酬設計モデルのハイパーパラメータ最適化")
-    parser.add_argument('--data-dir', type=str, default="kyotei_predictor/data/raw", help='データディレクトリ')
+    parser.add_argument('--data-dir', type=str, default="kyotei_predictor/data/raw", help='データディレクトリ（data-source=file のとき）')
+    parser.add_argument('--data-source', type=str, choices=['file', 'db'], default='file', help='データソース: file=JSON, db=SQLite')
+    parser.add_argument('--db-path', type=str, default=None, help='data-source=db のときの SQLite パス（例: kyotei_predictor/data/kyotei_races.sqlite）')
     parser.add_argument('--year-month', type=str, help='年月フィルタ（例: 2024-01）')
     parser.add_argument('--study-name', type=str, default="graduated_reward_optimization", help='Optunaスタディ名')
     parser.add_argument('--n-trials', type=int, default=50, help='試行回数')
@@ -523,10 +537,16 @@ def main():
     args = parser.parse_args()
     _setup_optimization_log(project_root)
 
-    _log_debug("main() args: data_dir=%s year_month=%s minimal=%s n_trials=%s", args.data_dir, args.year_month, args.minimal, args.n_trials)
+    _log_debug("main() args: data_dir=%s data_source=%s db_path=%s year_month=%s", args.data_dir, getattr(args, 'data_source', 'file'), getattr(args, 'db_path', None), args.year_month)
     data_dir = os.environ.get('DATA_DIR', args.data_dir)
+    data_source = getattr(args, 'data_source', 'file')
+    db_path = getattr(args, 'db_path', None)
+    if data_source == 'db' and not db_path:
+        db_path = os.path.join(project_root, "kyotei_predictor", "data", "kyotei_races.sqlite")
     print("Data dir: " + data_dir)
-    _opt_logger.info("使用するデータディレクトリ: %s", data_dir)
+    if data_source == 'db':
+        print("Data source: db  path: " + (db_path or ""))
+    _opt_logger.info("使用するデータ: data_source=%s data_dir=%s db_path=%s", data_source, data_dir, db_path)
 
     year_month = args.year_month
     if year_month:
@@ -545,6 +565,8 @@ def main():
         n_trials=args.n_trials,
         study_name=args.study_name,
         data_dir=data_dir,
+        data_source=data_source,
+        db_path=db_path,
         test_mode=args.test_mode,
         minimal_mode=args.minimal,
         fast_mode=args.fast_mode,

@@ -176,7 +176,7 @@ python -m kyotei_predictor.tools.batch.run_data_maintenance --start-date 2024-01
 ## 🔧 カスタマイズ・拡張
 
 ### アラート設定
-`kyotei_predictor/config/alert_config.json` でメール通知を設定可能
+メール通知は `kyotei_predictor/config/alert_config.json` で設定可能。リポジトリには `alert_config.json.sample` があるので、コピーして `alert_config.json` として編集する。ファイルが無い場合はメールは無効（デフォルト）。
 
 ```json
 {

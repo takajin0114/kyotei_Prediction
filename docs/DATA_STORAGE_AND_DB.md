@@ -66,7 +66,31 @@
    - 追加: `--data-source db --db-path kyotei_predictor/data/kyotei_races.sqlite` のように DB を指定可能にする。  
    学習パイプラインは「データソースが DB の場合は SQL でレース一覧を取得し、1 レースずつ state/報酬用のデータを読みに行く」ようにする。
 4. **Colab**  
-   Drive に `kyotei_races.sqlite` を置き、マウントしたパスを `--db-path` に指定して学習する。
+   Drive に `kyotei_races.sqlite` を置き、ノートブックで `DATA_SOURCE = 'db'` と `DB_PATH` を設定して `scripts/run_colab_learning_cycle.py` を実行する。詳細は [Colab 学習の準備](guides/colab_learning_prep.md) を参照。
+
+### 3.1 コマンド例
+
+- **JSON → DB 投入**（プロジェクトルートで実行）:
+  ```bash
+  python -m kyotei_predictor.tools.storage.import_raw_to_db --raw-dir kyotei_predictor/data/raw --db-path kyotei_predictor/data/kyotei_races.sqlite
+  ```
+  `--dry-run` を付けると投入せずに対象ファイル数だけ表示する。
+
+- **最適化を DB で行う**:
+  ```bash
+  python -m kyotei_predictor.tools.optimization.optimize_graduated_reward --data-source db --db-path kyotei_predictor/data/kyotei_races.sqlite --year-month 2025-01
+  ```
+  `--db-path` を省略した場合は `kyotei_predictor/data/kyotei_races.sqlite` をデフォルトで使用する。
+
+- **DB 投入後に raw の JSON を削除する**（ディスク節約用）:
+  ```bash
+  # 削除対象の確認のみ
+  python -m kyotei_predictor.tools.storage.delete_raw_after_import --raw-dir kyotei_predictor/data/raw --db-path kyotei_predictor/data/kyotei_races.sqlite --dry-run
+
+  # 実際に削除（DB に存在するペアに対応する JSON のみ削除）
+  python -m kyotei_predictor.tools.storage.delete_raw_after_import --raw-dir kyotei_predictor/data/raw --db-path kyotei_predictor/data/kyotei_races.sqlite --yes
+  ```
+  DB に無いペアのファイルは残るため、投入漏れがあっても安全。
 
 ---
 

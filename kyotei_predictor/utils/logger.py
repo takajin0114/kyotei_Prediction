@@ -1,12 +1,53 @@
 #!/usr/bin/env python3
 """
-統合ログ設定クラス
+統合ログ設定クラス。日時分秒は config/config.json の logging.datefmt で一律管理。
 """
 import logging
 import os
+import json
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Tuple
 from pathlib import Path
+
+# 設定ファイルのパス（logger.py から見て config/config.json）
+_CONFIG_DIR = Path(__file__).resolve().parent.parent / "config"
+_CONFIG_PATH = _CONFIG_DIR / "config.json"
+
+# デフォルト: 日時分秒を含む
+DEFAULT_LOG_FORMAT = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+DEFAULT_LOG_DATEFMT = "%Y-%m-%d %H:%M:%S"
+
+
+def _load_logging_config() -> Tuple[str, str]:
+    """config.json の logging から format と datefmt を読み込む。無ければデフォルトを返す。"""
+    try:
+        if _CONFIG_PATH.is_file():
+            with open(_CONFIG_PATH, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            logging_cfg = data.get("logging") or {}
+            fmt = logging_cfg.get("format") or DEFAULT_LOG_FORMAT
+            datefmt = logging_cfg.get("datefmt") or DEFAULT_LOG_DATEFMT
+            return fmt, datefmt
+    except Exception:
+        pass
+    return DEFAULT_LOG_FORMAT, DEFAULT_LOG_DATEFMT
+
+
+def get_logging_format() -> str:
+    """ログフォーマット文字列を返す（設定ファイルで一律管理）。"""
+    return _load_logging_config()[0]
+
+
+def get_logging_datefmt() -> str:
+    """ログ日時フォーマットを返す（日時分秒: %Y-%m-%d %H:%M:%S）。"""
+    return _load_logging_config()[1]
+
+
+def get_logging_formatter() -> logging.Formatter:
+    """設定に従った Formatter を返す。各モジュールで setFormatter に渡して利用。"""
+    fmt, datefmt = _load_logging_config()
+    return logging.Formatter(fmt, datefmt=datefmt)
+
 
 def setup_logger(
     name: str = "kyotei_predictor",
@@ -33,11 +74,11 @@ def setup_logger(
     # 既存のハンドラーをクリア
     logger.handlers.clear()
     
-    # フォーマッターを設定
+    # フォーマッターを設定（未指定時は config の format/datefmt で日時分秒付き）
     if format_string is None:
-        format_string = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    
-    formatter = logging.Formatter(format_string)
+        format_string = get_logging_format()
+    datefmt = get_logging_datefmt()
+    formatter = logging.Formatter(format_string, datefmt=datefmt)
     
     # コンソールハンドラーを追加
     console_handler = logging.StreamHandler()
@@ -89,8 +130,8 @@ DEFAULT_LOG_DIR = "logs"
 
 
 def format_timestamp() -> str:
-    """現在時刻を YYYY-MM-DD HH:MM:SS で返す（ログ用）"""
-    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    """現在時刻を設定の datefmt で返す（ログ用・日時分秒）。"""
+    return datetime.now().strftime(get_logging_datefmt())
 
 
 def format_log_line(message: str) -> str:

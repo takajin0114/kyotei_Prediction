@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
 """
-統合設定ファイル
+統合設定ファイル。プロジェクトルート・データ/ログパスはここで一括定義する。
 """
 import os
+from pathlib import Path
 from typing import Dict, Any
+
+# リポジトリルート（config/settings.py から 2 段上が kyotei_predictor、さらに 1 段上がルート）
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+
 
 class Settings:
     """競艇予測システムの設定クラス"""
@@ -12,16 +17,22 @@ class Settings:
     PROJECT_NAME = "kyotei_Prediction"
     VERSION = "Phase 3"
     
-    # データディレクトリ
+    # プロジェクトルート（全モジュールでここを import して利用する）
+    PROJECT_ROOT = _PROJECT_ROOT
+    
+    # データディレクトリ（相対パス: プロジェクトルート基準）
     DATA_DIR = "kyotei_predictor/data"
     RAW_DATA_DIR = os.path.join(DATA_DIR, "raw")
     PROCESSED_DATA_DIR = os.path.join(DATA_DIR, "processed")
     SAMPLE_DATA_DIR = os.path.join(DATA_DIR, "sample")
     BACKUP_DATA_DIR = os.path.join(DATA_DIR, "backup")
     
-    # 出力ディレクトリ
+    # 出力ディレクトリ（相対パス: プロジェクトルート基準）
     OUTPUT_DIR = "kyotei_predictor/outputs"
     LOGS_DIR = "kyotei_predictor/logs"
+    # ルート直下（予測結果・レポート・履歴など）
+    ROOT_LOGS_DIR = "logs"
+    ROOT_OUTPUTS_DIR = "outputs"
     
     # Optuna関連
     OPTUNA_STUDIES_DIR = "optuna_studies"
@@ -131,6 +142,16 @@ class Settings:
         
         for directory in directories:
             os.makedirs(directory, exist_ok=True)
+
+def get_raw_data_dir() -> Path:
+    """raw データディレクトリの絶対パス。環境変数 KYOTEI_RAW_DATA_DIR で上書き可能。"""
+    return Path(os.environ.get("KYOTEI_RAW_DATA_DIR", str(Settings.PROJECT_ROOT / Settings.RAW_DATA_DIR.replace("/", os.sep))))
+
+
+def get_project_root() -> Path:
+    """プロジェクトルートの絶対パス。"""
+    return Settings.PROJECT_ROOT
+
 
 # 環境変数による設定オーバーライド
 def get_env_settings() -> Dict[str, Any]:

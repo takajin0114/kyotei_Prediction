@@ -1,14 +1,26 @@
 import os
 import json
+from pathlib import Path
 from datetime import datetime
 
+def _get_data_dir() -> Path:
+    """raw データディレクトリ（config で一元管理）。"""
+    try:
+        from kyotei_predictor.config.settings import get_raw_data_dir
+        return get_raw_data_dir()
+    except Exception:
+        return Path("kyotei_predictor/data/raw")
+
 def verify_race_data_integrity():
-    """取得データの整合性を検証（簡易版）"""
-    data_dir = 'data'
-    
-    # 取得されたファイルを分析
-    race_files = [f for f in os.listdir(data_dir) if f.startswith('race_data_') and f.endswith('.json')]
-    odds_files = [f for f in os.listdir(data_dir) if f.startswith('odds_data_') and f.endswith('.json')]
+    """取得データの整合性を検証（簡易版）。raw 配下を再帰走査する。"""
+    data_dir = _get_data_dir()
+    if not data_dir.exists():
+        print(f"データディレクトリが存在しません: {data_dir}")
+        return
+
+    # 取得されたファイルを分析（サブディレクトリ含む）
+    race_files = [f.name for f in data_dir.rglob("*.json") if f.name.startswith("race_data_")]
+    odds_files = [f.name for f in data_dir.rglob("*.json") if f.name.startswith("odds_data_")]
     
     print(f"=== データ整合性検証結果 ===\n")
     print(f"取得されたレースデータファイル数: {len(race_files)}")
@@ -29,8 +41,8 @@ def verify_race_data_integrity():
             if venue not in data_by_date_venue[date]:
                 data_by_date_venue[date][venue] = {'races': [], 'odds': []}
             
-            data_by_date_venue[date][venue]['races'].append(race_num)
-    
+            data_by_date_venue[date][venue]["races"].append(race_num)
+
     for f in odds_files:
         parts = f.replace('odds_data_', '').replace('.json', '').split('_')
         if len(parts) >= 2:
@@ -90,24 +102,26 @@ def verify_race_data_integrity():
 
 def check_race_results():
     """レース結果の存在確認"""
-    data_dir = 'data'
-    
+    data_dir = _get_data_dir()
+    if not data_dir.exists():
+        print(f"データディレクトリが存在しません: {data_dir}")
+        return
+
     print("\n=== レース結果確認 ===\n")
-    
-    race_files = [f for f in os.listdir(data_dir) if f.startswith('race_data_') and f.endswith('.json')]
-    
+    race_paths = sorted(data_dir.rglob("race_data_*.json"))[:10]
+
     files_with_results = 0
     files_without_results = 0
-    
-    for i, filename in enumerate(race_files[:10]):  # 最初の10ファイルをチェック
+
+    for i, filepath in enumerate(race_paths):
         try:
-            with open(os.path.join(data_dir, filename), 'r', encoding='utf-8') as f:
+            with open(filepath, "r", encoding="utf-8") as f:
                 data = json.load(f)
             
             race_records = data.get('race_records', [])
             race_info = data.get('race_info', {})
             
-            print(f"{i+1}. {filename}")
+            print(f"{i+1}. {filepath.name}")
             print(f"   レース情報: {race_info.get('title', 'N/A')} - {race_info.get('date', 'N/A')}")
             
             if race_records and len(race_records) > 0:
@@ -125,26 +139,28 @@ def check_race_results():
             print()
             
         except Exception as e:
-            print(f"{i+1}. {filename} - エラー: {str(e)}")
+            print(f"{i+1}. {filepath.name} - エラー: {str(e)}")
             print()
-    
+
     print(f"結果あり: {files_with_results}件")
     print(f"結果なし: {files_without_results}件")
 
 def check_odds_data_quality():
     """オッズデータの品質確認"""
-    data_dir = 'data'
-    
+    data_dir = _get_data_dir()
+    if not data_dir.exists():
+        print(f"データディレクトリが存在しません: {data_dir}")
+        return
+
     print("\n=== オッズデータ品質確認 ===\n")
-    
-    odds_files = [f for f in os.listdir(data_dir) if f.startswith('odds_data_') and f.endswith('.json')]
-    
-    for i, filename in enumerate(odds_files[:5]):  # 最初の5ファイルをチェック
+    odds_paths = sorted(data_dir.rglob("odds_data_*.json"))[:5]
+
+    for i, filepath in enumerate(odds_paths):
         try:
-            with open(os.path.join(data_dir, filename), 'r', encoding='utf-8') as f:
+            with open(filepath, "r", encoding="utf-8") as f:
                 data = json.load(f)
             
-            print(f"{i+1}. {filename}")
+            print(f"{i+1}. {filepath.name}")
             print(f"   オッズ数: {data.get('odds_count', 0)}")
             print(f"   レース日: {data.get('race_date', 'N/A')}")
             print(f"   会場: {data.get('stadium', 'N/A')}")
@@ -157,7 +173,7 @@ def check_odds_data_quality():
             print()
             
         except Exception as e:
-            print(f"{i+1}. {filename} - エラー: {str(e)}")
+            print(f"{i+1}. {filepath.name} - エラー: {str(e)}")
             print()
 
 if __name__ == "__main__":

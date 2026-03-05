@@ -16,7 +16,7 @@
 - `batch/` : データ取得・再取得・一括運用バッチ（batch_fetch_all_venues, fetch_5year_chunked, retry_missing_races）
 - `analysis/` : 分析・可視化・統計ツール
 - `fetch/` : データ取得用API・スクレイパ
-- `optimization/` : **本流** Optuna 最適化（optimize_graduated_reward）。optimize_graduated_reward_202403 は 2024年3月版・参照用
+- `optimization/` : **本流** Optuna 最適化（optimize_graduated_reward）。2024年3月版は `legacy/optimize_graduated_reward_202403.py` に移動済み
 - `ai/` : AI学習・評価（optuna_optimizer）。tools/optuna_optimizer.py は ai の再エクスポート
 - `legacy/` : 本番未使用・参照用（旧最適化・Colab）。新規は optimization/・batch/ を参照
 - `common/` : 共通処理・ユーティリティ（venue_mapping は utils.venue_mapping のラッパー）
