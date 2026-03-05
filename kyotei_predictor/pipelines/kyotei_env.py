@@ -20,7 +20,7 @@ try:
 except ImportError:
     # 設定管理クラスが利用できない場合はデフォルト値を使用
     CONFIG_MANAGER = None
-    print("Warning: ImprovementConfigManager not available, using default values")
+    logging.warning("ImprovementConfigManager not available, using default values")
 
 # Kyotei用ロギング設定（日時は utils.logger の config に従う）
 ENABLE_KYOTEI_LOGGING = True  # TrueでDEBUG/INFOも表示、FalseでWARNING以上のみ
@@ -36,6 +36,10 @@ if ENABLE_KYOTEI_LOGGING:
     logging.basicConfig(level=logging.DEBUG, format=_kyotei_fmt, datefmt=_kyotei_datefmt, filename='outputs/logs/kyotei_env_debug.log', filemode='w')
 else:
     logging.basicConfig(level=logging.WARNING, format=_kyotei_fmt, datefmt=_kyotei_datefmt)
+
+# config の日時フォーマットで出すため logging に統一（print は使わない）
+_log = logging.getLogger(__name__)
+
 
 class KyoteiEnv(gym.Env):
     """
@@ -73,23 +77,23 @@ class KyoteiEnv(gym.Env):
         self.odds_data = odds.get('odds_data', [])
         valid_records = [r for r in race.get('race_records', []) if r.get('arrival') is not None]
         if ENABLE_KYOTEI_LOGGING:
-            print(f"[KyoteiEnv.reset] valid_records={len(valid_records)}")
+            _log.debug("[KyoteiEnv.reset] valid_records=%s", len(valid_records))
         if len(valid_records) < 3:
-            print(f"[KyoteiEnv.reset] Skipping race with insufficient valid records: {len(valid_records)} < 3")
+            _log.debug("[KyoteiEnv.reset] Skipping race with insufficient valid records: %s < 3", len(valid_records))
             logging.warning(f"Skipping race with insufficient valid records: {len(valid_records)} < 3")
             raise ValueError(f"Insufficient valid records: {len(valid_records)} < 3")
         records = sorted(valid_records, key=lambda x: x['arrival'])
         self.arrival_tuple = tuple(r['pit_number'] for r in records[:3])
-        print(f"[KyoteiEnv.reset] arrival_tuple={self.arrival_tuple}")
+        _log.debug("[KyoteiEnv.reset] arrival_tuple=%s", self.arrival_tuple)
         if len(self.arrival_tuple) != 3:
-            print(f"[KyoteiEnv.reset] Skipping race with invalid arrival_tuple: {self.arrival_tuple}")
+            _log.debug("[KyoteiEnv.reset] Skipping race with invalid arrival_tuple: %s", self.arrival_tuple)
             logging.warning(f"Skipping race with invalid arrival_tuple: {self.arrival_tuple}")
             raise ValueError(f"Invalid arrival_tuple: {self.arrival_tuple}, length: {len(self.arrival_tuple)}")
         # 状態は出走表＋レース情報のみ（オッズは含めない）。報酬計算では self.odds_data を使用
         self.state = build_race_state_vector(race, None)
         self.terminated = False
         info = {}
-        print(f"[KyoteiEnv.reset] state shape={self.state.shape if hasattr(self.state, 'shape') else type(self.state)}")
+        _log.debug("[KyoteiEnv.reset] state shape=%s", self.state.shape if hasattr(self.state, 'shape') else type(self.state))
         return self.state, info
 
     def step(self, action: int) -> Tuple[np.ndarray | None, float, bool, bool, dict]:
@@ -242,6 +246,8 @@ class KyoteiEnvManager(gym.Env):
         data_dir: str = "../data",
         bet_amount: int = 100,
         year_month: Optional[str] = None,
+        date_from: Optional[str] = None,
+        date_to: Optional[str] = None,
         data_source: str = "file",
         db_path: Optional[str] = None,
     ):
@@ -255,13 +261,19 @@ class KyoteiEnvManager(gym.Env):
         logging.debug(f"[KyoteiEnvManager.__init__] data_source={data_source}, data_dir={data_dir}")
         self.data_dir = data_dir
         self.year_month = year_month  # 年月フィルタ（例: "2024-01"）
+        self.date_from = date_from  # 日付範囲（例: "2025-01-01"）
+        self.date_to = date_to  # 日付範囲（例: "2025-12-31"）
         self.bet_amount = bet_amount
         self.pairs = self._find_race_odds_pairs()
         self.env = None
 
     def _find_race_odds_pairs(self) -> list:
         if self.data_source == "db" and self._db is not None:
-            pairs = self._db.get_race_odds_pairs(year_month=self.year_month)
+            pairs = self._db.get_race_odds_pairs(
+                year_month=self.year_month,
+                date_from=self.date_from,
+                date_to=self.date_to,
+            )
             return [(p[0], p[1], p[2]) for p in pairs]  # (race_date, stadium, race_number)
         logging.debug(f"data_dir: {self.data_dir}")
         logging.debug(f"abspath(data_dir): {os.path.abspath(self.data_dir)}")
@@ -275,14 +287,14 @@ class KyoteiEnvManager(gym.Env):
         logging.debug(f"odds_pattern: {odds_pattern}")
         
         # キャッシュを完全に無効化して年月フィルタを確実に動作させる
-        print(f"[DEBUG] Cache disabled, recalculating pairs for year_month: {self.year_month}")
+        _log.debug("[DEBUG] Cache disabled, recalculating pairs for year_month: %s", self.year_month)
         # キャッシュをクリア
         if hasattr(self, '_pairs_cache'):
             delattr(self, '_pairs_cache')
         
         # 年月フィルタのデバッグ情報を追加
-        print(f"[DEBUG] Year month filter: {self.year_month}")
-        print(f"[DEBUG] Data directory: {self.data_dir}")
+        _log.debug("[DEBUG] Year month filter: %s", self.year_month)
+        _log.debug("[DEBUG] Data directory: %s", self.data_dir)
         
         # ファイル検索を最適化
         race_files = []
@@ -298,17 +310,17 @@ class KyoteiEnvManager(gym.Env):
         
         # 年月フィルタリングを適用
         if self.year_month:
-            print(f"[DEBUG] Applying year_month filter: {self.year_month}")
+            _log.debug("[DEBUG] Applying year_month filter: %s", self.year_month)
             original_race_count = len(race_files)
             original_odds_count = len(odds_files)
             
             race_files = [f for f in race_files if self._matches_year_month(os.path.basename(f), self.year_month)]
             odds_files = [f for f in odds_files if self._matches_year_month(os.path.basename(f), self.year_month)]
             
-            print(f"[DEBUG] After filtering - race_files: {len(race_files)} (from {original_race_count})")
-            print(f"[DEBUG] After filtering - odds_files: {len(odds_files)} (from {original_odds_count})")
+            _log.debug("[DEBUG] After filtering - race_files: %s (from %s)", len(race_files), original_race_count)
+            _log.debug("[DEBUG] After filtering - odds_files: %s (from %s)", len(odds_files), original_odds_count)
         else:
-            print(f"[DEBUG] No year_month filter applied")
+            _log.debug("[DEBUG] No year_month filter applied")
         
         logging.debug(f"race_files count: {len(race_files)}")
         logging.debug(f"odds_files count: {len(odds_files)}")
@@ -352,15 +364,15 @@ class KyoteiEnvManager(gym.Env):
             odds_key = race_key.replace("race_data_", "odds_data_")
             pairs.append((race_map[race_key], odds_map[odds_key]))
         
-        print(f"[DEBUG] Final pairs count (file): {len(pairs)}")
+        _log.debug("[DEBUG] Final pairs count (file): %s", len(pairs))
         if pairs:
-            print(f"[DEBUG] Sample pair: {pairs[0]}")
+            _log.debug("[DEBUG] Sample pair: %s", pairs[0])
         logging.debug(f"pairs count: {len(pairs)}")
         if pairs:
             logging.debug(f"sample pair: {pairs[0]}")
         
         # キャッシュを無効化（年月フィルタの確実な動作のため）
-        print(f"[DEBUG] Cache disabled, not saving pairs to cache")
+        _log.debug("[DEBUG] Cache disabled, not saving pairs to cache")
         
         return pairs
 
@@ -396,10 +408,10 @@ class KyoteiEnvManager(gym.Env):
             return False
 
     def reset(self, *, seed=None, options=None) -> Tuple[np.ndarray | None, dict]:
-        print(f"[KyoteiEnvManager.reset] called. pairs={len(self.pairs)}")
+        _log.debug("[KyoteiEnvManager.reset] called. pairs=%s", len(self.pairs))
         # 年月フィルタの確認
         if self.year_month:
-            print(f"[KyoteiEnvManager.reset] year_month filter: {self.year_month}")
+            _log.debug("[KyoteiEnvManager.reset] year_month filter: %s", self.year_month)
             # 実際のペアの年月分布を確認（ファイルモード時のみ；DB は既に絞り込み済み）
             year_month_distribution = {}
             if self.pairs and len(self.pairs[0]) == 2:
@@ -419,16 +431,16 @@ class KyoteiEnvManager(gym.Env):
                         ym = date_s[:7]
                         year_month_distribution[ym] = year_month_distribution.get(ym, 0) + 1
             if year_month_distribution:
-                print(f"[KyoteiEnvManager.reset] actual year_month distribution: {year_month_distribution}")
+                _log.debug("[KyoteiEnvManager.reset] actual year_month distribution: %s", year_month_distribution)
         else:
-            print(f"[KyoteiEnvManager.reset] no year_month filter applied")
+            _log.debug("[KyoteiEnvManager.reset] no year_month filter applied")
         
         super().reset(seed=seed)
         
         # ペアが空の場合はエラー
         if not self.pairs:
             error_msg = f"No valid race-odds pairs found in {self.data_dir} with filter: {self.year_month}. Please check if data files exist."
-            print(f"[KyoteiEnvManager.reset] {error_msg}")
+            _log.debug("[KyoteiEnvManager.reset] %s", error_msg)
             logging.error(error_msg)
             raise ValueError(error_msg)
         
@@ -447,9 +459,9 @@ class KyoteiEnvManager(gym.Env):
                     filtered_pairs.append(pair)
             if filtered_pairs:
                 available_pairs = filtered_pairs
-                print(f"[KyoteiEnvManager.reset] Using {len(filtered_pairs)} pairs filtered by year_month: {self.year_month}")
+                _log.debug("[KyoteiEnvManager.reset] Using %s pairs filtered by year_month: %s", len(filtered_pairs), self.year_month)
             else:
-                print(f"[KyoteiEnvManager.reset] No pairs match year_month filter: {self.year_month}, using all pairs")
+                _log.debug("[KyoteiEnvManager.reset] No pairs match year_month filter: %s, using all pairs", self.year_month)
                 available_pairs = self.pairs
         else:
             available_pairs = self.pairs
@@ -472,22 +484,22 @@ class KyoteiEnvManager(gym.Env):
                     if not race_data or not odds_data:
                         continue
                     if ENABLE_KYOTEI_LOGGING:
-                        print(f"[KyoteiEnvManager.reset] attempt {attempt+1}: DB {race_date} {stadium} R{race_number}")
+                        _log.debug("[KyoteiEnvManager.reset] attempt %s: DB %s %s R%s", attempt + 1, race_date, stadium, race_number)
                     self.env = KyoteiEnv(race_data=race_data, odds_data=odds_data, bet_amount=self.bet_amount)
                 else:
                     # ファイルモード: (race_path, odds_path)
                     race_path, odds_path = chosen
                     if ENABLE_KYOTEI_LOGGING:
-                        print(f"[KyoteiEnvManager.reset] attempt {attempt+1}: race={race_path}, odds={odds_path}")
+                        _log.debug("[KyoteiEnvManager.reset] attempt %s: race=%s, odds=%s", attempt + 1, race_path, odds_path)
                     logging.debug(f"Selected race: {race_path}")
                     logging.debug(f"Selected odds: {odds_path}")
                     self.env = KyoteiEnv(race_data_path=race_path, odds_data_path=odds_path, bet_amount=self.bet_amount)
                 return self.env.reset()
             except ValueError as e:
-                print(f"[KyoteiEnvManager.reset] attempt {attempt+1} failed: {e}")
+                _log.debug("[KyoteiEnvManager.reset] attempt %s failed: %s", attempt + 1, e)
                 logging.info(f"Attempt {attempt + 1}: Skipping invalid race data: {e}")
                 if attempt == max_attempts - 1:
-                    print(f"[KyoteiEnvManager.reset] All attempts failed, using fallback data")
+                    _log.debug("[KyoteiEnvManager.reset] All attempts failed, using fallback data")
                     logging.warning(f"All attempts failed, using fallback data")
                     if len(chosen) == 3:
                         rd = self._db.get_race_json(chosen[0], chosen[1], chosen[2])
@@ -508,7 +520,7 @@ class KyoteiEnvManager(gym.Env):
             if rd and od:
                 self.env = KyoteiEnv(race_data=rd, odds_data=od, bet_amount=self.bet_amount)
         else:
-            print(f"[KyoteiEnvManager.reset] fallback: race={chosen[0]}, odds={chosen[1]}")
+            _log.debug("[KyoteiEnvManager.reset] fallback: race=%s, odds=%s", chosen[0], chosen[1])
             self.env = KyoteiEnv(race_data_path=chosen[0], odds_data_path=chosen[1], bet_amount=self.bet_amount)
         if self.env:
             self.env.arrival_tuple = (1, 2, 3)

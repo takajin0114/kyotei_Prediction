@@ -82,6 +82,12 @@
   ```
   `--db-path` を省略した場合は `kyotei_predictor/data/kyotei_races.sqlite` をデフォルトで使用する。
 
+- **直接訓練を DB で行う**:
+  ```bash
+  python -m kyotei_predictor.tools.batch.train_with_graduated_reward --data-source db --db-path kyotei_predictor/data/kyotei_races.sqlite --year-month 2025-01 --total-timesteps 500000
+  ```
+  `--db-path` を省略した場合も上記と同様にデフォルトの DB パスを使用する。
+
 - **DB 投入後に raw の JSON を削除する**（ディスク節約用）:
   ```bash
   # 削除対象の確認のみ
@@ -94,7 +100,43 @@
 
 ---
 
-## 4. 関連ドキュメント
+## 4. 各処理とデータソース（一覧）
+
+DB に入れたレースデータで動かせる処理と、現状ファイル（raw）のみの処理を整理する。
+
+### 4.1 データの流れ
+
+```
+[取得] batch_fetch_* → data/raw/YYYY-MM/*.json
+         ↓
+[投入] import_raw_to_db → kyotei_predictor/data/kyotei_races.sqlite
+         ↓
+[利用] 学習・検証など（下記のとおり DB / file のどちらかまたは両方対応）
+```
+
+### 4.2 処理ごとのデータソース
+
+| 処理 | モジュール・エントリ | データソース | 備考 |
+|------|----------------------|--------------|------|
+| **学習（最適化）** | `optimize_graduated_reward.py` | **file / db** | `--data-source db --db-path ...` で DB 使用。デフォルトは file。 |
+| **学習（直接訓練）** | `train_with_graduated_reward.py` | **file / db** | `--data-source db --db-path ... --year-month YYYY-MM` で DB 使用。 |
+| **強化学習環境** | `KyoteiEnvManager`（pipelines/kyotei_env.py） | **file / db** | `data_source="db"`, `db_path=...` で DB から `get_race_json` / `get_odds_json` を使用。 |
+| **JSON→DB 投入** | `import_raw_to_db.py` | raw → DB | 入力は raw の JSON。出力は SQLite。 |
+| **投入済み raw 削除** | `delete_raw_after_import.py` | DB 参照 + raw | DB に存在するペアに対応する raw の JSON を削除。 |
+| **予測（CLI）** | `prediction_tool.py` | **file のみ** | `get_race_data_paths` は raw の JSON ファイルを glob。DB から読むモードは未実装。 |
+| **予測検証** | `verify_predictions.py` | **file のみ** | 予測結果と data_dir の JSON を照合。 |
+| **データ品質チェック** | `data_quality_checker.py` | **file のみ** | raw ディレクトリを走査。 |
+| **取得済み一覧** | `list_fetched_data_summary.py` | **file のみ** | raw のファイル名から集計。 |
+
+### 4.3 DB を使うときの共通ポイント
+
+- **DB ファイル**: デフォルトは `kyotei_predictor/data/kyotei_races.sqlite`。`--db-path` で変更可能。
+- **スキーマ**: `data/race_db.py` の `RaceDB`（races / odds / race_canceled）。`get_race_odds_pairs(year_month=...)` で学習用ペア一覧を取得。
+- **年月フィルタ**: 学習・最適化では `--year-month 2025-01` のように指定すると、その月のデータだけを使う。
+
+---
+
+## 5. 関連ドキュメント
 
 | ドキュメント | 内容 |
 |--------------|------|
@@ -105,7 +147,7 @@
 
 ---
 
-## 5. 実装フェーズ（目安）
+## 6. 実装フェーズ（目安）
 
 | フェーズ | 内容 |
 |----------|------|

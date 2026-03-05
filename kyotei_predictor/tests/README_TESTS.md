@@ -1,5 +1,16 @@
 # テスト概要（リファクタリング向け）
 
+## 次にやること
+
+**詳細は [docs/NEXT_STEPS.md](../../docs/NEXT_STEPS.md) を参照。**
+
+- **優先**: 失敗しているテストの修正 or スキップ（kyotei_env, optimization_minimal, phase3, racer_error_handling, fetcher の mocker）
+- **メイン拡充**: app.py のテスト、PredictionEngine の他アルゴリズム、PredictionTool の run_complete_prediction 等
+- **カバレッジ**: メイン処理・pipelines のカバー拡大、目標値の明文化
+- **環境**: pytest-mock / schedule / psutil の整理、CI で pytest 実行
+
+---
+
 ## テスト優先順位（メイン処理を最優先）
 
 **方針: プロジェクトのメイン処理から優先してテストする。**

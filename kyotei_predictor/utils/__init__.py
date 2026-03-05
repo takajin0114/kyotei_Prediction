@@ -5,7 +5,7 @@
 
 from .common import KyoteiUtils
 from .config import Config
-from .logger import setup_logger, get_logger, LoggerMixin
+from .logger import setup_logger, setup_root_logger_from_config, get_logger, LoggerMixin
 from .venue_mapping import VenueMapper, VENUE_MAPPING
 from .compression import DataCompressor
 from .exceptions import (
@@ -22,6 +22,7 @@ __all__ = [
     
     # ログ機能
     'setup_logger',
+    'setup_root_logger_from_config',
     'get_logger',
     'LoggerMixin',
     

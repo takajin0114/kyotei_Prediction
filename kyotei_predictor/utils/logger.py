@@ -49,6 +49,31 @@ def get_logging_formatter() -> logging.Formatter:
     return logging.Formatter(fmt, datefmt=datefmt)
 
 
+def setup_root_logger_from_config() -> None:
+    """
+    config.json の logging を読み、ルートロガーに一律適用する。
+    日時分秒（datefmt）を含むフォーマットで、コンソール出力を統一する。
+    エントリポイント（main）の冒頭で呼ぶことを推奨。
+    """
+    fmt, datefmt = _load_logging_config()
+    level_str = "INFO"
+    try:
+        if _CONFIG_PATH.is_file():
+            with open(_CONFIG_PATH, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            logging_cfg = data.get("logging") or {}
+            level_str = (logging_cfg.get("level") or level_str).upper()
+    except Exception:
+        pass
+    root = logging.getLogger()
+    root.setLevel(getattr(logging, level_str, logging.INFO))
+    root.handlers.clear()
+    formatter = logging.Formatter(fmt, datefmt=datefmt)
+    h = logging.StreamHandler()
+    h.setFormatter(formatter)
+    root.addHandler(h)
+
+
 def setup_logger(
     name: str = "kyotei_predictor",
     level: str = "INFO",
