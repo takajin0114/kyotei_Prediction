@@ -3,9 +3,9 @@
 > **注記**: 詳細な設計・運用ルール・全体像は[../../docs/README.md](../../docs/README.md)・[../../README.md](../../README.md)・各設計書を参照してください。
 
 ## 参照フロー・索引
-- パイプライン全体像・運用ルール: [../../docs/integration_design.md](../../docs/integration_design.md)
-- データ取得・前処理・分析の流れ: [../../docs/data_acquisition.md](../../docs/data_acquisition.md)
-- 開発計画・進行中タスク: [../../docs/DEVELOPMENT_ROADMAP.md](../../docs/DEVELOPMENT_ROADMAP.md)
+- プロジェクト構成: [../../docs/PROJECT_LAYOUT.md](../../docs/PROJECT_LAYOUT.md)
+- データ取得・運用: [../../docs/operations/data_acquisition.md](../../docs/operations/data_acquisition.md)
+- 要件・タスク: [../../docs/REQUIREMENTS_OVERVIEW.md](../../docs/REQUIREMENTS_OVERVIEW.md)、[../../docs/README.md](../../docs/README.md)
 - 各ツール・バッチ: [../tools/README.md](../tools/README.md)
 
 ## 概要

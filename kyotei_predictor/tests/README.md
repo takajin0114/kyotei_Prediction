@@ -27,7 +27,7 @@ pytest tests/viz/
 ## 参照先
 - [../pipelines/README.md](../pipelines/README.md) - パイプライン運用・分析
 - [../../docs/README.md](../../docs/README.md) - ドキュメント全体ガイド
-- [../../docs/DEVELOPMENT_ROADMAP.md](../../docs/DEVELOPMENT_ROADMAP.md) - 開発ロードマップ
+- [../../docs/README.md](../../docs/README.md) - ドキュメント索引・タスク一覧
 
 ---
 

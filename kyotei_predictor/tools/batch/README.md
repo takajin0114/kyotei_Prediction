@@ -31,8 +31,8 @@ python -m kyotei_predictor.tools.batch.list_fetched_data_summary --input-dir kyo
 
 ## 参照先
 - [../../README.md](../../README.md) - ツール全体像
-- [../../../docs/data_acquisition.md](../../../docs/data_acquisition.md) - データ取得運用・手順
-- [../../../docs/integration_design.md](../../../docs/integration_design.md) - システム統合設計
+- [../../../docs/operations/data_acquisition.md](../../../docs/operations/data_acquisition.md) - データ取得運用・手順
+- [../../../docs/PROJECT_LAYOUT.md](../../../docs/PROJECT_LAYOUT.md) - プロジェクト構成
 
 ---
 

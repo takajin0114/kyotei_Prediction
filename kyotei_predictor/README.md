@@ -9,8 +9,8 @@
 ## 主要ディレクトリ・参照先
 - [../README.md](../README.md) - プロジェクト全体概要・索引
 - [../docs/README.md](../docs/README.md) - ドキュメント全体ガイド
-- [../docs/integration_design.md](../docs/integration_design.md) - システム統合設計
-- [../docs/DEVELOPMENT_ROADMAP.md](../docs/DEVELOPMENT_ROADMAP.md) - 開発ロードマップ
+- [../docs/PROJECT_LAYOUT.md](../docs/PROJECT_LAYOUT.md) - プロジェクト構成・エントリポイント
+- [../docs/REQUIREMENTS_OVERVIEW.md](../docs/REQUIREMENTS_OVERVIEW.md) - 要件整理
 - [data/README.md](data/README.md) - データ運用ルール
 - [pipelines/README.md](pipelines/README.md) - パイプライン運用
 - [tools/README.md](tools/README.md) - ツール群運用
@@ -70,7 +70,7 @@ kyotei_predictor/
 
 ## 開発ロードマップ
 
-詳細な開発計画は [docs/DEVELOPMENT_ROADMAP.md](../docs/DEVELOPMENT_ROADMAP.md) を参照してください。
+要件・タスクの整理は [docs/REQUIREMENTS_OVERVIEW.md](../docs/REQUIREMENTS_OVERVIEW.md) および [docs/README.md](../docs/README.md) を参照してください。
 
 ### Phase 1: 即座に実行可能な改善（1-2週間）
 1. **詳細なモデル評価**

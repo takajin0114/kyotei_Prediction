@@ -6,7 +6,7 @@
     python kyotei_predictor/pipelines/data_preprocessor.py --input-dir kyotei_predictor/data/raw --output kyotei_predictor/data/processed/feature_data.csv
     # テスト用: --max-files 100 などで件数制限可
 - 出力: 指定CSVファイル（特徴量テーブル）
-- 詳細: pipelines/README.md, docs/integration_design.md 参照
+- 詳細: pipelines/README.md, docs/PROJECT_LAYOUT.md 参照
 """
 import pandas as pd
 from sklearn.base import BaseEstimator, TransformerMixin

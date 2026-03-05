@@ -3,8 +3,8 @@
 > **注記**: 詳細な設計・運用ルール・全体像は[../../docs/README.md](../../docs/README.md)・[../pipelines/README.md](../pipelines/README.md)・各設計書を参照してください。
 
 ## 参照フロー・索引
-- ツール全体像・運用ルール: [../../docs/integration_design.md](../../docs/integration_design.md)
-- データ取得・前処理・分析の流れ: [../../docs/data_acquisition.md](../../docs/data_acquisition.md)
+- プロジェクト構成・ツール配置: [../../docs/PROJECT_LAYOUT.md](../../docs/PROJECT_LAYOUT.md)
+- データ取得・前処理・運用: [../../docs/operations/data_acquisition.md](../../docs/operations/data_acquisition.md)
 - パイプライン全体: [../pipelines/README.md](../pipelines/README.md)
 
 ## 概要
@@ -16,9 +16,8 @@
 - `batch/` : データ取得・再取得・一括運用バッチ（batch_fetch_all_venues, fetch_5year_chunked, retry_missing_races）
 - `analysis/` : 分析・可視化・統計ツール
 - `fetch/` : データ取得用API・スクレイパ
-- `optimization/` : **本流** Optuna 最適化（optimize_graduated_reward）。2024年3月版は `legacy/optimize_graduated_reward_202403.py` に移動済み
+- `optimization/` : **本流** Optuna 最適化（optimize_graduated_reward、file/db 対応）
 - `ai/` : AI学習・評価（optuna_optimizer）。tools/optuna_optimizer.py は ai の再エクスポート
-- `legacy/` : 本番未使用・参照用（旧最適化・Colab）。新規は optimization/・batch/ を参照
 - `common/` : 共通処理・ユーティリティ（venue_mapping は utils.venue_mapping のラッパー）
 - `viz/` : 可視化・グラフ生成
 

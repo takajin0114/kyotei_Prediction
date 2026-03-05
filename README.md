@@ -58,7 +58,7 @@ VENV_PATH=.venv-cycle YEAR_MONTH=2024-05 PREDICT_DATE=2024-05-01 ./scripts/run_l
 
 ## ドキュメント
 
-- [docs/README.md](docs/README.md): ドキュメント全体の入口
+- **[docs/README.md](docs/README.md)**: ドキュメント全体の**索引（推奨入口）**。目的別にリンク一覧あり。
 - **[docs/guides/processing_flow.md](docs/guides/processing_flow.md): 処理の流れ（Cursorで取得・保管 → Colabで学習 → Cursorで取得・予測）**
 - [docs/PROJECT_LAYOUT.md](docs/PROJECT_LAYOUT.md): ディレクトリ構成
 - [docs/guides/batch_usage.md](docs/guides/batch_usage.md): 実行スクリプトの使い方

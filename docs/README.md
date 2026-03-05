@@ -1,121 +1,147 @@
-# 📚 競艇予測システム ドキュメント
+# 競艇予測システム ドキュメント索引
 
-## 📋 概要
+**このファイルが docs の唯一の入口です。** 目的に応じて下のセクションから該当ドキュメントを開いてください。
 
-このディレクトリには、競艇予測システムの詳細なドキュメントが含まれています。
+---
 
-### まず読むもの（ロール別）
+## 1. まず読むもの（ロール別）
 
 | ロール | 1本目 | 2本目 |
 |--------|--------|--------|
-| **初回利用** | [README.md](../README.md)（プロジェクト概要） | [guides/batch_usage.md](guides/batch_usage.md)（バッチの使い方） |
-| **データ取得** | [guides/batch_usage.md](guides/batch_usage.md) | [guides/fetch_5year_chunked.md](guides/fetch_5year_chunked.md)（5年分を分けて取得） |
-| **最適化** | [optimization/README.md](optimization/README.md) | [optimization/EXECUTION_EXAMPLES.md](optimization/EXECUTION_EXAMPLES.md) |
+| **初回利用** | [../README.md](../README.md)（プロジェクト概要） | [guides/processing_flow.md](guides/processing_flow.md)（処理の流れ） |
+| **実行確認** | [RUN_VERIFICATION.md](RUN_VERIFICATION.md)（venv・テスト・短い学習） | [LEARNING_AND_PREDICTION_STATUS.md](LEARNING_AND_PREDICTION_STATUS.md)（学習・予測の手順） |
+| **データ取得** | [guides/batch_usage.md](guides/batch_usage.md) | [RACE_DATA_FETCH_OVERVIEW.md](RACE_DATA_FETCH_OVERVIEW.md) |
+| **学習・最適化** | [LEARNING_AND_PREDICTION_STATUS.md](LEARNING_AND_PREDICTION_STATUS.md) | [optimization/README.md](optimization/README.md) |
 | **構成把握** | [PROJECT_LAYOUT.md](PROJECT_LAYOUT.md) | [REQUIREMENTS_OVERVIEW.md](REQUIREMENTS_OVERVIEW.md) |
 
-## 🗂️ プロジェクト概要
+---
 
-- [README.md](../README.md) - プロジェクトの概要とクイックスタート
-- **[PROJECT_LAYOUT.md](PROJECT_LAYOUT.md)** - **ディレクトリ構成・エントリポイント・新規コードの置き場所**
-- **[LEARNING_AND_PREDICTION_STATUS.md](LEARNING_AND_PREDICTION_STATUS.md)** - **学習・予想を動かすための現状と手順**
-- **[LEARNING_INPUT_OUTPUT.md](LEARNING_INPUT_OUTPUT.md)** - **学習のインプットとアウトプットの整理**
-- **[ODDS_AND_STATE_DESIGN.md](ODDS_AND_STATE_DESIGN.md)** - **オッズの扱い（回収率専用）と状態定義の共通化**
-- [LEARNING_PREDICTION_CYCLE_IMPROVEMENTS.md](LEARNING_PREDICTION_CYCLE_IMPROVEMENTS.md) - 学習→予測サイクル実施結果と改善点一覧
-- **[guides/processing_flow.md](guides/processing_flow.md)** - **処理の流れ（Cursorで取得・保管 → Colabで学習 → Cursorで取得・予測）**
-- [guides/batch_usage.md](guides/batch_usage.md) - バッチの使い方（scripts/）
-- [guides/junction_setup.md](guides/junction_setup.md) - Windows Junction による日本語パス回避
-- [guides/cursor_web_drive_upload.md](guides/cursor_web_drive_upload.md) - Cursor Web で取得したデータを Drive に保存する
-- [guides/google_drive_colab_workflow.md](guides/google_drive_colab_workflow.md) - Google Drive保存とColab学習の手順
-- [guides/optimization_script.md](guides/optimization_script.md) - 最適化スクリプト
-- [guides/powershell.md](guides/powershell.md) - PowerShell メモ
+## 2. 構成・レイアウト
 
-## 🚀 最適化・学習
-
-- [optimization/README.md](optimization/README.md) - 最適化の概要
-- [optimization/FAST_MODE_IMPLEMENTATION_SUMMARY.md](optimization/FAST_MODE_IMPLEMENTATION_SUMMARY.md) - 3段階モード実装詳細
-- [optimization/OPTIMIZATION_GUIDE.md](optimization/OPTIMIZATION_GUIDE.md) - 最適化の詳細ガイド
-- [optimization/EXECUTION_EXAMPLES.md](optimization/EXECUTION_EXAMPLES.md) - 実行例とサンプル
-
-## 📊 システム状況・進捗
-
-- [CURRENT_STATUS_SUMMARY.md](CURRENT_STATUS_SUMMARY.md) - 現在の状況サマリー
-- **[archive/20250212/](archive/20250212/)** - 2025-02-12 整理レポート（6件のアーカイブ）
-- [improvement_implementation_summary.md](improvement_implementation_summary.md) - 改善策の実装状況
-- [test_results_summary.md](test_results_summary.md) - テスト結果の詳細
-- [monthly_learning_guide.md](monthly_learning_guide.md) - 月次学習ガイド
-
-**データ取得・保管**:
-- [RACE_DATA_ACQUISITION_AND_SOURCES.md](RACE_DATA_ACQUISITION_AND_SOURCES.md) - レースデータ取得処理・参照サイト・取得/必要データの洗い出し
-- **[SITE_DATA_AND_FETCH_STATUS.md](SITE_DATA_AND_FETCH_STATUS.md)** - サイトで取得できるデータ一覧と現状の取得状況（レース前予測前提）
-- **[DATA_STORAGE_AND_DB.md](DATA_STORAGE_AND_DB.md)** - **データ保管と DB 化**（JSON → SQLite 方針・スキーマ・移行）
-- [operations/data_acquisition.md](operations/data_acquisition.md) - データ取得の運用
-
-## 🔧 設定・運用
-
-- [config_usage_guide.md](config_usage_guide.md) - 設定ファイルの使用方法
-- [trifecta_improvement_strategy.md](trifecta_improvement_strategy.md) - 3連単的中率改善戦略
-- **[PREDICTION_ACCURACY_IMPROVEMENT_TODO.md](PREDICTION_ACCURACY_IMPROVEMENT_TODO.md)** - **予測精度向上のやること整理**（優先度・フェーズ別）
-
-## 🌐 Web表示・UI
-
-- [web_display/README.md](web_display/README.md) - Web表示システムの概要
-- [web_display/requirements.md](web_display/requirements.md) - Web表示の要件
-- [web_display/plan.md](web_display/plan.md) - Web表示の実装計画
-- [web_display/complete.md](web_display/complete.md) - Web表示の実装完了状況
-
-## 📋 運用・保守
-
-- [operations/README.md](operations/README.md) - 運用の概要
-- [operations/data_acquisition.md](operations/data_acquisition.md) - データ取得の運用
-- [operations/scheduled_maintenance.md](operations/scheduled_maintenance.md) - 定期メンテナンス
-
-## 📋 要件・仕様（要件レベルはここから）
-
-- **[REQUIREMENTS_OVERVIEW.md](REQUIREMENTS_OVERVIEW.md)** - **要件全体の整理**（目的・業務/機能/非機能・ドキュメント対応表）
-- [requirements/README.md](requirements/README.md) - 要件ディレクトリの索引
-- [requirements/system_status_page.md](requirements/system_status_page.md) - システム状況ページの要件
-- [requirements/ux_improvement.md](requirements/ux_improvement.md) - UX改善の要件
-- [web_display/requirements.md](web_display/requirements.md) - Web表示機能の要件定義書
+| ドキュメント | 内容 |
+|--------------|------|
+| [PROJECT_LAYOUT.md](PROJECT_LAYOUT.md) | ディレクトリ構成・エントリポイント・新規コードの置き場所 |
+| [REQUIREMENTS_OVERVIEW.md](REQUIREMENTS_OVERVIEW.md) | 要件全体の整理（目的・業務/機能/非機能・ドキュメント対応表） |
 
 ---
 
-## 🆕 最近の更新
+## 3. 学習・予測の手順
 
-### **2025年2月**
-- **PROJECT_LAYOUT.md** - プロジェクト構成・エントリポイント・新規コードの置き場所
-- **REQUIREMENTS_OVERVIEW.md** - 要件レベルで全体を整理（目的・業務/機能/非機能・ドキュメント対応表）
-- **archive/20250212/** - 2025-02-12 整理レポート（6件）をアーカイブ化
-
-### **2025年2月（構成整理）**
-- **scripts/** - バッチを一本化。**docs/guides/** - 実行ガイドを集約
-- **logs/** - ルートにログ用ディレクトリ。analysis_results 削除、冗長ドキュメント整理
-
-### **2025年1月**
-- **3段階モード**: 高速・中速・通常モードの完全実装
-- 重複ファイル削除、requirements.txt 統合、ドキュメント整備
+| ドキュメント | 内容 |
+|--------------|------|
+| [LEARNING_AND_PREDICTION_STATUS.md](LEARNING_AND_PREDICTION_STATUS.md) | 学習と予測を動かすための現状・手順・データ前提 |
+| [LEARNING_INPUT_OUTPUT.md](LEARNING_INPUT_OUTPUT.md) | 学習のインプット・アウトプット（race_data/odds_data の必須項目など） |
+| [LEARNING_PREDICTION_CYCLE_IMPROVEMENTS.md](LEARNING_PREDICTION_CYCLE_IMPROVEMENTS.md) | 学習→予測サイクルの改善点・verify_predictions の使い方 |
+| [RUN_VERIFICATION.md](RUN_VERIFICATION.md) | 実行確認の手順（venv 作成・テスト・学習の短い実行） |
 
 ---
 
-## 📖 ドキュメントの使用方法
+## 4. タスク・「次にやること」（役割で使い分け）
 
-### **初回利用者**
-1. [README.md](../README.md) - プロジェクトの概要を確認
-2. **[REQUIREMENTS_OVERVIEW.md](REQUIREMENTS_OVERVIEW.md)** - 要件レベルで何を実現するか・どの doc に書いてあるかを把握
-3. [guides/batch_usage.md](guides/batch_usage.md) - バッチ（scripts/）の使い方
-4. [PROJECT_LAYOUT.md](PROJECT_LAYOUT.md) - ディレクトリ構成を理解
+**「次にやること」系のドキュメントは役割ごとに分かれています。**
 
-### **最適化実行者**
-1. [optimization/README.md](optimization/README.md) - 最適化の概要を確認
-2. [optimization/FAST_MODE_IMPLEMENTATION_SUMMARY.md](optimization/FAST_MODE_IMPLEMENTATION_SUMMARY.md) - 3段階モードの詳細を理解
-3. [optimization/EXECUTION_EXAMPLES.md](optimization/EXECUTION_EXAMPLES.md) - 実行例を参考に実行
+| ドキュメント | 役割 |
+|--------------|------|
+| [LEARNING_NEXT_STEPS.md](LEARNING_NEXT_STEPS.md) | **学習**の次にやること（評価・検証、ステップ数延長、Optuna、運用） |
+| [NEXT_STEPS.md](NEXT_STEPS.md) | **テスト・CI・リポジトリ**の次にやること（失敗テスト修正、カバレッジ、pytest-mock 等） |
+| [PREDICTION_ACCURACY_IMPROVEMENT_TODO.md](PREDICTION_ACCURACY_IMPROVEMENT_TODO.md) | **精度向上**のフェーズ別タスク（測定・学習強化・モデル拡張・運用監視） |
 
-### **システム管理者**
-1. [CURRENT_STATUS_SUMMARY.md](CURRENT_STATUS_SUMMARY.md) - 現在の状況を把握
-2. [operations/README.md](operations/README.md) - 運用方法を確認
-3. [config_usage_guide.md](config_usage_guide.md) - 設定方法を学習
+※ 学習まわりは LEARNING_NEXT_STEPS → 詳細は PREDICTION_ACCURACY_IMPROVEMENT_TODO を参照。
 
 ---
 
-**最終更新**: 2025-02-12  
-**バージョン**: 3.1  
-**主要改善**: 要件レベル整理（REQUIREMENTS_OVERVIEW）、docs 索引・リンク整備、2025-02 整理レポート追加
+## 5. データ・保管・取得
+
+| ドキュメント | 内容 |
+|--------------|------|
+| [DATA_STORAGE_AND_DB.md](DATA_STORAGE_AND_DB.md) | データ保管と DB 化（JSON→SQLite、スキーマ、各処理の file/db 対応一覧） |
+| [RACE_DATA_FETCH_OVERVIEW.md](RACE_DATA_FETCH_OVERVIEW.md) | レースデータ取得処理の概要 |
+| [RACE_DATA_ACQUISITION_AND_SOURCES.md](RACE_DATA_ACQUISITION_AND_SOURCES.md) | 取得処理・参照サイト・必要データの洗い出し |
+| [SITE_DATA_AND_FETCH_STATUS.md](SITE_DATA_AND_FETCH_STATUS.md) | サイトで取得できるデータ一覧と取得状況 |
+| [PRE_RACE_FETCH_VERIFICATION.md](PRE_RACE_FETCH_VERIFICATION.md) | レース前取得の検証 |
+
+---
+
+## 6. 最適化・学習の詳細
+
+| ドキュメント | 内容 |
+|--------------|------|
+| [optimization/README.md](optimization/README.md) | 最適化の概要・クイックスタート |
+| [optimization/OPTIMIZATION_GUIDE.md](optimization/OPTIMIZATION_GUIDE.md) | 最適化の詳細ガイド |
+| [optimization/FAST_MODE_IMPLEMENTATION_SUMMARY.md](optimization/FAST_MODE_IMPLEMENTATION_SUMMARY.md) | 3段階モード（高速・中・通常）の実装詳細 |
+| [optimization/EXECUTION_EXAMPLES.md](optimization/EXECUTION_EXAMPLES.md) | 実行例・サンプル |
+| [trifecta_improvement_strategy.md](trifecta_improvement_strategy.md) | 3連単的中率向上の戦略（報酬設計・学習時間・アンサンブル） |
+| [improvement_implementation_summary.md](improvement_implementation_summary.md) | 改善策の実装状況（Phase1〜4） |
+| [monthly_learning_guide.md](monthly_learning_guide.md) | 月次学習ガイド |
+
+---
+
+## 7. 設計・設定
+
+| ドキュメント | 内容 |
+|--------------|------|
+| [ODDS_AND_STATE_DESIGN.md](ODDS_AND_STATE_DESIGN.md) | オッズの扱い（回収率専用）と状態定義の共通化 |
+| [config_usage_guide.md](config_usage_guide.md) | 設定ファイルの使用方法（config.json, improvement_config 等） |
+
+---
+
+## 8. 運用・ガイド
+
+| ドキュメント | 内容 |
+|--------------|------|
+| [guides/README.md](guides/README.md) | ガイド一覧 |
+| [guides/processing_flow.md](guides/processing_flow.md) | 処理の流れ（取得→保管→学習→予測） |
+| [guides/batch_usage.md](guides/batch_usage.md) | バッチ（scripts/）の使い方 |
+| [guides/fetch_5year_chunked.md](guides/fetch_5year_chunked.md) | 5年分データを分けて取得する手順 |
+| [guides/colab_learning_prep.md](guides/colab_learning_prep.md) | Colab で学習する準備 |
+| [guides/google_drive_colab_workflow.md](guides/google_drive_colab_workflow.md) | Google Drive 保存と Colab 学習の手順 |
+| [guides/cursor_web_drive_upload.md](guides/cursor_web_drive_upload.md) | Cursor Web で取得したデータを Drive に保存 |
+| [guides/optimization_script.md](guides/optimization_script.md) | 最適化スクリプトの設定・実行 |
+| [guides/powershell.md](guides/powershell.md) | PowerShell メモ |
+| [guides/junction_setup.md](guides/junction_setup.md) | Windows Junction（日本語パス回避） |
+| [guides/git_staging_safety.md](guides/git_staging_safety.md) | LFS 環境での安全なステージング |
+| [operations/README.md](operations/README.md) | 運用の概要 |
+| [operations/data_acquisition.md](operations/data_acquisition.md) | データ取得の運用 |
+| [operations/scheduled_maintenance.md](operations/scheduled_maintenance.md) | 定期メンテナンス |
+
+---
+
+## 9. 状況・テスト・要件
+
+| ドキュメント | 内容 |
+|--------------|------|
+| [CURRENT_STATUS_SUMMARY.md](CURRENT_STATUS_SUMMARY.md) | 現在の状況サマリー |
+| [test_results_summary.md](test_results_summary.md) | テスト結果の詳細 |
+| [requirements/README.md](requirements/README.md) | 要件ディレクトリの索引 |
+| [requirements/system_status_page.md](requirements/system_status_page.md) | システム状況ページの要件 |
+| [requirements/ux_improvement.md](requirements/ux_improvement.md) | UX 改善の要件 |
+
+---
+
+## 10. Web 表示
+
+| ドキュメント | 内容 |
+|--------------|------|
+| [web_display/README.md](web_display/README.md) | Web 表示システムの概要 |
+| [web_display/requirements.md](web_display/requirements.md) | Web 表示の要件 |
+| [web_display/plan.md](web_display/plan.md) | 実装計画 |
+| [web_display/complete.md](web_display/complete.md) | 実装完了状況 |
+
+---
+
+## 11. アーカイブ
+
+| ディレクトリ | 内容 |
+|--------------|------|
+| [archive/20250212/](archive/20250212/) | 2025-02-12 整理レポート（REPO_STATUS, REFACTORING_REPORT, DEEP_CLEANUP 等） |
+
+---
+
+## ドキュメント整理方針（メモ）
+
+- **索引**: 本 README.md を唯一の入口とし、上記セクションで目的別にリンクする。
+- **「次にやること」**: 学習用＝LEARNING_NEXT_STEPS、テスト/CI用＝NEXT_STEPS、精度向上フェーズ別＝PREDICTION_ACCURACY_IMPROVEMENT_TODO。役割が違うため 3 本で運用。
+- **データまわり**: 保管・DB＝DATA_STORAGE_AND_DB、取得概要＝RACE_DATA_FETCH_OVERVIEW を中心に、他は必要に応じて参照。
+- **新規ドキュメント**: 追加時は本 README の該当セクションに 1 行で追記する。
+
+**最終更新**: 2026-03

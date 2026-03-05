@@ -13,7 +13,7 @@
 - [../../../README.md](../../../README.md)（全体概要・セットアップ・タスク入口）
 - [../README.md](../README.md)（tools全体の運用ルール）
 - [../../../NEXT_STEPS.md](../../../NEXT_STEPS.md)（今後のタスク・優先度・進捗管理）
-- [../../../integration_design.md](../../../integration_design.md)（統合設計・アーキテクチャ）
+- [../../../docs/PROJECT_LAYOUT.md](../../../docs/PROJECT_LAYOUT.md)（プロジェクト構成）
 - [../../../site_analysis.md](../../../site_analysis.md)（データ取得元サイト分析）
 
 ---

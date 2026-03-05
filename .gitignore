@@ -116,6 +116,8 @@ ehthumbs.db
 Thumbs.db
 
 # Project specific
+# 冗長なネスト（中身は logs のみ・削除推奨）
+kyotei_predictor/kyotei_predictor/
 kyotei_predictor/logs/*.log
 kyotei_predictor/__pycache__/
 kyotei_predictor/results/*.json

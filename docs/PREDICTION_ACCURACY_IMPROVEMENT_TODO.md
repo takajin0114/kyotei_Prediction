@@ -1,5 +1,8 @@
 # 予測精度向上 — やること整理
 
+**役割**: 精度向上のフェーズ別タスク（測定・学習強化・モデル拡張・運用監視）。学習の具体手順は [LEARNING_NEXT_STEPS.md](LEARNING_NEXT_STEPS.md) を参照。  
+**索引**: [docs/README.md](README.md)（「タスク・次にやること」セクション）
+
 **目的**: 3連単予測の的中率・回収率を上げるために、やることを優先度・フェーズ別に整理する。  
 **参照**: [trifecta_improvement_strategy.md](trifecta_improvement_strategy.md), [improvement_implementation_summary.md](improvement_implementation_summary.md), [LEARNING_AND_PREDICTION_STATUS.md](LEARNING_AND_PREDICTION_STATUS.md)  
 **最終更新**: 2025-02-12

@@ -4,7 +4,7 @@
 
 ## 概要
 - データディレクトリの構成・運用方針・命名規則の概要を記載
-- 詳細な運用ルール・欠損管理・品質チェックは[../../docs/data_acquisition.md](../../docs/data_acquisition.md)等を参照
+- 詳細な運用ルール・欠損管理・品質チェックは[../../docs/operations/data_acquisition.md](../../docs/operations/data_acquisition.md)等を参照
 
 ## 主なディレクトリ
 - `raw/` : 取得したままの生データ
@@ -18,8 +18,8 @@
 ## 参照先
 - [../../README.md](../../README.md) - プロジェクト全体概要
 - [../../docs/README.md](../../docs/README.md) - ドキュメント全体ガイド
-- [../../docs/data_acquisition.md](../../docs/data_acquisition.md) - データ取得運用・手順
-- [../../docs/DEVELOPMENT_ROADMAP.md](../../docs/DEVELOPMENT_ROADMAP.md) - 開発ロードマップ
+- [../../docs/operations/data_acquisition.md](../../docs/operations/data_acquisition.md) - データ取得運用・手順
+- [../../docs/PROJECT_LAYOUT.md](../../docs/PROJECT_LAYOUT.md) - プロジェクト構成
 
 ---
 
