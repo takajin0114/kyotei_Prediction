@@ -527,13 +527,10 @@ class PredictionsViewer {
         }
 
         // 高期待値のみフィルター
+        const combos = prediction.all_combinations || prediction.top_20_combinations || [];
         if (criteria.highExpectedValue) {
-            const hasHighExpectedValue = prediction.top_20_combinations.some(combo => 
-                combo.expected_value >= 1.5
-            );
-            if (!hasHighExpectedValue) {
-                return false;
-            }
+            const hasHighExpectedValue = combos.some(combo => combo.expected_value >= 1.5);
+            if (!hasHighExpectedValue) return false;
         }
 
         // オッズ取得済みフィルター
@@ -568,21 +565,15 @@ class PredictionsViewer {
         }
 
         // 艇番フィルター
+        const combosPast = prediction.all_combinations || prediction.top_20_combinations || [];
         if (criteria.boatNumber) {
             const boatPattern = criteria.boatNumber.toLowerCase().replace(/\s+/g, '');
             let found = false;
-            
-            // 各組み合わせをチェック
-            prediction.top_20_combinations.forEach(combo => {
-                const comboStr = combo.combination.toLowerCase();
-                if (comboStr.includes(boatPattern)) {
-                    found = true;
-                }
+            combosPast.forEach(combo => {
+                const comboStr = (combo.combination || '').toLowerCase();
+                if (comboStr.includes(boatPattern)) found = true;
             });
-            
-            if (!found) {
-                return false;
-            }
+            if (!found) return false;
         }
 
         // 選手名フィルター
@@ -600,12 +591,8 @@ class PredictionsViewer {
 
         // 高期待値のみフィルター
         if (criteria.highExpectedValue) {
-            const hasHighExpectedValue = prediction.top_20_combinations.some(combo => 
-                combo.expected_value >= 1.5
-            );
-            if (!hasHighExpectedValue) {
-                return false;
-            }
+            const hasHighExpectedValue = combosPast.some(combo => combo.expected_value >= 1.5);
+            if (!hasHighExpectedValue) return false;
         }
 
         // オッズ取得済みフィルター
@@ -1277,7 +1264,8 @@ class PredictionsViewer {
                 setTimeout(() => reject(new Error('タイムアウト')), 15000); // 15秒タイムアウト
             });
 
-            const renderPromise = this.renderCombinationsTable(race.top_20_combinations, race.venue, race.race_number);
+            const tableCombos = (race.all_combinations || race.top_20_combinations || []).slice(0, 20);
+            const renderPromise = this.renderCombinationsTable(tableCombos, race.venue, race.race_number);
             const html = await Promise.race([renderPromise, timeoutPromise]);
             
             container.innerHTML = html;
@@ -2415,9 +2403,8 @@ class PredictionsViewer {
      * オッズ比較テーブルの描画
      */
     renderOddsCompareTable(oddsData, race = null) {
-        // race: 予測データのtop_20_combinationsを含むオブジェクト
-        // oddsData.combinations: [{combination, odds, ...}]
-        // 予測データとオッズデータを組み合わせて比較
+        // race: 予測データの all_combinations または top_20_combinations を含むオブジェクト
+        const raceCombos = race && (race.all_combinations || race.top_20_combinations || []).slice(0, 20);
         let oddsMap = {};
         (oddsData.combinations || []).forEach(row => {
             oddsMap[row.combination] = row.odds;
@@ -2430,8 +2417,8 @@ class PredictionsViewer {
                 <th>オッズ</th>
                 <th>期待リターン</th>
             </tr></thead><tbody>`;
-        if (race && race.top_20_combinations) {
-            race.top_20_combinations.forEach(row => {
+        if (race && raceCombos && raceCombos.length) {
+            raceCombos.forEach(row => {
                 const odds = oddsMap[row.combination];
                 const expectedReturn = odds ? (row.probability * odds) : '-';
                 html += `<tr>
@@ -2475,7 +2462,8 @@ class PredictionsViewer {
                 if (race) {
                     const tableContainer = table.closest('.table-responsive');
                     if (tableContainer) {
-                        tableContainer.innerHTML = this.renderCombinationsTable(race.top_20_combinations, race.venue, race.race_number);
+                        const combos = (race.all_combinations || race.top_20_combinations || []).slice(0, 20);
+                        tableContainer.innerHTML = this.renderCombinationsTable(combos, race.venue, race.race_number);
                     }
                 }
             };

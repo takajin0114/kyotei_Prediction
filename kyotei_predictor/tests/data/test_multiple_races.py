@@ -107,9 +107,9 @@ def analyze_prediction_accuracy(predictions, actual_results):
     
     return accuracy_data
 
-def test_race_prediction(filename, description):
+def _run_race_prediction(filename, description):
     """
-    単一レースの予測テスト
+    単一レースの予測実行（main から呼ぶヘルパー。pytest では収集しない）
     """
     print(f"\n🏁 {description}")
     print("=" * 60)
@@ -251,7 +251,7 @@ def main():
     
     # 各レースでテスト実行
     for race in test_races:
-        results = test_race_prediction(race['filename'], race['description'])
+        results = _run_race_prediction(race['filename'], race['description'])
         if results:
             all_results[race['description']] = results
     

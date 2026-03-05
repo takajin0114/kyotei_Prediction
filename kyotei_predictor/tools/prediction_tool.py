@@ -56,6 +56,7 @@ sys.path.append(str(PROJECT_ROOT))
 from stable_baselines3 import PPO
 from kyotei_predictor.pipelines.kyotei_env import action_to_trifecta, vectorize_race_state
 from kyotei_predictor.pipelines.state_vector import build_race_state_vector, get_state_dim
+from kyotei_predictor.data.race_db import RaceDB
 from metaboatrace.models.stadium import StadiumTelCode
 from kyotei_predictor.tools.fetch.race_data_fetcher import fetch_race_entry_data, fetch_pre_race_data
 from kyotei_predictor.tools.fetch.odds_fetcher import fetch_trifecta_odds
@@ -67,12 +68,25 @@ from io import StringIO
 class PredictionTool:
     """予想ツールのメインクラス"""
     
-    def __init__(self, log_level=logging.INFO, data_dir: Optional[Union[str, Path]] = None):
+    def __init__(
+        self,
+        log_level=logging.INFO,
+        data_dir: Optional[Union[str, Path]] = None,
+        model_path: Optional[Union[str, Path]] = None,
+        data_source: str = "db",
+        db_path: Optional[Union[str, Path]] = None,
+    ):
         self.setup_logging(log_level)
         self.model: Optional[PPO] = None
         self.model_info = {}
         self.utils = KyoteiUtils()  # 共通ユーティリティを初期化
         self.data_dir: Optional[Path] = Path(data_dir) if data_dir else None
+        self.default_model_path: Optional[Path] = Path(model_path) if model_path else None
+        self.data_source = data_source
+        self._db: Optional[RaceDB] = None
+        if data_source == "db":
+            path = db_path or (PROJECT_ROOT / "kyotei_predictor" / "data" / "kyotei_races.sqlite")
+            self._db = RaceDB(str(path))
         
     def setup_logging(self, log_level):
         """ログ設定（Windows ではファイルのみ。コンソールは safe_print で出力）"""
@@ -92,9 +106,10 @@ class PredictionTool:
         self.logger = logging.getLogger(__name__)
     
     def load_model(self, model_path: Optional[Union[str, Path]] = None) -> bool:
-        """学習済みモデルの読み込み"""
+        """学習済みモデルの読み込み（引数 > インスタンスの default_model_path > デフォルトパス）"""
         try:
-            if not model_path:
+            path_to_use = model_path or (str(self.default_model_path) if self.default_model_path else None)
+            if not path_to_use:
                 # デフォルトで最新のベストモデルを使用
                 model_dir = PROJECT_ROOT / "optuna_models" / "graduated_reward_best"
                 model_path_obj = model_dir / "best_model.zip"
@@ -107,7 +122,7 @@ class PredictionTool:
                         if checkpoints:
                             model_path_obj = max(checkpoints, key=lambda x: x.stat().st_mtime)
             else:
-                model_path_obj = Path(model_path)
+                model_path_obj = Path(path_to_use)
             
             if not model_path_obj.exists():
                 self.logger.error(f"モデルファイルが見つかりません: {model_path_obj}")
@@ -347,8 +362,17 @@ class PredictionTool:
             self.logger.error(f"オッズ情報取得エラー {stadium.name} R{race_no}: {e}")
             return None
     
-    def get_race_data_paths(self, predict_date: str, venues: Optional[List[str]] = None) -> List[Tuple[str, str, str, str]]:
-        """予測対象のレースデータパスを取得"""
+    def get_race_data_paths(self, predict_date: str, venues: Optional[List[str]] = None) -> List[Tuple[str, str, Optional[str], Optional[str]]]:
+        """予測対象のレースデータパスを取得。data_source=db のときは (venue, race_number, None, None) を返す。"""
+        if self.data_source == "db" and self._db is not None:
+            pairs = self._db.get_race_odds_pairs(date_from=predict_date, date_to=predict_date)
+            if venues:
+                venue_set = {v.upper() for v in venues}
+                pairs = [p for p in pairs if p[1] in venue_set]
+            race_paths = [(p[1], str(p[2]), None, None) for p in pairs]
+            self.logger.info(f"予測対象レース数(DB): {len(race_paths)}")
+            return race_paths
+
         if self.data_dir is not None:
             d = Path(self.data_dir)
             if not d.is_absolute():
@@ -395,42 +419,53 @@ class PredictionTool:
         return race_paths
     
     def predict_trifecta_probabilities(self, race_data_path: str, odds_data_path: str) -> List[Dict]:
-        """3連単の予測確率を計算（上位20組）"""
+        """3連単の予測確率を計算（120通り全て）・ファイルパス版"""
         try:
-            # 状態ベクトルを生成
             state = vectorize_race_state(race_data_path, odds_data_path)
-            # torch.Tensorに変換
-            state_tensor = torch.tensor(state, dtype=torch.float32).unsqueeze(0)  # shape: (1, n_features)
-            # モデルで予測
+            state_tensor = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
             action_probs = self.model.policy.get_distribution(state_tensor).distribution.probs.detach().cpu().numpy()[0]
-            
-            # 3連単の組み合わせリスト（120通り）
             trifecta_list = list(permutations(range(1, 7), 3))
-            
-            # 確率と組み合わせをペアにしてソート
             probability_combinations = []
             for i, prob in enumerate(action_probs):
                 trifecta = trifecta_list[i]
                 combination_str = f"{trifecta[0]}-{trifecta[1]}-{trifecta[2]}"
                 probability_combinations.append({
-                    'combination': combination_str,
-                    'probability': float(prob),
-                    'expected_value': self.calculate_expected_value(trifecta, odds_data_path),
-                    'rank': 0
+                    "combination": combination_str,
+                    "probability": float(prob),
+                    "expected_value": self.calculate_expected_value(trifecta, odds_data_path),
+                    "rank": 0,
                 })
-            
-            # 確率でソート（降順）
-            probability_combinations.sort(key=lambda x: x['probability'], reverse=True)
-            
-            # 上位20組を取得し、ランクを設定
-            top_20 = probability_combinations[:20]
-            for i, item in enumerate(top_20):
-                item['rank'] = i + 1
-            
-            return top_20
-            
+            probability_combinations.sort(key=lambda x: x["probability"], reverse=True)
+            for i, item in enumerate(probability_combinations):
+                item["rank"] = i + 1
+            return probability_combinations
         except Exception as e:
             self.logger.error(f"予測エラー: {e}")
+            return []
+
+    def predict_trifecta_probabilities_from_data(self, race_data: Dict, odds_data: Dict) -> List[Dict]:
+        """3連単の予測確率を計算（120通り全て）・辞書版（DB取得データ用）"""
+        try:
+            state = build_race_state_vector(race_data, None)
+            state_tensor = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
+            action_probs = self.model.policy.get_distribution(state_tensor).distribution.probs.detach().cpu().numpy()[0]
+            trifecta_list = list(permutations(range(1, 7), 3))
+            probability_combinations = []
+            for i, prob in enumerate(action_probs):
+                trifecta = trifecta_list[i]
+                combination_str = f"{trifecta[0]}-{trifecta[1]}-{trifecta[2]}"
+                probability_combinations.append({
+                    "combination": combination_str,
+                    "probability": float(prob),
+                    "expected_value": self.calculate_expected_value_from_data(trifecta, odds_data),
+                    "rank": 0,
+                })
+            probability_combinations.sort(key=lambda x: x["probability"], reverse=True)
+            for i, item in enumerate(probability_combinations):
+                item["rank"] = i + 1
+            return probability_combinations
+        except Exception as e:
+            self.logger.error(f"予測エラー(辞書): {e}")
             return []
     
     def calculate_expected_value(self, trifecta: Tuple[int, int, int], odds_data_path: str) -> float:
@@ -732,38 +767,34 @@ class PredictionTool:
             for venue, race_number, race_path, odds_path in race_paths:
                 try:
                     self.logger.info(f"予測中: {venue} {race_number}")
-                    
-                    # 3連単予測
-                    top_20_combinations = self.predict_trifecta_probabilities(race_path, odds_path)
-                    
-                    if top_20_combinations:
-                        # 購入方法の提案
-                        purchase_suggestions = self.generate_purchase_suggestions(top_20_combinations)
-                        
-                        # 合計確率
-                        total_probability = sum(c['probability'] for c in top_20_combinations)
-                        
-                        # レース情報を取得
-                        with open(race_path, 'r', encoding='utf-8') as f:
+
+                    if race_path is None and odds_path is None and self._db is not None:
+                        # DB から取得
+                        race_data = self._db.get_race_json(predict_date, venue, int(race_number))
+                        odds_data = self._db.get_odds_json(predict_date, venue, int(race_number))
+                        if not race_data or not odds_data:
+                            self.logger.warning(f"DB にレースデータなし: {predict_date} {venue} R{race_number}")
+                            continue
+                        all_combinations = self.predict_trifecta_probabilities_from_data(race_data, odds_data)
+                        race_info = race_data.get("race_info", {})
+                    else:
+                        all_combinations = self.predict_trifecta_probabilities(race_path, odds_path)
+                        with open(race_path, "r", encoding="utf-8") as f:
                             race_data = json.load(f)
-                        
-                        race_info = race_data.get('race_info', {})
-                        race_time = race_info.get('race_time', '09:00')
-                        
+                        race_info = race_data.get("race_info", {})
+
+                    if all_combinations:
+                        race_time = race_info.get("race_time", "09:00")
                         prediction = {
-                            'venue': venue,
-                            'venue_code': self.get_venue_code(venue),
-                            'race_number': int(race_number),
-                            'race_time': race_time,
-                            'top_20_combinations': top_20_combinations,
-                            'total_probability': total_probability,
-                            'purchase_suggestions': purchase_suggestions,
-                            'risk_level': self.calculate_risk_level(total_probability)
+                            "venue": venue,
+                            "venue_code": self.get_venue_code(venue),
+                            "race_number": int(race_number),
+                            "race_time": race_time,
+                            "all_combinations": all_combinations,
                         }
-                        
                         predictions.append(prediction)
                         successful_predictions += 1
-                    
+
                 except Exception as e:
                     self.logger.error(f"レース予測エラー {venue} {race_number}: {e}")
             
@@ -829,17 +860,15 @@ class PredictionTool:
                     'total_expected_value': 0
                 }
             
-            venue_stats[venue]['total_races'] += 1
-            venue_stats[venue]['total_probability'] += pred['total_probability']
-            
-            # 高信頼度レース（上位確率が0.08以上）
-            top_prob = pred['top_20_combinations'][0]['probability'] if pred['top_20_combinations'] else 0
+            ac = pred.get("all_combinations") or []
+            venue_stats[venue]["total_races"] += 1
+            sum_top20 = sum(c["probability"] for c in ac[:20]) if ac else 0
+            venue_stats[venue]["total_probability"] += sum_top20
+            top_prob = ac[0]["probability"] if ac else 0
             if top_prob >= 0.08:
-                venue_stats[venue]['high_confidence_races'] += 1
-            
-            # 平均期待値
-            avg_expected_value = sum(c['expected_value'] for c in pred['top_20_combinations'][:5]) / 5
-            venue_stats[venue]['total_expected_value'] += avg_expected_value
+                venue_stats[venue]["high_confidence_races"] += 1
+            avg_expected_value = sum(c["expected_value"] for c in ac[:5]) / 5 if len(ac) >= 5 else (sum(c["expected_value"] for c in ac) / len(ac) if ac else 0)
+            venue_stats[venue]["total_expected_value"] += avg_expected_value
         
         # サマリーを生成
         summaries = []
@@ -943,43 +972,34 @@ class PredictionTool:
             
             # 予測対象のレースを決定
             if prediction_only:
-                # 予測のみの場合は既存データを使用
+                # 予測のみの場合は既存データを使用（DB または data_dir）
                 race_paths = self.get_race_data_paths(target_date, venues)
                 for venue, race_number, race_path, odds_path in race_paths:
                     try:
                         self.logger.info(f"予測中: {venue} {race_number}")
-                        
-                        # 3連単予測
-                        top_20_combinations = self.predict_trifecta_probabilities(race_path, odds_path)
-                        
-                        if top_20_combinations:
-                            # 購入方法の提案
-                            purchase_suggestions = self.generate_purchase_suggestions(top_20_combinations)
-                            
-                            # 合計確率
-                            total_probability = sum(c['probability'] for c in top_20_combinations)
-                            
-                            # レース情報を取得
-                            with open(race_path, 'r', encoding='utf-8') as f:
+                        if race_path is None and odds_path is None and self._db is not None:
+                            race_data = self._db.get_race_json(target_date, venue, int(race_number))
+                            odds_data = self._db.get_odds_json(target_date, venue, int(race_number))
+                            if not race_data or not odds_data:
+                                continue
+                            all_combinations = self.predict_trifecta_probabilities_from_data(race_data, odds_data)
+                            race_info = race_data.get("race_info", {})
+                        else:
+                            all_combinations = self.predict_trifecta_probabilities(race_path, odds_path)
+                            with open(race_path, "r", encoding="utf-8") as f:
                                 race_data = json.load(f)
-                            
-                            race_info = race_data.get('race_info', {})
-                            race_time = race_info.get('race_time', '09:00')
-                            
+                            race_info = race_data.get("race_info", {})
+                        if all_combinations:
+                            race_time = race_info.get("race_time", "09:00")
                             prediction = {
-                                'venue': venue,
-                                'venue_code': self.get_venue_code(venue),
-                                'race_number': int(race_number),
-                                'race_time': race_time,
-                                'top_20_combinations': top_20_combinations,
-                                'total_probability': total_probability,
-                                'purchase_suggestions': purchase_suggestions,
-                                'risk_level': self.calculate_risk_level(total_probability)
+                                "venue": venue,
+                                "venue_code": self.get_venue_code(venue),
+                                "race_number": int(race_number),
+                                "race_time": race_time,
+                                "all_combinations": all_combinations,
                             }
-                            
                             predictions.append(prediction)
                             successful_predictions += 1
-                        
                     except Exception as e:
                         self.logger.error(f"レース予測エラー {venue} {race_number}: {e}")
             else:
@@ -999,31 +1019,19 @@ class PredictionTool:
                             odds_data = {'odds_data': []}
                         
                         # 3連単予測（新規データ用）
-                        top_20_combinations = self.predict_trifecta_probabilities_from_data(entry_data, odds_data)
-                        
-                        if top_20_combinations:
-                            # 購入方法の提案
-                            purchase_suggestions = self.generate_purchase_suggestions(top_20_combinations)
-                            
-                            # 合計確率
-                            total_probability = sum(c['probability'] for c in top_20_combinations)
-                            
-                            # レース情報を取得
-                            race_info = entry_data.get('race_info', {})
-                            race_time = race_info.get('race_time', '09:00')
-                            
+                        all_combinations = self.predict_trifecta_probabilities_from_data(entry_data, odds_data)
+
+                        if all_combinations:
+                            race_info = entry_data.get("race_info", {})
+                            race_time = race_info.get("race_time", "09:00")
                             prediction = {
-                                'venue': venue,
-                                'venue_code': self.get_venue_code(venue),
-                                'race_number': race_number,
-                                'race_time': race_time,
-                                'top_20_combinations': top_20_combinations,
-                                'total_probability': total_probability,
-                                'odds_available': odds_available,
-                                'purchase_suggestions': purchase_suggestions,
-                                'risk_level': self.calculate_risk_level(total_probability)
+                                "venue": venue,
+                                "venue_code": self.get_venue_code(venue),
+                                "race_number": race_number,
+                                "race_time": race_time,
+                                "all_combinations": all_combinations,
+                                "odds_available": odds_available,
                             }
-                            
                             predictions.append(prediction)
                             successful_predictions += 1
                             if odds_available:
@@ -1064,13 +1072,10 @@ class PredictionTool:
             return None
     
     def predict_trifecta_probabilities_from_data(self, race_data: Dict, odds_data: Dict) -> List[Dict]:
-        """新規データから3連単の予測確率を計算（上位20組）"""
+        """新規データから3連単の予測確率を計算（120通り全て）"""
         try:
-            # 状態ベクトルを生成（新規データ用）
             state = self.vectorize_race_state_from_data(race_data, odds_data)
-            # torch.Tensorに変換
-            state_tensor = torch.tensor(state, dtype=torch.float32).unsqueeze(0)  # shape: (1, n_features)
-            # モデルで予測
+            state_tensor = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
             if self.model is None or not hasattr(self.model, 'policy'):
                 self.logger.error("モデルがロードされていないか、policy属性がありません")
                 return []
@@ -1085,32 +1090,21 @@ class PredictionTool:
                 self.logger.error("distributionにprobs属性がありません")
                 return []
             action_probs = distribution.probs.detach().cpu().numpy()[0]
-            
-            # 3連単の組み合わせリスト（120通り）
             trifecta_list = list(permutations(range(1, 7), 3))
-            
-            # 確率と組み合わせをペアにしてソート
             probability_combinations = []
             for i, prob in enumerate(action_probs):
                 trifecta = trifecta_list[i]
                 combination_str = f"{trifecta[0]}-{trifecta[1]}-{trifecta[2]}"
                 probability_combinations.append({
-                    'combination': combination_str,
-                    'probability': float(prob),
-                    'expected_value': self.calculate_expected_value_from_data(trifecta, odds_data),
-                    'rank': 0
+                    "combination": combination_str,
+                    "probability": float(prob),
+                    "expected_value": self.calculate_expected_value_from_data(trifecta, odds_data),
+                    "rank": 0,
                 })
-            
-            # 確率でソート（降順）
-            probability_combinations.sort(key=lambda x: x['probability'], reverse=True)
-            
-            # 上位20組を取得し、ランクを設定
-            top_20 = probability_combinations[:20]
-            for i, item in enumerate(top_20):
-                item['rank'] = i + 1
-            
-            return top_20
-            
+            probability_combinations.sort(key=lambda x: x["probability"], reverse=True)
+            for i, item in enumerate(probability_combinations):
+                item["rank"] = i + 1
+            return probability_combinations
         except Exception as e:
             self.logger.error(f"新規データ予測エラー: {e}")
             return []
@@ -1126,21 +1120,18 @@ class PredictionTool:
             return [0.0] * get_state_dim()
     
     def calculate_expected_value_from_data(self, trifecta: Tuple[int, int, int], odds_data: Dict) -> float:
-        """新規データから期待値を計算"""
+        """辞書オッズデータから期待値を計算（DB/API 用。betting_numbers または combination に対応）"""
         try:
-            combination_str = f"{trifecta[0]}-{trifecta[1]}-{trifecta[2]}"
-            
-            # オッズデータから該当する組み合わせを検索
+            odds_list = odds_data.get("odds_data", [])
             odds = 0
-            for odds_entry in odds_data.get('odds_data', []):
-                if odds_entry.get('combination') == combination_str:
-                    odds = odds_entry.get('ratio', 0)
+            for o in odds_list:
+                if tuple(o.get("betting_numbers", [])) == trifecta:
+                    odds = o.get("ratio", 0)
                     break
-            
-            # 期待値 = 確率 × オッズ - 1
-            # 確率は上位20組の確率を使用するため、ここでは簡易計算
-            return odds * 0.05 - 1  # 仮の確率0.05を使用
-            
+                if o.get("combination") == f"{trifecta[0]}-{trifecta[1]}-{trifecta[2]}":
+                    odds = o.get("ratio", 0)
+                    break
+            return odds * 0.05 - 1
         except Exception as e:
             self.logger.warning(f"期待値計算エラー: {e}")
             return 0.0
@@ -1151,7 +1142,9 @@ def main():
     parser.add_argument('--venues', type=str, help='対象会場 (カンマ区切り)')
     parser.add_argument('--model-path', type=str, help='モデルファイルパス')
     parser.add_argument('--output-dir', type=str, help='出力ディレクトリ')
-    parser.add_argument('--data-dir', type=str, help='レースデータのディレクトリ（未指定時は kyotei_predictor/data/raw）')
+    parser.add_argument('--data-dir', type=str, help='レースデータのディレクトリ（data-source=file のとき）')
+    parser.add_argument('--data-source', type=str, choices=['file', 'db'], default='db', help='データソース: file=JSON, db=SQLite（デフォルト: db）')
+    parser.add_argument('--db-path', type=str, default=None, help='data-source=db のときの SQLite パス（未指定時は kyotei_predictor/data/kyotei_races.sqlite）')
     parser.add_argument('--verbose', action='store_true', help='詳細ログ出力')
     
     # 新規引数の追加
@@ -1165,8 +1158,14 @@ def main():
     # ログレベル設定
     log_level = logging.DEBUG if args.verbose else logging.INFO
     
-    # 予想ツール初期化（--data-dir で test_raw 等を指定可能）
-    tool = PredictionTool(log_level, data_dir=args.data_dir)
+    # 予想ツール初期化（デフォルトは DB からレースデータ取得）
+    tool = PredictionTool(
+        log_level,
+        data_dir=args.data_dir,
+        model_path=args.model_path,
+        data_source=args.data_source,
+        db_path=args.db_path,
+    )
     
     # 会場リスト（正規化）
     venues = None

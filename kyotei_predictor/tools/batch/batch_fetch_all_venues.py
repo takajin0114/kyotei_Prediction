@@ -38,6 +38,9 @@ from kyotei_predictor.utils.logger import format_log_line, get_daily_log_path
 # 日次ログファイル（main で開き、同一日の出力を1ファイルにまとめる）
 _daily_log_file = None
 PROGRESS_INTERVAL = 50
+# 進捗カウンタ（main で設定。単体呼び出し時は 0 のまま）
+progress_total = 0
+progress_done = 0
 
 def safe_print(message: str) -> None:
     """文字化け対策付きprint関数"""

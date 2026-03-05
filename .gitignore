@@ -166,8 +166,9 @@ optuna_models/
 optuna_studies/
 optuna_results/
 optuna_studies_backup_*/
+optuna_tensorboard/
 # ログ（scripts/ のバッチが書き出す先）
-logs/*.log
+logs/
 
 # バッチ・スクリプト（scripts/ 内はリポジトリで管理するため除外しない）
 *.bat

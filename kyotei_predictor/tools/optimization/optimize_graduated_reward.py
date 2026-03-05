@@ -523,8 +523,8 @@ def main():
     """メイン実行関数（コマンドライン引数対応）"""
     parser = argparse.ArgumentParser(description="段階的報酬設計モデルのハイパーパラメータ最適化")
     parser.add_argument('--data-dir', type=str, default="kyotei_predictor/data/raw", help='データディレクトリ（data-source=file のとき）')
-    parser.add_argument('--data-source', type=str, choices=['file', 'db'], default='file', help='データソース: file=JSON, db=SQLite')
-    parser.add_argument('--db-path', type=str, default=None, help='data-source=db のときの SQLite パス（例: kyotei_predictor/data/kyotei_races.sqlite）')
+    parser.add_argument('--data-source', type=str, choices=['file', 'db'], default='db', help='データソース: file=JSON, db=SQLite（デフォルト: db）')
+    parser.add_argument('--db-path', type=str, default=None, help='data-source=db のときの SQLite パス（未指定時は kyotei_predictor/data/kyotei_races.sqlite）')
     parser.add_argument('--year-month', type=str, help='年月フィルタ（例: 2024-01）')
     parser.add_argument('--study-name', type=str, default="graduated_reward_optimization", help='Optunaスタディ名')
     parser.add_argument('--n-trials', type=int, default=50, help='試行回数')
@@ -580,6 +580,27 @@ def main():
     print("Best score: " + str(round(study.best_value, 4)))
     print("Total trials: " + str(len(study.trials)))
     _opt_logger.info("最適化完了 最良試行=%s 最良スコア=%s 総試行数=%s", study.best_trial.number, study.best_value, len(study.trials))
+
+    # 2.1.4 学習ログの記録: 各実行の短いサマリを logs/ に残す
+    run_ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+    summary = {
+        "timestamp": run_ts,
+        "data_dir": data_dir,
+        "year_month": year_month or "(all)",
+        "data_source": data_source,
+        "n_trials": len(study.trials),
+        "best_trial": study.best_trial.number,
+        "best_value": float(study.best_value),
+        "best_model_path": f"./optuna_models/trial_{study.best_trial.number}/best_model.zip",
+        "best_model_copied_to": "./optuna_models/graduated_reward_best/best_model.zip",
+    }
+    log_dir = os.path.join(project_root, "logs")
+    os.makedirs(log_dir, exist_ok=True)
+    summary_path = os.path.join(log_dir, f"learning_run_{run_ts}.json")
+    with open(summary_path, "w", encoding="utf-8") as f:
+        json.dump(summary, f, ensure_ascii=False, indent=2)
+    _opt_logger.info("学習 Run サマリ: %s", summary_path)
+
     return study
 
 if __name__ == "__main__":

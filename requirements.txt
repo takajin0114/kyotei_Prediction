@@ -37,6 +37,7 @@ rich
 pytest==7.4.3
 pytest-cov==4.1.0
 pytest-html==4.1.1
+pytest-mock==3.14.0
 
 # Optional (uncomment if needed):
 # selenium==4.15.2

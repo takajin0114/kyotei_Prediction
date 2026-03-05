@@ -53,6 +53,7 @@ class TestKyoteiEnv(unittest.TestCase):
         reward_miss = calc_trifecta_reward(action, (1,2,3), odds_data, bet_amount=100)
         self.assertLess(reward_miss, 0)
 
+@pytest.mark.skip(reason="data_dir に raw データが必要（パス要設定）")
 def test_env_step_reward(race_date, venue, race_no, data_dir):
     race_path = os.path.join(data_dir, f'race_data_{race_date}_{venue}_R{race_no}.json')
     odds_path = os.path.join(data_dir, f'odds_data_{race_date}_{venue}_R{race_no}.json')
@@ -70,6 +71,7 @@ def test_env_step_reward(race_date, venue, race_no, data_dir):
     assert reward == -100
     assert terminated
 
+@pytest.mark.skip(reason="data_dir に複数レースの raw データが必要")
 def test_env_manager_multi_race(data_dir):
     from kyotei_predictor.pipelines.state_vector import get_state_dim
     state_dim = get_state_dim()

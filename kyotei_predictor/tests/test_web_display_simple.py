@@ -59,26 +59,14 @@ class TestWebDisplaySimple(unittest.TestCase):
                     "venue_code": "05",
                     "race_number": 1,
                     "race_time": "09:00",
-                    "top_20_combinations": [
+                    "all_combinations": [
                         {
                             "combination": "1-2-3",
                             "probability": 0.85,
                             "expected_value": 2.5,
                             "rank": 1
                         }
-                    ],
-                    "total_probability": 0.98,
-                    "purchase_suggestions": [
-                        {
-                            "type": "wheel",
-                            "description": "1-流し",
-                            "combinations": ["1-2-3"],
-                            "total_probability": 0.85,
-                            "total_cost": 100,
-                            "expected_return": 85.0
-                        }
-                    ],
-                    "risk_level": "LOW"
+                    ]
                 }
             ],
             "venue_summaries": [

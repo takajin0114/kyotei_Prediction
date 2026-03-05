@@ -71,72 +71,20 @@ class TestWebDisplay(unittest.TestCase):
                     "venue_code": "05",
                     "race_number": 1,
                     "race_time": "09:00",
-                    "top_20_combinations": [
-                        {
-                            "combination": "1-2-3",
-                            "probability": 0.85,
-                            "expected_value": 2.5,
-                            "rank": 1
-                        },
-                        {
-                            "combination": "1-3-2",
-                            "probability": 0.08,
-                            "expected_value": -0.5,
-                            "rank": 2
-                        },
-                        {
-                            "combination": "2-1-3",
-                            "probability": 0.05,
-                            "expected_value": 1.2,
-                            "rank": 3
-                        }
-                    ],
-                    "total_probability": 0.98,
-                    "purchase_suggestions": [
-                        {
-                            "type": "wheel",
-                            "description": "1-流し",
-                            "combinations": ["1-2-3", "1-3-2"],
-                            "total_probability": 0.93,
-                            "total_cost": 200,
-                            "expected_return": 186.0
-                        },
-                        {
-                            "type": "box",
-                            "description": "1-2-3 ボックス",
-                            "combinations": ["1-2-3", "1-3-2", "2-1-3"],
-                            "total_probability": 0.98,
-                            "total_cost": 600,
-                            "expected_return": 588.0
-                        }
-                    ],
-                    "risk_level": "LOW"
+                    "all_combinations": [
+                        {"combination": "1-2-3", "probability": 0.85, "expected_value": 2.5, "rank": 1},
+                        {"combination": "1-3-2", "probability": 0.08, "expected_value": -0.5, "rank": 2},
+                        {"combination": "2-1-3", "probability": 0.05, "expected_value": 1.2, "rank": 3}
+                    ]
                 },
                 {
                     "venue": "KIRYU",
                     "venue_code": "01",
                     "race_number": 1,
                     "race_time": "09:00",
-                    "top_20_combinations": [
-                        {
-                            "combination": "2-1-3",
-                            "probability": 0.75,
-                            "expected_value": 1.8,
-                            "rank": 1
-                        }
-                    ],
-                    "total_probability": 0.75,
-                    "purchase_suggestions": [
-                        {
-                            "type": "nagashi",
-                            "description": "2-1-流し",
-                            "combinations": ["2-1-3"],
-                            "total_probability": 0.75,
-                            "total_cost": 100,
-                            "expected_return": 75.0
-                        }
-                    ],
-                    "risk_level": "MEDIUM"
+                    "all_combinations": [
+                        {"combination": "2-1-3", "probability": 0.75, "expected_value": 1.8, "rank": 1}
+                    ]
                 }
             ],
             "venue_summaries": [

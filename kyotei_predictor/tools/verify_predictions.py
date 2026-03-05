@@ -116,9 +116,9 @@ def run_verification(
         actual, odds_ratio = actual_and_odds[key]
         if actual is None:
             continue
-        top20 = (race.get("top_20_combinations") or [])
+        all_comb = (race.get("all_combinations") or [])
         comb_to_rank: Dict[str, int] = {}
-        for i, c in enumerate(top20):
+        for i, c in enumerate(all_comb):
             comb = (c.get("combination") or "").strip()
             if comb:
                 comb_to_rank[comb] = i + 1  # 1-origin rank
@@ -137,7 +137,7 @@ def run_verification(
         if odds_ratio is not None and rank is not None:
             total_payout += bet * odds_ratio
         # 1位予想に賭けた場合の払戻（1位的中時のみ）
-        first_comb = (top20[0].get("combination") or "").strip() if top20 else ""
+        first_comb = (all_comb[0].get("combination") or "").strip() if all_comb else ""
         if first_comb == actual and odds_ratio is not None:
             total_payout_first += bet * odds_ratio
         details.append({
