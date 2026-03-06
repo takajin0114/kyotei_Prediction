@@ -31,6 +31,15 @@ sys.path.append(os.path.join(project_root, 'kyotei_predictor'))
 from pipelines.kyotei_env import KyoteiEnvManager
 from pipelines.kyotei_env import action_to_trifecta
 
+try:
+    from kyotei_predictor.tools.evaluation.metrics import (
+        compute_metrics_from_episodes,
+        merge_info_into_episode_results,
+    )
+except ImportError:
+    compute_metrics_from_episodes = None
+    merge_info_into_episode_results = None
+
 def evaluate_graduated_reward_model(
     model_path=None,
     n_eval_episodes=1000,
@@ -93,7 +102,8 @@ def evaluate_graduated_reward_model(
     actions = []
     arrival_tuples = []
     hit_types = []
-    
+    episode_infos = []
+
     for episode in range(n_eval_episodes):
         if episode % 100 == 0:
             print(f"評価進捗: {episode}/{n_eval_episodes}")
@@ -101,27 +111,22 @@ def evaluate_graduated_reward_model(
         obs = eval_env.reset()
         episode_reward = 0
         done = False
-        
+        last_info = None
         while not done:
             action, _ = model.predict(obs, deterministic=True)
             obs, reward, done, info = eval_env.step(action)
             episode_reward += reward[0]
-            
-            # 詳細情報を記録
+            last_info = info
             if done:
                 actions.append(action[0])
                 if 'arrival' in info[0]:
                     arrival_tuples.append(info[0]['arrival'])
-                
-                # 的中タイプを判定
                 trifecta = action_to_trifecta(action[0])
                 arrival = info[0].get('arrival', (1, 2, 3))
-                
                 if len(arrival) == 3:
                     is_win = trifecta == arrival
                     first_hit = trifecta[0] == arrival[0]
                     second_hit = trifecta[1] == arrival[1]
-                    
                     if is_win:
                         hit_types.append('win')
                     elif first_hit and second_hit:
@@ -132,18 +137,37 @@ def evaluate_graduated_reward_model(
                         hit_types.append('miss')
                 else:
                     hit_types.append('miss')
-        
         rewards.append(episode_reward)
+        episode_infos.append(last_info if last_info is not None else {})
     
+    # 評価指標の分離（ROI, 投資額, 払戻額 等）
+    if merge_info_into_episode_results is not None and compute_metrics_from_episodes is not None:
+        hit_count, payouts, bet_amounts = merge_info_into_episode_results(rewards, episode_infos)
+        metrics = compute_metrics_from_episodes(rewards, hit_count, payouts, bet_amounts)
+    else:
+        hit_count = sum(1 for t in hit_types if t == 'win')
+        metrics = {
+            "hit_rate": hit_count / len(rewards) if rewards else 0.0,
+            "mean_reward": float(np.mean(rewards)) if rewards else 0.0,
+            "std_reward": float(np.std(rewards)) if len(rewards) > 1 else 0.0,
+            "roi_pct": 0.0,
+            "total_bet": 0.0,
+            "total_payout": 0.0,
+            "hit_count": hit_count,
+            "n_episodes": len(rewards),
+        }
+
     # 統計分析
     print("\n=== 評価結果統計 ===")
     
-    rewards = np.array(rewards)
-    print(f"総エピソード数: {len(rewards)}")
-    print(f"平均報酬: {np.mean(rewards):.2f}")
-    print(f"報酬の標準偏差: {np.std(rewards):.2f}")
-    print(f"最大報酬: {np.max(rewards):.2f}")
-    print(f"最小報酬: {np.min(rewards):.2f}")
+    rewards_arr = np.array(rewards)
+    print(f"総エピソード数: {len(rewards_arr)}")
+    print(f"平均報酬: {np.mean(rewards_arr):.2f}")
+    print(f"報酬の標準偏差: {np.std(rewards_arr):.2f}")
+    print(f"最大報酬: {np.max(rewards_arr):.2f}")
+    print(f"最小報酬: {np.min(rewards_arr):.2f}")
+    print(f"的中件数: {metrics.get('hit_count', 0)}  hit_rate: {metrics.get('hit_rate', 0)*100:.2f}%")
+    print(f"ROI: {metrics.get('roi_pct', 0):.2f}%  投資額: {metrics.get('total_bet', 0):.0f}  払戻額: {metrics.get('total_payout', 0):.2f}")
     
     # 的中率分析
     hit_type_counts = {}
@@ -158,11 +182,11 @@ def evaluate_graduated_reward_model(
     
     # 報酬分布分析
     print(f"\n=== 報酬分布分析 ===")
-    positive_rewards = rewards[rewards > -100]
-    negative_rewards = rewards[rewards <= -100]
+    positive_rewards = rewards_arr[rewards_arr > -100]
+    negative_rewards = rewards_arr[rewards_arr <= -100]
     
-    print(f"正の報酬: {len(positive_rewards)}回 ({len(positive_rewards)/len(rewards)*100:.2f}%)")
-    print(f"負の報酬: {len(negative_rewards)}回 ({len(negative_rewards)/len(rewards)*100:.2f}%)")
+    print(f"正の報酬: {len(positive_rewards)}回 ({len(positive_rewards)/len(rewards_arr)*100:.2f}%)")
+    print(f"負の報酬: {len(negative_rewards)}回 ({len(negative_rewards)/len(rewards_arr)*100:.2f}%)")
     
     if len(positive_rewards) > 0:
         print(f"正の報酬の平均: {np.mean(positive_rewards):.2f}")
@@ -170,9 +194,9 @@ def evaluate_graduated_reward_model(
     
     # 可視化
     print("\n=== 結果の可視化 ===")
-    create_evaluation_plots(rewards, hit_types, model_path)
+    create_evaluation_plots(rewards_arr.tolist(), hit_types, model_path)
     
-    # 結果をJSONファイルに保存
+    # 結果をJSONファイルに保存（分解指標を含む）
     results = {
         'evaluation_time': datetime.now().isoformat(),
         'model_path': model_path,
@@ -182,13 +206,18 @@ def evaluate_graduated_reward_model(
             'std_reward': float(np.std(rewards)),
             'max_reward': float(np.max(rewards)),
             'min_reward': float(np.min(rewards)),
-            'hit_rate': hit_type_counts.get('win', 0) / len(hit_types),
-            'first_second_rate': hit_type_counts.get('first_second', 0) / len(hit_types),
-            'first_only_rate': hit_type_counts.get('first_only', 0) / len(hit_types),
-            'miss_rate': hit_type_counts.get('miss', 0) / len(hit_types),
-            'positive_reward_rate': len(positive_rewards) / len(rewards)
+            'hit_rate': hit_type_counts.get('win', 0) / len(hit_types) if hit_types else 0,
+            'first_second_rate': hit_type_counts.get('first_second', 0) / len(hit_types) if hit_types else 0,
+            'first_only_rate': hit_type_counts.get('first_only', 0) / len(hit_types) if hit_types else 0,
+            'miss_rate': hit_type_counts.get('miss', 0) / len(hit_types) if hit_types else 0,
+            'positive_reward_rate': len(positive_rewards) / len(rewards) if rewards else 0,
+            'roi_pct': metrics.get('roi_pct', 0),
+            'total_bet': metrics.get('total_bet', 0),
+            'total_payout': metrics.get('total_payout', 0),
+            'hit_count': metrics.get('hit_count', 0),
         },
-        'hit_type_counts': hit_type_counts
+        'hit_type_counts': hit_type_counts,
+        'metrics': metrics,
     }
     
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")

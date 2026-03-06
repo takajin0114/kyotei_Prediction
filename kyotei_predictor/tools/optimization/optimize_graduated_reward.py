@@ -37,8 +37,18 @@ try:
 except Exception:
     pass
 
-from pipelines.kyotei_env import KyoteiEnvManager
+from pipelines.kyotei_env import KyoteiEnvManager, action_to_trifecta
 from kyotei_predictor.utils.logger import get_logging_formatter
+try:
+    from kyotei_predictor.tools.evaluation.metrics import (
+        compute_metrics_from_episodes,
+        objective_from_metrics,
+        merge_info_into_episode_results,
+        OPTIMIZE_FOR_HYBRID,
+    )
+except ImportError:
+    compute_metrics_from_episodes = objective_from_metrics = merge_info_into_episode_results = None
+    OPTIMIZE_FOR_HYBRID = "hybrid"
 
 # 学習用ロガー（main内でファイルハンドラを付与。UTF-8でファイル出力し文字化けを避ける）
 _opt_logger = logging.getLogger("kyotei_predictor.tools.optimization.optimize_graduated_reward")
@@ -293,9 +303,13 @@ def objective(trial, data_dir=None, test_mode=False, minimal_mode=False, year_mo
         )
         _log_debug("[objective] model.learn end; evaluate_model start episodes=%s", n_eval_episodes)
         eval_results = evaluate_model(model, eval_env, n_eval_episodes=n_eval_episodes)
-        hit_rate = eval_results['hit_rate']
-        mean_reward = eval_results['mean_reward']
-        score = hit_rate * 100 + mean_reward / 1000
+        if objective_from_metrics is not None and CONFIG_MANAGER is not None:
+            optimize_for = CONFIG_MANAGER.get_optimize_for()
+            score = objective_from_metrics(eval_results, optimize_for)
+        else:
+            hit_rate = eval_results["hit_rate"]
+            mean_reward = eval_results["mean_reward"]
+            score = hit_rate * 100 + mean_reward / 1000
         _log_debug("[objective] Trial %s score: %s eval=%s", trial.number, score, eval_results)
         return score
     except Exception as e:
@@ -312,42 +326,47 @@ def objective(trial, data_dir=None, test_mode=False, minimal_mode=False, year_mo
         return -1000.0
 
 def evaluate_model(model, env, n_eval_episodes=100):
-    """モデルの評価"""
-    
+    """
+    モデルの評価。指標を分離して返す（hit_rate, mean_reward, ROI, 投資額, 払戻額 等）。
+    info に payout, bet_amount, hit が含まれる場合は ROI も計算する。
+    """
     rewards = []
-    hit_count = 0
-    
+    episode_infos = []
+
     for episode in range(n_eval_episodes):
         obs = env.reset()
         episode_reward = 0
         done = False
-        
+        last_info = None
         while not done:
             action, _ = model.predict(obs, deterministic=True)
             obs, reward, done, info = env.step(action)
             episode_reward += reward[0]
-            
-            if done:
-                # 的中判定
-                trifecta = action_to_trifecta(action[0])
-                arrival = info[0].get('arrival', (1, 2, 3))
-                
-                if len(arrival) == 3 and trifecta == arrival:
-                    hit_count += 1
-        
+            last_info = info
         rewards.append(episode_reward)
-    
-    return {
-        'hit_rate': hit_count / n_eval_episodes,
-        'mean_reward': np.mean(rewards),
-        'std_reward': np.std(rewards)
-    }
+        episode_infos.append(last_info if last_info is not None else {})
 
-def action_to_trifecta(action: int):
-    """action(0-119)→(1着,2着,3着)の買い目タプル"""
-    from itertools import permutations
-    trifecta_list = list(permutations(range(1,7), 3))
-    return trifecta_list[action]
+    if merge_info_into_episode_results is not None and compute_metrics_from_episodes is not None:
+        hit_count, payouts, bet_amounts = merge_info_into_episode_results(rewards, episode_infos)
+        metrics = compute_metrics_from_episodes(rewards, hit_count, payouts, bet_amounts)
+    else:
+        hit_count = 0
+        for inf in episode_infos:
+            i = inf[0] if isinstance(inf, (list, tuple)) and len(inf) > 0 else inf
+            if isinstance(i, dict):
+                hit_count += i.get("hit", 0)
+        metrics = {
+            "hit_rate": hit_count / n_eval_episodes if n_eval_episodes else 0.0,
+            "mean_reward": float(np.mean(rewards)) if rewards else 0.0,
+            "std_reward": float(np.std(rewards)) if len(rewards) > 1 else 0.0,
+            "roi_pct": 0.0,
+            "total_bet": 0.0,
+            "total_payout": 0.0,
+            "hit_count": hit_count,
+            "n_episodes": n_eval_episodes,
+        }
+    metrics["std_reward"] = metrics.get("std_reward", float(np.std(rewards)) if len(rewards) > 1 else 0.0)
+    return metrics
 
 def safe_savez(filepath, *args, **kwargs):
     """OSError対策付きnp.savez（3回リトライ）"""

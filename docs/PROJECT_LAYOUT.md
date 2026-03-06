@@ -47,6 +47,16 @@ kyotei_Prediction/                    # プロジェクトルート（ここで 
 | **Web** | `python -m kyotei_predictor.app` | Flask |
 | **実行確認** | [docs/RUN_VERIFICATION.md](RUN_VERIFICATION.md) 参照 | venv・テスト・短い学習 |
 
+### 実行例（ROI・買い目選定）
+
+- **従来どおり**: 上記コマンドのまま。`improvement_config.json` の `evaluation.optimize_for` は `hybrid`（従来スコア）がデフォルト。
+- **ROI 重視で最適化**: `improvement_config.json` の `evaluation.optimize_for` を `roi` に変更してから `optimize_graduated_reward` を実行。
+- **買い目選定を切り替え**: `improvement_config.json` の `betting.strategy` を `single` / `top_n` / `threshold` に変更。予測時に `--include-selected-bets` を付けると結果に `selected_bets` が含まれる。
+  - 例: `python -m kyotei_predictor.tools.prediction_tool --predict-date 2024-05-01 --include-selected-bets`
+- **検証で ROI を確認**: `verify_predictions` の出力に「ROI (bet on 1st prediction)」「Reference (if bet on actual)」が含まれる。結果を JSON で保存する場合は `--output outputs/verification.json`。
+
+詳細な方針は [ROI_AND_RESPONSIBILITY_SEPARATION.md](ROI_AND_RESPONSIBILITY_SEPARATION.md)、変更差分は [CHANGELOG_ROI_RESPONSIBILITY.md](CHANGELOG_ROI_RESPONSIBILITY.md) を参照。
+
 ---
 
 ## 3. kyotei_predictor パッケージ内
@@ -77,7 +87,8 @@ kyotei_Prediction/                    # プロジェクトルート（ここで 
 | **optimization/optimize_graduated_reward.py** | 本流の学習・最適化（file/db 対応） |
 | **batch/** | 一括取得・データ保守・train_with_graduated_reward（file/db 対応） |
 | **fetch/** | レース・オッズ取得 |
-| **evaluation/** | モデル評価 |
+| **evaluation/** | モデル評価（metrics: 指標分離、evaluate_graduated_reward_model） |
+| **betting/** | 買い目選定（strategy: single / top_n / threshold / ev） |
 | **analysis/** | 特徴量・報酬・オッズ・検証など |
 | **monitoring/** | 的中率・最適化状況・パフォーマンス |
 | **storage/** | import_raw_to_db, delete_raw_after_import 等 |

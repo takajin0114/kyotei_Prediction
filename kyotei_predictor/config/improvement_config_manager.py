@@ -136,6 +136,49 @@ class ImprovementConfigManager:
     def get_paths(self) -> Dict[str, str]:
         """ファイルパス設定を取得"""
         return self.config.get("paths", {})
+
+    def get_evaluation_params(self) -> Dict[str, Any]:
+        """
+        評価用パラメータを取得（optimize_for, roi_evaluation_enabled）。
+
+        Returns:
+            optimize_for: "hit_rate" | "mean_reward" | "roi" | "hybrid"
+            roi_evaluation_enabled: bool
+        """
+        return self.config.get("evaluation", {})
+
+    def get_optimize_for(self) -> str:
+        """最適化の目的指標を返す。未設定時は 'hybrid'（従来互換）。"""
+        return self.config.get("evaluation", {}).get("optimize_for", "hybrid")
+
+    def get_roi_evaluation_enabled(self) -> bool:
+        """ROI を評価に含めるか。未設定時は True。"""
+        return self.config.get("evaluation", {}).get("roi_evaluation_enabled", True)
+
+    def get_betting_params(self) -> Dict[str, Any]:
+        """
+        買い目選定用パラメータを取得。
+
+        Returns:
+            strategy, top_n, score_threshold, ev_threshold 等
+        """
+        return self.config.get("betting", {})
+
+    def get_betting_strategy(self) -> str:
+        """買い目選定戦略名。未設定時は 'single'。"""
+        return self.config.get("betting", {}).get("strategy", "single")
+
+    def get_betting_top_n(self) -> int:
+        """上位N点買いの N。未設定時は 3。"""
+        return int(self.config.get("betting", {}).get("top_n", 3))
+
+    def get_betting_score_threshold(self) -> float:
+        """スコア閾値。未設定時は 0.05。"""
+        return float(self.config.get("betting", {}).get("score_threshold", 0.05))
+
+    def get_betting_ev_threshold(self) -> float:
+        """EV 閾値。未設定時は 0.0。"""
+        return float(self.config.get("betting", {}).get("ev_threshold", 0.0))
     
     def update_config(self, updates: Dict[str, Any]) -> None:
         """

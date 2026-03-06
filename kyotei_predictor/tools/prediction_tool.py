@@ -65,6 +65,13 @@ from metaboatrace.scrapers.official.website.v1707.pages.monthly_schedule_page.sc
 import requests
 from io import StringIO
 
+try:
+    from kyotei_predictor.tools.betting import select_bets
+    from kyotei_predictor.config.improvement_config_manager import ImprovementConfigManager
+    _BETTING_AVAILABLE = True
+except ImportError:
+    _BETTING_AVAILABLE = False
+
 class PredictionTool:
     """予想ツールのメインクラス"""
     
@@ -743,8 +750,13 @@ class PredictionTool:
                     })
         return suggestions
     
-    def predict_races(self, predict_date: str, venues: Optional[List[str]] = None) -> Optional[Dict]:
-        """全会場・全レースの予測を実行"""
+    def predict_races(
+        self,
+        predict_date: str,
+        venues: Optional[List[str]] = None,
+        include_selected_bets: bool = False,
+    ) -> Optional[Dict]:
+        """全会場・全レースの予測を実行。include_selected_bets=True で設定に基づく買い目選定を追加。"""
         try:
             self.logger.info(f"予測開始: {predict_date}")
             start_time = datetime.now()
@@ -792,6 +804,22 @@ class PredictionTool:
                             "race_time": race_time,
                             "all_combinations": all_combinations,
                         }
+                        if include_selected_bets and _BETTING_AVAILABLE:
+                            try:
+                                cfg = ImprovementConfigManager()
+                                strategy = cfg.get_betting_strategy()
+                                top_n = cfg.get_betting_top_n()
+                                score_threshold = cfg.get_betting_score_threshold()
+                                ev_threshold = cfg.get_betting_ev_threshold()
+                                prediction["selected_bets"] = select_bets(
+                                    all_combinations,
+                                    strategy=strategy,
+                                    top_n=top_n,
+                                    score_threshold=score_threshold,
+                                    ev_threshold=ev_threshold,
+                                )
+                            except Exception as e:
+                                self.logger.debug("selected_bets skipped: %s", e)
                         predictions.append(prediction)
                         successful_predictions += 1
 
@@ -916,9 +944,15 @@ class PredictionTool:
             self.logger.error(f"予測結果保存エラー: {e}")
             return None
 
-    def run_complete_prediction(self, target_date: Optional[str] = None, venues: Optional[List[str]] = None, 
-                               fetch_data: bool = True, prediction_only: bool = False) -> Optional[Dict]:
-        """完全統合予測フロー"""
+    def run_complete_prediction(
+        self,
+        target_date: Optional[str] = None,
+        venues: Optional[List[str]] = None,
+        fetch_data: bool = True,
+        prediction_only: bool = False,
+        include_selected_bets: bool = False,
+    ) -> Optional[Dict]:
+        """完全統合予測フロー。include_selected_bets=True で設定に基づく買い目選定を追加。"""
         start_time = datetime.now()
         
         # target_dateの処理を統一
@@ -998,6 +1032,18 @@ class PredictionTool:
                                 "race_time": race_time,
                                 "all_combinations": all_combinations,
                             }
+                            if include_selected_bets and _BETTING_AVAILABLE:
+                                try:
+                                    cfg = ImprovementConfigManager()
+                                    prediction["selected_bets"] = select_bets(
+                                        all_combinations,
+                                        strategy=cfg.get_betting_strategy(),
+                                        top_n=cfg.get_betting_top_n(),
+                                        score_threshold=cfg.get_betting_score_threshold(),
+                                        ev_threshold=cfg.get_betting_ev_threshold(),
+                                    )
+                                except Exception as e:
+                                    self.logger.debug("selected_bets skipped: %s", e)
                             predictions.append(prediction)
                             successful_predictions += 1
                     except Exception as e:
@@ -1032,6 +1078,18 @@ class PredictionTool:
                                 "all_combinations": all_combinations,
                                 "odds_available": odds_available,
                             }
+                            if include_selected_bets and _BETTING_AVAILABLE:
+                                try:
+                                    cfg = ImprovementConfigManager()
+                                    prediction["selected_bets"] = select_bets(
+                                        all_combinations,
+                                        strategy=cfg.get_betting_strategy(),
+                                        top_n=cfg.get_betting_top_n(),
+                                        score_threshold=cfg.get_betting_score_threshold(),
+                                        ev_threshold=cfg.get_betting_ev_threshold(),
+                                    )
+                                except Exception as e:
+                                    self.logger.debug("selected_bets skipped: %s", e)
                             predictions.append(prediction)
                             successful_predictions += 1
                             if odds_available:
@@ -1152,6 +1210,8 @@ def main():
     parser.add_argument('--prediction-only', action='store_true', help='予測のみ実行（既存データ使用）')
     parser.add_argument('--risk-level', choices=['low', 'medium', 'high'], default='medium', help='リスクレベル')
     parser.add_argument('--complete-flow', action='store_true', help='完全統合フローを実行')
+    parser.add_argument('--include-selected-bets', action='store_true',
+                        help='設定に基づく買い目選定（selected_bets）を予測結果に含める')
     
     args = parser.parse_args()
     
@@ -1182,7 +1242,8 @@ def main():
             target_date=args.predict_date,
             venues=venues,
             fetch_data=args.fetch_data,
-            prediction_only=args.prediction_only
+            prediction_only=args.prediction_only,
+            include_selected_bets=args.include_selected_bets,
         )
     else:
         # 従来の予測実行（--predict-dateが必須）
@@ -1190,7 +1251,7 @@ def main():
             tool.utils.safe_print("エラー: --predict-date が必要です")
             return
         
-        result = tool.predict_races(args.predict_date, venues)
+        result = tool.predict_races(args.predict_date, venues, include_selected_bets=args.include_selected_bets)
     
     if result:
         # 結果保存

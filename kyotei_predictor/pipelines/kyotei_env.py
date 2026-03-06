@@ -100,9 +100,16 @@ class KyoteiEnv(gym.Env):
         assert not self.terminated, "エピソードはすでに終了しています。resetしてください。"
         # 報酬計算
         reward = calc_trifecta_reward(action, self.arrival_tuple, self.odds_data, self.bet_amount)
+        # ROI 評価用: 実際の払戻額と賭け金を info に含める
+        payout = calc_trifecta_payout(action, self.arrival_tuple, self.odds_data, self.bet_amount)
         self.terminated = True  # 1レース1stepで終了
         truncated = False
-        info = {"arrival": self.arrival_tuple}
+        info = {
+            "arrival": self.arrival_tuple,
+            "payout": payout,
+            "bet_amount": self.bet_amount,
+            "hit": 1 if action_to_trifecta(action) == self.arrival_tuple else 0,
+        }
         return self.state, reward, self.terminated, truncated, info
 
     def render(self, mode: str = "human") -> None:
@@ -132,6 +139,22 @@ def action_to_trifecta(action: int) -> Tuple[int, int, int]:
 def trifecta_to_action(trifecta: Tuple[int, int, int]) -> int:
     """(1着,2着,3着)の買い目タプル→action(0-119)"""
     return TRIFECTA_MAP[trifecta]
+
+
+def calc_trifecta_payout(action: int, arrival_tuple: Tuple[int, int, int], odds_data: list, bet_amount: int = 100) -> float:
+    """
+    実際の払戻額を計算（ROI 評価用）。
+    的中時のみ odds * bet_amount、不的中は 0。
+    """
+    if len(arrival_tuple) != 3:
+        return 0.0
+    trifecta = action_to_trifecta(action)
+    if trifecta != arrival_tuple:
+        return 0.0
+    odds_map = {tuple(o.get("betting_numbers", ())): o.get("ratio", 0) for o in (odds_data or [])}
+    odds = odds_map.get(trifecta, 0)
+    return float(odds * bet_amount)
+
 
 def calc_trifecta_reward(action: int, arrival_tuple: Tuple[int,int,int], odds_data: list, bet_amount: int = 100) -> float:
     """
