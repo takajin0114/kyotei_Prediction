@@ -151,6 +151,24 @@ class ImprovementConfigManager:
         """最適化の目的指標を返す。未設定時は 'hybrid'（従来互換）。"""
         return self.config.get("evaluation", {}).get("optimize_for", "hybrid")
 
+    # 検証ツールで使用。許可値: "first_only" | "selected_bets"
+    EVALUATION_MODE_FIRST_ONLY = "first_only"
+    EVALUATION_MODE_SELECTED_BETS = "selected_bets"
+    EVALUATION_MODES = (EVALUATION_MODE_FIRST_ONLY, EVALUATION_MODE_SELECTED_BETS)
+
+    def get_evaluation_mode(self) -> str:
+        """
+        検証時の評価モードを返す。未設定時は 'first_only'（従来互換）。
+
+        Returns:
+            "first_only": 1位予想に100円のみで検証。
+            "selected_bets": 予測の selected_bets に基づく ROI 検証（B案用）。
+        """
+        mode = self.config.get("evaluation", {}).get("evaluation_mode", self.EVALUATION_MODE_FIRST_ONLY)
+        if mode in self.EVALUATION_MODES:
+            return mode
+        return self.EVALUATION_MODE_FIRST_ONLY
+
     def get_roi_evaluation_enabled(self) -> bool:
         """ROI を評価に含めるか。未設定時は True。"""
         return self.config.get("evaluation", {}).get("roi_evaluation_enabled", True)

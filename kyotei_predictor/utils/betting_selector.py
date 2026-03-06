@@ -12,7 +12,10 @@ from typing import Dict, List, Any, Optional
 STRATEGY_SINGLE = "single"
 STRATEGY_TOP_N = "top_n"
 STRATEGY_THRESHOLD = "threshold"
-STRATEGY_EV = "ev"  # TODO: 将来 EV ベースの本実装に拡張
+STRATEGY_EV = "ev"
+
+# EV 戦略のフォールバック: オッズなし or 閾値以上なし時に採用する上位点数
+DEFAULT_EV_TOP_N_FALLBACK = 5
 
 
 def _get_combination(c: Dict[str, Any]) -> str:
@@ -82,34 +85,71 @@ def select_score_threshold(predictions: List[Dict[str, Any]], threshold: float) 
     return out
 
 
+def _get_odds_ratio(c: Dict[str, Any]) -> Optional[float]:
+    """候補辞書からオッズ（倍率）を取得。ratio または odds キー。"""
+    r = c.get("ratio")
+    if r is not None:
+        try:
+            return float(r)
+        except (TypeError, ValueError):
+            pass
+    o = c.get("odds")
+    if o is not None:
+        try:
+            return float(o)
+        except (TypeError, ValueError):
+            pass
+    return None
+
+
+def _compute_ev(probability: float, odds_ratio: float) -> float:
+    """
+    期待値（ネット）を計算。EV = 確率 × オッズ - 1。
+    1 円賭けて odds_ratio 円返る場合の期待利得。
+    """
+    return probability * odds_ratio - 1.0
+
+
 def select_ev(
     predictions: List[Dict[str, Any]],
     ev_threshold: float = 0.0,
-    top_n_fallback: int = 5,
+    top_n_fallback: int = DEFAULT_EV_TOP_N_FALLBACK,
 ) -> List[str]:
     """
-    EV（期待値）ベースの選定。将来拡張用。
-    現時点では expected_value が閾値以上なら購入、該当がなければ上位 top_n_fallback でフォールバック。
+    EV（期待値）ベースの選定。オッズがある候補について EV = 確率×オッズ-1 を計算し、
+    閾値以上のみ購入。オッズがない・該当なしの場合は上位 top_n_fallback でフォールバック。
 
     Args:
-        predictions: 予測候補リスト（expected_value があれば使用）。
-        ev_threshold: EV 閾値。
-        top_n_fallback: 該当なし時のフォールバック点数。
+        predictions: 予測候補リスト（probability と ratio または odds があれば EV 計算）。
+        ev_threshold: EV 閾値（この値以上の組み合わせを購入）。
+        top_n_fallback: オッズなし or 該当なし時のフォールバック点数。
 
     Returns:
         購入する combination のリスト
     """
+    if top_n_fallback <= 0:
+        top_n_fallback = DEFAULT_EV_TOP_N_FALLBACK
     out: List[str] = []
     for c in predictions:
-        ev = c.get("expected_value")
-        if ev is not None:
-            try:
-                if float(ev) >= ev_threshold:
-                    comb = _get_combination(c)
-                    if comb:
-                        out.append(comb)
-            except (TypeError, ValueError):
-                pass
+        prob = _get_score(c)
+        ratio = _get_odds_ratio(c)
+        if ratio is not None and ratio > 0:
+            ev = _compute_ev(prob, ratio)
+            if ev >= ev_threshold:
+                comb = _get_combination(c)
+                if comb:
+                    out.append(comb)
+        else:
+            # オッズがない場合は expected_value があればそれを使用（後方互換）
+            ev = c.get("expected_value")
+            if ev is not None:
+                try:
+                    if float(ev) >= ev_threshold:
+                        comb = _get_combination(c)
+                        if comb:
+                            out.append(comb)
+                except (TypeError, ValueError):
+                    pass
     if not out:
         return select_top_n(predictions, top_n_fallback)
     return out

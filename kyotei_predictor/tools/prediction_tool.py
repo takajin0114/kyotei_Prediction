@@ -432,14 +432,23 @@ class PredictionTool:
             state_tensor = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
             action_probs = self.model.policy.get_distribution(state_tensor).distribution.probs.detach().cpu().numpy()[0]
             trifecta_list = list(permutations(range(1, 7), 3))
+            odds_data = None
+            if odds_data_path and Path(odds_data_path).exists():
+                try:
+                    with open(odds_data_path, "r", encoding="utf-8") as f:
+                        odds_data = json.load(f)
+                except Exception:
+                    odds_data = None
             probability_combinations = []
             for i, prob in enumerate(action_probs):
                 trifecta = trifecta_list[i]
                 combination_str = f"{trifecta[0]}-{trifecta[1]}-{trifecta[2]}"
+                ratio = self._get_ratio_from_odds_data(odds_data, trifecta)
                 probability_combinations.append({
                     "combination": combination_str,
                     "probability": float(prob),
                     "expected_value": self.calculate_expected_value(trifecta, odds_data_path),
+                    "ratio": ratio,
                     "rank": 0,
                 })
             probability_combinations.sort(key=lambda x: x["probability"], reverse=True)
@@ -461,10 +470,12 @@ class PredictionTool:
             for i, prob in enumerate(action_probs):
                 trifecta = trifecta_list[i]
                 combination_str = f"{trifecta[0]}-{trifecta[1]}-{trifecta[2]}"
+                ratio = self._get_ratio_from_odds_data(odds_data, trifecta)
                 probability_combinations.append({
                     "combination": combination_str,
                     "probability": float(prob),
                     "expected_value": self.calculate_expected_value_from_data(trifecta, odds_data),
+                    "ratio": ratio,
                     "rank": 0,
                 })
             probability_combinations.sort(key=lambda x: x["probability"], reverse=True)
@@ -475,19 +486,31 @@ class PredictionTool:
             self.logger.error(f"予測エラー(辞書): {e}")
             return []
     
+    def _get_ratio_from_odds_data(self, odds_data: Optional[Dict], trifecta: Tuple[int, int, int]) -> Optional[float]:
+        """
+        オッズ辞書から指定 3連単の倍率を取得。betting_numbers または combination に対応。
+        EV 戦略（betting_selector）で使用。オッズなし時は None。
+        """
+        if not odds_data:
+            return None
+        for o in odds_data.get("odds_data") or []:
+            if tuple(o.get("betting_numbers", [])) == trifecta:
+                r = o.get("ratio")
+                return float(r) if r is not None else None
+            if o.get("combination") == f"{trifecta[0]}-{trifecta[1]}-{trifecta[2]}":
+                r = o.get("ratio")
+                return float(r) if r is not None else None
+        return None
+
     def calculate_expected_value(self, trifecta: Tuple[int, int, int], odds_data_path: str) -> float:
-        """期待値を計算"""
+        """期待値を計算（従来互換: 簡易式）。EV 戦略は betting_selector で確率×オッズ-1 を使用。"""
         try:
             with open(odds_data_path, 'r', encoding='utf-8') as f:
                 odds_data = json.load(f)
-            
-            odds_map = {tuple(o['betting_numbers']): o['ratio'] for o in odds_data['odds_data']}
-            odds = odds_map.get(trifecta, 0)
-            
-            # 期待値 = 確率 × オッズ - 1
-            # 確率は上位20組の確率を使用するため、ここでは簡易計算
-            return odds * 0.05 - 1  # 仮の確率0.05を使用
-            
+            ratio = self._get_ratio_from_odds_data(odds_data, trifecta)
+            if ratio is None:
+                return 0.0
+            return ratio * 0.05 - 1  # 仮の確率0.05を使用（従来互換）
         except Exception as e:
             self.logger.warning(f"期待値計算エラー: {e}")
             return 0.0
@@ -1125,6 +1148,19 @@ class PredictionTool:
             self.logger.error(f"完全統合予測フローエラー: {e}")
             return None
     
+    def _get_ratio_from_odds_data(self, odds_data: Optional[Dict], trifecta: Tuple[int, int, int]) -> Optional[float]:
+        """オッズ辞書から指定3連単の倍率を取得。EV戦略用。"""
+        if not odds_data:
+            return None
+        for o in odds_data.get("odds_data") or []:
+            if tuple(o.get("betting_numbers", [])) == trifecta:
+                r = o.get("ratio")
+                return float(r) if r is not None else None
+            if o.get("combination") == f"{trifecta[0]}-{trifecta[1]}-{trifecta[2]}":
+                r = o.get("ratio")
+                return float(r) if r is not None else None
+        return None
+
     def predict_trifecta_probabilities_from_data(self, race_data: Dict, odds_data: Dict) -> List[Dict]:
         """新規データから3連単の予測確率を計算（120通り全て）"""
         try:
@@ -1149,10 +1185,12 @@ class PredictionTool:
             for i, prob in enumerate(action_probs):
                 trifecta = trifecta_list[i]
                 combination_str = f"{trifecta[0]}-{trifecta[1]}-{trifecta[2]}"
+                ratio = self._get_ratio_from_odds_data(odds_data, trifecta)
                 probability_combinations.append({
                     "combination": combination_str,
                     "probability": float(prob),
                     "expected_value": self.calculate_expected_value_from_data(trifecta, odds_data),
+                    "ratio": ratio,
                     "rank": 0,
                 })
             probability_combinations.sort(key=lambda x: x["probability"], reverse=True)

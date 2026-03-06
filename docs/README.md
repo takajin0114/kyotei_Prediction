@@ -87,7 +87,7 @@
 | [ROADMAP_A_TO_B_BACKGROUND.md](ROADMAP_A_TO_B_BACKGROUND.md) | A案→B案移行の背景・現状構成・今やること／やらないこと・次のフェーズ |
 | [IMPLEMENTATION_TASK_LIST_A_TO_B.md](IMPLEMENTATION_TASK_LIST_A_TO_B.md) | **実装タスク一覧** — 直近／B案前準備／B案で新規の3分類・優先度・完了条件 |
 | [ROI_AND_RESPONSIBILITY_SEPARATION.md](ROI_AND_RESPONSIBILITY_SEPARATION.md) | 予測と買い目選定の責務分離・ROI 重視の技術方針 |
-| [EVALUATION_METRICS_SPEC.md](EVALUATION_METRICS_SPEC.md) | 評価・検証の指標定義（共通キー・A/B比較用） |
+| [EVALUATION_METRICS_SPEC.md](EVALUATION_METRICS_SPEC.md) | 評価・検証の指標定義（共通キー・最適化結果JSON仕様・A/B比較用） |
 | [ODDS_AND_STATE_DESIGN.md](ODDS_AND_STATE_DESIGN.md) | オッズの扱い（回収率専用）と状態定義の共通化 |
 | [config_usage_guide.md](config_usage_guide.md) | 設定ファイルの使用方法（config.json, improvement_config 等） |
 

@@ -27,6 +27,15 @@ from typing import Dict, List, Optional, Tuple
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent.parent
 
+# config から evaluation_mode を読む（CLI 未指定時用）
+def _get_config_evaluation_mode() -> str:
+    """ImprovementConfigManager の evaluation_mode。未読込時は first_only。"""
+    try:
+        from kyotei_predictor.config.improvement_config_manager import ImprovementConfigManager
+        return ImprovementConfigManager().get_evaluation_mode()
+    except Exception:
+        return "first_only"
+
 
 def _load_json(path: Path) -> dict:
     with open(path, "r", encoding="utf-8") as f:
@@ -256,8 +265,8 @@ def main():
                         help="Path to prediction JSON")
     parser.add_argument("--data-dir", "-d", type=str, default="kyotei_predictor/data/test_raw",
                         help="Directory containing race_data_*.json (and optionally odds_data_*.json)")
-    parser.add_argument("--evaluation-mode", type=str, choices=("first_only", "selected_bets"), default="first_only",
-                        help="first_only: 1位のみ100円で検証。selected_bets: 予測の selected_bets で ROI 検証（B案用）")
+    parser.add_argument("--evaluation-mode", type=str, choices=("first_only", "selected_bets"), default=None,
+                        help="検証モード。未指定時は config の evaluation_mode を使用（config 未設定時は first_only）")
     parser.add_argument("--output", "-o", type=str, help="Optional: write summary+details JSON to this path")
     parser.add_argument("--save", action="store_true",
                         help="Save result to outputs/verification_YYYYMMDD_HHMMSS.json (A/B比較用推奨)")
@@ -278,7 +287,11 @@ def main():
         print(f"Data directory not found: {data_dir}")
         return 1
 
-    summary, details = run_verification(pred_path, data_dir, evaluation_mode=args.evaluation_mode)
+    # CLI 指定があれば優先、未指定時は config の evaluation_mode（従来互換: first_only）
+    evaluation_mode = args.evaluation_mode if args.evaluation_mode is not None else _get_config_evaluation_mode()
+    if evaluation_mode not in ("first_only", "selected_bets"):
+        evaluation_mode = "first_only"
+    summary, details = run_verification(pred_path, data_dir, evaluation_mode=evaluation_mode)
 
     print("=== Verification ===")
     print(f"Prediction: {summary['prediction_file']}")
