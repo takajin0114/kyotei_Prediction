@@ -2,6 +2,7 @@
 
 **目的**: プロジェクト全体を通した「次にやるべきこと」を優先度順に一覧にし、どこから手を付けるか決めやすくする。  
 **詳細**: 各項目は [LEARNING_NEXT_STEPS.md](LEARNING_NEXT_STEPS.md) / [NEXT_STEPS.md](NEXT_STEPS.md) / [PREDICTION_ACCURACY_IMPROVEMENT_TODO.md](PREDICTION_ACCURACY_IMPROVEMENT_TODO.md) に記載あり。  
+**A案→B案移行まわり**: 直近／B案前準備／B案で新規の実装タスク分類・優先度・完了条件は [IMPLEMENTATION_TASK_LIST_A_TO_B.md](IMPLEMENTATION_TASK_LIST_A_TO_B.md) を参照。  
 **最終更新**: 2026-03
 
 ---

@@ -23,6 +23,7 @@
 | [PROJECT_LAYOUT.md](PROJECT_LAYOUT.md) | ディレクトリ構成・エントリポイント・新規コードの置き場所 |
 | [REQUIREMENTS_OVERVIEW.md](REQUIREMENTS_OVERVIEW.md) | 要件全体の整理（目的・業務/機能/非機能・ドキュメント対応表） |
 | [ROADMAP_A_TO_B_BACKGROUND.md](ROADMAP_A_TO_B_BACKGROUND.md) | **方針・ロードマップ** — A案（現行）からB案（予測と買い目選定分離・ROI重視）へ移行する背景と判断 |
+| [IMPLEMENTATION_TASK_LIST_A_TO_B.md](IMPLEMENTATION_TASK_LIST_A_TO_B.md) | **実装タスク一覧** — 直近／B案前準備／B案新規の3分類（[NEXT_TASKS_OVERVIEW](NEXT_TASKS_OVERVIEW.md) と併用） |
 
 ---
 
@@ -84,6 +85,7 @@
 | ドキュメント | 内容 |
 |--------------|------|
 | [ROADMAP_A_TO_B_BACKGROUND.md](ROADMAP_A_TO_B_BACKGROUND.md) | A案→B案移行の背景・現状構成・今やること／やらないこと・次のフェーズ |
+| [IMPLEMENTATION_TASK_LIST_A_TO_B.md](IMPLEMENTATION_TASK_LIST_A_TO_B.md) | **実装タスク一覧** — 直近／B案前準備／B案で新規の3分類・優先度・完了条件 |
 | [ROI_AND_RESPONSIBILITY_SEPARATION.md](ROI_AND_RESPONSIBILITY_SEPARATION.md) | 予測と買い目選定の責務分離・ROI 重視の技術方針 |
 | [ODDS_AND_STATE_DESIGN.md](ODDS_AND_STATE_DESIGN.md) | オッズの扱い（回収率専用）と状態定義の共通化 |
 | [config_usage_guide.md](config_usage_guide.md) | 設定ファイルの使用方法（config.json, improvement_config 等） |
