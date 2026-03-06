@@ -42,6 +42,8 @@ def main() -> int:
         default="sklearn",
         help="モデル種別。lightgbm/xgboost 未導入時は sklearn にフォールバック",
     )
+    parser.add_argument("--train-start", type=str, default=None, help="学習に含める開始日（YYYY-MM-DD）。ロールング検証用。")
+    parser.add_argument("--train-end", type=str, default=None, help="学習に含める終了日（YYYY-MM-DD）。ロールング検証用。")
     args = parser.parse_args()
 
     data_dir = args.data_dir or PROJECT_ROOT / "kyotei_predictor" / "data" / "test_raw"
@@ -60,6 +62,8 @@ def main() -> int:
             n_estimators=args.n_estimators,
             max_depth=args.max_depth,
             model_type=args.model_type,
+            train_start=args.train_start,
+            train_end=args.train_end,
         )
         print("学習完了:", summary)
         return 0
