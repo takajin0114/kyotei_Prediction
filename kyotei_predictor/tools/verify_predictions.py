@@ -67,17 +67,36 @@ def get_odds_for_combination(odds_data: dict, combination: str) -> Optional[floa
     return None
 
 
+# 1レースあたりの購入単価（円）。ROI計算の基準。
+BET_PER_COMBINATION = 100
+
+
+def _load_odds_for_race(data_dir: Path, prediction_date: str, venue: str, rno: int) -> Optional[dict]:
+    """指定レースのオッズJSONを読み、辞書で返す。存在しなければ None。"""
+    odds_file = data_dir / f"odds_data_{prediction_date}_{venue}_R{rno}.json"
+    if not odds_file.exists():
+        return None
+    return _load_json(odds_file)
+
+
 def run_verification(
     prediction_path: Path,
     data_dir: Path,
+    evaluation_mode: str = "first_only",
 ) -> Tuple[Dict, List[Dict]]:
     """
     予測JSONと data_dir 内の race_data を照合し、集計結果とレース別詳細を返す。
+
+    Args:
+        prediction_path: 予測JSONのパス
+        data_dir: race_data / odds_data が入ったディレクトリ
+        evaluation_mode: "first_only"（1位のみ100円） または "selected_bets"（selected_bets の買い目で検証）
     """
     pred = _load_json(prediction_path)
     prediction_date = pred.get("prediction_date") or ""
     predictions = pred.get("predictions") or []
     data_dir = Path(data_dir)
+    use_selected_bets = evaluation_mode == "selected_bets"
 
     # レースキー: (venue, race_number) -> (actual trifecta or None, odds or None)
     actual_and_odds: Dict[Tuple[str, int], Tuple[Optional[str], Optional[float]]] = {}
@@ -111,6 +130,10 @@ def run_verification(
     total_bet = 0.0
     total_payout = 0.0
     total_payout_first = 0.0  # 1位予想に100円ずつ賭けた場合の払戻合計
+    # selected_bets モード用
+    total_bet_selected = 0.0
+    total_payout_selected = 0.0
+    hit_count_selected = 0  # 1レースでも selected_bets のいずれかが的中した件数
     details: List[Dict] = []
 
     for race in predictions:
@@ -146,7 +169,8 @@ def run_verification(
         first_comb = (all_comb[0].get("combination") or "").strip() if all_comb else ""
         if first_comb == actual and odds_ratio is not None:
             total_payout_first += bet * odds_ratio
-        details.append({
+
+        detail = {
             "venue": venue,
             "race_number": rno,
             "actual": actual,
@@ -156,7 +180,31 @@ def run_verification(
             "hit_top3": rank is not None and rank <= 3,
             "hit_top10": rank is not None and rank <= 10,
             "hit_top20": rank is not None and rank <= 20,
-        })
+        }
+
+        # selected_bets モード: 買い目リストがあるレースのみ ROI を計算し、レース単位で purchased_bets / payout / race_profit を出す
+        if use_selected_bets:
+            selected = race.get("selected_bets") or []
+            purchased_bets = len(selected)
+            payout = 0.0
+            if purchased_bets > 0 and actual is not None:
+                odds_data = _load_odds_for_race(data_dir, prediction_date, venue, rno)
+                for comb in selected:
+                    c = (comb if isinstance(comb, str) else "").strip()
+                    if not c:
+                        continue
+                    od = get_odds_for_combination(odds_data, c) if odds_data else None
+                    if od is not None and c.replace(" ", "") == actual.replace(" ", ""):
+                        payout += BET_PER_COMBINATION * od
+                total_bet_selected += BET_PER_COMBINATION * purchased_bets
+                total_payout_selected += payout
+                if payout > 0:
+                    hit_count_selected += 1
+            detail["purchased_bets"] = purchased_bets
+            detail["payout"] = round(payout, 2)
+            detail["race_profit"] = round(payout - BET_PER_COMBINATION * purchased_bets, 2) if purchased_bets > 0 else 0.0
+
+        details.append(detail)
 
     hit_rate_rank1 = (hit_rank1 / total * 100) if total else 0.0
     hit_rate_top3 = (hit_top3 / total * 100) if total else 0.0
@@ -167,6 +215,11 @@ def run_verification(
 
     # 評価ツール（metrics）と比較可能な共通キー（A/B比較・ログ標準化用）
     # hit_count: 的中件数, total_bet/total_payout: 投資額/払戻額, roi_pct: 回収率(%)
+    roi_pct_final = (
+        round(total_payout_selected / total_bet_selected * 100, 2)
+        if use_selected_bets and total_bet_selected > 0
+        else round(roi_our_first, 2)
+    )
     summary = {
         "prediction_file": str(prediction_path),
         "prediction_date": prediction_date,
@@ -180,17 +233,20 @@ def run_verification(
         "hit_rate_top3_pct": round(hit_rate_top3, 2),
         "hit_rate_top10_pct": round(hit_rate_top10, 2),
         "hit_rate_top20_pct": round(hit_rate_top20, 2),
-        "total_bet": total_bet,
+        "total_bet": total_bet_selected if use_selected_bets else total_bet,
         "total_payout_if_actual": round(total_payout, 2),
         "roi_pct_if_bet_actual": round(roi_actual, 2),
         "total_payout_our_1st": round(total_payout_first, 2),
         "roi_pct_our_1st": round(roi_our_first, 2),
-        # 共通基盤: 評価 metrics と同じキーで比較可能（1位買いの場合）
-        "hit_count": hit_rank1,
-        "total_payout": round(total_payout_first, 2),
-        "roi_pct": round(roi_our_first, 2),
-        "evaluation_mode": "first_only",  # どの買い方で算出したか（将来 selected_bets 等と区別）
+        # 共通基盤: 評価 metrics と同じキー（evaluation_mode に応じて 1位買い or selected_bets）
+        "hit_count": hit_count_selected if use_selected_bets else hit_rank1,
+        "total_payout": round(total_payout_selected, 2) if use_selected_bets else round(total_payout_first, 2),
+        "roi_pct": roi_pct_final,
+        "evaluation_mode": evaluation_mode,
     }
+    if use_selected_bets:
+        summary["total_bet_selected"] = total_bet_selected
+        summary["total_payout_selected"] = round(total_payout_selected, 2)
     return summary, details
 
 
@@ -200,6 +256,8 @@ def main():
                         help="Path to prediction JSON")
     parser.add_argument("--data-dir", "-d", type=str, default="kyotei_predictor/data/test_raw",
                         help="Directory containing race_data_*.json (and optionally odds_data_*.json)")
+    parser.add_argument("--evaluation-mode", type=str, choices=("first_only", "selected_bets"), default="first_only",
+                        help="first_only: 1位のみ100円で検証。selected_bets: 予測の selected_bets で ROI 検証（B案用）")
     parser.add_argument("--output", "-o", type=str, help="Optional: write summary+details JSON to this path")
     parser.add_argument("--save", action="store_true",
                         help="Save result to outputs/verification_YYYYMMDD_HHMMSS.json (A/B比較用推奨)")
@@ -220,7 +278,7 @@ def main():
         print(f"Data directory not found: {data_dir}")
         return 1
 
-    summary, details = run_verification(pred_path, data_dir)
+    summary, details = run_verification(pred_path, data_dir, evaluation_mode=args.evaluation_mode)
 
     print("=== Verification ===")
     print(f"Prediction: {summary['prediction_file']}")

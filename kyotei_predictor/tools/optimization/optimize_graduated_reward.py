@@ -307,10 +307,18 @@ def objective(trial, data_dir=None, test_mode=False, minimal_mode=False, year_mo
             optimize_for = CONFIG_MANAGER.get_optimize_for()
             score = objective_from_metrics(eval_results, optimize_for)
         else:
+            optimize_for = "hybrid"
             hit_rate = eval_results["hit_rate"]
             mean_reward = eval_results["mean_reward"]
             score = hit_rate * 100 + mean_reward / 1000
-        _log_debug("[objective] Trial %s score: %s eval=%s", trial.number, score, eval_results)
+        trial.set_user_attr("optimize_for", optimize_for)
+        trial.set_user_attr("hit_rate", float(eval_results.get("hit_rate", 0)))
+        trial.set_user_attr("mean_reward", float(eval_results.get("mean_reward", 0)))
+        trial.set_user_attr("roi_pct", float(eval_results.get("roi_pct", 0)))
+        trial.set_user_attr("total_bet", float(eval_results.get("total_bet", 0)))
+        trial.set_user_attr("total_payout", float(eval_results.get("total_payout", 0)))
+        trial.set_user_attr("hit_count", int(eval_results.get("hit_count", 0)))
+        _log_debug("[objective] Trial %s score: %s optimize_for=%s eval=%s", trial.number, score, optimize_for, eval_results)
         return score
     except Exception as e:
         import traceback
@@ -457,11 +465,13 @@ def optimize_graduated_reward(
         callbacks=None  # コールバックを無効化して可視化を防ぐ
     )
     
-    _opt_logger.info("最適化完了 最良試行=%s 最良スコア=%s 最良パラメータ=%s", study.best_trial.number, study.best_value, study.best_params)
-    # 結果をJSONファイルに保存
+    optimize_for = CONFIG_MANAGER.get_optimize_for() if CONFIG_MANAGER else "hybrid"
+    _opt_logger.info("最適化完了 最良試行=%s 最良スコア=%s optimize_for=%s 最良パラメータ=%s", study.best_trial.number, study.best_value, optimize_for, study.best_params)
+    # 結果をJSONファイルに保存（trial ごとに hit_rate, mean_reward, roi_pct 等を保存）
     results = {
         'optimization_time': datetime.now().isoformat(),
         'study_name': study_name,
+        'optimize_for': optimize_for,
         'n_trials': n_trials,
         'existing_trials': existing_trials,
         'total_trials': len(study.trials),
@@ -472,18 +482,34 @@ def optimize_graduated_reward(
         'best_trial': {
             'number': study.best_trial.number,
             'value': float(study.best_value),
-            'params': study.best_params
+            'params': study.best_params,
+            'optimize_for': optimize_for,
+            'hit_rate': study.best_trial.user_attrs.get('hit_rate') if hasattr(study.best_trial, 'user_attrs') else None,
+            'mean_reward': study.best_trial.user_attrs.get('mean_reward') if hasattr(study.best_trial, 'user_attrs') else None,
+            'roi_pct': study.best_trial.user_attrs.get('roi_pct') if hasattr(study.best_trial, 'user_attrs') else None,
+            'total_bet': study.best_trial.user_attrs.get('total_bet') if hasattr(study.best_trial, 'user_attrs') else None,
+            'total_payout': study.best_trial.user_attrs.get('total_payout') if hasattr(study.best_trial, 'user_attrs') else None,
+            'hit_count': study.best_trial.user_attrs.get('hit_count') if hasattr(study.best_trial, 'user_attrs') else None,
         },
         'all_trials': []
     }
     
     for trial in study.trials:
-        results['all_trials'].append({
+        t = {
             'number': trial.number,
             'value': float(trial.value) if trial.value is not None else None,
             'params': trial.params,
-            'state': trial.state.name
-        })
+            'state': trial.state.name,
+        }
+        if hasattr(trial, 'user_attrs') and trial.user_attrs:
+            t['hit_rate'] = trial.user_attrs.get('hit_rate')
+            t['mean_reward'] = trial.user_attrs.get('mean_reward')
+            t['roi_pct'] = trial.user_attrs.get('roi_pct')
+            t['total_bet'] = trial.user_attrs.get('total_bet')
+            t['total_payout'] = trial.user_attrs.get('total_payout')
+            t['hit_count'] = trial.user_attrs.get('hit_count')
+            t['optimize_for'] = trial.user_attrs.get('optimize_for')
+        results['all_trials'].append(t)
     
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     results_path = f"./optuna_results/graduated_reward_optimization_{timestamp}.json"

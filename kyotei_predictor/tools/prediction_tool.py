@@ -66,7 +66,7 @@ import requests
 from io import StringIO
 
 try:
-    from kyotei_predictor.tools.betting import select_bets
+    from kyotei_predictor.utils.betting_selector import select_bets
     from kyotei_predictor.config.improvement_config_manager import ImprovementConfigManager
     _BETTING_AVAILABLE = True
 except ImportError:
@@ -807,16 +807,12 @@ class PredictionTool:
                         if include_selected_bets and _BETTING_AVAILABLE:
                             try:
                                 cfg = ImprovementConfigManager()
-                                strategy = cfg.get_betting_strategy()
-                                top_n = cfg.get_betting_top_n()
-                                score_threshold = cfg.get_betting_score_threshold()
-                                ev_threshold = cfg.get_betting_ev_threshold()
                                 prediction["selected_bets"] = select_bets(
                                     all_combinations,
-                                    strategy=strategy,
-                                    top_n=top_n,
-                                    score_threshold=score_threshold,
-                                    ev_threshold=ev_threshold,
+                                    strategy=cfg.get_betting_strategy(),
+                                    top_n=cfg.get_betting_top_n(),
+                                    score_threshold=cfg.get_betting_score_threshold(),
+                                    ev_threshold=cfg.get_betting_ev_threshold(),
                                 )
                             except Exception as e:
                                 self.logger.debug("selected_bets skipped: %s", e)
