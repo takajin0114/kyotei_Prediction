@@ -59,6 +59,35 @@
 
 ---
 
+## 複数日 A/B 実験（条件統一・2024-07-01〜07）
+
+### 条件（完全統一）
+
+- **betting_strategy**: top_n
+- **top_n**: 3
+- **evaluation_mode**: selected_bets
+- **data_dir**: kyotei_predictor/data/raw/2024-07
+- **date**: 2024-07-01 〜 2024-07-07（複数会場: EDOGAWA, KIRYU, TODA）
+
+### 集計結果
+
+| 項目 | A案（PPO） | B案（Baseline） |
+|------|------------|----------------|
+| **ROI** | 14.8% | 982.98% |
+| **hit_rate (1位)** | 21.97% | 73.48% |
+| **hit_rate (top3)** | 25.2% | 72.22% |
+| **total_bet** | 39600 | 39600 |
+| **total_payout** | 45460 | 428860 |
+| **hit_count** | 29 | 97 |
+| **races_with_result** | 132 | 132 |
+
+### 保存先
+
+- **logs/ab_test_multi_day.json**（日別結果 + 集計）
+- 外し傾向の集計: **docs/ab_error_analysis.md**（会場別・枠番別・オッズ帯別）
+
+---
+
 ## 実行例（テストデータ・参考）
 
 ### 条件
@@ -124,26 +153,22 @@
 
 | 項目 | A案（PPO） | B案（Baseline） |
 |------|------------|----------------|
-| **ROI** | 0.0% | 1028.89% |
-| **hit_rate (1位)** | 0.0% | 58.33% |
-| **hit_rate (top3)** | 25.0% | 58.33% |
-| **betting_strategy** | selected_bets | top_n |
+| **ROI** | 14.8% | 982.98% |
+| **hit_rate (1位)** | 21.97% | 73.48% |
+| **hit_rate (top3)** | 25.2% | 72.22% |
+| **betting_strategy** | top_n | top_n |
 | **evaluation_mode** | selected_bets | selected_bets |
 
-（実データ 2024-07-04・EDOGAWA 12R、top_n=3・selected_bets で検証）
+（2024-07-01〜07・132R・条件統一: top_n=3, selected_bets）
 
-### Observation
+### Error Analysis
 
-- **どちらが良かったか**: 今回の1日では **B案（Baseline）が有利**。ROI・1位的中率・的中数とも B案が上。
-- **なぜそうなったか**: A案（PPO）はこの日 1位 0 的中で、選んだ買い目に本命が含まれていなかった可能性がある。B案は同じ状態ベクトルベースの教師あり分類で、2024-07 の着順データで学習しており、この日の傾向に合いやすかった可能性がある。1日のみのため、複数日・複会場で再実験すると傾向が安定する。
-
-### Improvement Candidates
-
-- **特徴量**: `docs/B_BASELINE_IMPROVEMENT.md` の拡張候補（モーター・ボート勝率、展示タイム、スタート、枠番補正など）を順次検証する。
-- **EV戦略**: `docs/EV_STRATEGY_ROADMAP.md` に沿い、オッズ接続と expected_value 計算を本格化する。
+- **会場**: EDOGAWA で A の外し 57、B の外し 21。KIRYU で A 29・B 9。TODA で A 17・B 5。B案は全会場で外しが少ない。
+- **枠番**: 1着が 1 号艇のレースで A は 44 外し、B は 0 外し。本命 1 号艇のときに A が外しやすい傾向。
+- **人気**: オッズ帯では 10-50 のレースで A 50 外し・B 15 外し。詳細は **docs/ab_error_analysis.md** を参照。
 
 ### Next Steps
 
-1. 複数日・複会場で A/B を再実行し、外し傾向（会場・枠番・人気/穴）を集計する。
-2. B案の特徴量拡張を1つ選び実装し、同じ条件で A/B を再比較する。
-3. A案（PPO）の買い目選定（top_n や閾値）を improvement_config で B案と揃え、同条件で再実験する。
+1. **モデル改善**: A案（PPO）の 1 号艇本命時の外しを減らす（報酬設計・特徴量の見直し）。B案は特徴量拡張（`docs/B_BASELINE_IMPROVEMENT.md`）でさらに安定化。
+2. **EV 戦略**: オッズ接続と expected_value 計算（`docs/EV_STRATEGY_ROADMAP.md`）を本格化し、top_n に加えて EV 閾値でも比較する。
+3. **人気順位集計**: オッズ順位での外し傾向（本命・対抗・単穴）を別集計し、ab_error_analysis に追記する。
