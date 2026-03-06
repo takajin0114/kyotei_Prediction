@@ -76,7 +76,7 @@ python -m kyotei_predictor.cli.baseline_train \
 
 # 予測（selected_bets 付きで保存する場合）
 python -m kyotei_predictor.cli.baseline_predict \
-  --predict-date 2024-05-01 \
+  --prediction-date 2024-05-01 \
   --data-dir kyotei_predictor/data/test_raw \
   --output outputs/predictions_baseline_2024-05-01.json \
   --include-selected-bets --strategy top_n --top-n 3
@@ -123,3 +123,58 @@ A案と B案を同条件で比較するときは、以下を揃える。
 - **1着/2着/3着確率モデル**: 3連単 120 クラスではなく、1着・2着・3着を別々のモデルで予測し、その積で 3連単確率を構成する。
 - **EV 本格導入**: オッズと組み合わせて期待値を計算し、`expected_value` を出力し、betting strategy=ev で比較する。
 - **A/B 比較の拡張**: 同一日・同一データで A/B を実行するスクリプトを用意し、compare_ab の前段で予測を自動実行するオプションを追加する。
+
+---
+
+## 最終出力（Sprint サマリ）
+
+### Baseline B Summary
+
+B案ベースラインは、A案（PPO）と同じ verify / betting / ROI 基盤で比較するための**最小比較用モデル**として追加済みである。
+
+- **学習**: 着順入りの `race_data_*.json` から状態ベクトルと 3連単クラスを集め、軽量分類器を学習してモデル保存。
+- **予測**: 学習済みモデルで 120 クラススコアを出力し、A案と同一形式（`all_combinations`, `probability`, `rank`）の JSON を生成。オプションで `selected_bets` を付与可能。
+- **検証**: 既存の `verify_predictions` にそのまま渡して ROI / hit_rate を算出可能。A案と同条件で比較するための `compare_ab` CLI も利用可能。
+
+### Model Choice
+
+- **採用**: デフォルトは **scikit-learn の RandomForestClassifier**。オプションで **LightGBM** または **XGBoost** を `--model-type` で指定可能。
+- **理由**: 依存が少なく 30 分で動く最小構成を優先。LightGBM / XGBoost は未導入時は sklearn にフォールバックするため、環境に依存せず動作する。
+- **LightGBM でない場合**: 将来差し替える場合は、`create_baseline_model(model_type="lightgbm")` を指定するだけでよい。fit / predict_proba / save-load のインターフェースは共通。
+
+### Changed Files（B案ベースライン追加時の対象）
+
+| ファイル | 目的 |
+|----------|------|
+| `application/baseline_train_usecase.py` | 学習データ収集・学習実行・モデル保存 |
+| `application/baseline_predict_usecase.py` | 予測実行・A案互換形式・selected_bets 付与 |
+| `infrastructure/baseline_model_runner.py` | モデル生成（sklearn/LGB/XGB）、predict_proba、all_combinations 整形 |
+| `infrastructure/baseline_model_repository.py` | モデル保存・読込・.meta.json で種別管理 |
+| `cli/baseline_train.py` | 学習 CLI |
+| `cli/baseline_predict.py` | 予測 CLI |
+| `docs/BASELINE_B_APPROACH.md` | B案の目的・範囲・実行例・接続方法 |
+| `tests/test_baseline_b.py` | 学習・予測・selected_bets の軽量テスト |
+
+### How It Connects
+
+- **betting**: B案の予測 JSON は `all_combinations` に probability / rank を持つ。既存の `betting_selector`（single / top_n / threshold / ev）をそのまま適用でき、`--include-selected-bets` で `selected_bets` を付与する。
+- **verify**: `verify_predictions --prediction <B案JSON> --data-dir <同一data_dir>` で、A案と同様に first_only または selected_bets で ROI / hit_rate を算出する。
+- **ROI**: 同じ data_dir・同じ evaluation_mode・同じ betting_strategy に揃えれば、A案と B案の ROI を同条件で比較できる。
+
+### Validation
+
+- **学習**: `baseline_train` で data_dir に着順入り race_data があればモデルが保存される。テストでは `run_baseline_train` を小規模パラメータで実行して成功することを確認。
+- **予測**: 保存したモデルで `run_baseline_predict` を実行し、`predictions[].all_combinations` に 120 件の combination / probability / rank が含まれることを確認。
+- **検証**: 出力 JSON を `verify_predictions` に渡し、エラーなく hit_rate / roi_pct が算出されることを確認。`test_baseline_predict_with_selected_bets` で selected_bets 付与を検証。
+
+### How to Run
+
+- **学習**: `python -m kyotei_predictor.cli.baseline_train --data-dir <data_dir> --model-path outputs/baseline_b_model.joblib [--model-type lightgbm]`
+- **予測**: `python -m kyotei_predictor.cli.baseline_predict --prediction-date YYYY-MM-DD --data-dir <data_dir> [--include-selected-bets --strategy top_n --top-n 3]`
+- **検証**: `python -m kyotei_predictor.tools.verify_predictions --prediction outputs/predictions_baseline_YYYY-MM-DD.json --data-dir <data_dir> [--evaluation-mode selected_bets]`
+
+### Next Steps
+
+1. **実データで A/B 比較**: 同一日・同一 data_dir で A案と B案の予測を取得し、`compare_ab` で ROI / hit_rate を比較する。
+2. **B案のモデル・特徴量改善**: 1着/2着/3着確率モデルや特徴量拡張で予測精度を上げる。
+3. **EV 本格化**: オッズと組み合わせて expected_value を計算し、strategy=ev で検証可能にする。
