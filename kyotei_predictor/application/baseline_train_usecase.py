@@ -1,16 +1,18 @@
 """
 B案ベースラインの学習ユースケース。
 
-既存の race_data_*.json（着順入り）を読み、状態ベクトルと 3連単クラスを用意して
-軽量分類器を学習し、モデルを保存する。既存 verify / betting と比較可能なモデルを目指す。
+既存の race_data_*.json（着順入り）または DB からレースデータを読み、
+状態ベクトルと 3連単クラスを用意して軽量分類器を学習し、モデルを保存する。
+data_source で "json" / "db" を切り替え可能（既定は従来の JSON 直読）。
 """
 
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Union
 
 import numpy as np
 
 from kyotei_predictor.domain.verification_models import get_actual_trifecta_from_race_data
+from kyotei_predictor.domain.repositories.race_data_repository import RaceDataRepositoryProtocol
 from kyotei_predictor.infrastructure.file_loader import load_json
 from kyotei_predictor.infrastructure.baseline_model_repository import save_baseline_model
 from kyotei_predictor.infrastructure.baseline_model_runner import (
@@ -90,6 +92,39 @@ def collect_training_data(
     return np.stack(X_list, axis=0), np.array(y_list, dtype=np.int64)
 
 
+def _collect_training_data_from_repository(
+    repository: RaceDataRepositoryProtocol,
+    max_samples: Optional[int] = None,
+    train_start: Optional[str] = None,
+    train_end: Optional[str] = None,
+) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    リポジトリから期間内のレースを取得し、着順があるものだけ状態ベクトル X とクラス y に変換する。
+    """
+    start = train_start or "0000-01-01"
+    end = train_end or "9999-12-31"
+    races = repository.load_races_between(start, end, max_samples=max_samples)
+    X_list: List[np.ndarray] = []
+    y_list: List[int] = []
+    for race_data in races:
+        actual = get_actual_trifecta_from_race_data(race_data)
+        if actual is None:
+            continue
+        try:
+            state = build_race_state_vector(race_data, None)
+        except Exception:
+            continue
+        try:
+            label = trifecta_to_class_index(actual)
+        except ValueError:
+            continue
+        X_list.append(state)
+        y_list.append(label)
+    if not X_list:
+        return np.zeros((0, get_state_dim()), dtype=np.float32), np.array([], dtype=np.int64)
+    return np.stack(X_list, axis=0), np.array(y_list, dtype=np.int64)
+
+
 def run_baseline_train(
     data_dir: Path,
     model_save_path: Path,
@@ -99,12 +134,15 @@ def run_baseline_train(
     model_type: str = "sklearn",
     train_start: Optional[str] = None,
     train_end: Optional[str] = None,
+    data_source: Optional[str] = None,
+    race_repository: Optional[RaceDataRepositoryProtocol] = None,
+    db_path: Optional[Union[str, Path]] = None,
 ) -> dict:
     """
     B案ベースラインを学習し、モデルを保存する。
 
     Args:
-        data_dir: 学習用 race_data_*.json のディレクトリ（サブディレクトリも検索）
+        data_dir: 学習用 race_data_*.json のディレクトリ（data_source=json 時）。db 時は JSON 用の raw 参照に使う場合あり。
         model_save_path: モデル保存先パス
         max_samples: 最大学習サンプル数（30分程度で終わるよう抑える）
         n_estimators: 本数（RandomForest / LightGBM / XGBoost 共通）
@@ -112,19 +150,45 @@ def run_baseline_train(
         model_type: "sklearn" | "lightgbm" | "xgboost"。未導入時は sklearn にフォールバック
         train_start: 学習に含める開始日（YYYY-MM-DD）。None で制限なし。
         train_end: 学習に含める終了日（YYYY-MM-DD）。None で制限なし。
+        data_source: "json" | "db" | None。None のときは従来通り data_dir の JSON 直読。
+        race_repository: 指定時は data_source を無視してこのリポジトリを使用。
+        db_path: data_source=db 時の SQLite パス。None なら Settings.DB_PATH。
 
     Returns:
         学習結果サマリ（n_samples, model_type, train_accuracy 等）
     """
     data_dir = Path(data_dir)
-    X, y = collect_training_data(
-        data_dir,
-        max_samples=max_samples,
-        train_start=train_start,
-        train_end=train_end,
-    )
+    if race_repository is not None:
+        X, y = _collect_training_data_from_repository(
+            race_repository,
+            max_samples=max_samples,
+            train_start=train_start,
+            train_end=train_end,
+        )
+    elif data_source and data_source.strip().lower() in ("json", "db"):
+        from kyotei_predictor.infrastructure.repositories.race_data_repository_factory import (
+            get_race_data_repository,
+        )
+        repo = get_race_data_repository(
+            data_source.strip().lower(),
+            data_dir=data_dir,
+            db_path=str(db_path) if db_path else None,
+        )
+        X, y = _collect_training_data_from_repository(
+            repo,
+            max_samples=max_samples,
+            train_start=train_start,
+            train_end=train_end,
+        )
+    else:
+        X, y = collect_training_data(
+            data_dir,
+            max_samples=max_samples,
+            train_start=train_start,
+            train_end=train_end,
+        )
     if len(X) == 0:
-        raise ValueError(f"学習データがありません: {data_dir}")
+        raise ValueError("学習データがありません（data_dir または data_source=db の場合は DB を確認してください）")
 
     model_type = (model_type or MODEL_TYPE_SKLEARN).strip().lower()
     model = create_baseline_model(

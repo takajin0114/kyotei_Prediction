@@ -53,6 +53,14 @@ def main() -> int:
         default="json",
         help="出力形式",
     )
+    parser.add_argument(
+        "--data-source",
+        type=str,
+        choices=("json", "db"),
+        default=None,
+        help="検証時の race_data 読込元。未指定時は data-dir の JSON",
+    )
+    parser.add_argument("--db-path", type=Path, default=None, help="data-source=db 時の SQLite パス")
     args = parser.parse_args()
 
     data_dir = args.data_dir or PROJECT_ROOT / "kyotei_predictor" / "data" / "test_raw"
@@ -60,7 +68,7 @@ def main() -> int:
     out_path = args.output or PROJECT_ROOT / "outputs" / "compare_ab.json"
     out_path = Path(out_path)
 
-    if not data_dir.is_dir():
+    if args.data_source != "db" and not data_dir.is_dir():
         print(f"エラー: データディレクトリがありません: {data_dir}")
         return 1
 
@@ -71,6 +79,8 @@ def main() -> int:
         evaluation_mode=args.evaluation_mode,
         model_name_a=args.name_a,
         model_name_b=args.name_b,
+        data_source=args.data_source,
+        db_path=args.db_path,
     )
 
     out_path.parent.mkdir(parents=True, exist_ok=True)

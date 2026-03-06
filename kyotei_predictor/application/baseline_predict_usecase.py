@@ -2,15 +2,15 @@
 B案ベースラインの予測ユースケース。
 
 学習済みモデルを読み、指定日の race_data に対して 3連単スコアを出力する。
-既存の prediction 形式（all_combinations, venue, race_number）に合わせ、
+data_source で "json" / "db" を切り替え可能。既存の prediction 形式に合わせ、
 verify_predictions / betting_selector にそのまま渡せる形で返す。
-include_selected_bets=True で既存 betting_selector を適用し、selected_bets を付与する。
 """
 
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from kyotei_predictor.domain.verification_models import get_odds_for_combination
+from kyotei_predictor.domain.repositories.race_data_repository import RaceDataRepositoryProtocol
 from kyotei_predictor.infrastructure.file_loader import load_json
 from kyotei_predictor.infrastructure.baseline_model_repository import (
     load_baseline_model,
@@ -112,65 +112,94 @@ def run_baseline_predict(
     betting_top_n: Optional[int] = None,
     betting_score_threshold: Optional[float] = None,
     betting_ev_threshold: Optional[float] = None,
+    data_source: Optional[str] = None,
+    race_repository: Optional[RaceDataRepositoryProtocol] = None,
+    db_path: Optional[Union[str, Path]] = None,
 ) -> Dict[str, Any]:
     """
     B案ベースラインで予測を実行し、A案と同一形式の予測辞書を返す。
 
     Args:
         model_path: 学習済みモデルのパス
-        data_dir: race_data_*.json が入ったディレクトリ
-        prediction_date: 予測日 YYYY-MM-DD（ファイル名の日付部分に使う）
-        venues: 対象会場リスト。None の場合は data_dir 内の全レース
+        data_dir: race_data_*.json が入ったディレクトリ（JSON 時）。オッズ読込にも使用。
+        prediction_date: 予測日 YYYY-MM-DD
+        venues: 対象会場リスト。None の場合は全レース
         include_selected_bets: True で既存 betting_selector を適用し selected_bets を付与
-        betting_strategy: single / top_n / threshold / ev。None 時は config または single
-        betting_top_n: strategy=top_n の N
-        betting_score_threshold: strategy=threshold の閾値
-        betting_ev_threshold: strategy=ev の閾値
+        betting_strategy / betting_top_n / betting_score_threshold / betting_ev_threshold: 買い目パラメータ
+        data_source: "json" | "db" | None。None のときは従来通り data_dir の JSON 直読。
+        race_repository: 指定時はこのリポジトリでレース取得（data_source は無視）。
+        db_path: data_source=db 時の SQLite パス。
 
     Returns:
-        prediction_tool と同形式。include_selected_bets 時は selected_bets 付きで verify(selected_bets) 可能。
+        prediction_tool と同形式。include_selected_bets 時は selected_bets 付きで verify 可能。
     """
     data_dir = Path(data_dir)
     model_path_resolved = Path(model_path)
     model = load_baseline_model(model_path_resolved)
     saved_model_type = load_baseline_model_metadata(model_path_resolved)
 
-    prefix = f"race_data_{prediction_date}_"
-    race_files = sorted(data_dir.rglob("race_data_*.json"))
-    predictions = []
-    for path in race_files:
-        if not path.name.startswith(prefix):
-            continue
-        venue = ""
-        race_number = 0
-        try:
-            rest = path.stem[len("race_data_"):]
-            parts = rest.split("_")
-            if len(parts) >= 3:
-                venue = parts[-2]
-                rn = parts[-1]
-                if rn.startswith("R"):
-                    race_number = int(rn[1:])
-        except (ValueError, IndexError):
-            continue
-        if venues is not None and venue and venue not in venues:
-            continue
-        try:
-            race_data = load_json(path)
-        except Exception:
-            continue
-        try:
-            state = build_race_state_vector(race_data, None)
-        except Exception:
-            continue
-        proba = predict_proba_120(model, state)
-        all_combinations = scores_to_all_combinations(proba)
-        _attach_odds_to_combinations(all_combinations, data_dir, prediction_date, venue or "", race_number)
-        predictions.append({
-            "venue": venue or path.stem,
-            "race_number": race_number,
-            "all_combinations": all_combinations,
-        })
+    predictions: List[Dict[str, Any]] = []
+    if race_repository is not None or (data_source and data_source.strip().lower() in ("json", "db")):
+        if race_repository is None:
+            from kyotei_predictor.infrastructure.repositories.race_data_repository_factory import (
+                get_race_data_repository,
+            )
+            race_repository = get_race_data_repository(
+                (data_source or "json").strip().lower(),
+                data_dir=data_dir,
+                db_path=str(db_path) if db_path else None,
+            )
+        for race_data, venue, race_number in race_repository.load_races_by_date(
+            prediction_date, venues=venues
+        ):
+            try:
+                state = build_race_state_vector(race_data, None)
+            except Exception:
+                continue
+            proba = predict_proba_120(model, state)
+            all_combinations = scores_to_all_combinations(proba)
+            _attach_odds_to_combinations(all_combinations, data_dir, prediction_date, venue, race_number)
+            predictions.append({
+                "venue": venue,
+                "race_number": race_number,
+                "all_combinations": all_combinations,
+            })
+    else:
+        prefix = f"race_data_{prediction_date}_"
+        race_files = sorted(data_dir.rglob("race_data_*.json"))
+        for path in race_files:
+            if not path.name.startswith(prefix):
+                continue
+            venue = ""
+            race_number = 0
+            try:
+                rest = path.stem[len("race_data_"):]
+                parts = rest.split("_")
+                if len(parts) >= 3:
+                    venue = parts[-2]
+                    rn = parts[-1]
+                    if rn.startswith("R"):
+                        race_number = int(rn[1:])
+            except (ValueError, IndexError):
+                continue
+            if venues is not None and venue and venue not in venues:
+                continue
+            try:
+                race_data = load_json(path)
+            except Exception:
+                continue
+            try:
+                state = build_race_state_vector(race_data, None)
+            except Exception:
+                continue
+            proba = predict_proba_120(model, state)
+            all_combinations = scores_to_all_combinations(proba)
+            _attach_odds_to_combinations(all_combinations, data_dir, prediction_date, venue or "", race_number)
+            predictions.append({
+                "venue": venue or path.stem,
+                "race_number": race_number,
+                "all_combinations": all_combinations,
+            })
 
     if include_selected_bets:
         params = _get_betting_params_from_config()

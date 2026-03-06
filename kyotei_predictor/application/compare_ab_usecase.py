@@ -1,12 +1,12 @@
 """
 A/B比較ユースケース: 同一条件で A案・B案の予測を検証し、結果を並べて出力する。
 
-同一の data_dir / evaluation_mode で verify を実行し、
-model_name, approach, betting_strategy, hit_rate, roi_pct 等を一覧する。
+同一の data_dir / evaluation_mode で verify を実行。
+data_source=db 時は検証用 race_data を DB から取得する。
 """
 
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from kyotei_predictor.application.verify_usecase import run_verify
 from kyotei_predictor.infrastructure.file_loader import load_json
@@ -49,21 +49,23 @@ def run_compare_ab(
     evaluation_mode: str = "first_only",
     model_name_a: str = "A",
     model_name_b: str = "B",
+    data_source: Optional[str] = None,
+    db_path: Optional[Union[str, Path]] = None,
 ) -> List[Dict[str, Any]]:
     """
     2つの予測ファイルを同一条件で検証し、比較用の行リストを返す。
 
     Args:
-        prediction_a_path: A案の予測 JSON パス（例: predictions_2024-05-01.json）
-        prediction_b_path: B案の予測 JSON パス（例: predictions_baseline_2024-05-01.json）
+        prediction_a_path: A案の予測 JSON パス
+        prediction_b_path: B案の予測 JSON パス
         data_dir: race_data / odds_data のディレクトリ
         evaluation_mode: "first_only" または "selected_bets"
-        model_name_a: 比較表の A の表示名
-        model_name_b: 比較表の B の表示名
+        model_name_a / model_name_b: 比較表の表示名
+        data_source: "json" | "db" | None。検証時の race_data 読込元。
+        db_path: data_source=db 時の SQLite パス。
 
     Returns:
-        比較行のリスト。各要素は model_name, approach, betting_strategy, evaluation_mode,
-        hit_rate_rank1_pct, roi_pct, total_bet, total_payout, hit_count 等を持つ。
+        比較行のリスト。
     """
     data_dir = Path(data_dir)
     results = []
@@ -81,7 +83,13 @@ def run_compare_ab(
             })
             continue
         try:
-            summary, _ = run_verify(path, data_dir, evaluation_mode=evaluation_mode)
+            summary, _ = run_verify(
+                path,
+                data_dir,
+                evaluation_mode=evaluation_mode,
+                data_source=data_source,
+                db_path=db_path,
+            )
             results.append(_summary_to_row(path, summary, approach, model_name=name))
         except Exception as e:
             results.append({
@@ -97,15 +105,18 @@ def run_compare_ab_multi(
     prediction_specs: List[Tuple[Path, str, str]],
     data_dir: Path,
     evaluation_mode: str = "first_only",
+    data_source: Optional[str] = None,
+    db_path: Optional[Union[str, Path]] = None,
 ) -> List[Dict[str, Any]]:
     """
     複数予測ファイルを同一条件で検証し、比較用の行リストを返す。
-    EV 戦略実験など、3 件以上を並べて比較するときに使用する。
 
     Args:
-        prediction_specs: [(予測JSONパス, 表示名, approach), ...]。approach は "A" または "B" など。
+        prediction_specs: [(予測JSONパス, 表示名, approach), ...]
         data_dir: race_data / odds_data のディレクトリ
         evaluation_mode: "first_only" または "selected_bets"
+        data_source: "json" | "db" | None
+        db_path: data_source=db 時の SQLite パス
 
     Returns:
         比較行のリスト。
@@ -118,7 +129,13 @@ def run_compare_ab_multi(
             results.append({"model_name": name, "approach": approach, "error": f"ファイルが存在しません: {path}"})
             continue
         try:
-            summary, _ = run_verify(path, data_dir, evaluation_mode=evaluation_mode)
+            summary, _ = run_verify(
+                path,
+                data_dir,
+                evaluation_mode=evaluation_mode,
+                data_source=data_source,
+                db_path=db_path,
+            )
             results.append(_summary_to_row(path, summary, approach, model_name=name))
         except Exception as e:
             results.append({"model_name": name, "approach": approach, "error": str(e)})

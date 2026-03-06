@@ -57,6 +57,14 @@ def main() -> int:
     parser.add_argument("--top-n", type=int, default=None, help="strategy=top_n の N")
     parser.add_argument("--score-threshold", type=float, default=None, help="strategy=threshold の閾値")
     parser.add_argument("--ev-threshold", type=float, default=None, help="strategy=ev / top_n_ev の閾値（expected_roi、例: 1.05）")
+    parser.add_argument(
+        "--data-source",
+        type=str,
+        choices=("json", "db"),
+        default=None,
+        help="レースデータ読込元。未指定時は JSON 直読。オッズは data-dir から読む。",
+    )
+    parser.add_argument("--db-path", type=Path, default=None, help="data-source=db 時の SQLite パス")
     args = parser.parse_args()
 
     data_dir = args.data_dir or PROJECT_ROOT / "kyotei_predictor" / "data" / "test_raw"
@@ -69,7 +77,7 @@ def main() -> int:
         print(f"エラー: モデルが見つかりません: {model_path}")
         print("先に python -m kyotei_predictor.cli.baseline_train を実行してください。")
         return 1
-    if not data_dir.is_dir():
+    if args.data_source != "db" and not data_dir.is_dir():
         print(f"エラー: データディレクトリがありません: {data_dir}")
         return 1
 
@@ -84,6 +92,8 @@ def main() -> int:
             betting_top_n=args.top_n,
             betting_score_threshold=args.score_threshold,
             betting_ev_threshold=args.ev_threshold,
+            data_source=args.data_source,
+            db_path=args.db_path,
         )
     except Exception as e:
         print(f"エラー: {e}")

@@ -1,18 +1,19 @@
 """
 検証ユースケース: 予測JSON と race_data を照合し、的中率・回収率を算出する。
 
+race_data は data_dir の JSON または repository（DB）から取得可能。
 I/O は infrastructure、集計ロジックは domain に委譲。
-tools.verify_predictions はこの run_verify を呼ぶ薄いラッパーとする。
 """
 
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 
 from kyotei_predictor.domain.verification_models import (
     get_actual_trifecta_from_race_data,
     get_odds_for_combination,
 )
 from kyotei_predictor.domain.metrics import aggregate_verification_to_summary
+from kyotei_predictor.domain.repositories.race_data_repository import RaceDataRepositoryProtocol
 from kyotei_predictor.infrastructure.file_loader import load_json
 
 # 1レースあたりの購入単価（円）。ROI 計算の基準。
@@ -31,14 +32,21 @@ def run_verify(
     prediction_path: Path,
     data_dir: Path,
     evaluation_mode: str = "first_only",
+    data_source: Optional[str] = None,
+    race_repository: Optional[RaceDataRepositoryProtocol] = None,
+    db_path: Optional[Union[str, Path]] = None,
 ) -> Tuple[Dict, List[Dict]]:
     """
-    予測JSONと data_dir 内の race_data を照合し、集計結果とレース別詳細を返す。
+    予測JSONと race_data を照合し、集計結果とレース別詳細を返す。
+    race_data は data_dir の JSON または repository（data_source=db）から取得。
 
     Args:
         prediction_path: 予測JSONのパス
-        data_dir: race_data / odds_data が入ったディレクトリ
-        evaluation_mode: "first_only"（1位のみ100円） または "selected_bets"（selected_bets の買い目で検証）
+        data_dir: race_data / odds_data が入ったディレクトリ（JSON 時）。オッズはここから読む。
+        evaluation_mode: "first_only" または "selected_bets"
+        data_source: "json" | "db" | None。None のときは data_dir の JSON 直読。
+        race_repository: 指定時はこのリポジトリで race_data 取得。
+        db_path: data_source=db 時の SQLite パス。
 
     Returns:
         (summary_dict, details_list) 既存 tools.verify_predictions と同じ形式。
@@ -49,6 +57,17 @@ def run_verify(
     data_dir = Path(data_dir)
     use_selected_bets = evaluation_mode == "selected_bets"
 
+    repo: Optional[RaceDataRepositoryProtocol] = race_repository
+    if repo is None and data_source and data_source.strip().lower() == "db":
+        from kyotei_predictor.infrastructure.repositories.race_data_repository_factory import (
+            get_race_data_repository,
+        )
+        repo = get_race_data_repository(
+            "db",
+            data_dir=data_dir,
+            db_path=str(db_path) if db_path else None,
+        )
+
     # レースキー: (venue, race_number) -> (actual trifecta or None, odds or None)
     actual_and_odds: Dict[Tuple[str, int], Tuple[Optional[str], Optional[float]]] = {}
     for race in predictions:
@@ -56,19 +75,30 @@ def run_verify(
         rno = int(race.get("race_number") or 0)
         if not venue or rno <= 0:
             continue
-        race_file = data_dir / f"race_data_{prediction_date}_{venue}_R{rno}.json"
-        if not race_file.exists():
+        if repo is not None:
+            race_data = repo.load_race(prediction_date, venue, rno)
+        else:
+            race_file = data_dir / f"race_data_{prediction_date}_{venue}_R{rno}.json"
+            if not race_file.exists():
+                continue
+            try:
+                race_data = load_json(race_file)
+            except Exception:
+                continue
+        if race_data is None:
             continue
-        race_data = load_json(race_file)
         actual = get_actual_trifecta_from_race_data(race_data)
         if actual is None:
             actual_and_odds[(venue, rno)] = (None, None)
             continue
-        odds_file = data_dir / f"odds_data_{prediction_date}_{venue}_R{rno}.json"
         odds_ratio = None
+        odds_file = data_dir / f"odds_data_{prediction_date}_{venue}_R{rno}.json"
         if odds_file.exists():
-            odds_data = load_json(odds_file)
-            odds_ratio = get_odds_for_combination(odds_data, actual)
+            try:
+                odds_data = load_json(odds_file)
+                odds_ratio = get_odds_for_combination(odds_data, actual)
+            except Exception:
+                pass
         actual_and_odds[(venue, rno)] = (actual, odds_ratio)
 
     total = 0

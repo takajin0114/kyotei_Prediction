@@ -66,6 +66,13 @@ class Settings:
     DEFAULT_VALIDATION_RACES = 1000
     CONFIDENCE_LEVEL = 0.95
     
+    # データ読込元（学習・検証・比較のレースデータ）
+    # "json" = data_dir 配下の race_data_*.json を読む（従来互換）
+    # "db"   = SQLite (RaceDB) を主読込源にする
+    DATA_SOURCE = os.environ.get("KYOTEI_DATA_SOURCE", "json")
+    # DB 利用時の SQLite ファイルパス（相対は PROJECT_ROOT 基準）
+    DB_PATH = os.environ.get("KYOTEI_DB_PATH", os.path.join(DATA_DIR, "kyotei_races.sqlite"))
+    
     # ログ設定
     LOG_LEVEL = "INFO"
     LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"

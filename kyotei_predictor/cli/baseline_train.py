@@ -44,6 +44,14 @@ def main() -> int:
     )
     parser.add_argument("--train-start", type=str, default=None, help="学習に含める開始日（YYYY-MM-DD）。ロールング検証用。")
     parser.add_argument("--train-end", type=str, default=None, help="学習に含める終了日（YYYY-MM-DD）。ロールング検証用。")
+    parser.add_argument(
+        "--data-source",
+        type=str,
+        choices=("json", "db"),
+        default=None,
+        help="レースデータ読込元。未指定時は従来通り JSON 直読。json=race_data_*.json, db=SQLite",
+    )
+    parser.add_argument("--db-path", type=Path, default=None, help="data-source=db 時の SQLite ファイルパス。未指定時は設定の DB_PATH")
     args = parser.parse_args()
 
     data_dir = args.data_dir or PROJECT_ROOT / "kyotei_predictor" / "data" / "test_raw"
@@ -51,7 +59,7 @@ def main() -> int:
     data_dir = Path(data_dir)
     model_path = Path(model_path)
 
-    if not data_dir.is_dir():
+    if args.data_source != "db" and not data_dir.is_dir():
         print(f"エラー: データディレクトリがありません: {data_dir}")
         return 1
     try:
@@ -64,6 +72,8 @@ def main() -> int:
             model_type=args.model_type,
             train_start=args.train_start,
             train_end=args.train_end,
+            data_source=args.data_source,
+            db_path=args.db_path,
         )
         print("学習完了:", summary)
         return 0

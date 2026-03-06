@@ -9,6 +9,7 @@ import json
 import sys
 from datetime import datetime, timedelta
 from pathlib import Path
+from typing import Optional
 
 _THIS_DIR = Path(__file__).resolve().parent
 _PROJECT_ROOT = _THIS_DIR.parent.parent.parent
@@ -42,14 +43,21 @@ def run_one_window(
     out_pred_dir: Path,
     strategies: list,
     train_days: int,
+    data_source: Optional[str] = None,
+    db_path: Optional[str] = None,
 ) -> dict:
     """
     1 window 分の学習・予測・検証を行い、戦略別の結果を返す。
     strategies: [(name, strategy, top_n, ev_threshold), ...]
+    data_source: "json" | "db" | None。None のときは従来通り JSON 直読。
     """
+    import os
     from kyotei_predictor.application.baseline_train_usecase import run_baseline_train
     from kyotei_predictor.application.verify_usecase import run_verify
     from kyotei_predictor.application.baseline_predict_usecase import run_baseline_predict
+
+    ds = data_source or os.environ.get("KYOTEI_DATA_SOURCE") or None
+    dbp = db_path
 
     # 学習（日付フィルタ付き）
     run_baseline_train(
@@ -58,6 +66,8 @@ def run_one_window(
         max_samples=50000,
         train_start=train_start,
         train_end=train_end,
+        data_source=ds,
+        db_path=dbp,
     )
 
     test_dates = _date_range(test_start, test_end)
@@ -84,6 +94,8 @@ def run_one_window(
                     betting_top_n=top_n,
                     betting_score_threshold=None,
                     betting_ev_threshold=ev_th,
+                    data_source=ds,
+                    db_path=dbp,
                 )
                 with open(out_path, "w", encoding="utf-8") as f:
                     json.dump(result, f, ensure_ascii=False, indent=2)
@@ -104,7 +116,13 @@ def run_one_window(
             if not path.exists() or not data_dir_month.exists():
                 continue
             try:
-                summary, _ = run_verify(path, data_dir_month, evaluation_mode="selected_bets")
+                summary, _ = run_verify(
+                    path,
+                    data_dir_month,
+                    evaluation_mode="selected_bets",
+                    data_source=ds,
+                    db_path=dbp,
+                )
                 tb += summary.get("total_bet") or 0
                 tp += summary.get("total_payout") or 0
                 hc += summary.get("hit_count") or 0
@@ -177,6 +195,10 @@ def main() -> int:
         ("B top_n=5 EV>1.15", "top_n_ev", 5, 1.15),
     ]
 
+    import os as _os
+    _data_source = _os.environ.get("KYOTEI_DATA_SOURCE")
+    _db_path = _os.environ.get("KYOTEI_DB_PATH")
+
     # 改善前: 15日学習
     pred_dir_before = outputs_dir / "rolling_windows_15d"
     pred_dir_before.mkdir(exist_ok=True)
@@ -194,6 +216,8 @@ def main() -> int:
             out_pred_dir=pred_dir_before,
             strategies=strategies,
             train_days=15,
+            data_source=_data_source,
+            db_path=_db_path,
         )
         row["window_id"] = i + 1
         before_windows.append(row)
@@ -214,6 +238,8 @@ def main() -> int:
             out_pred_dir=pred_dir_after,
             strategies=strategies,
             train_days=30,
+            data_source=_data_source,
+            db_path=_db_path,
         )
         row["window_id"] = i + 1
         after_windows.append(row)

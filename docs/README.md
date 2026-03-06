@@ -59,6 +59,7 @@
 | ドキュメント | 内容 |
 |--------------|------|
 | [DATA_STORAGE_AND_DB.md](DATA_STORAGE_AND_DB.md) | データ保管と DB 化（JSON→SQLite、スキーマ、各処理の file/db 対応一覧） |
+| [DATA_SOURCE_MIGRATION.md](DATA_SOURCE_MIGRATION.md) | **読込の JSON→DB 移行**（repository 抽象化、data_source 切替、設定・運用） |
 | [RACE_DATA_FETCH_OVERVIEW.md](RACE_DATA_FETCH_OVERVIEW.md) | レースデータ取得処理の概要 |
 | [RACE_DATA_ACQUISITION_AND_SOURCES.md](RACE_DATA_ACQUISITION_AND_SOURCES.md) | 取得処理・参照サイト・必要データの洗い出し |
 | [SITE_DATA_AND_FETCH_STATUS.md](SITE_DATA_AND_FETCH_STATUS.md) | サイトで取得できるデータ一覧と取得状況 |
