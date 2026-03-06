@@ -167,8 +167,67 @@
 - **枠番**: 1着が 1 号艇のレースで A は 44 外し、B は 0 外し。本命 1 号艇のときに A が外しやすい傾向。
 - **人気**: オッズ帯では 10-50 のレースで A 50 外し・B 15 外し。詳細は **docs/ab_error_analysis.md** を参照。
 
-### Next Steps
+### 長期検証サマリ（30日・60日・B案のみ）
+
+| 期間 | B top_n=3 ROI | B top_n=5 EV>1.05 ROI | B top_n=10 EV>1.10 ROI |
+|------|----------------|------------------------|-------------------------|
+| 30日（6月のみ） | -28.89% | -31.37% | -33.48% |
+| 60日（6月+7月） | 379.91% | 327.31% | 146.23% |
+
+詳細は下記「長期検証（30日・60日・B案のみ）」を参照。
+
+---
+
+## 長期検証（30日・60日・B案のみ）
+
+リーク確認後、同一条件で B案を 30日・60日で再検証した。
+
+### 条件
+
+- **evaluation_mode**: selected_bets
+- **データ**: 2024-06（30日）、2024-06 + 2024-07（60日）
+- **A案**: 6月予測未実施。7月は 01〜07 の 7 日分のみあり（別集計）。
+- **B案**: top_n=3 / top_n=5 EV>1.05 / top_n=10 EV>1.10
+
+### 30日結果（2024-06-01 〜 06-30・B案のみ）
+
+| 条件 | ROI | hit_rate (1位) | total_bet | hit_count | races_with_result |
+|------|-----|----------------|-----------|-----------|-------------------|
+| B top_n=3 | -28.89% | 11.25% | 197,400 | 74 | 658 |
+| B top_n=5 EV>1.05 | -31.37% | 7.29% | 232,700 | 48 | 658 |
+| B top_n=10 EV>1.10 | -33.48% | 9.57% | 445,000 | 63 | 658 |
+
+- 6月単体では B案はマイナス。学習データが 7 月中心のため、6 月への汎化が弱い可能性。
+
+### 60日結果（2024-06-01 〜 07-31・B案のみ）
+
+| 条件 | ROI | hit_rate (1位) | total_bet | hit_count | races_with_result |
+|------|-----|----------------|-----------|-----------|-------------------|
+| B top_n=3 | 379.91% | 35.63% | 369,600 | 439 | 1,232 |
+| B top_n=5 EV>1.05 | 327.31% | 33.12% | 419,200 | 408 | 1,232 |
+| B top_n=10 EV>1.10 | 146.23% | 34.25% | 783,900 | 422 | 1,232 |
+
+- 6月＋7月で集計すると B案は高 ROI。7月の強さが効いている。
+- 保存先: **logs/ab_test_30day.json**, **logs/ab_test_60day.json**
+
+### 観察（長期）
+
+- **期間による差**: 7日（07-01〜07）では B が 982% 前後だったが、30日（6月のみ）ではマイナス、60日（6月+7月）では 146〜380% とプラス。月・データ分布に依存する。
+- **推奨**: 長期安定性を見るには、学習期間と検証期間の分離（例: 6月で学習・7月で検証）や、複数月のロールング検証が有効。現時点では「7月に強いが 6月単体では弱い」という傾向を認識した上で運用する。
+
+### 長期検証の実行方法
+
+1. **B案予測を日別に生成**（例: 6月）  
+   `python -m kyotei_predictor.cli.baseline_predict --predict-date 2024-06-DD --data-dir kyotei_predictor/data/raw/2024-06 --model-path outputs/baseline_b_abtest.joblib --output outputs/predictions_baseline_2024-06-DD.json --include-selected-bets --strategy top_n --top-n 3`（DD は 01〜30）。EV 戦略の場合は `--strategy top_n_ev --top-n 5 --ev-threshold 1.05` などで別ファイルに出力。
+2. **日別に verify**  
+   `run_verify(prediction_path, data_dir, evaluation_mode='selected_bets')` で日別サマリを取得。
+3. **集計**  
+   日別の total_bet / total_payout / hit_count / races_with_result を合算し、ROI・hit_rate を計算。結果は `logs/ab_test_30day.json` や `logs/ab_test_60day.json` に保存。
+4. **リーク確認の再実行**  
+   特徴量の確認は `docs/DATA_LEAKAGE_CHECK.md` の「参照コード」をたどり、`build_race_state_vector` に odds が渡されていないこと・学習でオッズファイルを読んでいないことを確認する。
+
+### Next Steps（Sprint サマリ）
 
 1. **モデル改善**: A案（PPO）の 1 号艇本命時の外しを減らす（報酬設計・特徴量の見直し）。B案は特徴量拡張（`docs/B_BASELINE_IMPROVEMENT.md`）でさらに安定化。
-2. **EV 戦略**: オッズ接続と expected_value 計算（`docs/EV_STRATEGY_ROADMAP.md`）を本格化し、top_n に加えて EV 閾値でも比較する。
+2. **EV 戦略・閾値**: 閾値 1.02 / 1.05 / 1.10 / 1.15 の比較結果は `docs/EV_STRATEGY_EXPERIMENT.md` を参照。長期では EV 閾値を上げると bet 数減・ROI は期間に依存。
 3. **人気順位集計**: オッズ順位での外し傾向（本命・対抗・単穴）を別集計し、ab_error_analysis に追記する。
