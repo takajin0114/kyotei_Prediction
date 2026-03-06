@@ -87,6 +87,10 @@
    `python -m kyotei_predictor.tools.rolling_validation_windows`  
    実行後、`logs/rolling_validation_b_windows.json` と `logs/rolling_validation_b_before_after.json` が更新される。
 
+6. **ロールング検証（特徴量 before/after）**  
+   プロジェクトルートで `PYTHONPATH=. python3 kyotei_predictor/tools/rolling_validation_feature.py`  
+   実行後、`logs/rolling_validation_feature_before_after.json` が更新される。
+
 ---
 
 ## ロールング検証（複数 window）
@@ -132,8 +136,22 @@
 - **要点**: 学習期間を 15日→30日 に拡張すると、**全戦略で平均 ROI が悪化**し、正の ROI を出した window は 0 になった。
 - 今回試した「学習期間の拡張」は汎化性能の改善にはつながらなかった。短い window（15日）で直近に合わせて学習した方が、このデータ・期間では検証スコアが良かった。
 
+### 特徴量1つ追加の影響（モーター勝率代理）
+
+同じ 15日学習・7日検証・4 window で、特徴量「モーター勝率代理」の有無を比較した。
+
+| 戦略 | 従来（特徴量なし）平均ROI | 従来 正のROI | 特徴量追加後 平均ROI | 特徴量追加後 正のROI |
+|------|----------------------------|--------------|------------------------|----------------------|
+| B top_n=3 | -1.14% | 1/4 | -20.49% | 0/4 |
+| B top_n=5 EV>1.10 | 19.69% | 2/4 | -36.84% | 0/4 |
+| B top_n=5 EV>1.15 | 18.39% | 2/4 | -39.55% | 0/4 |
+
+- **解釈**: 特徴量追加後は **全戦略で平均 ROI が悪化**し、正の ROI window は 0/4。15日 rolling では **従来の特徴量（モーター勝率代理なし）の方が汎化が良い**。EV 1.10〜1.15 の有効性は、特徴量追加前のモデルで確認された状態を維持するのが無難。
+- **保存先**: **logs/rolling_validation_feature_before_after.json**
+- **実行**: `PYTHONPATH=. python3 kyotei_predictor/tools/rolling_validation_feature.py`
+
 ### 現時点での汎化評価
 
-- **ロールング検証（4 window）**: 15日学習では EV 1.10・1.15 が 2/4 window でプラス。30日学習では全 window でマイナス。
-- **解釈**: データ量・期間が限られる中では、学習期間を伸ばすより「直近 15日で学習し EV で絞る」方がロールング検証スコアは良い。一方、window ごとのばらつきは大きい（分散 2300 前後）。
-- 保存先: **logs/rolling_validation_b_windows.json**, **logs/rolling_validation_b_before_after.json**
+- **ロールング検証（4 window）**: 15日学習では EV 1.10・1.15 が 2/4 window でプラス。30日学習では全 window でマイナス。特徴量「モーター勝率代理」を追加すると 15日学習でも全戦略が悪化（正のROI 0/4）。
+- **解釈**: データ量・期間が限られる中では、学習期間を伸ばすより「直近 15日で学習し EV で絞る」方がロールング検証スコアは良い。特徴量は 1 つ追加しただけでは汎化改善にならず、従来ベースライン＋EV 閾値の維持を推奨。
+- 保存先: **logs/rolling_validation_b_windows.json**, **logs/rolling_validation_b_before_after.json**, **logs/rolling_validation_feature_before_after.json**

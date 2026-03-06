@@ -18,10 +18,10 @@ class TestStateVector(unittest.TestCase):
     """build_race_state_vector の単体テスト"""
 
     def test_state_dim_constant(self):
-        """get_state_dim() が 48 + 会場数 + 3 であること"""
+        """get_state_dim() が 48 + 会場数 + 3 または +4（モーター勝率代理あり）であること"""
         stadiums = get_stadium_names_order()
-        expected = 48 + len(stadiums) + 3
-        self.assertEqual(get_state_dim(), expected)
+        dim = get_state_dim()
+        self.assertIn(dim, [48 + len(stadiums) + 3, 48 + len(stadiums) + 4], msg="state dim should be 48+stadiums+3 or +4")
 
     def test_build_race_state_vector_shape(self):
         """race_data のみで状態を生成すると get_state_dim() 次元になること"""
