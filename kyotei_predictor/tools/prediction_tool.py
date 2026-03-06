@@ -66,11 +66,43 @@ import requests
 from io import StringIO
 
 try:
-    from kyotei_predictor.utils.betting_selector import select_bets
+    from kyotei_predictor.utils.betting_selector import (
+        select_bets,
+        STRATEGY_EV,
+        EV_META_THRESHOLD,
+        EV_META_ADOPTED_COUNT,
+        EV_META_FALLBACK_USED,
+        EV_META_FALLBACK_COUNT,
+        EV_META_PURCHASED_COUNT,
+    )
     from kyotei_predictor.config.improvement_config_manager import ImprovementConfigManager
     _BETTING_AVAILABLE = True
 except ImportError:
     _BETTING_AVAILABLE = False
+    STRATEGY_EV = "ev"
+    EV_META_THRESHOLD = "ev_threshold"
+    EV_META_ADOPTED_COUNT = "ev_adopted_count"
+    EV_META_FALLBACK_USED = "fallback_used"
+    EV_META_FALLBACK_COUNT = "fallback_count"
+    EV_META_PURCHASED_COUNT = "purchased_count"
+
+
+def _aggregate_ev_metadata(predictions: List[Dict]) -> Optional[Dict]:
+    """
+    各 prediction の ev_selection_metadata を集計し execution_summary 用の辞書を返す。
+    strategy=ev のレースが1件もなければ None。
+    """
+    metas = [p.get("ev_selection_metadata") for p in predictions if p.get("ev_selection_metadata")]
+    if not metas:
+        return None
+    return {
+        "ev_threshold": metas[0].get("ev_threshold"),
+        "ev_adopted_count": sum(m.get("ev_adopted_count", 0) for m in metas),
+        "fallback_used_count": sum(1 for m in metas if m.get("fallback_used")),
+        "fallback_count_total": sum(m.get("fallback_count", 0) for m in metas),
+        "purchased_count_total": sum(m.get("purchased_count", 0) for m in metas),
+    }
+
 
 class PredictionTool:
     """予想ツールのメインクラス"""
@@ -830,13 +862,19 @@ class PredictionTool:
                         if include_selected_bets and _BETTING_AVAILABLE:
                             try:
                                 cfg = ImprovementConfigManager()
-                                prediction["selected_bets"] = select_bets(
+                                strategy = (cfg.get_betting_strategy() or "").strip().lower()
+                                res = select_bets(
                                     all_combinations,
-                                    strategy=cfg.get_betting_strategy(),
+                                    strategy=strategy,
                                     top_n=cfg.get_betting_top_n(),
                                     score_threshold=cfg.get_betting_score_threshold(),
                                     ev_threshold=cfg.get_betting_ev_threshold(),
+                                    return_metadata=(strategy == STRATEGY_EV),
                                 )
+                                if isinstance(res, tuple) and len(res) == 2:
+                                    prediction["selected_bets"], prediction["ev_selection_metadata"] = res[0], res[1]
+                                else:
+                                    prediction["selected_bets"] = res
                             except Exception as e:
                                 self.logger.debug("selected_bets skipped: %s", e)
                         predictions.append(prediction)
@@ -848,19 +886,22 @@ class PredictionTool:
             # 会場別サマリー
             venue_summaries = self.generate_venue_summaries(predictions)
             
-            # 実行結果
+            # 実行結果（EV 戦略時は execution_summary に EV 集計を追加）
             execution_time = (datetime.now() - start_time).total_seconds() / 60
-            
+            exec_summary = {
+                'total_venues': len(set(p['venue'] for p in predictions)),
+                'total_races': len(predictions),
+                'successful_predictions': successful_predictions,
+                'execution_time_minutes': execution_time
+            }
+            ev_agg = _aggregate_ev_metadata(predictions)
+            if ev_agg:
+                exec_summary["ev_selection"] = ev_agg
             result = {
                 'prediction_date': predict_date,
                 'generated_at': datetime.now().isoformat(),
                 'model_info': self.model_info,
-                'execution_summary': {
-                    'total_venues': len(set(p['venue'] for p in predictions)),
-                    'total_races': len(predictions),
-                    'successful_predictions': successful_predictions,
-                    'execution_time_minutes': execution_time
-                },
+                'execution_summary': exec_summary,
                 'predictions': predictions,
                 'venue_summaries': venue_summaries
             }
@@ -1054,13 +1095,19 @@ class PredictionTool:
                             if include_selected_bets and _BETTING_AVAILABLE:
                                 try:
                                     cfg = ImprovementConfigManager()
-                                    prediction["selected_bets"] = select_bets(
+                                    strategy = (cfg.get_betting_strategy() or "").strip().lower()
+                                    res = select_bets(
                                         all_combinations,
-                                        strategy=cfg.get_betting_strategy(),
+                                        strategy=strategy,
                                         top_n=cfg.get_betting_top_n(),
                                         score_threshold=cfg.get_betting_score_threshold(),
                                         ev_threshold=cfg.get_betting_ev_threshold(),
+                                        return_metadata=(strategy == STRATEGY_EV),
                                     )
+                                    if isinstance(res, tuple) and len(res) == 2:
+                                        prediction["selected_bets"], prediction["ev_selection_metadata"] = res[0], res[1]
+                                    else:
+                                        prediction["selected_bets"] = res
                                 except Exception as e:
                                     self.logger.debug("selected_bets skipped: %s", e)
                             predictions.append(prediction)
@@ -1100,13 +1147,19 @@ class PredictionTool:
                             if include_selected_bets and _BETTING_AVAILABLE:
                                 try:
                                     cfg = ImprovementConfigManager()
-                                    prediction["selected_bets"] = select_bets(
+                                    strategy = (cfg.get_betting_strategy() or "").strip().lower()
+                                    res = select_bets(
                                         all_combinations,
-                                        strategy=cfg.get_betting_strategy(),
+                                        strategy=strategy,
                                         top_n=cfg.get_betting_top_n(),
                                         score_threshold=cfg.get_betting_score_threshold(),
                                         ev_threshold=cfg.get_betting_ev_threshold(),
+                                        return_metadata=(strategy == STRATEGY_EV),
                                     )
+                                    if isinstance(res, tuple) and len(res) == 2:
+                                        prediction["selected_bets"], prediction["ev_selection_metadata"] = res[0], res[1]
+                                    else:
+                                        prediction["selected_bets"] = res
                                 except Exception as e:
                                     self.logger.debug("selected_bets skipped: %s", e)
                             predictions.append(prediction)
@@ -1120,23 +1173,26 @@ class PredictionTool:
             # 5. 会場別サマリー
             venue_summaries = self.generate_venue_summaries(predictions)
             
-            # 6. 実行結果
+            # 6. 実行結果（EV 戦略時は execution_summary に ev_selection を追加）
             execution_time = (datetime.now() - start_time).total_seconds() / 60
-            
+            exec_summary = {
+                'total_venues': len(set(p['venue'] for p in predictions)),
+                'total_races': len(predictions),
+                'successful_predictions': successful_predictions,
+                'odds_available_predictions': odds_available_predictions,
+                'odds_missing_predictions': max(successful_predictions - odds_available_predictions, 0),
+                'execution_time_minutes': execution_time,
+                'data_fetched': fetch_data,
+                'prediction_only': prediction_only
+            }
+            ev_agg = _aggregate_ev_metadata(predictions)
+            if ev_agg:
+                exec_summary["ev_selection"] = ev_agg
             result = {
                 'prediction_date': target_date,
                 'generated_at': datetime.now().isoformat(),
                 'model_info': self.model_info,
-                'execution_summary': {
-                    'total_venues': len(set(p['venue'] for p in predictions)),
-                    'total_races': len(predictions),
-                    'successful_predictions': successful_predictions,
-                    'odds_available_predictions': odds_available_predictions,
-                    'odds_missing_predictions': max(successful_predictions - odds_available_predictions, 0),
-                    'execution_time_minutes': execution_time,
-                    'data_fetched': fetch_data,
-                    'prediction_only': prediction_only
-                },
+                'execution_summary': exec_summary,
                 'predictions': predictions,
                 'venue_summaries': venue_summaries
             }

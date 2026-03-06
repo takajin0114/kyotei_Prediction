@@ -6,7 +6,7 @@
 B案移行後も同じインターフェースで EV 戦略等に拡張しやすい設計とする。
 """
 
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional, Tuple, Union
 
 # 戦略名（config の betting.strategy と一致）
 STRATEGY_SINGLE = "single"
@@ -110,11 +110,20 @@ def _compute_ev(probability: float, odds_ratio: float) -> float:
     return probability * odds_ratio - 1.0
 
 
+# EV メタデータのキー（execution_summary / ログ用）
+EV_META_THRESHOLD = "ev_threshold"
+EV_META_ADOPTED_COUNT = "ev_adopted_count"
+EV_META_FALLBACK_USED = "fallback_used"
+EV_META_FALLBACK_COUNT = "fallback_count"
+EV_META_PURCHASED_COUNT = "purchased_count"
+
+
 def select_ev(
     predictions: List[Dict[str, Any]],
     ev_threshold: float = 0.0,
     top_n_fallback: int = DEFAULT_EV_TOP_N_FALLBACK,
-) -> List[str]:
+    return_metadata: bool = False,
+) -> Union[List[str], Tuple[List[str], Dict[str, Any]]]:
     """
     EV（期待値）ベースの選定。オッズがある候補について EV = 確率×オッズ-1 を計算し、
     閾値以上のみ購入。オッズがない・該当なしの場合は上位 top_n_fallback でフォールバック。
@@ -123,13 +132,17 @@ def select_ev(
         predictions: 予測候補リスト（probability と ratio または odds があれば EV 計算）。
         ev_threshold: EV 閾値（この値以上の組み合わせを購入）。
         top_n_fallback: オッズなし or 該当なし時のフォールバック点数。
+        return_metadata: True のとき (list, metadata_dict) を返す。B案・比較用ログ用。
 
     Returns:
-        購入する combination のリスト
+        return_metadata=False: 購入する combination のリスト
+        return_metadata=True: (リスト, メタデータ辞書)。メタデータは ev_threshold, ev_adopted_count,
+            fallback_used, fallback_count, purchased_count を含む。
     """
     if top_n_fallback <= 0:
         top_n_fallback = DEFAULT_EV_TOP_N_FALLBACK
     out: List[str] = []
+    ev_adopted_count = 0
     for c in predictions:
         prob = _get_score(c)
         ratio = _get_odds_ratio(c)
@@ -139,8 +152,8 @@ def select_ev(
                 comb = _get_combination(c)
                 if comb:
                     out.append(comb)
+                    ev_adopted_count += 1
         else:
-            # オッズがない場合は expected_value があればそれを使用（後方互換）
             ev = c.get("expected_value")
             if ev is not None:
                 try:
@@ -148,10 +161,24 @@ def select_ev(
                         comb = _get_combination(c)
                         if comb:
                             out.append(comb)
+                            ev_adopted_count += 1
                 except (TypeError, ValueError):
                     pass
-    if not out:
-        return select_top_n(predictions, top_n_fallback)
+    fallback_used = len(out) == 0
+    if fallback_used:
+        out = select_top_n(predictions, top_n_fallback)
+    fallback_count = len(out) if fallback_used else 0
+    purchased_count = len(out)
+
+    if return_metadata:
+        metadata = {
+            EV_META_THRESHOLD: ev_threshold,
+            EV_META_ADOPTED_COUNT: ev_adopted_count,
+            EV_META_FALLBACK_USED: fallback_used,
+            EV_META_FALLBACK_COUNT: fallback_count,
+            EV_META_PURCHASED_COUNT: purchased_count,
+        }
+        return (out, metadata)
     return out
 
 
@@ -161,8 +188,9 @@ def select_bets(
     top_n: int = 3,
     score_threshold: float = 0.05,
     ev_threshold: float = 0.0,
+    return_metadata: bool = False,
     **kwargs: Any,
-) -> List[str]:
+) -> Union[List[str], Tuple[List[str], Dict[str, Any]]]:
     """
     設定に応じて買い目を選定する共通入口。
 
@@ -172,10 +200,12 @@ def select_bets(
         top_n: strategy=top_n のときの N。
         score_threshold: strategy=threshold のときの閾値。
         ev_threshold: strategy=ev のときの EV 閾値。
+        return_metadata: strategy=ev のとき True にすると (list, ev_metadata) を返す。比較・B案用。
         **kwargs: その他（将来拡張用）。
 
     Returns:
-        購入する combination のリスト
+        return_metadata=False または strategy!=ev: 購入する combination のリスト
+        return_metadata=True かつ strategy=ev: (リスト, EVメタデータ辞書)
     """
     strategy = (strategy or STRATEGY_SINGLE).strip().lower()
     if strategy == STRATEGY_SINGLE:
@@ -185,5 +215,11 @@ def select_bets(
     if strategy == STRATEGY_THRESHOLD:
         return select_score_threshold(predictions, score_threshold)
     if strategy == STRATEGY_EV:
-        return select_ev(predictions, ev_threshold=ev_threshold, top_n_fallback=top_n)
+        result = select_ev(
+            predictions,
+            ev_threshold=ev_threshold,
+            top_n_fallback=top_n,
+            return_metadata=return_metadata,
+        )
+        return result
     return select_single(predictions)

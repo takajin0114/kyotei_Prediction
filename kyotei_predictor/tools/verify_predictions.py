@@ -189,6 +189,7 @@ def run_verification(
             "hit_top3": rank is not None and rank <= 3,
             "hit_top10": rank is not None and rank <= 10,
             "hit_top20": rank is not None and rank <= 20,
+            "evaluation_mode": evaluation_mode,
         }
 
         # selected_bets モード: 買い目リストがあるレースのみ ROI を計算し、レース単位で purchased_bets / payout / race_profit を出す
@@ -310,13 +311,19 @@ def main():
         for d in details:
             print(f"  {d['venue']} R{d['race_number']}: actual={d['actual']} rank={d['rank_in_top20']} hit_1st={d['hit_rank1']} top3={d['hit_top3']}")
 
+    # 保存JSON: 比較条件を固定するため summary / details / トップレベルに evaluation_mode を必ず含める
+    output_payload = {
+        "evaluation_mode": summary["evaluation_mode"],
+        "summary": summary,
+        "details": details,
+    }
     if args.output:
         out_path = Path(args.output)
         if not out_path.is_absolute():
             out_path = PROJECT_ROOT / out_path
         out_path.parent.mkdir(parents=True, exist_ok=True)
         with open(out_path, "w", encoding="utf-8") as f:
-            json.dump({"summary": summary, "details": details}, f, ensure_ascii=False, indent=2)
+            json.dump(output_payload, f, ensure_ascii=False, indent=2)
         print(f"Wrote: {out_path}")
 
     # 検証ログ標準化: 推奨出力先に保存（--save）
@@ -326,7 +333,7 @@ def main():
         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
         save_path = out_dir / f"verification_{ts}.json"
         with open(save_path, "w", encoding="utf-8") as f:
-            json.dump({"summary": summary, "details": details}, f, ensure_ascii=False, indent=2)
+            json.dump(output_payload, f, ensure_ascii=False, indent=2)
         print(f"Saved (--save): {save_path}")
 
     return 0

@@ -124,10 +124,57 @@ config の `evaluation.optimize_for` で指定。比較時は **同じ optimize_
 
 ---
 
+## optimize_for=roi と検証 ROI の突き合わせ
+
+最適化時の roi_pct（best_trial.roi_pct）と verify_predictions の roi_pct が乖離していると、学習時評価と実運用検証の前提がずれている可能性がある。同一条件で両者を並べて確認する手順を以下に示す。
+
+### 比較対象
+
+| 側 | 指標の出所 | キー |
+|----|------------|------|
+| 最適化 | 結果 JSON の best_trial | best_trial.roi_pct, best_trial.total_bet, best_trial.total_payout, best_trial.hit_count |
+| 検証 | verify_predictions の summary | roi_pct, total_bet, total_payout, hit_count |
+
+### 比較時に揃える条件
+
+突き合わせる前に、以下を同一にすること。
+
+| 条件 | 説明 |
+|------|------|
+| **prediction file** | 検証に使う予測 JSON は、最適化で評価したモデル（または同じ設定）で出した予測であること。 |
+| **data dir** | 検証の `--data-dir` に含まれる race_data / odds_data が、最適化時の評価データと同一期間・同一ソースであること。 |
+| **evaluation_mode** | 検証の evaluation_mode（first_only / selected_bets）を、比較したい「買い方」と一致させる。optimize 側は「1本選んで step」なので、first_only と対応づけて比較する場合は first_only で検証する。 |
+| **betting strategy** | evaluation_mode=selected_bets で比較する場合は、予測 JSON を出したときの betting strategy（single / top_n / threshold / ev）を記録し、同じ戦略で出した予測同士で roi_pct を比較する。 |
+| **対象期間** | 最適化の year_month（または評価エピソードの期間）と、検証に使う prediction_date / data_dir の期間を揃える。 |
+
+config の固定: `improvement_config.json` の `evaluation.evaluation_mode` および `betting.strategy` を決め、最適化前後で変更しない。`optimization_config.ini` の `EVALUATION_MODE` は検証突き合わせ時の推奨値として improvement_config と一致させておく。
+
+### 乖離があるときに確認する項目
+
+| 確認項目 | 内容 |
+|----------|------|
+| **first_only / selected_bets の違い** | 検証が first_only なら「1位に100円」の集計。selected_bets なら「selected_bets の買い目ごとに100円」の集計。最適化の評価は「1本選んで step」なので、first_only と対応づけると解釈が近い。 |
+| **total_bet の算出方法** | 最適化: 環境の bet_amount × エピソード数。検証 first_only: 100円 × 結果ありレース数。検証 selected_bets: 100円 × (各レースの selected_bets 数) の合計。 |
+| **payout の定義** | いずれも「的中した組み合わせの (賭け金 × オッズ) の合計」。オッズが無いレースは payout に含めない（または 0）。 |
+| **fallback の有無** | strategy=ev のとき、オッズなし・閾値以上なしでフォールバックすると購入点数が変わり total_bet / roi_pct が変わる。検証結果に ev_fallback_used 等があれば確認する。 |
+
+### 運用時の確認手順
+
+1. 最適化実行後、結果 JSON の `best_trial.roi_pct` / `total_bet` / `total_payout` / `hit_count` を記録する。
+2. 同じモデル・同じデータ前提で予測を実行し、検証用の予測 JSON を用意する。
+3. `improvement_config.json` の `evaluation.evaluation_mode` を確認（first_only で突き合わせるなら first_only）。
+4. `verify_predictions --prediction <その予測JSON> --data-dir <同一data_dir> [--evaluation-mode first_only] --save` で検証を実行する。
+5. 保存した verification JSON の `summary.roi_pct` / `total_bet` / `total_payout` / `hit_count` と、手順1の値を並べ、乖離があれば上記「乖離があるときに確認する項目」を確認する。
+
+---
+
 ## 買い目選定（EV 戦略）
 
 - **strategy=ev**（betting_selector）: 候補に **probability** と **ratio**（または **odds**）がある場合、EV = 確率×オッズ−1 を計算し、**ev_threshold** 以上の組み合わせのみ購入。オッズがない候補は expected_value キーがあればそれで判定（後方互換）。該当なし・オッズなしの場合は **top_n** 点でフォールバック。
-- 予測ツールは候補に **ratio** を付与する（オッズあり時）。config の `betting.ev_threshold` で閾値を指定。将来、summary に EV 採用件数や採用基準を残す拡張が可能。
+- 予測ツールは候補に **ratio** を付与する（オッズあり時）。config の `betting.ev_threshold` で閾値を指定。
+- **EV ログ（比較・B案用）**: strategy=ev のとき、以下を記録する。
+  - **各レース（prediction）**: `ev_selection_metadata` に `ev_threshold`, `ev_adopted_count`, `fallback_used`, `fallback_count`, `purchased_count` を格納。
+  - **execution_summary**: `ev_selection` に全レースの集計（`ev_threshold`, `ev_adopted_count` 合計, `fallback_used_count` レース数, `fallback_count_total`, `purchased_count_total`）を格納。突き合わせ・ROI 乖離確認時に参照する。
 
 ---
 
