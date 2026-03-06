@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# 学習→予測→検証の一連実行。OS非依存の単体コマンドは docs/OS_PORTABILITY_STRATEGY.md 参照。
+# 例: python -m kyotei_predictor.cli.optimize --config optimization_config.ini
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

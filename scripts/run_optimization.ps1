@@ -59,27 +59,14 @@ if (Test-Path $ActivateScript) {
     Write-Warning "venv not found at $ActivatePath, using system python"
 }
 
-# 最適化実行
-$PyScript = "kyotei_predictor.tools.optimization.optimize_graduated_reward"
-$OptArgs = @("--n-trials", $TRIALS)
-switch ($MODE) {
-    "fast"   { $OptArgs += "--fast-mode" }
-    "medium" { $OptArgs += "--medium-mode" }
-    "normal" { }
-    default  { $OptArgs += "--fast-mode" }
-}
-if ($YEAR_MONTH) {
-    $OptArgs += "--year-month"
-    $OptArgs += $YEAR_MONTH
-}
-
+# 最適化実行（OS非依存: Python CLI に config を渡すだけ）
 $LogDirPath = Join-Path $ProjectRoot $LOG_DIR
 if (-not (Test-Path $LogDirPath)) { New-Item -ItemType Directory -Path $LogDirPath | Out-Null }
 $Timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
 $LogFile = Join-Path $LogDirPath "optimization_$Timestamp.log"
 
 Write-Host "Starting optimization... Log: $LogFile"
-& python -m $PyScript @OptArgs 2>&1 | Tee-Object -FilePath $LogFile
+& python -m kyotei_predictor.cli.optimize --config $ConfigPath 2>&1 | Tee-Object -FilePath $LogFile
 $OptExit = $LASTEXITCODE
 
 # 検証: evaluation_mode を optimization_config.ini の値で統一して実行

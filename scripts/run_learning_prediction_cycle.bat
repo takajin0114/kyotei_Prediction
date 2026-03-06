@@ -1,4 +1,5 @@
 @echo off
+REM Learning->Prediction->Verification. OS-independent single commands: see docs\OS_PORTABILITY_STRATEGY.md
 cd /d "%~dp0\.."
 chcp 65001 >nul
 setlocal

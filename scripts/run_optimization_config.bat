@@ -112,31 +112,10 @@ if errorlevel 1 (
     )
 )
 
-:: Start optimization
+:: Start optimization (OS-independent: single Python CLI call with config)
 echo Starting optimization...
 echo Settings: %MODE% mode, %TRIALS% trials, %YEAR_MONTH% data
-
-:: Build command
-set PYTHON_SCRIPT=kyotei_predictor\tools\optimization\optimize_graduated_reward.py
-set CMD_ARGS=--n-trials %TRIALS%
-
-:: Add mode-specific arguments
-if "%MODE%"=="fast" (
-    set CMD_ARGS=%CMD_ARGS% --fast-mode
-) else if "%MODE%"=="medium" (
-    set CMD_ARGS=%CMD_ARGS% --medium-mode
-) else if "%MODE%"=="normal" (
-    :: Normal mode - no additional flags
-) else (
-    echo Warning: Unknown mode '%MODE%', using fast mode as default
-    set CMD_ARGS=%CMD_ARGS% --fast-mode
-)
-
-if not "%YEAR_MONTH%"=="" (
-    set CMD_ARGS=%CMD_ARGS% --year-month %YEAR_MONTH%
-)
-
-echo Command: python %PYTHON_SCRIPT% %CMD_ARGS%
+echo Command: python -m kyotei_predictor.cli.optimize --config optimization_config.ini
 
 :: Execute optimization
 :: Get start time with better precision
@@ -144,8 +123,7 @@ for /f "tokens=1-2 delims=: " %%a in ('time /t') do set START_TIME=%%a:%%b
 echo Start time: %START_TIME% >> %LOG_FILE%
 echo [BATCH] Optimization started at: %START_TIME% >> %LOG_FILE%
 
-:: Execute the optimization script
-python %PYTHON_SCRIPT% %CMD_ARGS% >> %LOG_FILE% 2>&1
+python -m kyotei_predictor.cli.optimize --config optimization_config.ini >> %LOG_FILE% 2>&1
 set OPTIMIZATION_EXIT_CODE=%errorlevel%
 
 :: Get end time with better precision
