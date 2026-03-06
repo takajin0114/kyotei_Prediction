@@ -95,12 +95,16 @@ def _aggregate_ev_metadata(predictions: List[Dict]) -> Optional[Dict]:
     metas = [p.get("ev_selection_metadata") for p in predictions if p.get("ev_selection_metadata")]
     if not metas:
         return None
+    adopted_total = sum(m.get("ev_adopted_count", 0) for m in metas)
+    purchased_total = sum(m.get("purchased_count", 0) for m in metas)
     return {
         "ev_threshold": metas[0].get("ev_threshold"),
-        "ev_adopted_count": sum(m.get("ev_adopted_count", 0) for m in metas),
+        "ev_adopted_count": adopted_total,
+        "ev_selected_count": adopted_total,
         "fallback_used_count": sum(1 for m in metas if m.get("fallback_used")),
         "fallback_count_total": sum(m.get("fallback_count", 0) for m in metas),
-        "purchased_count_total": sum(m.get("purchased_count", 0) for m in metas),
+        "purchased_count_total": purchased_total,
+        "final_selected_count_total": purchased_total,
     }
 
 

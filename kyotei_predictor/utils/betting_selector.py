@@ -113,9 +113,11 @@ def _compute_ev(probability: float, odds_ratio: float) -> float:
 # EV メタデータのキー（execution_summary / ログ用）
 EV_META_THRESHOLD = "ev_threshold"
 EV_META_ADOPTED_COUNT = "ev_adopted_count"
+EV_META_SELECTED_COUNT = "ev_selected_count"  # ev_adopted_count の別名（比較・ログ用）
 EV_META_FALLBACK_USED = "fallback_used"
 EV_META_FALLBACK_COUNT = "fallback_count"
 EV_META_PURCHASED_COUNT = "purchased_count"
+EV_META_FINAL_SELECTED_COUNT = "final_selected_count"  # purchased_count の別名（比較・ログ用）
 
 
 def select_ev(
@@ -174,9 +176,11 @@ def select_ev(
         metadata = {
             EV_META_THRESHOLD: ev_threshold,
             EV_META_ADOPTED_COUNT: ev_adopted_count,
+            EV_META_SELECTED_COUNT: ev_adopted_count,
             EV_META_FALLBACK_USED: fallback_used,
             EV_META_FALLBACK_COUNT: fallback_count,
             EV_META_PURCHASED_COUNT: purchased_count,
+            EV_META_FINAL_SELECTED_COUNT: purchased_count,
         }
         return (out, metadata)
     return out

@@ -29,9 +29,18 @@
 
 ## 検証ツールの出力
 
-- **verify_predictions**: `run_verification` の返り値 `summary` に、従来キーに加え `hit_count`, `total_payout`, `roi_pct`, `evaluation_mode` を含む。
+- **verify_predictions**: `run_verification` の返り値 `summary` に、従来キーに加え `hit_count`, `total_payout`, `roi_pct`, `evaluation_mode`, `evaluation_mode_source` を含む。
 - **evaluation_mode**: config（`improvement_config.json` の `evaluation.evaluation_mode`）で指定可能。CLI の `--evaluation-mode` を指定した場合は CLI 優先。未指定時は config → 未設定時は `first_only`。比較条件を固定する場合は config に明示することを推奨。
 - **推奨出力先**: `outputs/verification_YYYYMMDD_HHMMSS.json`。`--save` で自動作成。`--output` は従来どおり任意パス指定。
+
+### 検証 JSON の保存形式と参照方法
+
+`--output` / `--save` で保存するファイル（検証 JSON）の形式は次のとおり。
+
+- **トップレベル**: `evaluation_mode`, `summary`, `details` の3キーを持つ。比較条件の追跡のため `evaluation_mode` をトップにも置く。
+- **推奨参照方法**: ツールやスクリプトから読むときは **`payload["summary"]`** と **`payload["details"]`** を参照すること。サマリー指標は `payload["summary"]`、レース別詳細は `payload["details"]`。比較条件は `payload["summary"]["evaluation_mode"]` および `payload["summary"]["evaluation_mode_source"]`（または `payload["evaluation_mode"]`）で確認できる。
+- **後方互換**: 以前は「`summary` と `details` のみ」の形式で保存していた場合がある。現形式は **`summary` と `details` をそのまま含む** ため、`payload["summary"]` / `payload["details"]` のみを参照する既存コードはそのまま動作する。トップレベルに `evaluation_mode` が増えただけである。逆に「トップレベルに `summary` しかない」と仮定しているコード（例: ルートが summary のキーだけを持つ）は、ルートが `evaluation_mode`, `summary`, `details` の3キーになっているため、**`payload["summary"]` を明示的に参照する**ように変更する必要がある。
+- **互換ヘルパー**: 検証 JSON を読むツールでは `kyotei_predictor.tools.verify_predictions.load_verification_payload(path)` を使うと、新旧どちらの形式でも `(summary, details)` を取得できる。大規模な互換レイヤーは不要なため、この1関数のみ提供する。
 
 ---
 
@@ -156,7 +165,7 @@ config の固定: `improvement_config.json` の `evaluation.evaluation_mode` お
 | **first_only / selected_bets の違い** | 検証が first_only なら「1位に100円」の集計。selected_bets なら「selected_bets の買い目ごとに100円」の集計。最適化の評価は「1本選んで step」なので、first_only と対応づけると解釈が近い。 |
 | **total_bet の算出方法** | 最適化: 環境の bet_amount × エピソード数。検証 first_only: 100円 × 結果ありレース数。検証 selected_bets: 100円 × (各レースの selected_bets 数) の合計。 |
 | **payout の定義** | いずれも「的中した組み合わせの (賭け金 × オッズ) の合計」。オッズが無いレースは payout に含めない（または 0）。 |
-| **fallback の有無** | strategy=ev のとき、オッズなし・閾値以上なしでフォールバックすると購入点数が変わり total_bet / roi_pct が変わる。検証結果に ev_fallback_used 等があれば確認する。 |
+| **fallback の有無** | strategy=ev のとき、オッズなし・閾値以上なしでフォールバックすると購入点数が変わり total_bet / roi_pct が変わる。予測結果の **execution_summary.ev_selection** で `fallback_used_count`（フォールバックしたレース数）と `fallback_count_total` を確認する。各 prediction の **ev_selection_metadata.fallback_used** でレース単位のフォールバック有無も追跡できる。 |
 
 ### 運用時の確認手順
 
@@ -173,8 +182,8 @@ config の固定: `improvement_config.json` の `evaluation.evaluation_mode` お
 - **strategy=ev**（betting_selector）: 候補に **probability** と **ratio**（または **odds**）がある場合、EV = 確率×オッズ−1 を計算し、**ev_threshold** 以上の組み合わせのみ購入。オッズがない候補は expected_value キーがあればそれで判定（後方互換）。該当なし・オッズなしの場合は **top_n** 点でフォールバック。
 - 予測ツールは候補に **ratio** を付与する（オッズあり時）。config の `betting.ev_threshold` で閾値を指定。
 - **EV ログ（比較・B案用）**: strategy=ev のとき、以下を記録する。
-  - **各レース（prediction）**: `ev_selection_metadata` に `ev_threshold`, `ev_adopted_count`, `fallback_used`, `fallback_count`, `purchased_count` を格納。
-  - **execution_summary**: `ev_selection` に全レースの集計（`ev_threshold`, `ev_adopted_count` 合計, `fallback_used_count` レース数, `fallback_count_total`, `purchased_count_total`）を格納。突き合わせ・ROI 乖離確認時に参照する。
+  - **各レース（prediction）**: `ev_selection_metadata` に `ev_threshold`, `ev_adopted_count` / `ev_selected_count`, `fallback_used`, `fallback_count`, `purchased_count` / `final_selected_count` を格納。
+  - **execution_summary**: `ev_selection` に全レースの集計（`ev_threshold`, `ev_adopted_count` / `ev_selected_count` 合計, `fallback_used_count` レース数, `fallback_count_total`, `purchased_count_total` / `final_selected_count_total`）を格納。突き合わせ・ROI 乖離確認時は **fallback 影響** をここで確認する。
 
 ---
 

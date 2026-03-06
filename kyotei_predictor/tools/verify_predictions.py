@@ -21,7 +21,7 @@ import json
 import os
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 
 # プロジェクトルート（kyotei_predictor の親＝outputs 等があるディレクトリ）
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -40,6 +40,21 @@ def _get_config_evaluation_mode() -> str:
 def _load_json(path: Path) -> dict:
     with open(path, "r", encoding="utf-8") as f:
         return json.load(f)
+
+
+def load_verification_payload(path: Union[Path, str]) -> Tuple[Dict, List[Dict]]:
+    """
+    検証 JSON ファイルを読み、summary と details を返す。
+    新旧どちらの形式（トップに evaluation_mode あり/なし）でも同じように参照できる後方互換ヘルパー。
+
+    Args:
+        path: 検証 JSON のパス（--output / --save で保存したファイル）。
+
+    Returns:
+        (summary, details) のタプル。
+    """
+    payload = _load_json(Path(path))
+    return (payload.get("summary", {}), payload.get("details", []))
 
 
 def get_actual_trifecta_from_race_data(race_data: dict) -> Optional[str]:
@@ -289,10 +304,14 @@ def main():
         return 1
 
     # CLI 指定があれば優先、未指定時は config の evaluation_mode（従来互換: first_only）
+    evaluation_mode_source = "cli" if args.evaluation_mode is not None else "config"
     evaluation_mode = args.evaluation_mode if args.evaluation_mode is not None else _get_config_evaluation_mode()
     if evaluation_mode not in ("first_only", "selected_bets"):
         evaluation_mode = "first_only"
+    # 比較条件の追跡: 実行時ログに evaluation_mode と由来を1行で出す
+    print(f"evaluation_mode={evaluation_mode} source={evaluation_mode_source}")
     summary, details = run_verification(pred_path, data_dir, evaluation_mode=evaluation_mode)
+    summary["evaluation_mode_source"] = evaluation_mode_source  # 保存JSONで比較条件の由来を追跡
 
     print("=== Verification ===")
     print(f"Prediction: {summary['prediction_file']}")
