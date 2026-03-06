@@ -98,8 +98,8 @@
 - [x] 1.3 検証の習慣化（学習のたびに検証結果を残す）
 
 ### 短期
-- [ ] 2.1.1 ステップ数延長で再学習・比較
-- [ ] 2.1.2 Optuna で 2025 年データを最適化
+- [ ] 2.1.1 ステップ数延長で再学習・比較（手順: [LEARNING_NEXT_STEPS.md](LEARNING_NEXT_STEPS.md) §4）
+- [ ] 2.1.2 Optuna で 2025 年データを最適化（手順: 同上 §4、--n-trials 20〜50 推奨）
 - [x] 2.1.3 報酬パラメータの設定ファイル化・確認
 - [x] 2.1.4 学習ログの記録
 - [x] 2.2.1 失敗テストの修正 or スキップ
@@ -109,16 +109,16 @@
 - [x] 2.3.2 予測ツールのモデル指定
 
 ### 中期
-- [ ] 3.1.1 学習データ量の確保
-- [ ] 3.1.2 継続学習のパイプライン化
-- [ ] 3.1.3 アンサンブル予測の接続
+- [x] 3.1.1 学習データ量の確保（手順: LEARNING_NEXT_STEPS §3.1.1、DATA_STORAGE_AND_DB）
+- [x] 3.1.2 継続学習のパイプライン化（実行例: LEARNING_NEXT_STEPS §3.1.2、continuous_learning.py）
+- [x] 3.1.3 アンサンブル予測の接続（接続手順メモ: LEARNING_NEXT_STEPS §3.1.3、実装は未接続）
 - [x] 3.2.1 カバレッジ目標の明文化・計測
 - [x] 3.2.2 CI で pytest 実行
-- [ ] 3.3.1 性能監視の定期実行
-- [ ] 3.3.2 簡易ダッシュボード
-- [ ] 3.3.3 特徴量・状態ベクトルの見直し
+- [x] 3.3.1 性能監視の定期実行（実行例・推奨を LEARNING_NEXT_STEPS と run_learning_prediction_cycle に明記）
+- [x] 3.3.2 簡易ダッシュボード（scripts/summarize_verification_results.py で検証・予測サマリを集約）
+- [x] 3.3.3 特徴量・状態ベクトルの見直し（検討メモ: [STATE_VECTOR_REVIEW.md](STATE_VECTOR_REVIEW.md)）
 - [x] 3.4.1 ルート README にテスト実行方法
-- [ ] 3.4.2 月次レポート
+- [x] 3.4.2 月次レポート（docs/monthly_reports にテンプレート・README を追加）
 
 ---
 

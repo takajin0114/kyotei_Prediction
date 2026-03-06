@@ -73,6 +73,9 @@ else
 fi
 
 echo
+echo "[推奨] 性能監視: 学習・検証後に performance_monitor で的中率・報酬を記録する場合は以下を実行"
+echo "  ${PYTHON_BIN} -m kyotei_predictor.tools.monitoring.performance_monitor"
+echo
 echo "========================================"
 echo "Cycle completed. Check outputs/predictions_${PREDICT_DATE}.json"
 echo "Verification log: ${VERIFY_LOG}"

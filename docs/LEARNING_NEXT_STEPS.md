@@ -58,9 +58,37 @@
 | # | やること | 内容 |
 |---|----------|------|
 | **3.1** | **学習データ量の確保** | 2026 年データの追加取得・DB 投入を行い、学習に使うペア数を維持・増やす。 |
+
+**3.1.1 手順（2026年データを追加する場合）**: (1) バッチ取得で 2026 年を取得 → `data/raw/2026-MM/` に JSON 保存。(2) `import_raw_to_db` で DB に投入（[DATA_STORAGE_AND_DB.md](DATA_STORAGE_AND_DB.md) のコマンド例参照）。(3) 学習で `--date-from 2026-01-01 --date-to 2026-12-31` を指定して利用。
+
 | **3.2** | **継続学習の利用** | 既存の best_model を初期値にした継続学習（`continuous_learning`）を、月次バッチや手動スクリプトのオプションとして組み込む。 |
+
+**3.1.2 継続学習の実行例**: `kyotei_predictor.tools.continuous.continuous_learning` の `ContinuousLearningSystem` を使う。best_model を読み込み、新しいデータで追加学習する。
+
+```python
+from kyotei_predictor.tools.continuous.continuous_learning import create_continuous_learning_from_best_model
+
+cls = create_continuous_learning_from_best_model("optuna_models/graduated_reward_best/best_model.zip")
+cls.load_best_model()
+cls.continue_learning(new_data_dir="kyotei_predictor/data/raw", additional_steps=50000)
+# 保存は別途 model.save("path.zip") 等
+```
+
+バッチや run_learning_prediction_cycle から呼ぶ場合は、上記をスクリプト化するか、既存の `python kyotei_predictor/tools/continuous/continuous_learning.py` の利用を検討する（[improvement_implementation_summary.md](improvement_implementation_summary.md) 参照）。
+
 | **3.3** | **アンサンブル予測の接続** | 複数モデル（別トライアル or 別年月）を `ensemble_model` で読み込み、`prediction_tool` からアンサンブル予測を出せるようにする。 |
+
+**3.1.3 接続の現状と手順**: `EnsembleTrifectaModel`（`tools/ensemble/ensemble_model.py`）は複数 PPO の重み付き投票で action を返す。現状 `prediction_tool` は単一 `PPO` のみを `model` に持つ。接続するには、(1) prediction_tool が「単一 PPO または EnsembleTrifectaModel」のどちらでも受け付けるようにする、(2) 状態ベクトルを各モデルに渡し、確率（または action）を集約して 120 通りに変換する、という拡張が必要。実装時は `PredictionTool.__init__(model_path=...)` で複数パスを指定した場合に EnsembleTrifectaModel を組み立て、`predict_trifecta_probabilities_from_data` 内で ensemble.predict(state) を使う分岐を追加する。
+
 | **3.4** | **性能監視の定期実行** | 学習完了後に `performance_monitor` を実行し、的中率・平均報酬・安定性を記録する。 |
+
+**性能監視の実行例**（学習・検証サイクルのあとに推奨）:
+
+```bash
+python -m kyotei_predictor.tools.monitoring.performance_monitor
+```
+
+評価結果（eval_results）を渡してメトリクスを追跡する場合は、スクリプト内で `PerformanceMonitor` を利用する。出力は `kyotei_predictor/monitoring` に保存される。
 
 **成果**: 単一モデル以上の安定性・精度と、運用の見える化ができる。
 
@@ -75,19 +103,23 @@
 python -m kyotei_predictor.tools.batch.train_with_graduated_reward \
   --data-source db --date-from 2025-01-01 --date-to 2025-12-31
 
-# 100 万ステップに延長
+# 100 万ステップに延長（2.1.1 ステップ数延長）
 python -m kyotei_predictor.tools.batch.train_with_graduated_reward \
   --data-source db --date-from 2025-01-01 --date-to 2025-12-31 --total-timesteps 1000000
 ```
 
-### Optuna 最適化（DB・2025 年）
+**2.1.1 比較の記録**: 延長して再学習したら、同じ条件で予測 → `verify_predictions` を実行し、的中率・回収率を 50 万ステップ時と比較する。結果は `docs/monthly_reports/YYYY-MM.md` または `logs/` に残す。
+
+### Optuna 最適化（DB・2025 年）（2.1.2）
 
 ```bash
 python -m kyotei_predictor.tools.optimization.optimize_graduated_reward \
   --data-source db --db-path kyotei_predictor/data/kyotei_races.sqlite \
   --date-from 2025-01-01 --date-to 2025-12-31 \
-  --fast-mode --n-trials 20
+  --n-trials 20
 ```
+
+本番では `--n-trials` を 20〜50 にするとよい。最良トライアルのモデルはスクリプトが保存するので、良ければ `optuna_models/graduated_reward_best/best_model.zip` にコピーして予測ツールから利用する。
 
 ### 予測 → 検証（ベースライン計測）
 

@@ -44,9 +44,11 @@
 
 | ドキュメント | 役割 |
 |--------------|------|
-| [LEARNING_NEXT_STEPS.md](LEARNING_NEXT_STEPS.md) | **学習**の次にやること（評価・検証、ステップ数延長、Optuna、運用） |
+| [LEARNING_NEXT_STEPS.md](LEARNING_NEXT_STEPS.md) | **学習**の次にやること（評価・検証、ステップ数延長、Optuna、性能監視・運用） |
 | [NEXT_STEPS.md](NEXT_STEPS.md) | **テスト・CI・リポジトリ**の次にやること（失敗テスト修正、カバレッジ、pytest-mock 等） |
 | [PREDICTION_ACCURACY_IMPROVEMENT_TODO.md](PREDICTION_ACCURACY_IMPROVEMENT_TODO.md) | **精度向上**のフェーズ別タスク（測定・学習強化・モデル拡張・運用監視） |
+| [monthly_reports/README.md](monthly_reports/README.md) | **月次レポート**（学習設定・使用データ・検証結果を 1 ファイルにまとめるテンプレート） |
+| [STATE_VECTOR_REVIEW.md](STATE_VECTOR_REVIEW.md) | **特徴量・状態ベクトル見直し**（3.3.3 検討メモ：展示走・天候・同一定義） |
 
 ---
 

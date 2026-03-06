@@ -17,6 +17,7 @@
 | **fetch_5year_plan.json** | **5年分取得の対象月一覧（2021-01〜2026-02）。** |
 | check_batch_fetch_stuck.sh | バッチ取得のスタック検知（ログ・プロセス監視） |
 | cleanup_old_files.bat | 古いログ・Optuna ファイルの削除 |
+| **summarize_verification_results.py** | **簡易ダッシュボード**（3.3.2）: logs/ と outputs/ を集約して検証・予測サマリを表示 |
 
 **削除済み（.sh または Python で代替）**: fetch_1month.bat, fetch_5years.bat, fetch_reperiod.bat → 1ヶ月は `run_batch_fetch_1month.sh`、期間・5年は `run_fetch_5year_chunked.sh` または `python -m kyotei_predictor.tools.batch.fetch_5year_chunked` を使用。
 
@@ -38,6 +39,10 @@ scripts\run_learning_prediction_cycle.bat
 
 # Linux / macOS（環境変数で上書き）
 VENV_PATH=.venv-cycle YEAR_MONTH=2024-05 PREDICT_DATE=2024-05-01 ./scripts/run_learning_prediction_cycle.sh
+
+# 簡易ダッシュボード（検証ログ・予測結果のサマリ）
+python scripts/summarize_verification_results.py
+python scripts/summarize_verification_results.py --format json
 
 # Colab（Driveマウント済み想定）
 python scripts/run_colab_learning_cycle.py --drive-root /content/drive/MyDrive/kyotei_prediction --year-month 2024-05 --minimal --predict-date 2024-05-01
