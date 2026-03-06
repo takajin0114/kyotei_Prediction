@@ -22,6 +22,7 @@
 - **予測結果ファイル**: 例: `outputs/predictions_YYYY-MM-DD.json`
 - **verify_predictions の結果**: 1位/Top3/Top10 的中率・回収率など（ログまたは数値）
 - **検証ログのパス**: 例: `logs/verification_YYYY-MM-DD_*.txt`
+- **EV 採用ログ（strategy=ev 時）**: ROI 解釈時は `execution_summary.ev_selection` を確認すること。ev_threshold / fallback_used_count / final_selected_count_total を記録すると比較しやすい。
 
 ## 4. 性能監視（任意）
 

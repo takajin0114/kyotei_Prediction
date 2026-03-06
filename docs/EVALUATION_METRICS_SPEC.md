@@ -184,6 +184,7 @@ config の固定: `improvement_config.json` の `evaluation.evaluation_mode` お
 - **EV ログ（比較・B案用）**: strategy=ev のとき、以下を記録する。
   - **各レース（prediction）**: `ev_selection_metadata` に `ev_threshold`, `ev_adopted_count` / `ev_selected_count`, `fallback_used`, `fallback_count`, `purchased_count` / `final_selected_count` を格納。
   - **execution_summary**: `ev_selection` に全レースの集計（`ev_threshold`, `ev_adopted_count` / `ev_selected_count` 合計, `fallback_used_count` レース数, `fallback_count_total`, `purchased_count_total` / `final_selected_count_total`）を格納。突き合わせ・ROI 乖離確認時は **fallback 影響** をここで確認する。
+- **ROI 解釈時は ev_selection を確認すること**。strategy=ev の場合、fallback_used_count が大きいと total_bet / roi_pct がフォールバック分だけ変動する。月次レポートや A-B 比較では `execution_summary.ev_selection`（ev_threshold, fallback_used_count, final_selected_count_total）を併記すると解釈が安定する。
 
 ---
 

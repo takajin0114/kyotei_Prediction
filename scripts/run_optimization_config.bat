@@ -21,6 +21,7 @@ for /f "tokens=1,2 delims==" %%a in (%CONFIG_FILE%) do (
     if "%%a"=="MODE" set MODE=%%b
     if "%%a"=="TRIALS" set TRIALS=%%b
     if "%%a"=="YEAR_MONTH" set YEAR_MONTH=%%b
+    if "%%a"=="EVALUATION_MODE" set EVALUATION_MODE=%%b
     if "%%a"=="VENV_PATH" set VENV_PATH=%%b
     if "%%a"=="LOG_DIR" set LOG_DIR=%%b
     if "%%a"=="CLEANUP_DAYS" set CLEANUP_DAYS=%%b
@@ -36,6 +37,7 @@ set YEAR_MONTH=2024-01
 set VENV_PATH=venv
 set LOG_DIR=logs
 set CLEANUP_DAYS=7
+if not defined EVALUATION_MODE set EVALUATION_MODE=first_only
 
 :check_config
 :: Display current settings
@@ -43,6 +45,7 @@ echo Current Settings:
 echo   Mode: %MODE%
 echo   Trials: %TRIALS%
 echo   Year-Month: %YEAR_MONTH%
+echo   Evaluation Mode: %EVALUATION_MODE%
 echo   Virtual Environment: %VENV_PATH%
 echo   Log Directory: %LOG_DIR%
 echo   Cleanup Days: %CLEANUP_DAYS% days

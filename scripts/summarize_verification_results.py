@@ -55,12 +55,26 @@ def find_prediction_jsons(outputs_dir: Path) -> list[Path]:
 
 
 def summarize_predictions(path: Path) -> dict:
-    """1 ファイルから予測日・レース数だけ取得。"""
-    out = {"file": path.name, "path": str(path), "prediction_date": None, "total_races": 0}
+    """1 ファイルから予測日・レース数・EV採用ログ（ev_selection）を取得。"""
+    out = {
+        "file": path.name,
+        "path": str(path),
+        "prediction_date": None,
+        "total_races": 0,
+        "ev_selection": None,
+    }
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
         out["prediction_date"] = data.get("prediction_date")
         out["total_races"] = len(data.get("predictions", []))
+        es = data.get("execution_summary") or {}
+        ev_sel = es.get("ev_selection")
+        if ev_sel:
+            out["ev_selection"] = {
+                "ev_threshold": ev_sel.get("ev_threshold"),
+                "fallback_used_count": ev_sel.get("fallback_used_count"),
+                "final_selected_count_total": ev_sel.get("final_selected_count_total"),
+            }
     except Exception:
         pass
     return out
@@ -101,6 +115,16 @@ def run(project_root: Path, format: str) -> None:
         print("|--------|----------|----------|")
         for p in predictions:
             print(f"| {p.get('prediction_date') or '-'} | {p.get('total_races', 0)} | {p['file']} |")
+        ev_predictions = [p for p in predictions if p.get("ev_selection")]
+        if ev_predictions:
+            print()
+            print("## EV 採用ログ（strategy=ev の予測）")
+            print("ROI 解釈時は ev_selection を確認すること。")
+            print("| ファイル | ev_threshold | fallback_used_count | final_selected_count_total |")
+            print("|----------|--------------|---------------------|---------------------------|")
+            for p in ev_predictions:
+                es = p["ev_selection"]
+                print(f"| {p['file']} | {es.get('ev_threshold', '-')} | {es.get('fallback_used_count', '-')} | {es.get('final_selected_count_total', '-')} |")
     else:
         print("## 予測結果一覧")
         print("（`outputs/predictions_*.json` がありません）")

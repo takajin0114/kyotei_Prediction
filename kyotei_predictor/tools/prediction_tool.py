@@ -1360,6 +1360,9 @@ def main():
             if 'data_fetched' in result['execution_summary']:
                 tool.utils.safe_print(f"データ取得: {'あり' if result['execution_summary']['data_fetched'] else 'なし'}")
                 tool.utils.safe_print(f"予測のみ: {'あり' if result['execution_summary']['prediction_only'] else 'なし'}")
+            ev_sel = result.get("execution_summary", {}).get("ev_selection")
+            if ev_sel:
+                tool.utils.safe_print(f"EV採用: ev_threshold={ev_sel.get('ev_threshold')} fallback_used_count={ev_sel.get('fallback_used_count')} final_selected_count_total={ev_sel.get('final_selected_count_total')}")
             tool.utils.safe_print(f"結果ファイル: {output_path}")
         else:
             tool.utils.safe_print("予測結果の保存に失敗しました")

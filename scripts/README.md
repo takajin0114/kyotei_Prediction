@@ -5,6 +5,7 @@
 | ファイル | 説明 |
 |----------|------|
 | run_optimization_config.bat | 最適化（optimization_config.ini 参照・推奨） |
+| **run_optimization.ps1** | 最適化＋検証（EVALUATION_MODE を読み verify_predictions に --evaluation-mode を渡して比較条件を統一） |
 | run_optimization_batch.bat | 最適化（中速・20試行で即実行） |
 | run_optimization_simple.bat | 最適化（簡易版） |
 | run_learning_prediction_cycle.bat | 学習→予測一括（test_raw） |
