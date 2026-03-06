@@ -2,6 +2,8 @@
 
 **更新**: 2026-03
 
+**背景・ロードマップ**: A案（現行）から B案（予測と買い目選定分離）へ移行する判断の背景は [ROADMAP_A_TO_B_BACKGROUND.md](ROADMAP_A_TO_B_BACKGROUND.md) を参照。
+
 ---
 
 ## 1. 背景と目的
