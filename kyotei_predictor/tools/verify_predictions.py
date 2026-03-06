@@ -6,14 +6,20 @@
 予測JSONと照合して 1位的中率 / Top3・Top10・Top20 的中率、
 およびオッズがある場合は回収率を算出する。
 
+標準出力形式（A/B比較用）:
+  summary に hit_count, total_bet, total_payout, roi_pct を含める。
+  評価ツール（evaluate_graduated_reward_model）の metrics と同一キーで比較可能。
+  推奨出力先: outputs/verification_YYYYMMDD_HHMMSS.json（--save で自動作成）。
+
 使い方:
   python -m kyotei_predictor.tools.verify_predictions --prediction outputs/predictions_2024-05-01.json --data-dir kyotei_predictor/data/test_raw
-  python -m kyotei_predictor.tools.verify_predictions --prediction outputs/predictions_2024-05-01.json
+  python -m kyotei_predictor.tools.verify_predictions --prediction outputs/predictions_2024-05-01.json --save
 """
 
 import argparse
 import json
 import os
+from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -159,6 +165,8 @@ def run_verification(
     roi_actual = (total_payout / total_bet * 100) if total_bet else 0.0
     roi_our_first = (total_payout_first / total_bet * 100) if total_bet else 0.0
 
+    # 評価ツール（metrics）と比較可能な共通キー（A/B比較・ログ標準化用）
+    # hit_count: 的中件数, total_bet/total_payout: 投資額/払戻額, roi_pct: 回収率(%)
     summary = {
         "prediction_file": str(prediction_path),
         "prediction_date": prediction_date,
@@ -177,6 +185,11 @@ def run_verification(
         "roi_pct_if_bet_actual": round(roi_actual, 2),
         "total_payout_our_1st": round(total_payout_first, 2),
         "roi_pct_our_1st": round(roi_our_first, 2),
+        # 共通基盤: 評価 metrics と同じキーで比較可能（1位買いの場合）
+        "hit_count": hit_rank1,
+        "total_payout": round(total_payout_first, 2),
+        "roi_pct": round(roi_our_first, 2),
+        "evaluation_mode": "first_only",  # どの買い方で算出したか（将来 selected_bets 等と区別）
     }
     return summary, details
 
@@ -187,7 +200,9 @@ def main():
                         help="Path to prediction JSON")
     parser.add_argument("--data-dir", "-d", type=str, default="kyotei_predictor/data/test_raw",
                         help="Directory containing race_data_*.json (and optionally odds_data_*.json)")
-    parser.add_argument("--output", "-o", type=str, help="Optional: write summary JSON here")
+    parser.add_argument("--output", "-o", type=str, help="Optional: write summary+details JSON to this path")
+    parser.add_argument("--save", action="store_true",
+                        help="Save result to outputs/verification_YYYYMMDD_HHMMSS.json (A/B比較用推奨)")
     parser.add_argument("--verbose", "-v", action="store_true", help="Print per-race details")
     args = parser.parse_args()
 
@@ -232,6 +247,16 @@ def main():
         with open(out_path, "w", encoding="utf-8") as f:
             json.dump({"summary": summary, "details": details}, f, ensure_ascii=False, indent=2)
         print(f"Wrote: {out_path}")
+
+    # 検証ログ標準化: 推奨出力先に保存（--save）
+    if args.save:
+        out_dir = PROJECT_ROOT / "outputs"
+        out_dir.mkdir(parents=True, exist_ok=True)
+        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+        save_path = out_dir / f"verification_{ts}.json"
+        with open(save_path, "w", encoding="utf-8") as f:
+            json.dump({"summary": summary, "details": details}, f, ensure_ascii=False, indent=2)
+        print(f"Saved (--save): {save_path}")
 
     return 0
 

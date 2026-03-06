@@ -288,6 +288,7 @@ B案試作や移行比較のために整えておくタスク。
 
 ## 関連ドキュメント
 
+- [EVALUATION_METRICS_SPEC.md](EVALUATION_METRICS_SPEC.md) — **評価・検証の指標定義**（hit_rate, roi_pct, total_bet, total_payout, hit_count の共通キーと比較の注意）
 - [ROADMAP_A_TO_B_BACKGROUND.md](ROADMAP_A_TO_B_BACKGROUND.md) — 背景と「A案で今やること／やらないこと」
 - [ROI_AND_RESPONSIBILITY_SEPARATION.md](ROI_AND_RESPONSIBILITY_SEPARATION.md) — 技術方針と既存実装の調査
 - [CHANGELOG_ROI_RESPONSIBILITY.md](CHANGELOG_ROI_RESPONSIBILITY.md) — 評価指標分離・betting の変更差分

@@ -41,6 +41,8 @@
 | `data/race_db.py` | 学習用DB |
 | `tools/verify_predictions.py` 等 | 検証・バッチ |
 
+**責務分離（A→B 共通基盤）**: 予測は `all_combinations`（候補とスコア）まで。買い目選定は `tools/betting` の `select_bets` の責務。評価指標は `tools/evaluation/metrics` で共通化（[EVALUATION_METRICS_SPEC](../../docs/EVALUATION_METRICS_SPEC.md) 参照）。
+
 ---
 
 ## 実行方法（今後この手順で実行できる）

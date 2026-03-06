@@ -53,7 +53,7 @@ kyotei_Prediction/                    # プロジェクトルート（ここで 
 - **ROI 重視で最適化**: `improvement_config.json` の `evaluation.optimize_for` を `roi` に変更してから `optimize_graduated_reward` を実行。
 - **買い目選定を切り替え**: `improvement_config.json` の `betting.strategy` を `single` / `top_n` / `threshold` に変更。予測時に `--include-selected-bets` を付けると結果に `selected_bets` が含まれる。
   - 例: `python -m kyotei_predictor.tools.prediction_tool --predict-date 2024-05-01 --include-selected-bets`
-- **検証で ROI を確認**: `verify_predictions` の出力に「ROI (bet on 1st prediction)」「Reference (if bet on actual)」が含まれる。結果を JSON で保存する場合は `--output outputs/verification.json`。
+- **検証で ROI を確認**: `verify_predictions` の出力に「ROI (bet on 1st prediction)」「Reference (if bet on actual)」が含まれる。結果を JSON で保存: `--output パス` または **`--save`** で `outputs/verification_YYYYMMDD_HHMMSS.json` に自動作成（A/B比較用推奨）。指標定義は [EVALUATION_METRICS_SPEC.md](EVALUATION_METRICS_SPEC.md) を参照。
 
 詳細な方針は [ROI_AND_RESPONSIBILITY_SEPARATION.md](ROI_AND_RESPONSIBILITY_SEPARATION.md)、変更差分は [CHANGELOG_ROI_RESPONSIBILITY.md](CHANGELOG_ROI_RESPONSIBILITY.md) を参照。
 

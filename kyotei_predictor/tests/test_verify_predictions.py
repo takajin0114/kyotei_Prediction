@@ -62,3 +62,36 @@ class TestRunVerification:
         assert isinstance(details, list)
         assert "races_with_result" in summary
         assert summary["races_with_result"] == 0
+
+    def test_summary_contains_standard_metrics_keys_for_ab_comparison(self, tmp_path):
+        """検証サマリーに共通基盤キー（hit_count, total_bet, total_payout, roi_pct, evaluation_mode）が含まれること"""
+        pred = {
+            "prediction_date": "2024-01-01",
+            "predictions": [
+                {
+                    "venue": "KIRYU",
+                    "race_number": 1,
+                    "all_combinations": [{"combination": "1-2-3", "probability": 0.1}],
+                }
+            ],
+        }
+        pred_path = tmp_path / "pred.json"
+        pred_path.write_text(json.dumps(pred), encoding="utf-8")
+        race_data = {
+            "race_records": [
+                {"pit_number": 1, "arrival": 1},
+                {"pit_number": 2, "arrival": 2},
+                {"pit_number": 3, "arrival": 3},
+                {"pit_number": 4, "arrival": 4},
+            ]
+        }
+        (tmp_path / "race_data_2024-01-01_KIRYU_R1.json").write_text(
+            json.dumps(race_data), encoding="utf-8"
+        )
+        summary, _ = vp.run_verification(pred_path, tmp_path)
+        assert summary["races_with_result"] == 1
+        assert "hit_count" in summary
+        assert "total_bet" in summary
+        assert "total_payout" in summary
+        assert "roi_pct" in summary
+        assert summary.get("evaluation_mode") == "first_only"
