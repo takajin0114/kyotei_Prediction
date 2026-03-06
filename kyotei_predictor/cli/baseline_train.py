@@ -33,8 +33,15 @@ def main() -> int:
         help="モデル保存先。未指定時は outputs/baseline_b_model.joblib",
     )
     parser.add_argument("--max-samples", type=int, default=5000, help="最大学習サンプル数")
-    parser.add_argument("--n-estimators", type=int, default=50, help="RandomForest の本数")
+    parser.add_argument("--n-estimators", type=int, default=50, help="本数（sklearn / lightgbm / xgboost 共通）")
     parser.add_argument("--max-depth", type=int, default=10, help="最大深さ")
+    parser.add_argument(
+        "--model-type",
+        type=str,
+        choices=("sklearn", "lightgbm", "xgboost"),
+        default="sklearn",
+        help="モデル種別。lightgbm/xgboost 未導入時は sklearn にフォールバック",
+    )
     args = parser.parse_args()
 
     data_dir = args.data_dir or PROJECT_ROOT / "kyotei_predictor" / "data" / "test_raw"
@@ -52,6 +59,7 @@ def main() -> int:
             max_samples=args.max_samples,
             n_estimators=args.n_estimators,
             max_depth=args.max_depth,
+            model_type=args.model_type,
         )
         print("学習完了:", summary)
         return 0

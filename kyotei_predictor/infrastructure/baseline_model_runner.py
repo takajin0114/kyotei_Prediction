@@ -29,34 +29,73 @@ def trifecta_to_class_index(combination: str) -> int:
     raise ValueError(f"combination not in TRIFECTA_ORDER: {combination}")
 
 
+# モデル種別（ログ・保存結果に残す）
+MODEL_TYPE_SKLEARN = "sklearn"
+MODEL_TYPE_LIGHTGBM = "lightgbm"
+MODEL_TYPE_XGBOOST = "xgboost"
+
+
 def create_baseline_model(
-    use_sklearn: bool = True,
+    model_type: str = "sklearn",
     n_estimators: int = 50,
     max_depth: int = 10,
     random_state: int = 42,
+    use_sklearn: Optional[bool] = None,
 ) -> Any:
     """
     ベースライン用の分類器を生成する。
 
-    現状は scikit-learn の RandomForestClassifier。
-    TODO: use_sklearn=False で LightGBM / XGBoost を返すオプションを追加する。
+    model_type: "sklearn" | "lightgbm" | "xgboost"。
+    lightgbm / xgboost は未導入時は sklearn にフォールバックする。
+    use_sklearn: 非推奨。model_type を優先する。
 
     Returns:
         fit(X, y) と predict_proba(X) を持つオブジェクト
     """
-    if use_sklearn:
+    if use_sklearn is False:
+        model_type = MODEL_TYPE_LIGHTGBM
+    elif use_sklearn is True:
+        model_type = MODEL_TYPE_SKLEARN
+    model_type = (model_type or MODEL_TYPE_SKLEARN).strip().lower()
+
+    if model_type == MODEL_TYPE_LIGHTGBM:
         try:
-            from sklearn.ensemble import RandomForestClassifier
-            return RandomForestClassifier(
+            import lightgbm as lgb
+            return lgb.LGBMClassifier(
                 n_estimators=n_estimators,
                 max_depth=max_depth,
                 random_state=random_state,
+                verbosity=-1,
             )
         except ImportError:
-            from sklearn.linear_model import LogisticRegression
-            return LogisticRegression(max_iter=500, random_state=random_state)
-    # TODO: import lightgbm / xgboost and return LGBMClassifier or XGBClassifier
-    raise NotImplementedError("use_sklearn=False は未実装（LightGBM/XGBoost 用）")
+            pass
+
+    if model_type == MODEL_TYPE_XGBOOST:
+        try:
+            import xgboost as xgb
+            kwargs = dict(
+                n_estimators=n_estimators,
+                max_depth=max_depth,
+                random_state=random_state,
+                verbosity=0,
+            )
+            if hasattr(xgb.XGBClassifier, "eval_metric"):
+                kwargs["eval_metric"] = "mlogloss"
+            return xgb.XGBClassifier(**kwargs)
+        except ImportError:
+            pass
+
+    # sklearn（デフォルトまたは lightgbm/xgboost 未導入時のフォールバック）
+    try:
+        from sklearn.ensemble import RandomForestClassifier
+        return RandomForestClassifier(
+            n_estimators=n_estimators,
+            max_depth=max_depth,
+            random_state=random_state,
+        )
+    except ImportError:
+        from sklearn.linear_model import LogisticRegression
+        return LogisticRegression(max_iter=500, random_state=random_state)
 
 
 def predict_proba_120(model: Any, state: np.ndarray) -> np.ndarray:

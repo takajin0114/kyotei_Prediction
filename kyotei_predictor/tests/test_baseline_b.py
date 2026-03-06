@@ -95,3 +95,33 @@ def test_baseline_train_and_predict(tmp_path):
         assert pred["all_combinations"][0]["combination"] == "1-2-3"
         assert "probability" in pred["all_combinations"][0]
         assert "rank" in pred["all_combinations"][0]
+
+
+def test_baseline_predict_with_selected_bets(tmp_path):
+    """include_selected_bets=True で selected_bets が付与されること"""
+    from kyotei_predictor.application.baseline_train_usecase import run_baseline_train
+    from kyotei_predictor.application.baseline_predict_usecase import run_baseline_predict
+    import json
+
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+    for i in range(2):
+        race = _minimal_race_data_with_result()
+        (data_dir / f"race_data_2024-05-01_KIRYU_R{i+1}.json").write_text(
+            json.dumps(race, ensure_ascii=False)
+        )
+    model_path = tmp_path / "m.joblib"
+    run_baseline_train(data_dir=data_dir, model_save_path=model_path, max_samples=10, n_estimators=3, max_depth=2)
+    result = run_baseline_predict(
+        model_path=model_path,
+        data_dir=data_dir,
+        prediction_date="2024-05-01",
+        include_selected_bets=True,
+        betting_strategy="top_n",
+        betting_top_n=2,
+    )
+    assert result["execution_summary"].get("betting_strategy") == "top_n"
+    for pred in result["predictions"]:
+        assert "selected_bets" in pred
+        assert isinstance(pred["selected_bets"], list)
+        assert len(pred["selected_bets"]) <= 2

@@ -48,6 +48,15 @@ def main() -> int:
         default=None,
         help="対象会場（カンマ区切り）。未指定で全レース",
     )
+    parser.add_argument(
+        "--include-selected-bets",
+        action="store_true",
+        help="既存 betting_selector で selected_bets を付与（verify evaluation_mode=selected_bets 用）",
+    )
+    parser.add_argument("--strategy", type=str, default=None, help="買い目戦略: single / top_n / threshold / ev")
+    parser.add_argument("--top-n", type=int, default=None, help="strategy=top_n の N")
+    parser.add_argument("--score-threshold", type=float, default=None, help="strategy=threshold の閾値")
+    parser.add_argument("--ev-threshold", type=float, default=None, help="strategy=ev の閾値")
     args = parser.parse_args()
 
     data_dir = args.data_dir or PROJECT_ROOT / "kyotei_predictor" / "data" / "test_raw"
@@ -70,6 +79,11 @@ def main() -> int:
             data_dir=data_dir,
             prediction_date=args.predict_date,
             venues=venues,
+            include_selected_bets=args.include_selected_bets,
+            betting_strategy=args.strategy,
+            betting_top_n=args.top_n,
+            betting_score_threshold=args.score_threshold,
+            betting_ev_threshold=args.ev_threshold,
         )
     except Exception as e:
         print(f"エラー: {e}")
