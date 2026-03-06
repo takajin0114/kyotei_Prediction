@@ -10,6 +10,7 @@ include_selected_bets=True で既存 betting_selector を適用し、selected_be
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from kyotei_predictor.domain.verification_models import get_odds_for_combination
 from kyotei_predictor.infrastructure.file_loader import load_json
 from kyotei_predictor.infrastructure.baseline_model_repository import (
     load_baseline_model,
@@ -35,6 +36,30 @@ def _get_betting_params_from_config() -> Dict[str, Any]:
         }
     except Exception:
         return {"strategy": "single", "top_n": 3, "score_threshold": 0.05, "ev_threshold": 0.0}
+
+
+def _attach_odds_to_combinations(
+    all_combinations: List[Dict[str, Any]],
+    data_dir: Path,
+    prediction_date: str,
+    venue: str,
+    race_number: int,
+) -> None:
+    """all_combinations の各要素に ratio（オッズ）を付与する。オッズがない場合は付与しない。in-place。"""
+    odds_file = data_dir / f"odds_data_{prediction_date}_{venue}_R{race_number}.json"
+    if not odds_file.exists():
+        return
+    try:
+        odds_data = load_json(odds_file)
+    except Exception:
+        return
+    for c in all_combinations:
+        comb = (c.get("combination") or "").strip()
+        if not comb:
+            continue
+        od = get_odds_for_combination(odds_data, comb)
+        if od is not None:
+            c["ratio"] = od
 
 
 def _apply_selected_bets(
@@ -140,6 +165,7 @@ def run_baseline_predict(
             continue
         proba = predict_proba_120(model, state)
         all_combinations = scores_to_all_combinations(proba)
+        _attach_odds_to_combinations(all_combinations, data_dir, prediction_date, venue or "", race_number)
         predictions.append({
             "venue": venue or path.stem,
             "race_number": race_number,

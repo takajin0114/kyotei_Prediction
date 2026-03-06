@@ -6,7 +6,7 @@ model_name, approach, betting_strategy, hit_rate, roi_pct 等を一覧する。
 """
 
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from kyotei_predictor.application.verify_usecase import run_verify
 from kyotei_predictor.infrastructure.file_loader import load_json
@@ -90,4 +90,36 @@ def run_compare_ab(
                 "error": str(e),
             })
 
+    return results
+
+
+def run_compare_ab_multi(
+    prediction_specs: List[Tuple[Path, str, str]],
+    data_dir: Path,
+    evaluation_mode: str = "first_only",
+) -> List[Dict[str, Any]]:
+    """
+    複数予測ファイルを同一条件で検証し、比較用の行リストを返す。
+    EV 戦略実験など、3 件以上を並べて比較するときに使用する。
+
+    Args:
+        prediction_specs: [(予測JSONパス, 表示名, approach), ...]。approach は "A" または "B" など。
+        data_dir: race_data / odds_data のディレクトリ
+        evaluation_mode: "first_only" または "selected_bets"
+
+    Returns:
+        比較行のリスト。
+    """
+    data_dir = Path(data_dir)
+    results = []
+    for path, name, approach in prediction_specs:
+        path = Path(path)
+        if not path.exists():
+            results.append({"model_name": name, "approach": approach, "error": f"ファイルが存在しません: {path}"})
+            continue
+        try:
+            summary, _ = run_verify(path, data_dir, evaluation_mode=evaluation_mode)
+            results.append(_summary_to_row(path, summary, approach, model_name=name))
+        except Exception as e:
+            results.append({"model_name": name, "approach": approach, "error": str(e)})
     return results
