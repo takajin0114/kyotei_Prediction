@@ -131,6 +131,13 @@ source venv/bin/activate
 **実行手順・メインのみの実行・除外オプションなど**  
 → [kyotei_predictor/tests/README_TESTS.md](kyotei_predictor/tests/README_TESTS.md)
 
+## ドキュメント・構成
+
+- **ドキュメント入口**: [docs/README.md](docs/README.md)
+- **実験管理**: [experiments/](experiments/)
+- **分析・Colab ノートブック**: [notebooks/](notebooks/)（Colab 用は `notebooks/colab/`）
+- **新規 AI セッション開始時**: [docs/ai_dev/chat_bootstrap_prompt.md](docs/ai_dev/chat_bootstrap_prompt.md) を読む
+
 ## AI Development System
 
 This project uses AI-assisted development.

@@ -124,8 +124,8 @@ python -m kyotei_predictor.tools.batch.batch_fetch_all_venues ^
 1. Colab で Drive をマウントする。
 2. リポジトリを clone し、`pip install -r requirements.txt` する。
 3. 次のいずれかのノートブックを上から順に実行する。
-   - `colab_drive_learning_cycle_template.ipynb`
-   - `colab_drive_learning_cycle_gpu_template.ipynb`（GPU を使う場合）
+   - [notebooks/colab/colab_drive_learning_cycle_template.ipynb](../../notebooks/colab/colab_drive_learning_cycle_template.ipynb)
+   - [notebooks/colab/colab_drive_learning_cycle_gpu_template.ipynb](../../notebooks/colab/colab_drive_learning_cycle_gpu_template.ipynb)（GPU を使う場合）
 
 ノートブック内で以下を指定する。
 

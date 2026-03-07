@@ -1,6 +1,18 @@
 # 競艇予測システム ドキュメント索引
 
-**このファイルが docs の唯一の入口です。** 目的に応じて下のセクションから該当ドキュメントを開いてください。
+**このファイルが docs の主要な入口です。** 目的に応じて下のセクションから該当ドキュメントを開いてください。
+
+---
+
+## ドキュメント入口（カテゴリ別）
+
+| カテゴリ | 内容 | 主なリンク |
+|----------|------|------------|
+| **architecture** | 構成・レイアウト・データ設計 | [PROJECT_LAYOUT.md](PROJECT_LAYOUT.md) / [architecture/README.md](architecture/README.md) / [REQUIREMENTS_OVERVIEW.md](REQUIREMENTS_OVERVIEW.md) / [ODDS_AND_STATE_DESIGN.md](ODDS_AND_STATE_DESIGN.md) / [DATA_STORAGE_AND_DB.md](DATA_STORAGE_AND_DB.md) |
+| **strategy** | 戦略・EV・ROI・方針 | [strategy/README.md](strategy/README.md) / [EV_BETTING_STRATEGY.md](EV_BETTING_STRATEGY.md) / [ROI_AND_RESPONSIBILITY_SEPARATION.md](ROI_AND_RESPONSIBILITY_SEPARATION.md) / [ROADMAP_A_TO_B_BACKGROUND.md](ROADMAP_A_TO_B_BACKGROUND.md) |
+| **development** | 学習・予測・タスク・実装 | [LEARNING_AND_PREDICTION_STATUS.md](LEARNING_AND_PREDICTION_STATUS.md) / [RUN_VERIFICATION.md](RUN_VERIFICATION.md) / [NEXT_TASKS_OVERVIEW.md](NEXT_TASKS_OVERVIEW.md) / [development/README.md](development/README.md) |
+| **ai_dev** | AI 共同開発・実験管理 | [ai_dev/README.md](ai_dev/README.md) / [ai_dev/chat_bootstrap_prompt.md](ai_dev/chat_bootstrap_prompt.md)（新規セッション時はここから） / 実験トラッカーは [../experiments/](../experiments/) |
+| **guides** | 実行ガイド・運用 | [guides/README.md](guides/README.md) / [guides/processing_flow.md](guides/processing_flow.md) / [guides/batch_usage.md](guides/batch_usage.md) / [optimization/README.md](optimization/README.md) / [operations/README.md](operations/README.md) |
 
 ---
 

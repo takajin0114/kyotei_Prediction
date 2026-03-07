@@ -13,15 +13,23 @@ kyotei_Prediction/                    # プロジェクトルート（ここで 
 ├── README.md
 ├── docs/                            # ドキュメント一式（入口: docs/README.md）
 │   ├── README.md                    # 索引（推奨入口）
-│   ├── guides/                      # 実行ガイド
-│   ├── optimization/, operations/, requirements/, web_display/, archive/
+│   ├── ai_dev/                      # AI 共同開発（状態・タスク・チャット bootstrap）
+│   ├── architecture/, strategy/, development/  # カテゴリ別ドキュメント
+│   ├── guides/, optimization/, operations/, requirements/, web_display/, archive/
 │   └── *.md                         # 状況・タスク・データ・要件など
+├── experiments/                     # 実験トラッカー（ML 実験一覧・leaderboard・ログ）。docs/ai_dev/experiments は廃止
+│   ├── README.md, experiment_index.md, leaderboard.md, open_questions.md
+│   ├── templates/                   # 実験記録テンプレート
+│   └── logs/                        # 個別実験ログ（YAML standard 推奨）
+├── notebooks/                       # 分析・Colab 用ノートブック
+│   ├── colab/                       # Colab 学習テンプレート（Drive 連携）
+│   └── analysis/                   # 分析用ノートブック
 ├── scripts/                         # 実行用バッチ・ランチャー
 │   ├── run_optimization_config.bat  # 最適化（推奨）
 │   ├── run_learning_prediction_cycle.bat / .sh
 │   ├── run_batch_fetch_1month.sh, run_fetch_5year_chunked.sh
 │   └── README.md                    # 一覧・実行例
-├── logs/                            # 実行ログ・比較結果 JSON（.gitignore。運用: docs/REPOSITORY_HYGIENE_AND_CLEANUP.md）
+├── logs/                            # 実行ログ・比較結果 JSON（.gitignore。用途: logs/README.md）
 ├── outputs/                         # 予測結果 JSON・学習済みモデル（.gitignore）
 ├── kyotei_predictor/                # メイン Python パッケージ
 │   ├── app.py, prediction_engine.py, data_integration.py, errors.py
@@ -112,7 +120,8 @@ kyotei_Prediction/                    # プロジェクトルート（ここで 
 
 ## 6. ログの出力先
 
-- **ルートの logs/** : バッチ取得（batch_fetch_*.log）、最適化・学習の tee 出力（optimize_*.log, train_*.log）、比較結果 JSON（rolling_validation_*.json 等）など
+- **ルートの logs/** : バッチ取得（batch_fetch_*.log）、最適化・学習の tee 出力（optimize_*.log, train_*.log）、比較結果 JSON（rolling_validation_*.json 等）など。用途・Git 運用は [logs/README.md](../logs/README.md) を参照。
+- **experiments/logs/** : 個別 ML 実験の記録（Markdown + YAML front matter）。実験トラッカー用。
 - **kyotei_predictor/logs/** : 学習の詳細ログ、予測ツール、データ品質・スケジュール保守など
 - 日時形式は `config.json` の `logging.datefmt` で統一（`utils/logger.py` 経由）
 - **生成物の整理・cleanup**: [REPOSITORY_HYGIENE_AND_CLEANUP.md](REPOSITORY_HYGIENE_AND_CLEANUP.md) を参照
@@ -136,11 +145,12 @@ kyotei_Prediction/                    # プロジェクトルート（ここで 
 
 | 項目 | 内容 |
 |------|------|
-| **ドキュメント索引** | `docs/README.md` を唯一の入口に整理。目的別セクションで重複なくリンク。 |
+| **ドキュメント索引** | `docs/README.md` を主要な入口に整理。カテゴリ別（architecture / strategy / development / ai_dev / guides）の索引を追加。 |
+| **実験トラッカー** | `experiments/` をリポジトリルートに配置。`docs/ai_dev/experiments/` は廃止。テンプレートは `experiments/templates/`、個別ログは `experiments/logs/`。 |
+| **notebooks** | ルート直下に `notebooks/` を追加。Colab テンプレートは `notebooks/colab/`、分析用は `notebooks/analysis/`。 |
+| **logs** | ルートの `logs/` は実行時生成物の出力先（.gitignore）。用途・保存方針は `logs/README.md` で明記。 |
 | **「次にやること」** | 学習＝LEARNING_NEXT_STEPS、テスト/CI＝NEXT_STEPS、精度向上＝PREDICTION_ACCURACY_IMPROVEMENT_TODO と役割を分離。 |
 | **PROJECT_LAYOUT** | 現状の構成・エントリに合わせて更新。legacy 削除済みを明記。DB・日付範囲の実行例を追加。 |
-| **壊れていたリンク** | 存在しない `integration_design.md` / `data_acquisition.md`（ルート）を `PROJECT_LAYOUT.md` / `operations/data_acquisition.md` に変更。 |
-| **tools/README** | legacy 記述を削除。参照先を PROJECT_LAYOUT・operations/data_acquisition に統一。 |
 | **ネスト kyotei_predictor** | `kyotei_predictor/kyotei_predictor/` は冗長（中身は logs のみ）。`.gitignore` で除外。削除してよい。 |
 
 ### 方針
