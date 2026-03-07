@@ -67,7 +67,7 @@ def test_baseline_train_and_predict(tmp_path):
         with open(path, "w", encoding="utf-8") as f:
             json.dump(race, f, ensure_ascii=False)
 
-    X, y = collect_training_data(data_dir, max_samples=10)
+    X, y, _ = collect_training_data(data_dir, max_samples=10)
     assert len(X) == 5
     assert len(y) == 5
 

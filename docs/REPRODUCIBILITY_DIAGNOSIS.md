@@ -126,6 +126,64 @@ python -m kyotei_predictor.cli.compare_run_summaries \
   outputs/strategy_b_all/strategy_b_summary_${PREDICT_DATE}.json --diff-only
 ```
 
+## 2.2 DB を唯一の正にした実行例（再現性診断推奨）
+
+レースデータの入力を **DB に統一** すると、JSON と DB の差で結果がブレる余地をなくせます。`--db-path` を指定すると `--data-source` 未指定時は自動で `data_source=db` になります。
+
+### 同一条件 run A / run B（DB 利用）
+
+```bash
+export DB_PATH="kyotei_predictor/data/kyotei_races.sqlite"
+export DATA_DIR="kyotei_predictor/data/raw"
+export PREDICT_DATE="2024-06-01"
+
+# run A
+python -m kyotei_predictor.cli.run_strategy_b \
+  --train-start 2024-01-01 --train-end 2024-05-31 \
+  --predict-date "$PREDICT_DATE" --data-dir "$DATA_DIR" --db-path "$DB_PATH" \
+  --seed 42 --max-samples 50000 --sample-mode head \
+  --output outputs/strategy_b_db_runA
+
+# run B（同一条件）
+python -m kyotei_predictor.cli.run_strategy_b \
+  --train-start 2024-01-01 --train-end 2024-05-31 \
+  --predict-date "$PREDICT_DATE" --data-dir "$DATA_DIR" --db-path "$DB_PATH" \
+  --seed 42 --max-samples 50000 --sample-mode head \
+  --output outputs/strategy_b_db_runB
+
+# 比較（data_source / db_path / train_file_manifest_hash / verify_details_hash 等を確認）
+python -m kyotei_predictor.cli.compare_run_summaries \
+  outputs/strategy_b_db_runA/strategy_b_summary_${PREDICT_DATE}.json \
+  outputs/strategy_b_db_runB/strategy_b_summary_${PREDICT_DATE}.json --diff-only
+```
+
+### sample_mode=head / random / all（DB 利用）
+
+```bash
+# head
+python -m kyotei_predictor.cli.run_strategy_b \
+  --train-start 2024-01-01 --train-end 2024-05-31 \
+  --predict-date "$PREDICT_DATE" --data-dir "$DATA_DIR" --db-path "$DB_PATH" \
+  --seed 42 --max-samples 50000 --sample-mode head \
+  --output outputs/strategy_b_db_head
+
+# random
+python -m kyotei_predictor.cli.run_strategy_b \
+  --train-start 2024-01-01 --train-end 2024-05-31 \
+  --predict-date "$PREDICT_DATE" --data-dir "$DATA_DIR" --db-path "$DB_PATH" \
+  --seed 42 --max-samples 50000 --sample-mode random \
+  --output outputs/strategy_b_db_random
+
+# all
+python -m kyotei_predictor.cli.run_strategy_b \
+  --train-start 2024-01-01 --train-end 2024-05-31 \
+  --predict-date "$PREDICT_DATE" --data-dir "$DATA_DIR" --db-path "$DB_PATH" \
+  --seed 42 --sample-mode all \
+  --output outputs/strategy_b_db_all
+```
+
+DB 利用時は summary の `conditions` に `data_source`, `db_path`, `train_data_source`, `predict_data_source`, `verify_data_source`, `odds_data_source`, `result_data_source`, `db_table_names`, `db_snapshot_version`, `query_date_range` が記録されます。
+
 ## 3. 2 回の run の違いを比較する
 
 `compare_run_summaries` で 2 つの summary JSON を比較し、差分がある項目だけを確認できます。

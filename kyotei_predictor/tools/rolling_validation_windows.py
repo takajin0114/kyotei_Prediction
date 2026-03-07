@@ -45,11 +45,15 @@ def run_one_window(
     train_days: int,
     data_source: Optional[str] = None,
     db_path: Optional[str] = None,
+    calibration: Optional[str] = None,
+    seed: Optional[int] = 42,
 ) -> dict:
     """
     1 window 分の学習・予測・検証を行い、戦略別の結果を返す。
     strategies: [(name, strategy, top_n, ev_threshold), ...]
     data_source: "json" | "db" | None。None のときは従来通り JSON 直読。
+    calibration: "none" | "sigmoid" | "isotonic"。None のときは "none"。
+    seed: 乱数シード。再現性用。None のときは 42。
     """
     import os
     from kyotei_predictor.application.baseline_train_usecase import run_baseline_train
@@ -58,8 +62,11 @@ def run_one_window(
 
     ds = data_source or os.environ.get("KYOTEI_DATA_SOURCE") or None
     dbp = db_path
+    calib = calibration or "none"
+    if seed is None:
+        seed = 42
 
-    # 学習（日付フィルタ付き）
+    # 学習（日付フィルタ付き・キャリブレーション・seed 指定可）
     run_baseline_train(
         data_dir=data_dir_raw,
         model_save_path=model_path,
@@ -68,6 +75,8 @@ def run_one_window(
         train_end=train_end,
         data_source=ds,
         db_path=dbp,
+        calibration=calib,
+        seed=seed,
     )
 
     test_dates = _date_range(test_start, test_end)
@@ -132,16 +141,19 @@ def run_one_window(
         roi = round((tp / tb - 1) * 100, 2) if tb else 0
         hr1 = round(hc / rwr * 100, 2) if rwr else 0
         hr3 = None  # selected_bets 時は別集計が必要なら追加
+        profit = round(tp - tb, 2) if tb else 0
         results.append({
             "strategy": strategy,
             "strategy_name": spec_name,
             "top_n": top_n,
             "ev_threshold": ev_th,
             "roi_pct": roi,
+            "hit_rate": hr1,
             "hit_rate_rank1_pct": hr1,
             "hit_rate_top3_pct": hr3,
             "total_bet": tb,
             "total_payout": tp,
+            "profit": profit,
             "hit_count": hc,
             "races_with_result": rwr,
         })

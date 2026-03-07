@@ -63,7 +63,7 @@ class KyoteiEnv(gym.Env):
         self.odds_data = []  # 必ずリストで初期化
         self.arrival_tuple = (0,0,0)  # 必ずタプルで初期化
 
-    def reset(self, *, seed=None, options=None) -> Tuple[np.ndarray | None, dict]:
+    def reset(self, *, seed=None, options=None) -> Tuple[Optional[np.ndarray], dict]:
         super().reset(seed=seed)
         if self._race_data_dict is not None and self._odds_data_dict is not None:
             race = self._race_data_dict
@@ -96,7 +96,7 @@ class KyoteiEnv(gym.Env):
         _log.debug("[KyoteiEnv.reset] state shape=%s", self.state.shape if hasattr(self.state, 'shape') else type(self.state))
         return self.state, info
 
-    def step(self, action: int) -> Tuple[np.ndarray | None, float, bool, bool, dict]:
+    def step(self, action: int) -> Tuple[Optional[np.ndarray], float, bool, bool, dict]:
         assert not self.terminated, "エピソードはすでに終了しています。resetしてください。"
         # 報酬計算
         reward = calc_trifecta_reward(action, self.arrival_tuple, self.odds_data, self.bet_amount)
@@ -430,7 +430,7 @@ class KyoteiEnvManager(gym.Env):
         except Exception as e:
             return False
 
-    def reset(self, *, seed=None, options=None) -> Tuple[np.ndarray | None, dict]:
+    def reset(self, *, seed=None, options=None) -> Tuple[Optional[np.ndarray], dict]:
         _log.debug("[KyoteiEnvManager.reset] called. pairs=%s", len(self.pairs))
         # 年月フィルタの確認
         if self.year_month:
@@ -549,7 +549,7 @@ class KyoteiEnvManager(gym.Env):
             self.env.arrival_tuple = (1, 2, 3)
         return (self.env.state, {}) if self.env else (None, {})
 
-    def step(self, action: int) -> Tuple[np.ndarray | None, float, bool, bool, dict]:
+    def step(self, action: int) -> Tuple[Optional[np.ndarray], float, bool, bool, dict]:
         if self.env is None:
             raise RuntimeError("envが初期化されていません。reset()を先に呼んでください。")
         return self.env.step(action)

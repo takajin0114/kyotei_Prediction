@@ -32,7 +32,14 @@ def main() -> int:
         default=None,
         help="モデル保存先。未指定時は outputs/baseline_b_model.joblib",
     )
-    parser.add_argument("--max-samples", type=int, default=5000, help="最大学習サンプル数")
+    parser.add_argument("--max-samples", type=int, default=5000, help="最大学習サンプル数。--sample-mode=all のときは無視")
+    parser.add_argument(
+        "--sample-mode",
+        type=str,
+        choices=("head", "random", "all"),
+        default="head",
+        help="学習サンプル抽出: head=先頭から, random=seed固定ランダム, all=期間内全件",
+    )
     parser.add_argument("--n-estimators", type=int, default=50, help="本数（sklearn / lightgbm / xgboost 共通）")
     parser.add_argument("--max-depth", type=int, default=10, help="最大深さ")
     parser.add_argument(
@@ -52,6 +59,14 @@ def main() -> int:
         help="レースデータ読込元。未指定時は従来通り JSON 直読。json=race_data_*.json, db=SQLite",
     )
     parser.add_argument("--db-path", type=Path, default=None, help="data-source=db 時の SQLite ファイルパス。未指定時は設定の DB_PATH")
+    parser.add_argument(
+        "--calibration",
+        type=str,
+        choices=("none", "sigmoid", "isotonic"),
+        default="none",
+        help="確率キャリブレーション。none=なし, sigmoid=Platt scaling, isotonic=Isotonic regression",
+    )
+    parser.add_argument("--seed", type=int, default=42, help="乱数シード。再現性用。未指定時は 42。")
     args = parser.parse_args()
 
     data_dir = args.data_dir or PROJECT_ROOT / "kyotei_predictor" / "data" / "test_raw"
@@ -67,6 +82,7 @@ def main() -> int:
             data_dir=data_dir,
             model_save_path=model_path,
             max_samples=args.max_samples,
+            sample_mode=args.sample_mode,
             n_estimators=args.n_estimators,
             max_depth=args.max_depth,
             model_type=args.model_type,
@@ -74,6 +90,8 @@ def main() -> int:
             train_end=args.train_end,
             data_source=args.data_source,
             db_path=args.db_path,
+            calibration=args.calibration,
+            seed=args.seed,
         )
         print("学習完了:", summary)
         return 0

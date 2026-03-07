@@ -48,3 +48,15 @@ class RaceDataRepositoryProtocol(Protocol):
         venues 指定時はその会場のみ。None で全会場。
         """
         ...
+
+    def get_odds(
+        self,
+        race_date: str,
+        venue: str,
+        race_number: int,
+    ) -> Optional[Dict[str, Any]]:
+        """
+        1 レース分の odds_data 辞書を取得する。無ければ None。
+        DB リポジトリでは DB から、JSON リポジトリでは data_dir の odds_data_*.json から取得。
+        """
+        ...

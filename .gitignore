@@ -115,7 +115,7 @@ dmypy.json
 ehthumbs.db
 Thumbs.db
 
-# Project specific
+# Project specific（運用方針: docs/REPOSITORY_HYGIENE_AND_CLEANUP.md）
 # 冗長なネスト（中身は logs のみ・削除推奨）
 kyotei_predictor/kyotei_predictor/
 kyotei_predictor/logs/*.log
@@ -167,8 +167,11 @@ optuna_studies/
 optuna_results/
 optuna_studies_backup_*/
 optuna_tensorboard/
-# ログ（scripts/ のバッチが書き出す先）
+# ログ（scripts/ のバッチが書き出す先）。中身は ignore、logs/.gitkeep は追跡可
 logs/
+# 学習済みモデル（outputs/ 配下は上で除外。ルート直下の紛れも ignore）
+*.joblib
+*.pkl
 
 # バッチ・スクリプト（scripts/ 内はリポジトリで管理するため除外しない）
 *.bat

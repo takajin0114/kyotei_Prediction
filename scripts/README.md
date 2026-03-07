@@ -17,8 +17,17 @@
 | **run_batch_fetch_1month.sh** | 1ヶ月分取得（YYYY-MM 指定可）。venv自動使用。 |
 | **fetch_5year_plan.json** | **5年分取得の対象月一覧（2021-01〜2026-02）。** |
 | check_batch_fetch_stuck.sh | バッチ取得のスタック検知（ログ・プロセス監視） |
-| cleanup_old_files.bat | 古いログ・Optuna ファイルの削除 |
+| cleanup_old_files.bat | 古いログ・Optuna ファイルの削除（Windows 用。7日/30日より古いものを削除） |
 | **summarize_verification_results.py** | **簡易ダッシュボード**（3.3.2）: logs/ と outputs/ を集約して検証・予測サマリを表示 |
+
+**Cleanup（古い生成物の削除）**  
+- **Windows**: `scripts\cleanup_old_files.bat` で実行。対象: optuna_* 配下（7日以上）、logs/*.log（30日以上）。
+- **全 OS（推奨）**: `python -m kyotei_predictor.cli.cleanup` で OS 非依存に実行可能。  
+  - ドライラン: `python -m kyotei_predictor.cli.cleanup --dry-run --days 7`  
+  - 実行: `python -m kyotei_predictor.cli.cleanup --days 7`  
+  - ログのみ 30 日以上: `python -m kyotei_predictor.cli.cleanup --logs-only --days 30`  
+- 詳細: **docs/REPOSITORY_HYGIENE_AND_CLEANUP.md**
+- 削除実行後は回帰テストで確認することを推奨: `pytest kyotei_predictor/tests/test_cleanup_regression.py kyotei_predictor/tests/test_baseline_b.py kyotei_predictor/tests/test_verify_predictions.py`
 
 **削除済み（.sh または Python で代替）**: fetch_1month.bat, fetch_5years.bat, fetch_reperiod.bat → 1ヶ月は `run_batch_fetch_1month.sh`、期間・5年は `run_fetch_5year_chunked.sh` または `python -m kyotei_predictor.tools.batch.fetch_5year_chunked` を使用。
 

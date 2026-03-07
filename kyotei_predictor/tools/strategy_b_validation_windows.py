@@ -77,6 +77,7 @@ def main() -> int:
     data_source = os.environ.get("KYOTEI_DATA_SOURCE")
     db_path = os.environ.get("KYOTEI_DB_PATH")
     calibration = "sigmoid"
+    seed = 42  # 再現性固定
 
     pred_dir = outputs_dir / "strategy_b_validation"
     pred_dir.mkdir(exist_ok=True)
@@ -98,6 +99,7 @@ def main() -> int:
             data_source=data_source,
             db_path=db_path,
             calibration=calibration,
+            seed=seed,
         )
         row["window_id"] = i + 1
         test_dates = _date_range(tst, tend)
@@ -159,8 +161,9 @@ def main() -> int:
         }
 
     out = {
-        "description": "主戦略（EV>=1.15 + fixed）の複数 window 再検証。calibration=sigmoid, top_n=5。",
+        "description": "主戦略（EV>=1.15 + fixed）の複数 window 再検証。calibration=sigmoid, top_n=5。seed 固定で再現性確保。",
         "calibration": calibration,
+        "seed": seed,
         "train_days": 15,
         "test_days": 7,
         "windows": 4,

@@ -92,10 +92,12 @@ def run_verify(
             actual_and_odds[(venue, rno)] = (None, None)
             continue
         odds_ratio = None
-        odds_file = data_dir / f"odds_data_{prediction_date}_{venue}_R{rno}.json"
-        if odds_file.exists():
+        if repo is not None and hasattr(repo, "get_odds"):
+            odds_data = repo.get_odds(prediction_date, venue, rno)
+        else:
+            odds_data = _load_odds_for_race(data_dir, prediction_date, venue, rno)
+        if odds_data is not None:
             try:
-                odds_data = load_json(odds_file)
                 odds_ratio = get_odds_for_combination(odds_data, actual)
             except Exception:
                 pass
@@ -197,7 +199,10 @@ def run_verify(
             purchased_bets = len(selected)
             payout = 0.0
             if purchased_bets > 0 and actual is not None:
-                odds_data = _load_odds_for_race(data_dir, prediction_date, venue, rno)
+                if repo is not None and hasattr(repo, "get_odds"):
+                    odds_data = repo.get_odds(prediction_date, venue, rno)
+                else:
+                    odds_data = _load_odds_for_race(data_dir, prediction_date, venue, rno)
                 for comb in selected:
                     c = (comb if isinstance(comb, str) else "").strip()
                     if not c:

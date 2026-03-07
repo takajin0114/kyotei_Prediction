@@ -100,3 +100,18 @@ class JsonRaceDataRepository:
             except Exception:
                 continue
         return result
+
+    def get_odds(
+        self,
+        race_date: str,
+        venue: str,
+        race_number: int,
+    ) -> Optional[Dict[str, Any]]:
+        """1 レース分の odds_data を data_dir の JSON から取得する。"""
+        odds_file = self.data_dir / f"odds_data_{race_date}_{venue}_R{race_number}.json"
+        if not odds_file.exists():
+            return None
+        try:
+            return load_json(odds_file)
+        except Exception:
+            return None

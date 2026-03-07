@@ -71,6 +71,15 @@ class DbRaceDataRepository:
                 result.append((data, stadium, race_number))
         return result
 
+    def get_odds(
+        self,
+        race_date: str,
+        venue: str,
+        race_number: int,
+    ) -> Optional[Dict[str, Any]]:
+        """1 レース分の odds_data を DB から取得する。"""
+        return self._get_db().get_odds_json(race_date, venue, race_number)
+
     def close(self) -> None:
         """接続を閉じる。長時間運用時は明示的に呼ぶ。"""
         if self._db is not None:

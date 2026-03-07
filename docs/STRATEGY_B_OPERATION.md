@@ -1,6 +1,6 @@
 # 主戦略 B の運用フロー
 
-baseline B + sigmoid + top_n=5 + EV>=1.15 + fixed の再現手順と実行方法。
+baseline B + sigmoid + top_n=5 + EV>=1.15 + fixed の再現手順と実行方法。**seed 固定で再現性を確保**する。
 
 ---
 
@@ -15,6 +15,14 @@ baseline B + sigmoid + top_n=5 + EV>=1.15 + fixed の再現手順と実行方法
 | ev_threshold | 1.15 |
 | bet_sizing | fixed（1 点 100 円） |
 | evaluation_mode | selected_bets |
+| seed | 未指定時は 42（学習・再検証で共通） |
+
+---
+
+## 1.1 再現手順（要約）
+
+- **主戦略の 1 本実行**: `run_strategy_b` で実行（学習 → 予測 → 検証 → サマリ保存）。同一条件・同一 seed なら同じ結果になる。
+- **再検証（複数 window）**: `strategy_b_validation_windows` で実行。4 window で seed=42 固定。
 
 ---
 
@@ -34,6 +42,7 @@ python3 -m kyotei_predictor.cli.run_strategy_b \
 
 - `--model-path`: 未指定時は出力先配下の `strategy_b_model.joblib`
 - `--output`: 未指定時は data-dir の親の `outputs/strategy_b`
+- `--seed`: 乱数シード。未指定時は 42。再現性用。
 - `--save-summary-to`: サマリ JSON の任意の保存先
 
 ### 出力
@@ -41,6 +50,14 @@ python3 -m kyotei_predictor.cli.run_strategy_b \
 - 予測 JSON: `output/predictions_strategy_b_<predict_date>.json`
 - サマリ JSON: `output/strategy_b_summary_<predict_date>.json`（条件 + 検証 summary）
 - モデル: `model_save_path` に保存
+
+### サマリ JSON に保存される条件
+
+`conditions` および `summary` に以下が含まれる。
+
+- train_start, train_end, predict_date, data_dir
+- model, calibration, top_n, ev_threshold, bet_sizing
+- seed, race_count, selected_bets_count
 
 ### プログラムから呼ぶ場合
 
@@ -69,7 +86,7 @@ PYTHONPATH=. python3 kyotei_predictor/tools/strategy_b_validation_windows.py
 ```
 
 - **出力**: **logs/strategy_b_validation_windows.json**
-- **内容**: windows_detail（window 別・戦略別）、aggregate_by_strategy（EV>1.15 / EV>1.10 の集計）
+- **内容**: seed（42 固定）、windows_detail（各 window に train_start, train_end, test_start, test_end、各戦略に roi_pct, hit_rate, total_bet, profit を保存）、aggregate_by_strategy（EV>1.15 / EV>1.10 の集計）
 
 ---
 
@@ -85,6 +102,12 @@ PYTHONPATH=. python3 kyotei_predictor/tools/strategy_b_validation_windows.py
 
 ---
 
-## 5. 差分の追い方
+## 5. 再現性（seed 固定）
 
-過去の「プラス結果」と直近の「マイナス結果」の条件差分は **docs/STRATEGY_B_CONDITION_DIFF.md** に整理している。再現するには同じスクリプトを再実行し、その時点のデータ・乱数で結果を確認する。
+- 学習時: `baseline_train_usecase.run_baseline_train(..., seed=42)` で `np.random.seed(seed)` と `random.seed(seed)` を設定し、`create_baseline_model(..., random_state=seed)` でモデルを生成。未指定時は seed=42。
+- CLI: `baseline_train --seed 42`、`run_strategy_b --seed 42`。未指定時はデフォルト 42。
+- 再検証: `strategy_b_validation_windows` は内部で seed=42 を渡して `run_one_window` を呼ぶ。同一データ・同一 seed なら同じ結果になる。
+
+## 6. 差分の追い方
+
+過去の「プラス結果」と直近の「マイナス結果」の条件差分は **docs/STRATEGY_B_CONDITION_DIFF.md** に整理している。再現するには同じスクリプトを再実行し、seed 固定により同一条件なら同じ結果を確認できる。

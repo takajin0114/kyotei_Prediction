@@ -3,9 +3,13 @@
 
 学習・予測の両方で同一の状態定義を使う。
 オッズは状態に含めず、回収率計算は予測後に別途行う。
+
+追加特徴量（モーター勝率代理）はデフォルトOFF。ON にするには KYOTEI_USE_MOTOR_WIN_PROXY=1 を設定。
+無効時は従来どおりの次元。比較用に ON へ切り替える手段は残している。
 """
 from __future__ import annotations
 
+import os
 import numpy as np
 from itertools import permutations
 from typing import Dict, Any, List, Optional
@@ -39,11 +43,25 @@ def _get_stadium_names() -> List[str]:
     return _stadium_names_cache
 
 
-# 次元: 艇48 + 会場one-hot(len) + race_num(1) + laps(1) + is_fixed(1)
+# 次元: 艇48 + 会場one-hot(len) + race_num(1) + laps(1) + is_fixed(1) + motor_win_proxy(1)
 NUM_BOAT_FEATURES = 48   # 6艇 × 8
+# レース特徴: race_num(1) + laps(1) + is_fixed(1)。モーター勝率代理は +1 でオプション。
+NUM_BASE_RACE_FEATURES = 3
+NUM_EXTRA_RACE_FEATURES = 4  # base(3) + motor_win_proxy(1)
+
+
+def _use_motor_win_proxy_feature() -> bool:
+    """追加特徴量（モーター勝率代理）を使うか。デフォルトOFF。ON にするには KYOTEI_USE_MOTOR_WIN_PROXY=1 を設定。"""
+    return os.environ.get("KYOTEI_USE_MOTOR_WIN_PROXY", "0") == "1"
 # NUM_RACE_FEATURES / STATE_DIM は get_state_dim() で動的に算出
 
-# 艇1あたり8次元: pit(1) + rating(1) + perf_all, perf_local, boat2, boat3, motor2, motor3(6)
+# 艇1あたり8次元（詳細は docs/STATE_VECTOR_AUDIT_MOTOR_BOAT.md を参照）:
+#   0: pit（枠番の正規化）
+#   1: rating（レーサー級別）
+#   2: perf_all（全国勝率）
+#   3: perf_local（当地勝率）
+#   4: boat2（ボート2連率）、5: boat3（ボート3連率）
+#   6: motor2（モーター2連率）、7: motor3（モーター3連率）
 RATING_MAP = {"A1": 1.0, "A2": 0.75, "B1": 0.5, "B2": 0.25}  # 1次元に圧縮（元はone-hot 4）
 TRIFECTA_ORDER = list(permutations(range(1, 7), 3))  # 1-indexed, 120通り
 
@@ -107,14 +125,27 @@ def build_race_state_vector(
         boats.append([0.0] * 8)
     boats = np.array(boats[:6], dtype=np.float32).flatten()  # 48
 
-    # 2. レース特徴: 会場 one-hot + race_num + laps + is_fixed
+    # 2. レース特徴: 会場 one-hot + race_num + laps + is_fixed [+ motor_win_proxy]
     ri = race_data.get("race_info", {})
     stadium = ri.get("stadium", "")
     stadium_onehot = [1.0 if stadium == s else 0.0 for s in stadium_names]
     race_num = (ri.get("race_number", 1) - 1) / 11.0
     laps = (ri.get("number_of_laps", 3) - 1) / 4.0 if ri.get("number_of_laps") is not None else 0.0
     is_fixed = 1.0 if ri.get("is_course_fixed") else 0.0
-    race_feat = np.array(stadium_onehot + [race_num, laps, is_fixed], dtype=np.float32)
+    race_list = stadium_onehot + [race_num, laps, is_fixed]
+    if _use_motor_win_proxy_feature():
+        # 追加特徴量: モーター勝率代理（6艇のモーター2連率・3連率の平均）。欠損時は 0.5（中立）
+        motor_vals = []
+        for entry in entries[:6]:
+            m2 = entry.get("motor", {}).get("quinella_rate")
+            m3 = entry.get("motor", {}).get("trio_rate")
+            if m2 is not None and m3 is not None:
+                motor_vals.append((m2 / 100.0 + m3 / 100.0) / 2.0)
+            else:
+                motor_vals.append(0.5)
+        motor_win_proxy = float(np.mean(motor_vals)) if motor_vals else 0.5
+        race_list.append(motor_win_proxy)
+    race_feat = np.array(race_list, dtype=np.float32)
 
     state = np.concatenate([boats, race_feat])
     assert state.shape == (expected_dim,), f"state shape {state.shape} != ({expected_dim},)"
@@ -122,8 +153,9 @@ def build_race_state_vector(
 
 
 def get_state_dim() -> int:
-    """状態ベクトルの次元を返す（艇48 + 会場数 + 3）。"""
-    return NUM_BOAT_FEATURES + len(_get_stadium_names()) + 3
+    """状態ベクトルの次元を返す（艇48 + 会場数 + 3 or +4）。モーター勝率代理は KYOTEI_USE_MOTOR_WIN_PROXY で制御。"""
+    n_extra = NUM_EXTRA_RACE_FEATURES if _use_motor_win_proxy_feature() else NUM_BASE_RACE_FEATURES
+    return NUM_BOAT_FEATURES + len(_get_stadium_names()) + n_extra
 
 
 def get_stadium_names_order() -> List[str]:
@@ -131,6 +163,6 @@ def get_stadium_names_order() -> List[str]:
     return list(_get_stadium_names())
 
 
-# 定数エイリアス（get_state_dim() と一致）
+# 定数エイリアス（環境変数で次元が変わるため、動的に get_state_dim() を呼ぶこと推奨）
 STATE_DIM = get_state_dim()
-NUM_RACE_FEATURES = len(_get_stadium_names()) + 3
+NUM_RACE_FEATURES = len(_get_stadium_names()) + NUM_EXTRA_RACE_FEATURES  # 最大（モーター勝率代理あり）

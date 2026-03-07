@@ -20,34 +20,59 @@ def _meta_path(model_path: Path) -> Path:
     return Path(str(model_path) + ".meta.json")
 
 
-def save_baseline_model_metadata(model_path: Path, model_type: str) -> None:
-    """モデル種別を .meta.json に保存する。"""
+def save_baseline_model_metadata(
+    model_path: Path,
+    model_type: str,
+    calibration: Optional[str] = None,
+    seed: Optional[int] = None,
+) -> None:
+    """モデル種別・キャリブレーション・seed を .meta.json に保存する。"""
     path = _meta_path(Path(model_path))
     path.parent.mkdir(parents=True, exist_ok=True)
+    meta = {"model_type": model_type, "calibration": calibration or "none"}
+    if seed is not None:
+        meta["seed"] = seed
     with open(path, "w", encoding="utf-8") as f:
-        json.dump({"model_type": model_type}, f, ensure_ascii=False)
+        json.dump(meta, f, ensure_ascii=False)
 
 
-def load_baseline_model_metadata(model_path: Path) -> Optional[str]:
-    """保存済みモデル種別を読む。無ければ None。"""
+def load_baseline_model_metadata(model_path: Path) -> dict:
+    """
+    保存済みメタデータを読む。
+    Returns:
+        {"model_type", "calibration", "seed"}。ファイルが無い場合は {"model_type": None, "calibration": "none", "seed": None}。
+    """
     path = _meta_path(Path(model_path))
     if not path.exists():
-        return None
+        return {"model_type": None, "calibration": "none", "seed": None}
     try:
         with open(path, "r", encoding="utf-8") as f:
-            return json.load(f).get("model_type")
+            d = json.load(f)
+        return {
+            "model_type": d.get("model_type"),
+            "calibration": d.get("calibration", "none"),
+            "seed": d.get("seed"),
+        }
     except Exception:
-        return None
+        return {"model_type": None, "calibration": "none", "seed": None}
 
 
-def save_baseline_model(model: Any, path: Path, model_type: Optional[str] = None) -> None:
+def save_baseline_model(
+    model: Any,
+    path: Path,
+    model_type: Optional[str] = None,
+    calibration: Optional[str] = None,
+    seed: Optional[int] = None,
+) -> None:
     """
     ベースラインモデルをファイルに保存する。
 
     Args:
-        model: fit と predict_proba を持つオブジェクト（sklearn / lightgbm / xgboost）
+        model: fit と predict_proba を持つオブジェクト（sklearn / lightgbm / xgboost / CalibratedClassifierCV）
         path: 保存先パス（.joblib または .pkl 推奨）
         model_type: モデル種別（sklearn / lightgbm / xgboost）。指定時は .meta.json に保存する。
+        calibration: キャリブレーション種別（none / sigmoid / isotonic）。.meta.json に保存する。
+        seed: 学習時の乱数シード。再現性用に .meta.json に保存する。
     """
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -57,8 +82,8 @@ def save_baseline_model(model: Any, path: Path, model_type: Optional[str] = None
         import pickle
         with open(path, "wb") as f:
             pickle.dump(model, f)
-    if model_type:
-        save_baseline_model_metadata(path, model_type)
+    if model_type is not None:
+        save_baseline_model_metadata(path, model_type, calibration=calibration, seed=seed)
 
 
 def load_baseline_model(path: Path) -> Any:

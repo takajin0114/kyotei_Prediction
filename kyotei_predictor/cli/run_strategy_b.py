@@ -52,6 +52,15 @@ def main() -> int:
         help="レースデータ読込元。未指定時は JSON 直読",
     )
     parser.add_argument("--db-path", type=Path, default=None, help="data-source=db 時の SQLite パス")
+    parser.add_argument("--seed", type=int, default=42, help="乱数シード。再現性用。未指定時は 42。")
+    parser.add_argument("--max-samples", type=int, default=50000, help="最大学習サンプル数。sample-mode=all のときは無視。")
+    parser.add_argument(
+        "--sample-mode",
+        type=str,
+        choices=("head", "random", "all"),
+        default="head",
+        help="学習サンプル抽出: head=先頭から, random=seed固定ランダム, all=期間内全件",
+    )
     parser.add_argument(
         "--save-summary-to",
         type=Path,
@@ -76,6 +85,9 @@ def main() -> int:
             output_dir=args.output,
             data_source=args.data_source,
             db_path=args.db_path,
+            seed=args.seed,
+            max_samples=args.max_samples,
+            sample_mode=args.sample_mode,
         )
     except Exception as e:
         print(f"エラー: {e}")

@@ -7,7 +7,7 @@ verify_predictions / betting_selector にそのまま渡せる形で返す。
 """
 
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 from kyotei_predictor.domain.verification_models import get_odds_for_combination
 from kyotei_predictor.domain.repositories.race_data_repository import RaceDataRepositoryProtocol
@@ -44,14 +44,20 @@ def _attach_odds_to_combinations(
     prediction_date: str,
     venue: str,
     race_number: int,
+    odds_getter: Optional[Callable[[str, str, int], Optional[Dict[str, Any]]]] = None,
 ) -> None:
     """all_combinations の各要素に ratio（オッズ）を付与する。オッズがない場合は付与しない。in-place。"""
-    odds_file = data_dir / f"odds_data_{prediction_date}_{venue}_R{race_number}.json"
-    if not odds_file.exists():
-        return
-    try:
-        odds_data = load_json(odds_file)
-    except Exception:
+    if odds_getter is not None:
+        odds_data = odds_getter(prediction_date, venue, race_number)
+    else:
+        odds_file = data_dir / f"odds_data_{prediction_date}_{venue}_R{race_number}.json"
+        if not odds_file.exists():
+            return
+        try:
+            odds_data = load_json(odds_file)
+        except Exception:
+            return
+    if odds_data is None:
         return
     for c in all_combinations:
         comb = (c.get("combination") or "").strip()
@@ -136,7 +142,9 @@ def run_baseline_predict(
     data_dir = Path(data_dir)
     model_path_resolved = Path(model_path)
     model = load_baseline_model(model_path_resolved)
-    saved_model_type = load_baseline_model_metadata(model_path_resolved)
+    meta = load_baseline_model_metadata(model_path_resolved)
+    saved_model_type = meta.get("model_type")
+    saved_calibration = meta.get("calibration", "none")
 
     predictions: List[Dict[str, Any]] = []
     if race_repository is not None or (data_source and data_source.strip().lower() in ("json", "db")):
@@ -149,6 +157,9 @@ def run_baseline_predict(
                 data_dir=data_dir,
                 db_path=str(db_path) if db_path else None,
             )
+        odds_getter = None
+        if hasattr(race_repository, "get_odds"):
+            odds_getter = lambda d, v, n: race_repository.get_odds(d, v, n)
         for race_data, venue, race_number in race_repository.load_races_by_date(
             prediction_date, venues=venues
         ):
@@ -158,7 +169,9 @@ def run_baseline_predict(
                 continue
             proba = predict_proba_120(model, state)
             all_combinations = scores_to_all_combinations(proba)
-            _attach_odds_to_combinations(all_combinations, data_dir, prediction_date, venue, race_number)
+            _attach_odds_to_combinations(
+                all_combinations, data_dir, prediction_date, venue, race_number, odds_getter=odds_getter
+            )
             predictions.append({
                 "venue": venue,
                 "race_number": race_number,
@@ -228,6 +241,7 @@ def run_baseline_predict(
             "model_type": "baseline_b",
             "model_path": str(model_path),
             "backend": saved_model_type or "sklearn",
+            "calibration": saved_calibration,
         },
         "execution_summary": {
             "total_races": len(predictions),
