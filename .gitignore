@@ -191,3 +191,10 @@ batch_fetch_all_venues.lock
 # アーカイブ・バックアップ
 archives/
 final_results/
+
+# --- リポジトリ整理（再現性診断後・明示）---
+__pycache__/
+*.pyc
+*.log
+.env
+.DS_Store

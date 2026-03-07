@@ -56,6 +56,22 @@ VENV_PATH=.venv-cycle YEAR_MONTH=2024-05 PREDICT_DATE=2024-05-01 ./scripts/run_l
 
 詳細: [docs/guides/git_staging_safety.md](docs/guides/git_staging_safety.md)
 
+## Reproducibility Diagnostics
+
+このリポジトリでは以下の診断ツールを実装しています。
+
+- **compare_run_summaries** — 2 回の run の summary JSON を比較し、差分を表示
+- **train_file_manifest** — 学習に使ったファイル一覧・hash（JSON 経路時）
+- **verify_details** — 検証の前提条件・スキップ理由・レース別詳細
+
+再現性確認手順:
+
+1. 同一条件で runA / runB を実行（`--db-path` 指定で DB 統一推奨）
+2. `compare_run_summaries` で 2 つの summary を比較
+3. sample_mode の違い（head / random / all）で比較
+
+詳細は [docs/REPRODUCIBILITY_DIAGNOSIS.md](docs/REPRODUCIBILITY_DIAGNOSIS.md) を参照してください。
+
 ## ドキュメント
 
 - **[docs/README.md](docs/README.md)**: ドキュメント全体の**索引（推奨入口）**。目的別にリンク一覧あり。

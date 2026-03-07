@@ -286,8 +286,10 @@ def run_baseline_train(
 
     if calib in ("sigmoid", "isotonic"):
         from sklearn.calibration import CalibratedClassifierCV
-        # 学習データのみでキャリブレーションを fit（test 期間は使わない）
-        calibrated = CalibratedClassifierCV(estimator=model, method=calib, cv="prefit")
+        from sklearn.frozen import FrozenEstimator
+        # 既に fit 済みのモデルをキャリブレーション（sklearn 1.2+ は FrozenEstimator でラップ）
+        frozen = FrozenEstimator(model)
+        calibrated = CalibratedClassifierCV(estimator=frozen, method=calib, cv=None)
         calibrated.fit(X, y)
         model = calibrated
 
