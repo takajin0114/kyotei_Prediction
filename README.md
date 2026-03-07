@@ -135,6 +135,9 @@ source venv/bin/activate
 
 This project uses AI-assisted development.
 
+- **Experiment tracking** is stored under [docs/ai_dev/experiments/](docs/ai_dev/experiments/).
+- Before proposing new experiments, the AI should review [leaderboard](docs/ai_dev/experiments/leaderboard.md) and [open questions](docs/ai_dev/experiments/open_questions.md).
+
 Before starting a new development session, the AI should read:
 
 - [docs/ai_dev/project_status.md](docs/ai_dev/project_status.md)

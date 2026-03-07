@@ -169,6 +169,9 @@ optuna_studies_backup_*/
 optuna_tensorboard/
 # ログ（scripts/ のバッチが書き出す先）。中身は ignore、logs/.gitkeep は追跡可
 logs/
+# 実験トラッカー用ログは追跡する
+!docs/ai_dev/experiments/logs/
+!docs/ai_dev/experiments/logs/*.md
 # 学習済みモデル（outputs/ 配下は上で除外。ルート直下の紛れも ignore）
 *.joblib
 *.pkl
