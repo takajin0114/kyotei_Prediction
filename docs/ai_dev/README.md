@@ -11,6 +11,10 @@ AIが新しい作業を開始する前に
 
 実験管理は [docs/ai_dev/experiments/](experiments/) を参照すること。項目定義・ステータスルールは [field_definitions.md](experiments/field_definitions.md)、[status_rules.md](experiments/status_rules.md)。
 
+## Chat Bootstrap
+
+When starting a new AI coding session, read [docs/ai_dev/chat_bootstrap_prompt.md](chat_bootstrap_prompt.md).
+
 ---
 
 ## 構造
@@ -20,6 +24,7 @@ AIが新しい作業を開始する前に
 | project_status.md | 現在のプロジェクト状態 |
 | next_tasks.md | 次にやるタスク |
 | architecture.md | システム設計 |
+| chat_bootstrap_prompt.md | 新規 AI セッション用の標準引き継ぎプロンプト |
 | experiment_log.md | モデル実験ログ（概要） |
 | experiments/ | 実験トラッカー（一覧・leaderboard・個別ログ） |
 | prompt_history/ | AIプロンプト履歴 |
