@@ -83,3 +83,33 @@ class TestPredictionToolMain:
         pred = result["predictions"][0]
         assert "venue" in pred and "all_combinations" in pred
         assert len(pred["all_combinations"]) == 120
+
+    def test_result_payload_contract_keys(self, tmp_path):
+        """predict_races / run_complete_prediction 返却の主要キーが壊れないことを担保する契約テスト"""
+        from unittest.mock import patch
+        from kyotei_predictor.tools.prediction_tool import PredictionTool
+
+        (tmp_path / "race_data_2024-06-01_KIRYU_R1.json").write_text(
+            json.dumps(_minimal_race_json(), ensure_ascii=False), encoding="utf-8"
+        )
+        (tmp_path / "odds_data_2024-06-01_KIRYU_R1.json").write_text("{}", encoding="utf-8")
+        fake_combos = [{"combination": f"{i}-{j}-{k}", "probability": 0.01, "expected_value": 0.0, "rank": idx + 1}
+                      for idx, (i, j, k) in enumerate([(1, 2, 3)] * 120)]
+
+        tool = PredictionTool(log_level=50, data_dir=str(tmp_path), data_source="file")
+        with patch.object(tool, "load_model", return_value=True), patch.object(
+            tool, "predict_trifecta_probabilities", return_value=fake_combos
+        ):
+            result = tool.run_complete_prediction(
+                target_date="2024-06-01", venues=["KIRYU"],
+                fetch_data=False, prediction_only=True,
+            )
+        assert result is not None
+        # トップレベル契約
+        for key in ("prediction_date", "generated_at", "model_info", "execution_summary", "predictions", "venue_summaries"):
+            assert key in result, f"missing key: {key}"
+        # execution_summary 必須キー
+        es = result["execution_summary"]
+        for key in ("total_races", "successful_predictions", "execution_time_minutes"):
+            assert key in es, f"execution_summary missing key: {key}"
+        assert "predictions" in result and isinstance(result["predictions"], list)

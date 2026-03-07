@@ -40,3 +40,4 @@
 - 追加テスト: `test_baseline_contracts.py`（メタデータ load/save、run_baseline_predict 返却キー契約）、`test_cli_smoke.py`（baseline_predict / prediction_tool --help）。
 - ドキュメント同期: `kyotei_predictor/tests/README_TESTS.md` に contract/smoke テストを追記。`docs/PROJECT_LAYOUT.md` にテスト配置・実行の一文を追加。
 - ROI 計算・買い目ロジック・主戦略条件は変更していない。
+- **prediction_tool 分割**: execution_summary / result payload の組み立てを `_build_execution_summary` / `_build_result_payload` に抽出。selected_bets 付与を `_apply_selected_bets_to_prediction` に集約。詳細は [prediction_tool_refactor_memo.md](prediction_tool_refactor_memo.md)。
