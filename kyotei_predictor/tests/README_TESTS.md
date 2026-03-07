@@ -135,10 +135,12 @@ pytest kyotei_predictor/tests/ -v --tb=short
 | `test_data_integration_main.py` | `data_integration.DataIntegration` | 検証, race_id 抽出, get_race_entries_summary, get_race_data(source=file) |
 | `test_prediction_tool_main.py` | `tools.prediction_tool.PredictionTool` | 初期化, get_race_data_paths, run_complete_prediction(prediction_only=True) のモックテスト |
 
-### 周辺・インフラ
+### 周辺・インフラ・契約
 
 | ファイル | 対象モジュール | 内容 |
 |----------|----------------|------|
+| `test_baseline_contracts.py` | application/infrastructure | モデルメタデータ save/load、run_baseline_predict 返却キー（model_info, execution_summary, predictions）の契約テスト |
+| `test_cli_smoke.py` | CLI エントリ | baseline_predict / prediction_tool の --help が落ちないこと |
 | `test_compression.py` | `utils.compression` | DataCompressor の save/load |
 | `test_exceptions_extended.py` | `utils.exceptions` | ValidationError, ConfigError, handle_exception, ErrorHandler |
 | `test_verify_predictions.py` | `tools.verify_predictions` | get_actual_trifecta_from_race_data, get_odds_for_combination, run_verification |

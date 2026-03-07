@@ -158,3 +158,4 @@ kyotei_Prediction/                    # プロジェクトルート（ここで 
 - **新規ドキュメント**: 追加時は `docs/README.md` の該当セクションに 1 行で追記する。
 - **新規ツール**: `kyotei_predictor/tools/` の適切なサブディレクトリに置き、`python -m kyotei_predictor.tools.xxx` で実行する。
 - **設定**: ルートの `optimization_config.ini` と `kyotei_predictor/config/*.json` を併用。パスは `config/settings.py` で一元管理。
+- **テスト**: 正式なテスト配置は `kyotei_predictor/tests/`。ルート `tests/improvement_tests/` は改善検証用。実行はプロジェクトルートで `pytest kyotei_predictor/tests/`（詳細は [kyotei_predictor/tests/README_TESTS.md](../kyotei_predictor/tests/README_TESTS.md)）。

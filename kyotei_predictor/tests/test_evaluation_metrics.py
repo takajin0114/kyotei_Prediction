@@ -13,7 +13,7 @@ def test_compute_metrics_from_episodes_basic():
     """指標が分解されて取得できる"""
     from kyotei_predictor.tools.evaluation.metrics import compute_metrics_from_episodes
 
-    rewards = [10.0, -80.0, 50.0, -80.0, 100.0]
+    rewards = [10.0, -80.0, 50.0, -80.0, 100.0]  # sum=0 → mean_reward=0.0
     hit_count = 2
     payouts = [1000.0, 0.0, 5000.0, 0.0, 10000.0]
     bet_amounts = [100.0] * 5
@@ -21,7 +21,7 @@ def test_compute_metrics_from_episodes_basic():
     m = compute_metrics_from_episodes(rewards, hit_count, payouts, bet_amounts)
     assert m["n_episodes"] == 5
     assert m["hit_rate"] == 0.4
-    assert m["mean_reward"] == 10.0
+    assert m["mean_reward"] == 0.0
     assert m["hit_count"] == 2
     assert m["total_bet"] == 500.0
     assert m["total_payout"] == 16000.0
