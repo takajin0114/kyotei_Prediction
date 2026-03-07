@@ -130,3 +130,14 @@ source venv/bin/activate
 
 **実行手順・メインのみの実行・除外オプションなど**  
 → [kyotei_predictor/tests/README_TESTS.md](kyotei_predictor/tests/README_TESTS.md)
+
+## AI Development System
+
+This project uses AI-assisted development.
+
+Before starting a new development session, the AI should read:
+
+- [docs/ai_dev/project_status.md](docs/ai_dev/project_status.md)
+- [docs/ai_dev/next_tasks.md](docs/ai_dev/next_tasks.md)
+- [docs/ai_dev/architecture.md](docs/ai_dev/architecture.md)
+- [docs/ai_dev/experiment_log.md](docs/ai_dev/experiment_log.md)
