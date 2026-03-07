@@ -48,9 +48,9 @@ BoatRace（競艇）3連単 EV prediction AI を開発している。
 ## Step 4 — Experiment Tracker
 
 **read**  
-[docs/ai_dev/experiments/leaderboard.md](experiments/leaderboard.md)  
+[experiments/leaderboard.md](../experiments/leaderboard.md)  
 then  
-[docs/ai_dev/experiments/open_questions.md](experiments/open_questions.md)
+[experiments/open_questions.md](../experiments/open_questions.md)
 
 **理解する内容**
 - 現在のベストモデル
@@ -61,7 +61,7 @@ then
 ## Step 5 — Recent Experiments
 
 **read**  
-[docs/ai_dev/experiments/logs/](experiments/logs/)
+[experiments/logs/](../experiments/logs/)
 
 最新の実験ログを確認する。  
 YAML front matter を優先して読むこと。
@@ -92,7 +92,7 @@ AI は新しい提案をする前に
 ## Experiment Logging
 
 新しい実験を行う場合  
-[docs/ai_dev/experiments/experiment_template_yaml.md](experiments/experiment_template_yaml.md)  
+[experiments/templates/experiment_template_yaml.md](../experiments/templates/experiment_template_yaml.md)  
 を使用する。
 
 ---

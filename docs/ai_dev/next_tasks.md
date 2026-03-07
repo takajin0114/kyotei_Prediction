@@ -1,6 +1,6 @@
 # Next Tasks
 
-新しいモデル比較を始める前に、[leaderboard](experiments/leaderboard.md) と [open_questions](experiments/open_questions.md) を確認すること。
+新しいモデル比較を始める前に、[leaderboard](../experiments/leaderboard.md) と [open_questions](../experiments/open_questions.md) を確認すること。
 
 ## Priority 1
 
