@@ -41,8 +41,9 @@ pytest-cov==4.1.0
 pytest-html==4.1.1
 pytest-mock==3.14.0
 
-# Optional: B案で LightGBM / XGBoost を使う場合（未導入時は sklearn にフォールバック）
-# pip install lightgbm xgboost
+# B案モデル比較（sklearn / LightGBM / XGBoost）
+lightgbm>=4.0.0
+xgboost>=2.0.0
 
 # Optional (uncomment if needed):
 # selenium==4.15.2

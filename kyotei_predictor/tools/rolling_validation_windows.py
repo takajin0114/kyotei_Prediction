@@ -46,6 +46,7 @@ def run_one_window(
     data_source: Optional[str] = None,
     db_path: Optional[str] = None,
     calibration: Optional[str] = None,
+    model_type: Optional[str] = None,
     seed: Optional[int] = 42,
 ) -> dict:
     """
@@ -53,6 +54,7 @@ def run_one_window(
     strategies: [(name, strategy, top_n, ev_threshold), ...]
     data_source: "json" | "db" | None。None のときは従来通り JSON 直読。
     calibration: "none" | "sigmoid" | "isotonic"。None のときは "none"。
+    model_type: "sklearn" | "lightgbm" | "xgboost"。None のときは "sklearn"。
     seed: 乱数シード。再現性用。None のときは 42。
     """
     import os
@@ -63,10 +65,11 @@ def run_one_window(
     ds = data_source or os.environ.get("KYOTEI_DATA_SOURCE") or None
     dbp = db_path
     calib = calibration or "none"
+    mtype = model_type or "sklearn"
     if seed is None:
         seed = 42
 
-    # 学習（日付フィルタ付き・キャリブレーション・seed 指定可）
+    # 学習（日付フィルタ付き・キャリブレーション・model_type・seed 指定可）
     run_baseline_train(
         data_dir=data_dir_raw,
         model_save_path=model_path,
@@ -76,6 +79,7 @@ def run_one_window(
         data_source=ds,
         db_path=dbp,
         calibration=calib,
+        model_type=mtype,
         seed=seed,
     )
 
@@ -89,7 +93,7 @@ def run_one_window(
         for spec_name, strategy, top_n, ev_th in strategies:
             suffix = ""
             if strategy == "top_n_ev":
-                suffix = f"_top5ev{int(ev_th * 100)}" if ev_th else ""
+                suffix = f"_top{top_n}ev{int(ev_th * 100)}" if ev_th else ""
             out_path = out_pred_dir / f"predictions_baseline_{day}{suffix}.json"
             if out_path.exists():
                 continue
@@ -111,13 +115,15 @@ def run_one_window(
             except Exception:
                 pass
 
-    # 検証集計（戦略別）
+    # 検証集計（戦略別）: selected_bets 用メトリクスを優先
     results = []
     for spec_name, strategy, top_n, ev_th in strategies:
         suffix = ""
         if strategy == "top_n_ev":
-            suffix = f"_top5ev{int(ev_th * 100)}" if ev_th else ""
-        tb = tp = hc = rwr = 0
+            suffix = f"_top{top_n}ev{int(ev_th * 100)}" if ev_th else ""
+        tb_sel = tp_sel = sc = rwr = hc = om = 0
+        log_loss_list = []
+        brier_list = []
         for day in test_dates:
             month = _month_dir(day)
             data_dir_month = data_dir_raw / month
@@ -132,30 +138,45 @@ def run_one_window(
                     data_source=ds,
                     db_path=dbp,
                 )
-                tb += summary.get("total_bet") or 0
-                tp += summary.get("total_payout") or 0
-                hc += summary.get("hit_count") or 0
+                tb_sel += summary.get("total_bet_selected") or 0
+                tp_sel += summary.get("total_payout_selected") or 0
+                sc += summary.get("selected_bets_total_count") or 0
                 rwr += summary.get("races_with_result") or 0
+                hc += summary.get("hit_count") or 0
+                om += summary.get("odds_missing_count") or 0
+                if summary.get("log_loss") is not None:
+                    log_loss_list.append(summary["log_loss"])
+                if summary.get("brier_score") is not None:
+                    brier_list.append(summary["brier_score"])
             except Exception:
                 continue
-        roi = round((tp / tb - 1) * 100, 2) if tb else 0
-        hr1 = round(hc / rwr * 100, 2) if rwr else 0
-        hr3 = None  # selected_bets 時は別集計が必要なら追加
-        profit = round(tp - tb, 2) if tb else 0
+        roi_sel = round((tp_sel / tb_sel - 1) * 100, 2) if tb_sel else 0.0
+        hr1 = round(hc / rwr * 100, 2) if rwr else 0.0
+        profit = round(tp_sel - tb_sel, 2) if tb_sel else 0.0
+        mean_log_loss = round(sum(log_loss_list) / len(log_loss_list), 6) if log_loss_list else None
+        mean_brier = round(sum(brier_list) / len(brier_list), 6) if brier_list else None
         results.append({
             "strategy": strategy,
             "strategy_name": spec_name,
             "top_n": top_n,
             "ev_threshold": ev_th,
-            "roi_pct": roi,
+            "roi_pct": roi_sel,
+            "roi_selected": roi_sel,
             "hit_rate": hr1,
             "hit_rate_rank1_pct": hr1,
-            "hit_rate_top3_pct": hr3,
-            "total_bet": tb,
-            "total_payout": tp,
+            "hit_rate_top3_pct": None,
+            "total_bet": tb_sel,
+            "total_payout": tp_sel,
+            "total_bet_selected": tb_sel,
+            "total_payout_selected": tp_sel,
+            "selected_bets_count": sc,
+            "selected_bets_total_count": sc,
+            "odds_missing_count": om,
             "profit": profit,
             "hit_count": hc,
             "races_with_result": rwr,
+            "log_loss": mean_log_loss,
+            "brier_score": mean_brier,
         })
     return {
         "train_start": train_start,

@@ -72,6 +72,23 @@ VENV_PATH=.venv-cycle YEAR_MONTH=2024-05 PREDICT_DATE=2024-05-01 ./scripts/run_l
 
 詳細は [docs/REPRODUCIBILITY_DIAGNOSIS.md](docs/REPRODUCIBILITY_DIAGNOSIS.md) を参照してください。
 
+## Model Comparison
+
+現在比較しているモデル:
+
+- sklearn baseline
+- LightGBM
+- XGBoost
+
+評価方法:
+
+- rolling validation
+- ROI（mean / median / std / overall）
+- log loss
+- Brier score
+
+詳細: [docs/MODEL_COMPARISON.md](docs/MODEL_COMPARISON.md)
+
 ## ドキュメント
 
 - **[docs/README.md](docs/README.md)**: ドキュメント全体の**索引（推奨入口）**。目的別にリンク一覧あり。
