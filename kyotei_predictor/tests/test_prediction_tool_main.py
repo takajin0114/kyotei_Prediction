@@ -113,3 +113,38 @@ class TestPredictionToolMain:
         for key in ("total_races", "successful_predictions", "execution_time_minutes"):
             assert key in es, f"execution_summary missing key: {key}"
         assert "predictions" in result and isinstance(result["predictions"], list)
+
+    def test_parse_prediction_tool_args_defaults_and_flags(self):
+        """argparse 分離: 主要オプションがパースでき、デフォルトが維持される"""
+        from kyotei_predictor.tools.prediction_tool import _parse_prediction_tool_args
+
+        args = _parse_prediction_tool_args(["--predict-date", "2024-06-01"])
+        assert args.predict_date == "2024-06-01"
+        assert args.data_source == "db"
+        assert args.verbose is False
+        assert args.complete_flow is False
+        assert args.include_selected_bets is False
+
+        args2 = _parse_prediction_tool_args(
+            ["--predict-date", "2025-01-15", "--data-source", "file", "--complete-flow", "--include-selected-bets"]
+        )
+        assert args2.predict_date == "2025-01-15"
+        assert args2.data_source == "file"
+        assert args2.complete_flow is True
+        assert args2.include_selected_bets is True
+
+    def test_get_ratio_from_odds_data_pure(self):
+        """_get_ratio_from_odds_data: 同一入力で同じ倍率が返る契約"""
+        from kyotei_predictor.tools.prediction_tool import PredictionTool
+
+        tool = PredictionTool(log_level=50, data_source="file")
+        odds_data = {
+            "odds_data": [
+                {"betting_numbers": [1, 2, 3], "ratio": 10.5},
+                {"combination": "2-3-4", "ratio": 20.0},
+            ]
+        }
+        assert tool._get_ratio_from_odds_data(odds_data, (1, 2, 3)) == 10.5
+        assert tool._get_ratio_from_odds_data(odds_data, (2, 3, 4)) == 20.0
+        assert tool._get_ratio_from_odds_data(odds_data, (1, 3, 2)) is None
+        assert tool._get_ratio_from_odds_data(None, (1, 2, 3)) is None

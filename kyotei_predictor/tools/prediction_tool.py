@@ -538,33 +538,6 @@ class PredictionTool:
             self.logger.error(f"予測エラー: {e}")
             return []
 
-    def predict_trifecta_probabilities_from_data(self, race_data: Dict, odds_data: Dict) -> List[Dict]:
-        """3連単の予測確率を計算（120通り全て）・辞書版（DB取得データ用）"""
-        try:
-            state = build_race_state_vector(race_data, None)
-            state_tensor = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
-            action_probs = self.model.policy.get_distribution(state_tensor).distribution.probs.detach().cpu().numpy()[0]
-            trifecta_list = list(permutations(range(1, 7), 3))
-            probability_combinations = []
-            for i, prob in enumerate(action_probs):
-                trifecta = trifecta_list[i]
-                combination_str = f"{trifecta[0]}-{trifecta[1]}-{trifecta[2]}"
-                ratio = self._get_ratio_from_odds_data(odds_data, trifecta)
-                probability_combinations.append({
-                    "combination": combination_str,
-                    "probability": float(prob),
-                    "expected_value": self.calculate_expected_value_from_data(trifecta, odds_data),
-                    "ratio": ratio,
-                    "rank": 0,
-                })
-            probability_combinations.sort(key=lambda x: x["probability"], reverse=True)
-            for i, item in enumerate(probability_combinations):
-                item["rank"] = i + 1
-            return probability_combinations
-        except Exception as e:
-            self.logger.error(f"予測エラー(辞書): {e}")
-            return []
-    
     def _get_ratio_from_odds_data(self, odds_data: Optional[Dict], trifecta: Tuple[int, int, int]) -> Optional[float]:
         """
         オッズ辞書から指定 3連単の倍率を取得。betting_numbers または combination に対応。
@@ -1199,19 +1172,6 @@ class PredictionTool:
         except Exception as e:
             self.logger.error(f"完全統合予測フローエラー: {e}")
             return None
-    
-    def _get_ratio_from_odds_data(self, odds_data: Optional[Dict], trifecta: Tuple[int, int, int]) -> Optional[float]:
-        """オッズ辞書から指定3連単の倍率を取得。EV戦略用。"""
-        if not odds_data:
-            return None
-        for o in odds_data.get("odds_data") or []:
-            if tuple(o.get("betting_numbers", [])) == trifecta:
-                r = o.get("ratio")
-                return float(r) if r is not None else None
-            if o.get("combination") == f"{trifecta[0]}-{trifecta[1]}-{trifecta[2]}":
-                r = o.get("ratio")
-                return float(r) if r is not None else None
-        return None
 
     def predict_trifecta_probabilities_from_data(self, race_data: Dict, odds_data: Dict) -> List[Dict]:
         """新規データから3連単の予測確率を計算（120通り全て）"""
@@ -1280,7 +1240,8 @@ class PredictionTool:
             self.logger.warning(f"期待値計算エラー: {e}")
             return 0.0
 
-def main():
+def _build_prediction_tool_parser() -> argparse.ArgumentParser:
+    """CLI 引数パーサーを組み立てる。テスト・main 両方から利用可能。"""
     parser = argparse.ArgumentParser(description='予想ツール - 3連単予測・購入方法提案')
     parser.add_argument('--predict-date', type=str, help='予測対象日 (YYYY-MM-DD)')
     parser.add_argument('--venues', type=str, help='対象会場 (カンマ区切り)')
@@ -1290,16 +1251,23 @@ def main():
     parser.add_argument('--data-source', type=str, choices=['file', 'db'], default='db', help='データソース: file=JSON, db=SQLite（デフォルト: db）')
     parser.add_argument('--db-path', type=str, default=None, help='data-source=db のときの SQLite パス（未指定時は kyotei_predictor/data/kyotei_races.sqlite）')
     parser.add_argument('--verbose', action='store_true', help='詳細ログ出力')
-    
-    # 新規引数の追加
     parser.add_argument('--fetch-data', action='store_true', help='当日データ取得を実行')
     parser.add_argument('--prediction-only', action='store_true', help='予測のみ実行（既存データ使用）')
     parser.add_argument('--risk-level', choices=['low', 'medium', 'high'], default='medium', help='リスクレベル')
     parser.add_argument('--complete-flow', action='store_true', help='完全統合フローを実行')
     parser.add_argument('--include-selected-bets', action='store_true',
                         help='設定に基づく買い目選定（selected_bets）を予測結果に含める')
-    
-    args = parser.parse_args()
+    return parser
+
+
+def _parse_prediction_tool_args(argv: Optional[List[str]] = None):
+    """CLI 引数をパースして namespace を返す。argv 未指定時は sys.argv を使用。"""
+    parser = _build_prediction_tool_parser()
+    return parser.parse_args(argv)
+
+
+def main():
+    args = _parse_prediction_tool_args()
     
     # ログレベル設定
     log_level = logging.DEBUG if args.verbose else logging.INFO

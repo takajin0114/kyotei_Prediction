@@ -133,7 +133,7 @@ pytest kyotei_predictor/tests/ -v --tb=short
 | `test_app_flask.py` | `app.py` (Flask) | GET /, /predictions, /api/race_data, POST /api/predict, /api/races, /api/weather, 静的ファイル 404 |
 | `test_prediction_engine_main.py` | `prediction_engine.PredictionEngine` | predict(), データ検証, 未知アルゴリズム, basic / rating_weighted / equipment_focused / comprehensive / relative_strength |
 | `test_data_integration_main.py` | `data_integration.DataIntegration` | 検証, race_id 抽出, get_race_entries_summary, get_race_data(source=file) |
-| `test_prediction_tool_main.py` | `tools.prediction_tool.PredictionTool` | 初期化, get_race_data_paths, run_complete_prediction(prediction_only=True) のモックテスト, 返却 payload 契約（prediction_date/model_info/execution_summary/predictions/venue_summaries） |
+| `test_prediction_tool_main.py` | `tools.prediction_tool.PredictionTool` | 初期化, get_race_data_paths, run_complete_prediction 構造・payload 契約, _parse_prediction_tool_args パース・デフォルト, _get_ratio_from_odds_data の同一入力→同一出力 |
 
 ### 周辺・インフラ・契約
 

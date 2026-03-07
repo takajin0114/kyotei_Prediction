@@ -41,3 +41,4 @@
 - ドキュメント同期: `kyotei_predictor/tests/README_TESTS.md` に contract/smoke テストを追記。`docs/PROJECT_LAYOUT.md` にテスト配置・実行の一文を追加。
 - ROI 計算・買い目ロジック・主戦略条件は変更していない。
 - **prediction_tool 分割**: execution_summary / result payload の組み立てを `_build_execution_summary` / `_build_result_payload` に抽出。selected_bets 付与を `_apply_selected_bets_to_prediction` に集約。詳細は [prediction_tool_refactor_memo.md](prediction_tool_refactor_memo.md)。
+- **prediction_tool 第2段**: argparse を `_build_prediction_tool_parser` / `_parse_prediction_tool_args` に分離。`_get_ratio_from_odds_data` と `predict_trifecta_probabilities_from_data` の重複定義を削除。 [prediction_tool_refactor_phase2_memo.md](prediction_tool_refactor_phase2_memo.md)。
