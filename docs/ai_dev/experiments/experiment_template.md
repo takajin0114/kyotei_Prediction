@@ -1,4 +1,6 @@
-# Experiment Template
+# Experiment Template（簡易版）
+
+**推奨**: 新規実験ログは [experiment_template_yaml.md](experiment_template_yaml.md)（YAML standard）を使うこと。こちらは YAML front matter を使わない簡易版。機械可読性が必要な場合は YAML standard を利用する。
 
 ## Experiment ID
 

@@ -9,7 +9,7 @@ AIが新しい作業を開始する前に
 - [docs/ai_dev/next_tasks.md](next_tasks.md)
 - [docs/ai_dev/architecture.md](architecture.md)
 
-実験管理は [docs/ai_dev/experiments/](experiments/) を参照すること。
+実験管理は [docs/ai_dev/experiments/](experiments/) を参照すること。項目定義・ステータスルールは [field_definitions.md](experiments/field_definitions.md)、[status_rules.md](experiments/status_rules.md)。
 
 ---
 
