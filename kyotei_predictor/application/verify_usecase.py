@@ -101,6 +101,20 @@ def run_verify(
                 pass
         actual_and_odds[(venue, rno)] = (actual, odds_ratio)
 
+    # 再現性診断用カウント（Task 5）
+    races_with_predictions = len(predictions)
+    races_with_odds = sum(1 for v in actual_and_odds.values() if v[1] is not None)
+    skip_result_missing = 0
+    skip_odds_missing = 0
+    skip_no_ev_candidate = 0
+    skipped_identifiers: Dict[str, List[str]] = {
+        "result_missing": [],
+        "odds_missing": [],
+        "no_ev_candidate": [],
+    }
+    selected_bets_race_count = 0
+    bets_per_date: Dict[str, int] = {}
+
     total = 0
     hit_rank1 = 0
     hit_top3 = 0
@@ -118,11 +132,29 @@ def run_verify(
         venue = race.get("venue") or ""
         rno = int(race.get("race_number") or 0)
         key = (venue, rno)
+        ident = f"{venue}_R{rno}" if venue else ""
         if key not in actual_and_odds:
+            skip_result_missing += 1
+            if ident:
+                skipped_identifiers["result_missing"].append(ident)
             continue
         actual, odds_ratio = actual_and_odds[key]
         if actual is None:
+            skip_result_missing += 1
+            if ident:
+                skipped_identifiers["result_missing"].append(ident)
             continue
+        if odds_ratio is None:
+            skip_odds_missing += 1
+            if ident:
+                skipped_identifiers["odds_missing"].append(ident)
+        selected = race.get("selected_bets") or []
+        if use_selected_bets and len(selected) == 0:
+            skip_no_ev_candidate += 1
+            if ident:
+                skipped_identifiers["no_ev_candidate"].append(ident)
+        if len(selected) > 0:
+            selected_bets_race_count += 1
         all_comb = race.get("all_combinations") or []
         comb_to_rank: Dict[str, int] = {}
         for i, c in enumerate(all_comb):
@@ -183,6 +215,16 @@ def run_verify(
 
         details.append(detail)
 
+    # 1日ごとの bet 件数（今回の verify は 1 日分なので prediction_date のみ）
+    selected_bets_total_count = int(total_bet_selected / BET_PER_COMBINATION) if total_bet_selected else 0
+    if prediction_date:
+        bets_per_date[prediction_date] = selected_bets_total_count
+
+    # skipped = 結果がなくて評価しなかったレースのみ。odds_missing / no_ev_candidate は評価したが bet しなかった件数
+    skipped_race_count = skip_result_missing
+    evaluated_race_count = total
+    races_with_selected_bets = selected_bets_race_count
+
     summary_obj = aggregate_verification_to_summary(
         prediction_file=str(prediction_path),
         prediction_date=prediction_date,
@@ -200,4 +242,21 @@ def run_verify(
         hit_count_selected=hit_count_selected,
         evaluation_mode=evaluation_mode,
     )
-    return summary_obj.to_dict(), details
+    summary_dict = summary_obj.to_dict()
+    # 再現性診断用: verify 前提条件を summary に追加（Task 5）
+    summary_dict["evaluated_race_count"] = evaluated_race_count
+    summary_dict["races_with_predictions"] = races_with_predictions
+    summary_dict["races_with_odds"] = races_with_odds
+    summary_dict["races_with_selected_bets"] = races_with_selected_bets
+    summary_dict["skipped_race_count"] = skipped_race_count
+    summary_dict["skip_reasons"] = {
+        "odds_missing": skip_odds_missing,
+        "prediction_missing": 0,
+        "no_ev_candidate": skip_no_ev_candidate,
+        "result_missing": skip_result_missing,
+    }
+    summary_dict["selected_bets_total_count"] = selected_bets_total_count
+    summary_dict["bets_per_date"] = bets_per_date
+    summary_dict["odds_missing_count"] = skip_odds_missing  # conditions で参照する用
+    summary_dict["skipped_race_identifiers"] = skipped_identifiers
+    return summary_dict, details

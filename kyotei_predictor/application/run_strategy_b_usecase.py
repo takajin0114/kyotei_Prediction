@@ -3,11 +3,33 @@
 
 学習 → 予測（selected_bets 付与）→ 検証 → サマリ保存 を一括実行する。
 再現手順を固定し、別期間での再検証にも利用する。
+run ごとの実験条件を完全保存し、再現性の切り分けに使う。
 """
 
+import hashlib
 import json
+import subprocess
+import uuid
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Optional, Union
+
+
+def _get_git_commit_hash() -> Optional[str]:
+    """git rev-parse HEAD でコミットハッシュを取得。取得できない場合は None。"""
+    try:
+        out = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            capture_output=True,
+            text=True,
+            timeout=2,
+            cwd=Path(__file__).resolve().parent.parent.parent,
+        )
+        if out.returncode == 0 and out.stdout:
+            return out.stdout.strip()[:40]
+    except Exception:
+        pass
+    return None
 
 
 # 主戦略の固定パラメータ（EV_BETTING_STRATEGY.md と一致）
@@ -28,6 +50,9 @@ def run_strategy_b(
     output_dir: Optional[Path] = None,
     data_source: Optional[str] = None,
     db_path: Optional[Union[str, Path]] = None,
+    seed: Optional[int] = 42,
+    max_samples: Optional[int] = 50000,
+    sample_mode: str = "head",
 ) -> Dict[str, Any]:
     """
     主戦略で 学習 → 予測 → 検証 を一括実行し、サマリと実行条件を返す。
@@ -41,6 +66,9 @@ def run_strategy_b(
         output_dir: 予測 JSON とサマリの出力先。None のとき data_dir_raw の親の outputs/strategy_b
         data_source: "json" | "db" | None
         db_path: data_source=db 時の DB パス
+        seed: 乱数シード。再現性用。None のときは 42。
+        max_samples: 最大学習サンプル数。sample_mode=all のときは無視。既定 50000。
+        sample_mode: "head" | "random" | "all"。既定 "head"。
 
     Returns:
         {
@@ -66,16 +94,20 @@ def run_strategy_b(
     else:
         model_save_path = Path(model_save_path)
 
-    # 1. 学習（calibration=sigmoid）
-    run_baseline_train(
+    # 1. 学習（calibration=sigmoid, seed 固定）
+    if seed is None:
+        seed = 42
+    train_result = run_baseline_train(
         data_dir=data_dir_raw,
         model_save_path=model_save_path,
-        max_samples=50000,
+        max_samples=max_samples,
+        sample_mode=sample_mode,
         train_start=train_start,
         train_end=train_end,
         data_source=data_source,
         db_path=db_path,
         calibration=STRATEGY_B_CALIBRATION,
+        seed=seed,
     )
 
     # 2. 予測（主戦略パラメータ）
@@ -109,7 +141,47 @@ def run_strategy_b(
         db_path=db_path,
     )
 
+    # 再現性診断: verify 詳細を JSON で保存（Task 5）
+    verify_details_path = output_dir / f"verify_details_{predict_date}.json"
+    verify_details_hash: Optional[str] = None
+    try:
+        verify_details = {
+            "evaluated_race_count": summary.get("evaluated_race_count"),
+            "races_with_predictions": summary.get("races_with_predictions"),
+            "races_with_odds": summary.get("races_with_odds"),
+            "races_with_selected_bets": summary.get("races_with_selected_bets"),
+            "skipped_race_count": summary.get("skipped_race_count"),
+            "skip_reasons": summary.get("skip_reasons"),
+            "selected_bets_total_count": summary.get("selected_bets_total_count"),
+            "bets_per_date": summary.get("bets_per_date"),
+            "details_count": len(details),
+            "skipped_race_identifiers": summary.get("skipped_race_identifiers", {}),
+            "details": details,
+        }
+        payload = {k: v for k, v in verify_details.items() if k != "verify_details_hash"}
+        verify_details_hash = hashlib.sha256(
+            json.dumps(payload, sort_keys=True, ensure_ascii=False, default=str).encode()
+        ).hexdigest()[:16]
+        verify_details["verify_details_hash"] = verify_details_hash
+        with open(verify_details_path, "w", encoding="utf-8") as f:
+            json.dump(verify_details, f, ensure_ascii=False, indent=2, default=str)
+    except Exception:
+        verify_details_path = None
+
+    total_bet_selected = summary.get("total_bet_selected") or summary.get("total_bet") or 0
+    total_payout_selected = summary.get("total_payout_selected") or 0
+    roi_selected = summary.get("roi_pct")
+    selected_bets_count = int(total_bet_selected / 100) if total_bet_selected else 0
+    predict_race_count = len(result.get("predictions") or [])
+    run_id = uuid.uuid4().hex[:12]
+    summary_created_at = datetime.now(timezone.utc).isoformat()
+
+    # 再現性切り分け用: run ごとの実験条件を完全保存（Task 1）
     conditions = {
+        "run_id": run_id,
+        "train_start": train_start,
+        "train_end": train_end,
+        "predict_date": predict_date,
         "model": "baseline_b",
         "calibration": STRATEGY_B_CALIBRATION,
         "strategy": STRATEGY_B_STRATEGY,
@@ -117,9 +189,28 @@ def run_strategy_b(
         "ev_threshold": STRATEGY_B_EV_THRESHOLD,
         "bet_sizing": STRATEGY_B_BET_SIZING,
         "evaluation_mode": STRATEGY_B_EVALUATION_MODE,
-        "train_start": train_start,
-        "train_end": train_end,
-        "predict_date": predict_date,
+        "seed": seed,
+        "max_samples": max_samples,
+        "sample_mode": sample_mode,
+        "data_source": data_source or "json",
+        "data_dir": str(data_dir_raw),
+        "train_sample_count": train_result.get("n_samples"),
+        "train_file_count": train_result.get("train_file_count"),
+        "train_first_date": train_result.get("train_first_date"),
+        "train_last_date": train_result.get("train_last_date"),
+        "train_file_manifest_path": train_result.get("train_file_manifest_path"),
+        "train_file_manifest_hash": train_result.get("train_file_manifest_hash"),
+        "verify_details_hash": verify_details_hash,
+        "predict_race_count": predict_race_count,
+        "odds_missing_count": summary.get("odds_missing_count"),
+        "selected_bets_count": selected_bets_count,
+        "total_bet_selected": total_bet_selected,
+        "total_payout_selected": total_payout_selected,
+        "roi_selected": roi_selected,
+        "git_commit_hash": _get_git_commit_hash(),
+        "model_path": str(model_save_path),
+        "verify_details_path": str(verify_details_path) if verify_details_path else None,
+        "summary_created_at": summary_created_at,
     }
 
     # 4. サマリ保存（実行条件付き）
@@ -131,7 +222,7 @@ def run_strategy_b(
         "model_path": str(model_save_path),
     }
     with open(summary_path, "w", encoding="utf-8") as f:
-        json.dump(to_save, f, ensure_ascii=False, indent=2)
+        json.dump(to_save, f, ensure_ascii=False, indent=2, default=str)
 
     run_result = {
         "summary": summary,

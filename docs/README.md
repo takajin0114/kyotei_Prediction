@@ -35,6 +35,7 @@
 | [LEARNING_INPUT_OUTPUT.md](LEARNING_INPUT_OUTPUT.md) | 学習のインプット・アウトプット（race_data/odds_data の必須項目など） |
 | [LEARNING_PREDICTION_CYCLE_IMPROVEMENTS.md](LEARNING_PREDICTION_CYCLE_IMPROVEMENTS.md) | 学習→予測サイクルの改善点・verify_predictions の使い方 |
 | [RUN_VERIFICATION.md](RUN_VERIFICATION.md) | 実行確認の手順（venv 作成・テスト・学習の短い実行） |
+| [REPRODUCIBILITY_DIAGNOSIS.md](REPRODUCIBILITY_DIAGNOSIS.md) | **再現性診断** — 同じ条件で同じ結果にする手順・summary 比較・学習/verify 実態の確認。**ROI 不安定時の切り分け手順**（§7）あり。 |
 
 ---
 
