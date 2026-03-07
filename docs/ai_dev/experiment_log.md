@@ -1,6 +1,6 @@
 # Experiment Log
 
-ここではモデル実験結果の概要を記録する。詳細な個別実験は [experiments/logs/](../experiments/logs/) に保存する。
+ここではモデル実験結果の概要を記録する。詳細な個別実験は [experiments/logs/](../../experiments/logs/) に保存する。
 
 ---
 
