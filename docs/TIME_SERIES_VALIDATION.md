@@ -59,6 +59,7 @@
 
 ## 参照
 
+- **State Vector 棚卸し（モーター・ボート）**: `docs/STATE_VECTOR_AUDIT_MOTOR_BOAT.md`（モーター・ボート情報の入力構造・評価）
 - ロールング検証の集計: `kyotei_predictor/tools/rolling_validation_aggregate.py`
 - 学習: `python -m kyotei_predictor.cli.baseline_train --data-dir kyotei_predictor/data/raw/2024-06 --model-path outputs/baseline_b_train202406.joblib --max-samples 10000`
 - 予測: `python -m kyotei_predictor.cli.baseline_predict --predict-date 2024-07-DD --data-dir kyotei_predictor/data/raw/2024-07 --model-path outputs/baseline_b_train202406.joblib --output outputs/rolling_train202406/predictions_baseline_2024-07-DD.json --include-selected-bets --strategy top_n --top-n 3`
@@ -90,6 +91,10 @@
 6. **ロールング検証（特徴量 before/after）**  
    プロジェクトルートで `PYTHONPATH=. python3 kyotei_predictor/tools/rolling_validation_feature.py`  
    実行後、`logs/rolling_validation_feature_before_after.json` が更新される。
+
+7. **ロールング検証（キャリブレーション比較）**  
+   プロジェクトルートで `PYTHONPATH=. python3 kyotei_predictor/tools/rolling_validation_calibration.py`  
+   実行後、`logs/rolling_validation_calibration_before_after.json` と `logs/rolling_validation_calibration_compare.json` が更新される。
 
 ---
 
@@ -150,8 +155,27 @@
 - **保存先**: **logs/rolling_validation_feature_before_after.json**
 - **実行**: `PYTHONPATH=. python3 kyotei_predictor/tools/rolling_validation_feature.py`
 
+### 確率キャリブレーションの影響（15日 rolling・同一条件）
+
+calibration=none / sigmoid / isotonic で同一 4 window を比較した結果。
+
+| 戦略 | none 平均ROI | sigmoid 平均ROI | isotonic 平均ROI | isotonic 正のROI |
+|------|--------------|-----------------|------------------|------------------|
+| B top_n=3 | -1.14% | 30.26% | 18.20% | 2/4 |
+| B top_n=5 EV>1.10 | 19.69% | **53.54%** | **44.55%** | **3/4** |
+| B top_n=5 EV>1.15 | 18.39% | **55.40%** | **40.51%** | 2/4 |
+
+- **解釈**: キャリブレーション（sigmoid / isotonic）を導入すると、**平均 ROI が大きく改善**。EV 1.10・1.15 の有効性は維持・強化。現時点の推奨は「従来特徴量 + calibration=sigmoid（または isotonic）+ EV>1.10 または 1.15」。
+- **保存先**: **logs/rolling_validation_calibration_before_after.json**, **logs/rolling_validation_calibration_compare.json**
+- **実行**: `PYTHONPATH=. python3 kyotei_predictor/tools/rolling_validation_calibration.py`
+
+### 現時点の主戦略（15日 rolling・calibration 比較後）
+
+- **推奨**: B案 + **calibration=sigmoid** + B top_n=5 EV>1.10 または EV>1.15。train 15日・test 7日・4 window で平均 ROI が最も高かった組み合わせ。
+- **代替**: calibration=isotonic（EV>1.10 で正のROI window 3/4 の安定性を重視する場合）。
+
 ### 現時点での汎化評価
 
-- **ロールング検証（4 window）**: 15日学習では EV 1.10・1.15 が 2/4 window でプラス。30日学習では全 window でマイナス。特徴量「モーター勝率代理」を追加すると 15日学習でも全戦略が悪化（正のROI 0/4）。
-- **解釈**: データ量・期間が限られる中では、学習期間を伸ばすより「直近 15日で学習し EV で絞る」方がロールング検証スコアは良い。特徴量は 1 つ追加しただけでは汎化改善にならず、従来ベースライン＋EV 閾値の維持を推奨。
-- 保存先: **logs/rolling_validation_b_windows.json**, **logs/rolling_validation_b_before_after.json**, **logs/rolling_validation_feature_before_after.json**
+- **ロールング検証（4 window）**: 15日学習では EV 1.10・1.15 が 2/4 window でプラス。30日学習では全 window でマイナス。特徴量「モーター勝率代理」追加は悪化。**確率キャリブレーション（sigmoid / isotonic）導入で平均 ROI が改善**（EV>1.10 で 19.69% → 53.54% / 44.55%、正のROI は 2/4 または 3/4）。
+- **解釈**: 直近 15日で学習し EV で絞る方針は維持。特徴量追加は今回有効でなかったため従来特徴量のまま。**キャリブレーションを有効にした B案 + EV 1.10 / 1.15 を現時点の推奨戦略**とする。
+- 保存先: **logs/rolling_validation_b_windows.json**, **logs/rolling_validation_b_before_after.json**, **logs/rolling_validation_feature_before_after.json**, **logs/rolling_validation_calibration_before_after.json**, **logs/rolling_validation_calibration_compare.json**

@@ -134,7 +134,13 @@
 ### 特徴量追加後の EV 閾値（モーター勝率代理 1 次元追加）
 
 - **結果**: モーター勝率代理を 1 次元追加したモデルでは、EV 1.10・1.15 でも平均 ROI がマイナス（-36.84%, -39.55%）、正の ROI window は 0/4。**特徴量追加後は EV 1.10〜1.15 の有利性は出ていない**。
-- **暫定推奨**: **従来特徴量（モーター勝率代理なし）** の B案で、EV 1.10 または 1.15 を維持する。特徴量追加は今回 1 つでは汎化改善にならなかったため、デフォルトで追加を切る（`KYOTEI_USE_MOTOR_WIN_PROXY=0`）か、別特徴量を 1 つずつ試す方針が無難。
+- **暫定推奨**: **従来特徴量（モーター勝率代理なし）** の B案で、EV 1.10 または 1.15 を維持する。現時点ではモーター勝率代理はデフォルトOFF。
+
+### キャリブレーション導入後の EV 閾値（確率補正あり）
+
+- **結果**: calibration=none に比べ、**sigmoid / isotonic で平均 ROI が大きく改善**。同一 15日 rolling で EV>1.10 は none 19.69% → sigmoid 53.54%、isotonic 44.55%。EV>1.15 は none 18.39% → sigmoid 55.40%、isotonic 40.51%。正の ROI window は none 2/4 のまま、isotonic EV>1.10 では 3/4。
+- **確率補正の有無**: 補正なし（none）でも EV 1.10〜1.15 は有効（2/4 プラス）が、**sigmoid または isotonic をかけると EV 閾値の効きが強くなり、平均 ROI が向上**。本番運用では calibration ありを推奨。
+- **暫定推奨閾値**: **B案 + calibration=sigmoid + EV>1.10 または EV>1.15**。sigmoid が平均 ROI 最大。代替として calibration=isotonic（EV>1.10 で正のROI window 3/4 の安定性を重視する場合）。学習は `--calibration sigmoid` で保存し、予測時は保存済みモデル（キャリブレーション込み）をそのまま利用する。
 
 ### ROI と bet 数のトレードオフ
 
@@ -144,8 +150,9 @@
 
 ### 現時点の推奨戦略
 
+- **ロールング検証・汎化重視**: **B案 + calibration=sigmoid + B top_n=5 EV>1.10 または EV>1.15**。15日学習・7日検証・4 window で平均 ROI が最大だった設定（`docs/TIME_SERIES_VALIDATION.md` 参照）。
 - **短期・7月データ（学習と検証が近い場合）**: B top_n=3 または B top_n=5 EV>1.05（高 ROI 維持）。
-- **時系列分離後（train=6月 / test=7月）**: B案は全条件マイナス（`docs/TIME_SERIES_VALIDATION.md` 参照）。汎化を重視するなら学習期間の拡大やロールング検証を検討。
+- **時系列分離後（train=6月 / test=7月）**: B案は全条件マイナス（`docs/TIME_SERIES_VALIDATION.md` 参照）。汎化を重視するなら 15日 rolling + calibration を推奨。
 - **60日・EV閾値**: top_n=5 では 1.10 または 1.15 で bet 数減・ROI 増の傾向。厳しめに絞りたい場合は 1.15 を推奨。
 - **本番運用**: 学習では最終オッズを使わず、検証では final odds、本番では current odds のみ使用（`docs/DATA_LEAKAGE_CHECK.md` 参照）。
 

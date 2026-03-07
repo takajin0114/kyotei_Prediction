@@ -21,8 +21,8 @@ kyotei_Prediction/                    # プロジェクトルート（ここで 
 │   ├── run_learning_prediction_cycle.bat / .sh
 │   ├── run_batch_fetch_1month.sh, run_fetch_5year_chunked.sh
 │   └── README.md                    # 一覧・実行例
-├── logs/                            # 実行ログ（バッチ・学習の出力先）
-├── outputs/                         # 予測結果 JSON 等
+├── logs/                            # 実行ログ・比較結果 JSON（.gitignore。運用: docs/REPOSITORY_HYGIENE_AND_CLEANUP.md）
+├── outputs/                         # 予測結果 JSON・学習済みモデル（.gitignore）
 ├── kyotei_predictor/                # メイン Python パッケージ
 │   ├── app.py, prediction_engine.py, data_integration.py, errors.py
 │   ├── config/, utils/, pipelines/, data/, static/, templates/
@@ -112,9 +112,10 @@ kyotei_Prediction/                    # プロジェクトルート（ここで 
 
 ## 6. ログの出力先
 
-- **ルートの logs/** : バッチ取得（batch_fetch_*.log）、最適化・学習の tee 出力（optimize_*.log, train_*.log）など
+- **ルートの logs/** : バッチ取得（batch_fetch_*.log）、最適化・学習の tee 出力（optimize_*.log, train_*.log）、比較結果 JSON（rolling_validation_*.json 等）など
 - **kyotei_predictor/logs/** : 学習の詳細ログ、予測ツール、データ品質・スケジュール保守など
 - 日時形式は `config.json` の `logging.datefmt` で統一（`utils/logger.py` 経由）
+- **生成物の整理・cleanup**: [REPOSITORY_HYGIENE_AND_CLEANUP.md](REPOSITORY_HYGIENE_AND_CLEANUP.md) を参照
 
 ---
 

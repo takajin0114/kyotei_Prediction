@@ -28,6 +28,7 @@ jobs:
           pip install -r requirements.txt
           pip install pytest pytest-mock
 
+      # 含まれるテスト: test_baseline_b, test_verify_predictions, test_cleanup_regression, test_state_vector 等（Selenium/Web 除外）
       - name: Run pytest（Selenium/Web 除外）
         run: |
           python -m pytest kyotei_predictor/tests/ \
