@@ -53,10 +53,10 @@ def main() -> int:
         action="store_true",
         help="既存 betting_selector で selected_bets を付与（verify evaluation_mode=selected_bets 用）",
     )
-    parser.add_argument("--strategy", type=str, default=None, help="買い目戦略: single / top_n / threshold / ev / top_n_ev（上位NのうちEV閾値以上）")
-    parser.add_argument("--top-n", type=int, default=None, help="strategy=top_n の N")
+    parser.add_argument("--strategy", type=str, default=None, help="買い目戦略。未指定時は config。single / top_n / top_n_ev（推奨）等")
+    parser.add_argument("--top-n", type=int, default=None, help="strategy=top_n / top_n_ev の N。未指定時は config（推奨 5）")
     parser.add_argument("--score-threshold", type=float, default=None, help="strategy=threshold の閾値")
-    parser.add_argument("--ev-threshold", type=float, default=None, help="strategy=ev / top_n_ev の閾値（expected_roi、例: 1.05）")
+    parser.add_argument("--ev-threshold", type=float, default=None, help="strategy=ev / top_n_ev の閾値（expected_roi）。未指定時は config（推奨 1.15）")
     parser.add_argument(
         "--data-source",
         type=str,
