@@ -170,7 +170,9 @@ optuna_tensorboard/
 # ログ（scripts/ のバッチが書き出す先）。中身は ignore。README のみ追跡
 logs/
 !logs/README.md
-# 実験ログ（experiments/logs/）は experiments/ 配下で別管理
+# 実験ログ（experiments/logs/）の .md は追跡する
+!experiments/logs/
+!experiments/logs/*.md
 # 学習済みモデル（outputs/ 配下は上で除外。ルート直下の紛れも ignore）
 *.joblib
 *.pkl

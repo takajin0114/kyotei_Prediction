@@ -28,7 +28,6 @@
 ## Priority 6
 
 - feature engineering
-  - course × venue performance
-  - recent form
-  - motor trend
-  - relative race strength
+  - extended_features_v2 を n_windows=12 で再評価（EXP-0002 は n_windows=2）
+  - DB 由来の venue/course 成績・直近N走（recent form）を v2 に組み込む
+  - course × venue performance / recent form / motor trend / relative race strength の実データ化

@@ -16,6 +16,8 @@ ROI 改善に最も効く特徴量は何か。
 - motor trend
 - relative race strength
 
+（extended_features_v2 で motor_trend / relative_race_strength を追加済み。recent_form はプレースホルダー。EXP-0002 で n_windows=2 比較済み。v2 は現時点では hold。）
+
 ## Q3
 
 EV strategy の改善余地はどこか。

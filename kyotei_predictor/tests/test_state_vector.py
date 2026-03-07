@@ -11,6 +11,7 @@ from kyotei_predictor.pipelines.state_vector import (
     build_race_state_vector,
     get_state_dim,
     get_stadium_names_order,
+    EXTENDED_V2_EXTRA_DIM,
 )
 
 
@@ -129,6 +130,41 @@ class TestStateVector(unittest.TestCase):
         }
         state = build_race_state_vector(race, None)
         self.assertEqual(state.shape, (get_state_dim(),))
+
+    def test_extended_features_v2_dim_and_build(self):
+        """feature_set=extended_features_v2 のとき次元が base+EXTENDED_V2_EXTRA_DIM になり落ちずにビルドできること"""
+        prev = os.environ.get("KYOTEI_FEATURE_SET"), os.environ.get("KYOTEI_USE_MOTOR_WIN_PROXY")
+        try:
+            os.environ["KYOTEI_FEATURE_SET"] = "extended_features_v2"
+            if "KYOTEI_USE_MOTOR_WIN_PROXY" in os.environ:
+                del os.environ["KYOTEI_USE_MOTOR_WIN_PROXY"]
+            stadiums = get_stadium_names_order()
+            base_extended = 48 + len(stadiums) + 4
+            expected_dim = base_extended + EXTENDED_V2_EXTRA_DIM
+            self.assertEqual(get_state_dim(), expected_dim)
+            race = {
+                "race_info": {"stadium": "TODA", "race_number": 1, "number_of_laps": 3, "is_course_fixed": False},
+                "race_entries": [
+                    {
+                        "pit_number": i,
+                        "racer": {"current_rating": "B1"},
+                        "performance": {"rate_in_all_stadium": 5.0, "rate_in_event_going_stadium": 5.0},
+                        "boat": {"quinella_rate": 50.0, "trio_rate": 50.0},
+                        "motor": {"quinella_rate": 50.0, "trio_rate": 50.0},
+                    }
+                    for i in range(1, 7)
+                ],
+            }
+            state = build_race_state_vector(race, None)
+            self.assertEqual(state.shape, (expected_dim,))
+            self.assertFalse(np.any(np.isnan(state)))
+        finally:
+            if prev[0] is not None:
+                os.environ["KYOTEI_FEATURE_SET"] = prev[0]
+            elif "KYOTEI_FEATURE_SET" in os.environ:
+                os.environ.pop("KYOTEI_FEATURE_SET")
+            if prev[1] is not None:
+                os.environ["KYOTEI_USE_MOTOR_WIN_PROXY"] = prev[1]
 
 
 if __name__ == "__main__":

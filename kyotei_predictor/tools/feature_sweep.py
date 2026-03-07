@@ -1,8 +1,9 @@
 """
-特徴量セット比較: current_features vs extended_features で同一条件の rolling validation を実行。
+特徴量セット比較: current_features / extended_features / extended_features_v2 で同一条件の rolling validation を実行。
 
-- current_features: KYOTEI_USE_MOTOR_WIN_PROXY=0（既存状態ベクトルのみ）
-- extended_features: KYOTEI_USE_MOTOR_WIN_PROXY=1（モーター勝率代理を追加）
+- current_features: 既存状態ベクトルのみ
+- extended_features: モーター勝率代理を追加
+- extended_features_v2: extended + venue_course/recent_form/motor_trend/relative_race_strength 系
 
 戦略は現状ベスト（top_n=6, ev_threshold=1.20）で固定。DB 必須。
 出力: outputs/feature_comparison_summary.json
@@ -23,9 +24,11 @@ if str(_PROJECT_ROOT) not in sys.path:
 from kyotei_predictor.tools.rolling_validation_roi import run_rolling_validation_roi
 
 FEATURE_SETS = [
-    ("current_features", "0"),
-    ("extended_features", "1"),
+    ("current_features", None),
+    ("extended_features", "extended_features"),
+    ("extended_features_v2", "extended_features_v2"),
 ]
+ENV_FEATURE_SET = "KYOTEI_FEATURE_SET"
 ENV_MOTOR_PROXY = "KYOTEI_USE_MOTOR_WIN_PROXY"
 
 
@@ -52,11 +55,16 @@ def main() -> int:
         return 1
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
-    prev_env = os.environ.get(ENV_MOTOR_PROXY)
+    prev_feature_set = os.environ.get(ENV_FEATURE_SET)
+    prev_motor = os.environ.get(ENV_MOTOR_PROXY)
     results = []
     try:
-        for name, proxy_val in FEATURE_SETS:
-            os.environ[ENV_MOTOR_PROXY] = proxy_val
+        for name, feature_set_val in FEATURE_SETS:
+            if feature_set_val is not None:
+                os.environ[ENV_FEATURE_SET] = feature_set_val
+            else:
+                os.environ[ENV_FEATURE_SET] = "current_features"
+                os.environ[ENV_MOTOR_PROXY] = "0"
             sub_dir = args.output_dir / f"feature_{name}"
             sub_dir.mkdir(parents=True, exist_ok=True)
             summary, windows = run_rolling_validation_roi(
@@ -75,10 +83,17 @@ def main() -> int:
             bets = [w["selected_bets_total_count"] for w in windows]
             results.append({
                 "feature_set": name,
+                "model_type": summary.get("model_type", "sklearn"),
+                "calibration": summary.get("calibration", args.calibration),
+                "strategy": summary.get("strategy", "top_n_ev"),
+                "top_n": summary.get("top_n", args.top_n),
+                "ev_threshold": summary.get("ev_threshold", args.ev_threshold),
+                "seed": summary.get("seed", args.seed),
+                "n_windows": summary.get("n_windows") or summary.get("number_of_windows"),
+                "overall_roi_selected": summary.get("overall_roi_selected"),
                 "mean_roi_selected": summary.get("mean_roi_selected"),
                 "median_roi_selected": summary.get("median_roi_selected"),
                 "std_roi_selected": summary.get("std_roi_selected"),
-                "overall_roi_selected": summary.get("overall_roi_selected"),
                 "total_selected_bets": summary.get("total_selected_bets"),
                 "mean_selected_bets_per_window": round(statistics.mean(bets), 2) if bets else None,
                 "mean_log_loss": summary.get("mean_log_loss"),
@@ -86,19 +101,27 @@ def main() -> int:
                 "number_of_windows": summary.get("number_of_windows"),
             })
     finally:
-        if prev_env is not None:
-            os.environ[ENV_MOTOR_PROXY] = prev_env
+        if prev_feature_set is not None:
+            os.environ[ENV_FEATURE_SET] = prev_feature_set
+        elif ENV_FEATURE_SET in os.environ:
+            os.environ.pop(ENV_FEATURE_SET, None)
+        if prev_motor is not None:
+            os.environ[ENV_MOTOR_PROXY] = prev_motor
         elif ENV_MOTOR_PROXY in os.environ:
             os.environ.pop(ENV_MOTOR_PROXY, None)
 
     out_path = args.output_dir / "feature_comparison_summary.json"
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump({
+            "model_type": "sklearn",
             "feature_sets": [f[0] for f in FEATURE_SETS],
-            "note": "extended_features = current + motor_win_proxy (KYOTEI_USE_MOTOR_WIN_PROXY=1)",
-            "strategy": {"top_n": args.top_n, "ev_threshold": args.ev_threshold},
+            "note": "extended_features = +motor_win_proxy; extended_features_v2 = +venue_course/recent_form/motor_trend/relative_race_strength",
+            "strategy": "top_n_ev",
+            "top_n": args.top_n,
+            "ev_threshold": args.ev_threshold,
             "calibration": args.calibration,
             "n_windows": args.n_windows,
+            "seed": args.seed,
             "results": results,
         }, f, ensure_ascii=False, indent=2)
     print("Saved", out_path)

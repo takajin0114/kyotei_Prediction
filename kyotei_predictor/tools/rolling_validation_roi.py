@@ -81,13 +81,20 @@ def run_rolling_validation_roi(
     ev_threshold: float = 1.15,
     strategies: Optional[List[Tuple[str, str, int, Optional[float]]]] = None,
     model_type: Optional[str] = None,
+    feature_set: Optional[str] = None,
     seed: int = 42,
 ) -> Tuple[Union[dict, List[dict]], Union[list, List[list]]]:
     """
     DB のみでロールング検証を実行し、各 window の結果と summary を返す。
     strategies を渡すと複数戦略を同一 train で比較し、
     (summaries のリスト, windows のリストのリスト) を返す。
+    feature_set: 記録用（current_features / extended_features / extended_features_v2）。None のときは環境変数から取得。
     """
+    import os as _os
+    _feature_set = feature_set or _os.environ.get("KYOTEI_FEATURE_SET", "extended_features")
+    if _feature_set == "extended_features" and _os.environ.get("KYOTEI_USE_MOTOR_WIN_PROXY", "0") == "0":
+        _feature_set = "current_features"
+    _model_type = model_type or "sklearn"
     min_date, max_date = get_db_date_range(db_path)
     windows = build_windows(
         min_date, max_date, train_days, test_days, step_days, n_windows
@@ -159,16 +166,22 @@ def run_rolling_validation_roi(
         briers = [r["brier_score"] for r in recs if r.get("brier_score") is not None]
         name, s, tn, ev = strat
         out = {
+            "model_type": _model_type,
             "model": model,
             "calibration": calibration,
+            "feature_set": _feature_set,
             "strategy": s,
             "strategy_name": name,
             "top_n": tn,
             "ev_threshold": ev,
+            "seed": seed,
+            "n_windows": len(recs),
+            "number_of_windows": len(recs),
             "train_days": train_days,
             "test_days": test_days,
             "step_days": step_days,
             "date_range": {"min": min_date, "max": max_date},
+            "overall_roi_selected": overall_roi,
             "mean_roi_selected": round(statistics.mean(rois), 2) if rois else None,
             "median_roi_selected": round(statistics.median(rois), 2) if rois else None,
             "std_roi_selected": round(statistics.stdev(rois), 2) if len(rois) > 1 else None,
@@ -177,13 +190,15 @@ def run_rolling_validation_roi(
             "total_selected_bets": total_selected_bets,
             "total_bet_selected": round(total_bet, 2),
             "total_payout_selected": round(total_payout, 2),
-            "overall_roi_selected": overall_roi,
-            "number_of_windows": len(recs),
         }
         if log_losses:
             out["mean_log_loss"] = round(statistics.mean(log_losses), 6)
+        else:
+            out["mean_log_loss"] = None
         if briers:
             out["mean_brier_score"] = round(statistics.mean(briers), 6)
+        else:
+            out["mean_brier_score"] = None
         return out
 
     if len(strategies) == 1:
