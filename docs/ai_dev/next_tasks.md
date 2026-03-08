@@ -8,7 +8,7 @@
 
 ## Priority 2
 
-- rolling validation automation
+- 特徴量見直し（venue/recent の正規化・重み）、または rolling validation automation
 
 ## Priority 3
 
@@ -28,6 +28,6 @@
 ## Priority 6
 
 - feature engineering
-  - extended_features_v2 を n_windows=12 で再評価（EXP-0002 は n_windows=2）
-  - DB 由来の venue/course 成績・直近N走（recent form）を v2 に組み込む
-  - course × venue performance / recent form / motor trend / relative race strength の実データ化
+  - **実施済み**: feature_set 明示引数化、meta.json に feature_set 保存、予測時 mismatch 警告、DB 由来 recent_form / venue_course の v2 実装、train/predict への racer_history_cache 接続
+  - **実施済み**: n_windows=12 で extended_features と extended_features_v2 を正式比較。EXP-0004 で hold 判断（v2 ROI 悪化）
+  - course × venue performance のさらなる拡張は任意

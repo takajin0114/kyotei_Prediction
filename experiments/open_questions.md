@@ -16,7 +16,7 @@ ROI 改善に最も効く特徴量は何か。
 - motor trend
 - relative race strength
 
-（extended_features_v2 で motor_trend / relative_race_strength を追加済み。recent_form はプレースホルダー。EXP-0002 で n_windows=2 比較済み。v2 は現時点では hold。）
+（extended_features_v2 で motor_trend / relative_race_strength に加え、DB 由来の recent_form・venue_course を実装済み。EXP-0004: n_windows=12 で正式比較済み → extended_features_v2 は extended_features より ROI 悪化（-33.76% vs -27.7%）のため hold。）
 
 ## Q3
 
