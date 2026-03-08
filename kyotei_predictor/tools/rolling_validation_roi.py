@@ -127,7 +127,8 @@ def run_rolling_validation_roi(
             data_source="db",
             db_path=db_path,
             calibration=calibration,
-            model_type=model_type,
+            model_type=_model_type,
+            feature_set=_feature_set,
             seed=seed,
         )
         for j, res in enumerate(row["results"]):

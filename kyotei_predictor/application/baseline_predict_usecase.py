@@ -4,10 +4,17 @@ B案ベースラインの予測ユースケース。
 学習済みモデルを読み、指定日の race_data に対して 3連単スコアを出力する。
 data_source で "json" / "db" を切り替え可能。既存の prediction 形式に合わせ、
 verify_predictions / betting_selector にそのまま渡せる形で返す。
+feature_set は明示引数優先。meta.json の feature_set と不一致の場合は警告する。
 """
 
+import logging
+import os
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Union
+
+logger = logging.getLogger(__name__)
+ENV_FEATURE_SET = "KYOTEI_FEATURE_SET"
+ENV_MOTOR_PROXY = "KYOTEI_USE_MOTOR_WIN_PROXY"
 
 from kyotei_predictor.domain.verification_models import get_odds_for_combination
 from kyotei_predictor.domain.repositories.race_data_repository import RaceDataRepositoryProtocol
@@ -121,6 +128,7 @@ def run_baseline_predict(
     data_source: Optional[str] = None,
     race_repository: Optional[RaceDataRepositoryProtocol] = None,
     db_path: Optional[Union[str, Path]] = None,
+    feature_set: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     B案ベースラインで予測を実行し、A案と同一形式の予測辞書を返す。
@@ -135,6 +143,7 @@ def run_baseline_predict(
         data_source: "json" | "db" | None。None のときは従来通り data_dir の JSON 直読。
         race_repository: 指定時はこのリポジトリでレース取得（data_source は無視）。
         db_path: data_source=db 時の SQLite パス。
+        feature_set: 使用する特徴量セット。None のときは meta または環境変数に従う。meta と不一致なら警告。
 
     Returns:
         prediction_tool と同形式。include_selected_bets 時は selected_bets 付きで verify 可能。
@@ -145,6 +154,44 @@ def run_baseline_predict(
     meta = load_baseline_model_metadata(model_path_resolved)
     saved_model_type = meta.get("model_type")
     saved_calibration = meta.get("calibration", "none")
+    saved_feature_set = meta.get("feature_set")
+
+    effective_fs = None
+    if feature_set is not None:
+        effective_fs = feature_set.strip().lower()
+        if effective_fs not in ("current_features", "extended_features", "extended_features_v2"):
+            effective_fs = saved_feature_set or "extended_features"
+    if effective_fs is None:
+        effective_fs = os.environ.get(ENV_FEATURE_SET, "").strip().lower() or None
+    if not effective_fs:
+        effective_fs = "extended_features" if os.environ.get(ENV_MOTOR_PROXY, "0") == "1" else "current_features"
+
+    if saved_feature_set is not None and effective_fs != saved_feature_set:
+        logger.warning(
+            "feature_set mismatch: model was trained with feature_set=%s but predict is using %s. Results may be wrong.",
+            saved_feature_set,
+            effective_fs,
+        )
+
+    prev_fs = os.environ.get(ENV_FEATURE_SET)
+    prev_motor = os.environ.get(ENV_MOTOR_PROXY)
+    try:
+        os.environ[ENV_FEATURE_SET] = effective_fs
+        if ENV_MOTOR_PROXY in os.environ:
+            os.environ.pop(ENV_MOTOR_PROXY, None)
+    except Exception:
+        pass
+
+    racer_history_cache = None
+    if effective_fs == "extended_features_v2" and db_path:
+        try:
+            from kyotei_predictor.pipelines.racer_history import get_racer_history_from_db
+            racer_history_cache = get_racer_history_from_db(
+                str(db_path),
+                date_to=prediction_date,
+            )
+        except Exception as e:
+            logger.warning("racer_history cache build failed for predict: %s", e)
 
     predictions: List[Dict[str, Any]] = []
     if race_repository is not None or (data_source and data_source.strip().lower() in ("json", "db")):
@@ -164,7 +211,7 @@ def run_baseline_predict(
             prediction_date, venues=venues
         ):
             try:
-                state = build_race_state_vector(race_data, None)
+                state = build_race_state_vector(race_data, None, racer_history_cache=racer_history_cache)
             except Exception:
                 continue
             proba = predict_proba_120(model, state)
@@ -202,7 +249,7 @@ def run_baseline_predict(
             except Exception:
                 continue
             try:
-                state = build_race_state_vector(race_data, None)
+                state = build_race_state_vector(race_data, None, racer_history_cache=racer_history_cache)
             except Exception:
                 continue
             proba = predict_proba_120(model, state)
@@ -235,6 +282,16 @@ def run_baseline_predict(
         strategy = None
         exec_ev = None
 
+    try:
+        if prev_fs is not None:
+            os.environ[ENV_FEATURE_SET] = prev_fs
+        elif ENV_FEATURE_SET in os.environ:
+            os.environ.pop(ENV_FEATURE_SET, None)
+        if prev_motor is not None:
+            os.environ[ENV_MOTOR_PROXY] = prev_motor
+    except Exception:
+        pass
+
     out = {
         "prediction_date": prediction_date,
         "model_info": {
@@ -242,6 +299,7 @@ def run_baseline_predict(
             "model_path": str(model_path),
             "backend": saved_model_type or "sklearn",
             "calibration": saved_calibration,
+            "feature_set": effective_fs,
         },
         "execution_summary": {
             "total_races": len(predictions),

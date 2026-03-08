@@ -79,6 +79,7 @@ def main() -> int:
                 ev_threshold=args.ev_threshold,
                 calibration=args.calibration,
                 seed=args.seed,
+                feature_set=feature_set_val if feature_set_val else "current_features",
             )
             bets = [w["selected_bets_total_count"] for w in windows]
             results.append({

@@ -67,6 +67,13 @@ def main() -> int:
         help="確率キャリブレーション。none=なし, sigmoid=Platt scaling, isotonic=Isotonic regression",
     )
     parser.add_argument("--seed", type=int, default=42, help="乱数シード。再現性用。未指定時は 42。")
+    parser.add_argument(
+        "--feature-set",
+        type=str,
+        choices=("current_features", "extended_features", "extended_features_v2"),
+        default=None,
+        help="特徴量セット。未指定時は KYOTEI_FEATURE_SET または KYOTEI_USE_MOTOR_WIN_PROXY で決定。学習時に meta に保存される。",
+    )
     args = parser.parse_args()
 
     data_dir = args.data_dir or PROJECT_ROOT / "kyotei_predictor" / "data" / "test_raw"
@@ -92,6 +99,7 @@ def main() -> int:
             db_path=args.db_path,
             calibration=args.calibration,
             seed=args.seed,
+            feature_set=args.feature_set,
         )
         print("学習完了:", summary)
         return 0

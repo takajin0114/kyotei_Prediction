@@ -59,8 +59,8 @@ def _use_motor_win_proxy_feature() -> bool:
     return os.environ.get("KYOTEI_USE_MOTOR_WIN_PROXY", "0") == "1"
 
 
-# extended_features_v2 で追加する次元数（recent_form 3 + motor_trend 8 + relative_race_strength 7）
-EXTENDED_V2_EXTRA_DIM = 18
+# extended_features_v2: 6*(recent3+venue2)=30 + motor_trend 8 + relative_race_strength 7 = 45
+EXTENDED_V2_EXTRA_DIM = 45
 
 
 def _get_feature_set() -> str:
@@ -106,17 +106,49 @@ def _build_extended_v2_extras(
     race_data: Dict[str, Any],
     entries: List[Dict[str, Any]],
     stadium_names: List[str],
+    racer_history_cache: Optional[List[tuple]] = None,
+    race_date: Optional[str] = None,
+    stadium: Optional[str] = None,
 ) -> np.ndarray:
     """
-    extended_features_v2 用の追加ベクトル（18次元）。
-    リークなし・欠損時は 0 または 0.5 で defensive。
-    - recent_form: 3 (将来用プレースホルダー、現状 0)
-    - motor_trend: 2 (race motor mean, std) + 6 (motor rank per boat)
-    - relative_race_strength: 6 (perf_all rank per boat) + 1 (perf_all std)
+    extended_features_v2 用の追加ベクトル（45次元）。
+    - recent_form + venue: 6艇×5 (avg_rank_norm, rate_1st, rate_top3, venue_avg_norm, venue_rate_1st) = 30
+    - motor_trend: 2 + 6 = 8
+    - relative_race_strength: 6 + 1 = 7
+    racer_history_cache が None のときは recent/venue を 0.5/0 で埋める。
     """
     out: List[float] = []
-    # recent_form: 直近N走は現データに無いため 0
-    out.extend([0.0, 0.0, 0.0])
+    use_db = (
+        racer_history_cache is not None
+        and race_date is not None
+        and stadium is not None
+    )
+    if use_db:
+        try:
+            from kyotei_predictor.pipelines.racer_history import (
+                compute_recent_form,
+                compute_venue_form,
+            )
+            for entry in (entries[:6] if len(entries) >= 6 else entries):
+                reg_no = (entry.get("racer", {}).get("registration_number") or "")
+                try:
+                    reg_no = str(reg_no).strip()
+                except Exception:
+                    reg_no = ""
+                r_avg, r_1st, r_top3, _ = compute_recent_form(
+                    racer_history_cache, reg_no, race_date
+                )
+                v_avg, v_1st, _ = compute_venue_form(
+                    racer_history_cache, reg_no, race_date, stadium or ""
+                )
+                out.extend([r_avg, r_1st, r_top3, v_avg, v_1st])
+        except Exception:
+            use_db = False
+    if not use_db:
+        for _ in range(6):
+            out.extend([0.5, 0.0, 0.0, 0.5, 0.0])
+    while len(out) < 30:
+        out.extend([0.5, 0.0, 0.0, 0.5, 0.0])
     # motor_trend: 6艇のモーター強さ (m2+m3)/2 の平均・標準偏差・各艇の順位
     motor_vals = []
     for entry in (entries[:6] if len(entries) >= 6 else entries):
@@ -201,6 +233,7 @@ def _build_base_state_vector(
 def build_race_state_vector(
     race_data: Dict[str, Any],
     odds_data: Optional[Dict[str, Any]] = None,
+    racer_history_cache: Optional[List[tuple]] = None,
 ) -> np.ndarray:
     """
     レースデータから状態ベクトルを生成する（学習・予測共通）。
@@ -211,6 +244,7 @@ def build_race_state_vector(
     Args:
         race_data: race_info, race_entries を持つ辞書（race_records は不要）。
         odds_data: 未使用（互換用に受け取るが無視する）。
+        racer_history_cache: extended_features_v2 で DB 由来の recent_form/venue を使う場合の履歴リスト。
 
     Returns:
         shape=(get_state_dim(),) の float32 配列。値は 0〜1 付近に正規化。
@@ -230,11 +264,26 @@ def build_race_state_vector(
                 "motor": {"quinella_rate": 50.0, "trio_rate": 50.0},
             })
 
+    ri = race_data.get("race_info", {})
+    race_date = ri.get("date") or ri.get("race_date")
+    if isinstance(race_date, str):
+        pass
+    else:
+        race_date = None
+    stadium = ri.get("stadium", "") or ""
+
     fs = _get_feature_set()
     if fs == "extended_features_v2":
         use_motor = True
         base = _build_base_state_vector(race_data, entries, stadium_names, use_motor_proxy=use_motor)
-        extras = _build_extended_v2_extras(race_data, entries, stadium_names)
+        extras = _build_extended_v2_extras(
+            race_data,
+            entries,
+            stadium_names,
+            racer_history_cache=racer_history_cache,
+            race_date=race_date,
+            stadium=stadium,
+        )
         state = np.concatenate([base, extras]).astype(np.float32)
     else:
         use_motor = fs == "extended_features"

@@ -17,6 +17,39 @@ When starting a new AI coding session, read [docs/ai_dev/chat_bootstrap_prompt.m
 
 ---
 
+## AI開発フロー（ChatGPT ↔ Cursor 連携）
+
+ChatGPT と Cursor の間のコピペを減らすため、リポジトリ内の Markdown でやり取りする。
+
+1. **ChatGPT** が [docs/ai_dev/current_task.md](current_task.md) に指示を書く
+2. **Cursor** がそれを読んで実装する
+3. 実装後、リポジトリルートで次を実行する  
+   `bash scripts/ai_dev_cycle.sh`
+4. [docs/ai_dev/run_report.md](run_report.md) が生成される
+5. そのレポートを ChatGPT に貼り付けて引き継ぐ
+
+テンプレートは [docs/ai_dev/templates/](templates/) を参照。
+
+---
+
+## Experiment Automation
+
+開発者は
+
+```bash
+bash scripts/run_experiment_cycle.sh
+```
+
+を実行するだけで、以下が更新される。
+
+- **validation**（rolling_validation_roi）
+- **experiment log**（experiments/logs/EXP-xxxx.md）
+- **leaderboard**（experiments/leaderboard.md の Recent 表）
+
+DB パスは環境変数 `KYOTEI_DB_PATH` で指定（未設定時は `data/races.db`）。リポジトリルートで実行すること。
+
+---
+
 ## 構造
 
 | ファイル / フォルダ | 説明 |
@@ -25,6 +58,9 @@ When starting a new AI coding session, read [docs/ai_dev/chat_bootstrap_prompt.m
 | next_tasks.md | 次にやるタスク |
 | architecture.md | システム設計 |
 | chat_bootstrap_prompt.md | 新規 AI セッション用の標準引き継ぎプロンプト |
+| **current_task.md** | **AI開発フロー: ChatGPT が書く指示** |
+| **run_report.md** | **AI開発フロー: Cursor が書く実装結果レポート** |
+| **templates/** | **current_task / run_report のテンプレート** |
 | experiment_log.md | モデル実験ログ（概要） |
 | experiments/（リポジトリルート） | 実験トラッカー（一覧・leaderboard・個別ログ） |
 | prompt_history/ | AIプロンプト履歴 |

@@ -65,6 +65,13 @@ def main() -> int:
         help="レースデータ読込元。未指定時は JSON 直読。オッズは data-dir から読む。",
     )
     parser.add_argument("--db-path", type=Path, default=None, help="data-source=db 時の SQLite パス")
+    parser.add_argument(
+        "--feature-set",
+        type=str,
+        choices=("current_features", "extended_features", "extended_features_v2"),
+        default=None,
+        help="特徴量セット。未指定時はモデル meta または環境変数。meta と不一致の場合は警告が出る。",
+    )
     args = parser.parse_args()
 
     data_dir = args.data_dir or PROJECT_ROOT / "kyotei_predictor" / "data" / "test_raw"
@@ -94,6 +101,7 @@ def main() -> int:
             betting_ev_threshold=args.ev_threshold,
             data_source=args.data_source,
             db_path=args.db_path,
+            feature_set=args.feature_set,
         )
     except Exception as e:
         print(f"エラー: {e}")

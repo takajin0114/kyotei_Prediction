@@ -47,6 +47,7 @@ def run_one_window(
     db_path: Optional[str] = None,
     calibration: Optional[str] = None,
     model_type: Optional[str] = None,
+    feature_set: Optional[str] = None,
     seed: Optional[int] = 42,
 ) -> dict:
     """
@@ -55,6 +56,7 @@ def run_one_window(
     data_source: "json" | "db" | None。None のときは従来通り JSON 直読。
     calibration: "none" | "sigmoid" | "isotonic"。None のときは "none"。
     model_type: "sklearn" | "lightgbm" | "xgboost"。None のときは "sklearn"。
+    feature_set: 特徴量セット。None のときは環境変数に従う。
     seed: 乱数シード。再現性用。None のときは 42。
     """
     import os
@@ -69,7 +71,7 @@ def run_one_window(
     if seed is None:
         seed = 42
 
-    # 学習（日付フィルタ付き・キャリブレーション・model_type・seed 指定可）
+    # 学習（日付フィルタ付き・キャリブレーション・model_type・feature_set・seed 指定可）
     run_baseline_train(
         data_dir=data_dir_raw,
         model_save_path=model_path,
@@ -80,6 +82,7 @@ def run_one_window(
         db_path=dbp,
         calibration=calib,
         model_type=mtype,
+        feature_set=feature_set,
         seed=seed,
     )
 
@@ -109,6 +112,7 @@ def run_one_window(
                     betting_ev_threshold=ev_th,
                     data_source=ds,
                     db_path=dbp,
+                    feature_set=feature_set,
                 )
                 with open(out_path, "w", encoding="utf-8") as f:
                     json.dump(result, f, ensure_ascii=False, indent=2)
