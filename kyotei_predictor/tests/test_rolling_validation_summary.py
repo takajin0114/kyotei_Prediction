@@ -64,14 +64,51 @@ class TestRollingValidationSummary(unittest.TestCase):
                 ev_threshold=1.20,
                 calibration="sigmoid",
                 seed=42,
+                feature_set="extended_features",
             )
             missing = REQUIRED_SUMMARY_KEYS - set(summary.keys())
             self.assertEqual(missing, set(), msg=f"Missing keys in summary: {missing}")
+            self.assertEqual(summary.get("model_type"), "sklearn")
         finally:
             if prev_fs is not None:
                 os.environ["KYOTEI_FEATURE_SET"] = prev_fs
             elif "KYOTEI_FEATURE_SET" in os.environ:
-                os.environ.pop("KYOTEI_FEATURE_SET")
+                os.environ.pop("KYOTEI_FEATURE_SET", None)
+
+    def test_model_type_in_summary(self):
+        """model_type を明示的に渡すと summary に正しく含まれること"""
+        from kyotei_predictor.data.race_db import DEFAULT_DB_PATH
+        from kyotei_predictor.tools.rolling_validation_roi import run_rolling_validation_roi
+
+        db_path = Path(DEFAULT_DB_PATH)
+        if not db_path.exists():
+            self.skipTest(f"DB not found: {db_path}")
+        data_dir = _ROOT / "kyotei_predictor" / "data" / "raw"
+        if not data_dir.is_dir():
+            self.skipTest("data_dir not found")
+        out_dir = _ROOT / "outputs" / "test_rolling_summary"
+        out_dir.mkdir(parents=True, exist_ok=True)
+        prev_fs = os.environ.get("KYOTEI_FEATURE_SET")
+        try:
+            os.environ["KYOTEI_FEATURE_SET"] = "extended_features"
+            summary, _ = run_rolling_validation_roi(
+                db_path=str(db_path),
+                output_dir=out_dir,
+                data_dir_raw=data_dir,
+                n_windows=1,
+                top_n=6,
+                ev_threshold=1.20,
+                calibration="sigmoid",
+                model_type="sklearn",
+                feature_set="extended_features",
+                seed=42,
+            )
+            self.assertEqual(summary.get("model_type"), "sklearn")
+        finally:
+            if prev_fs is not None:
+                os.environ["KYOTEI_FEATURE_SET"] = prev_fs
+            elif "KYOTEI_FEATURE_SET" in os.environ:
+                os.environ.pop("KYOTEI_FEATURE_SET", None)
 
 
 if __name__ == "__main__":

@@ -4,14 +4,19 @@ B案ベースラインの学習ユースケース。
 既存の race_data_*.json（着順入り）または DB からレースデータを読み、
 状態ベクトルと 3連単クラスを用意して軽量分類器を学習し、モデルを保存する。
 data_source で "json" / "db" を切り替え可能（既定は従来の JSON 直読）。
+feature_set は明示引数優先。未指定時は KYOTEI_FEATURE_SET / KYOTEI_USE_MOTOR_WIN_PROXY で決定し meta に保存する。
 """
 
 import hashlib
 import json
 import logging
+import os
 import random
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
+
+ENV_FEATURE_SET = "KYOTEI_FEATURE_SET"
+ENV_MOTOR_PROXY = "KYOTEI_USE_MOTOR_WIN_PROXY"
 
 import numpy as np
 
@@ -50,6 +55,7 @@ def collect_training_data(
     train_end: Optional[str] = None,
     sample_mode: str = "head",
     seed: Optional[int] = None,
+    racer_history_cache: Optional[List[tuple]] = None,
 ) -> Tuple[np.ndarray, np.ndarray, Optional[Dict[str, Any]]]:
     """
     data_dir 配下の race_data_*.json から、着順があるレースのみを集め、
@@ -102,7 +108,7 @@ def collect_training_data(
         if actual is None:
             continue
         try:
-            state = build_race_state_vector(race_data, None)
+            state = build_race_state_vector(race_data, None, racer_history_cache=racer_history_cache)
         except Exception:
             continue
         try:
@@ -159,10 +165,11 @@ def _collect_training_data_from_repository(
     max_samples: Optional[int] = None,
     train_start: Optional[str] = None,
     train_end: Optional[str] = None,
+    racer_history_cache: Optional[List[tuple]] = None,
 ) -> Tuple[np.ndarray, np.ndarray, Optional[Dict[str, Any]]]:
     """
     リポジトリから期間内のレースを取得し、着順があるものだけ状態ベクトル X とクラス y に変換する。
-    ファイルパスは取得できないため manifest は None。
+    racer_history_cache が渡されると extended_features_v2 で DB 由来の recent/venue を使う。
     """
     start = train_start or "0000-01-01"
     end = train_end or "9999-12-31"
@@ -174,7 +181,7 @@ def _collect_training_data_from_repository(
         if actual is None:
             continue
         try:
-            state = build_race_state_vector(race_data, None)
+            state = build_race_state_vector(race_data, None, racer_history_cache=racer_history_cache)
         except Exception:
             continue
         try:
@@ -205,6 +212,7 @@ def run_baseline_train(
     db_path: Optional[Union[str, Path]] = None,
     calibration: Optional[str] = None,
     seed: Optional[int] = 42,
+    feature_set: Optional[str] = None,
 ) -> dict:
     """
     B案ベースラインを学習し、モデルを保存する。
@@ -224,124 +232,176 @@ def run_baseline_train(
         db_path: data_source=db 時の SQLite パス。None なら Settings.DB_PATH。
         calibration: 確率キャリブレーション。"none" | "sigmoid" | "isotonic"。None は "none" 扱い。
         seed: 乱数シード。再現性用。None のときは 42 を使用。numpy / random を固定する。
+        feature_set: 使用する特徴量セット（current_features / extended_features / extended_features_v2）。None のときは環境変数で決定。
 
     Returns:
-        学習結果サマリ（n_samples, model_type, calibration, train_accuracy, seed 等）
+        学習結果サマリ（n_samples, model_type, calibration, train_accuracy, seed, feature_set 等）
     """
-    # seed 使用箇所（Task 4）: 以下で再現性を固定
-    # - np.random.seed / random.seed: 学習データ shuffle（sample_mode=random）・その他
-    # - create_baseline_model(..., random_state=seed): モデル内部の乱数
-    # - save_baseline_model(..., seed=seed): .meta.json に保存
     if seed is None:
         seed = 42
     np.random.seed(seed)
     random.seed(seed)
 
-    data_dir = Path(data_dir)
-    train_manifest: Optional[Dict[str, Any]] = None
-    if race_repository is not None:
-        X, y, train_manifest = _collect_training_data_from_repository(
-            race_repository,
-            max_samples=max_samples,
-            train_start=train_start,
-            train_end=train_end,
-        )
-    elif data_source and data_source.strip().lower() in ("json", "db"):
-        from kyotei_predictor.infrastructure.repositories.race_data_repository_factory import (
-            get_race_data_repository,
-        )
-        repo = get_race_data_repository(
-            data_source.strip().lower(),
-            data_dir=data_dir,
-            db_path=str(db_path) if db_path else None,
-        )
-        X, y, train_manifest = _collect_training_data_from_repository(
-            repo,
-            max_samples=max_samples,
-            train_start=train_start,
-            train_end=train_end,
-        )
-    else:
-        X, y, train_manifest = collect_training_data(
-            data_dir,
-            max_samples=max_samples,
-            train_start=train_start,
-            train_end=train_end,
-            sample_mode=sample_mode,
-            seed=seed,
-        )
-    if len(X) == 0:
-        raise ValueError("学習データがありません（data_dir または data_source=db の場合は DB を確認してください）")
+    # feature_set: 明示引数 > 環境変数 > デフォルト。学習中は ENV を設定して state_vector に伝える。
+    if feature_set is not None:
+        feature_set = feature_set.strip().lower()
+        if feature_set not in ("current_features", "extended_features", "extended_features_v2"):
+            feature_set = "extended_features"
+    if feature_set is None:
+        feature_set = os.environ.get(ENV_FEATURE_SET, "").strip().lower() or None
+    if not feature_set:
+        feature_set = "extended_features" if os.environ.get(ENV_MOTOR_PROXY, "0") == "1" else "current_features"
+    prev_fs = os.environ.get(ENV_FEATURE_SET)
+    prev_motor = os.environ.get(ENV_MOTOR_PROXY)
+    try:
+        os.environ[ENV_FEATURE_SET] = feature_set
+        if ENV_MOTOR_PROXY in os.environ:
+            os.environ.pop(ENV_MOTOR_PROXY, None)
+    except Exception:
+        pass
 
-    model_type = (model_type or MODEL_TYPE_SKLEARN).strip().lower()
-    calib = (calibration or "none").strip().lower()
-
-    model = create_baseline_model(
-        model_type=model_type,
-        n_estimators=n_estimators,
-        max_depth=max_depth,
-        random_state=seed,
-    )
-    model.fit(X, y)
-
-    if calib in ("sigmoid", "isotonic"):
-        from sklearn.calibration import CalibratedClassifierCV
-        from sklearn.frozen import FrozenEstimator
-        # 既に fit 済みのモデルをキャリブレーション（sklearn 1.2+ は FrozenEstimator でラップ）
-        frozen = FrozenEstimator(model)
-        calibrated = CalibratedClassifierCV(estimator=frozen, method=calib, cv=None)
-        calibrated.fit(X, y)
-        model = calibrated
-
-    save_baseline_model(
-        model,
-        Path(model_save_path),
-        model_type=model_type,
-        calibration=calib,
-        seed=seed,
-    )
-    acc = float(np.mean(model.predict(X) == y))
-    out = {
-        "n_samples": int(len(X)),
-        "model_path": str(model_save_path),
-        "model_type": model_type,
-        "calibration": calib,
-        "train_accuracy": round(acc, 4),
-        "seed": seed,
-        "max_samples": max_samples,
-        "sample_mode": sample_mode,
-    }
-    # 再現性診断: 学習実態を manifest として保存し、summary から参照可能に（Task 2）
-    train_file_manifest_path: Optional[str] = None
-    train_file_manifest_hash: Optional[str] = None
-    if train_manifest:
-        out["train_file_count"] = train_manifest.get("file_count")
-        out["train_first_date"] = train_manifest.get("first_date")
-        out["train_last_date"] = train_manifest.get("last_date")
-        out["max_samples_reached"] = train_manifest.get("max_samples_reached")
-        manifest_path = Path(model_save_path).parent / "train_file_manifest.json"
+    racer_history_cache = None
+    if feature_set == "extended_features_v2" and db_path:
         try:
-            body: Dict[str, Any] = {
-                "file_count": train_manifest.get("file_count"),
-                "sample_count": train_manifest.get("sample_count"),
-                "first_date": train_manifest.get("first_date"),
-                "last_date": train_manifest.get("last_date"),
-                "max_samples_reached": train_manifest.get("max_samples_reached"),
-                "max_samples": train_manifest.get("max_samples"),
-                "sample_mode": train_manifest.get("sample_mode", "head"),
-                "file_paths": train_manifest.get("file_paths", []),
-            }
-            file_paths_json = json.dumps(body["file_paths"], sort_keys=True, ensure_ascii=False)
-            body["file_paths_hash"] = hashlib.sha256(file_paths_json.encode()).hexdigest()[:16]
-            body["manifest_hash"] = hashlib.sha256(
-                json.dumps({k: v for k, v in body.items() if k != "manifest_hash"}, sort_keys=True, ensure_ascii=False).encode()
-            ).hexdigest()[:16]
-            train_file_manifest_hash = body["manifest_hash"]
-            with open(manifest_path, "w", encoding="utf-8") as f:
-                json.dump(body, f, ensure_ascii=False, indent=2)
-            train_file_manifest_path = str(manifest_path)
+            from kyotei_predictor.pipelines.racer_history import get_racer_history_from_db
+            racer_history_cache = get_racer_history_from_db(
+                str(db_path),
+                date_from=train_start,
+                date_to=train_end,
+            )
         except Exception as e:
-            logger.warning("train_file_manifest.json の保存に失敗: %s", e)
-    out["train_file_manifest_path"] = train_file_manifest_path
-    out["train_file_manifest_hash"] = train_file_manifest_hash
-    return out
+            logger.warning("racer_history cache build failed: %s", e)
+
+    try:
+        data_dir = Path(data_dir)
+        train_manifest = None
+        if race_repository is not None:
+            X, y, train_manifest = _collect_training_data_from_repository(
+                race_repository,
+                max_samples=max_samples,
+                train_start=train_start,
+                train_end=train_end,
+                racer_history_cache=racer_history_cache,
+            )
+        elif data_source and data_source.strip().lower() in ("json", "db"):
+            from kyotei_predictor.infrastructure.repositories.race_data_repository_factory import (
+                get_race_data_repository,
+            )
+            repo = get_race_data_repository(
+                data_source.strip().lower(),
+                data_dir=data_dir,
+                db_path=str(db_path) if db_path else None,
+            )
+            X, y, train_manifest = _collect_training_data_from_repository(
+                repo,
+                max_samples=max_samples,
+                train_start=train_start,
+                train_end=train_end,
+                racer_history_cache=racer_history_cache,
+            )
+        else:
+            X, y, train_manifest = collect_training_data(
+                data_dir,
+                max_samples=max_samples,
+                train_start=train_start,
+                train_end=train_end,
+                sample_mode=sample_mode,
+                seed=seed,
+                racer_history_cache=racer_history_cache,
+            )
+        if len(X) == 0:
+            raise ValueError("学習データがありません（data_dir または data_source=db の場合は DB を確認してください）")
+
+        model_type = (model_type or MODEL_TYPE_SKLEARN).strip().lower()
+        calib = (calibration or "none").strip().lower()
+
+        # XGBoost は全クラス 0..119 が y に含まれる必要がある。欠損クラスにダミーサンプルを 1 件ずつ追加
+        NUM_CLASSES = 120
+        if model_type == "xgboost":
+            present = set(np.unique(y))
+            missing = [c for c in range(NUM_CLASSES) if c not in present]
+            if missing:
+                dummy_X = np.zeros((len(missing), X.shape[1]), dtype=X.dtype)
+                dummy_y = np.array(missing, dtype=np.int64)
+                X = np.vstack([X, dummy_X])
+                y = np.concatenate([y, dummy_y])
+
+        model = create_baseline_model(
+            model_type=model_type,
+            n_estimators=n_estimators,
+            max_depth=max_depth,
+            random_state=seed,
+        )
+        model.fit(X, y)
+
+        if calib in ("sigmoid", "isotonic"):
+            from sklearn.calibration import CalibratedClassifierCV
+            from sklearn.frozen import FrozenEstimator
+            frozen = FrozenEstimator(model)
+            calibrated = CalibratedClassifierCV(estimator=frozen, method=calib, cv=None)
+            calibrated.fit(X, y)
+            model = calibrated
+
+        save_baseline_model(
+            model,
+            Path(model_save_path),
+            model_type=model_type,
+            calibration=calib,
+            seed=seed,
+            feature_set=feature_set,
+        )
+        acc = float(np.mean(model.predict(X) == y))
+        out = {
+            "n_samples": int(len(X)),
+            "model_path": str(model_save_path),
+            "model_type": model_type,
+            "calibration": calib,
+            "train_accuracy": round(acc, 4),
+            "seed": seed,
+            "feature_set": feature_set,
+            "max_samples": max_samples,
+            "sample_mode": sample_mode,
+        }
+        train_file_manifest_path = None
+        train_file_manifest_hash = None
+        if train_manifest:
+            out["train_file_count"] = train_manifest.get("file_count")
+            out["train_first_date"] = train_manifest.get("first_date")
+            out["train_last_date"] = train_manifest.get("last_date")
+            out["max_samples_reached"] = train_manifest.get("max_samples_reached")
+            manifest_path = Path(model_save_path).parent / "train_file_manifest.json"
+            try:
+                body: Dict[str, Any] = {
+                    "file_count": train_manifest.get("file_count"),
+                    "sample_count": train_manifest.get("sample_count"),
+                    "first_date": train_manifest.get("first_date"),
+                    "last_date": train_manifest.get("last_date"),
+                    "max_samples_reached": train_manifest.get("max_samples_reached"),
+                    "max_samples": train_manifest.get("max_samples"),
+                    "sample_mode": train_manifest.get("sample_mode", "head"),
+                    "file_paths": train_manifest.get("file_paths", []),
+                }
+                file_paths_json = json.dumps(body["file_paths"], sort_keys=True, ensure_ascii=False)
+                body["file_paths_hash"] = hashlib.sha256(file_paths_json.encode()).hexdigest()[:16]
+                body["manifest_hash"] = hashlib.sha256(
+                    json.dumps({k: v for k, v in body.items() if k != "manifest_hash"}, sort_keys=True, ensure_ascii=False).encode()
+                ).hexdigest()[:16]
+                train_file_manifest_hash = body["manifest_hash"]
+                with open(manifest_path, "w", encoding="utf-8") as f:
+                    json.dump(body, f, ensure_ascii=False, indent=2)
+                train_file_manifest_path = str(manifest_path)
+            except Exception as e:
+                logger.warning("train_file_manifest.json の保存に失敗: %s", e)
+        out["train_file_manifest_path"] = train_file_manifest_path
+        out["train_file_manifest_hash"] = train_file_manifest_hash
+        return out
+    finally:
+        try:
+            if prev_fs is not None:
+                os.environ[ENV_FEATURE_SET] = prev_fs
+            elif ENV_FEATURE_SET in os.environ:
+                os.environ.pop(ENV_FEATURE_SET, None)
+            if prev_motor is not None:
+                os.environ[ENV_MOTOR_PROXY] = prev_motor
+        except Exception:
+            pass

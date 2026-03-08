@@ -12,11 +12,11 @@
 
 ## Priority 3
 
-- LightGBM model sweep
+- **実施済み**: LightGBM / XGBoost model sweep。EXP-0005 で XGBoost が最良 ROI。次基準候補として adopt
 
 ## Priority 4
 
-- XGBoost model sweep
+- XGBoost をデフォルトモデルとして運用検討
 
 ## Priority 5
 

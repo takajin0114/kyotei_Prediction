@@ -31,6 +31,8 @@ EV strategy の改善余地はどこか。
 
 LightGBM / XGBoost は baseline を上回れるか。
 
+（EXP-0005: 上回る。XGBoost -20.7%、LightGBM -29.9%、sklearn -31.8%。XGBoost を次基準候補として adopt。）
+
 ## Q5
 
 戦略調整ではなく確率モデル改善が主因か。

@@ -1,8 +1,9 @@
 """
 モデル比較: sklearn / lightgbm / xgboost で同一条件の rolling validation を実行。
 
-未導入のモデルはスキップする。戦略は現状ベスト（top_n=6, ev_threshold=1.20）で固定。DB 必須。
---use-extended-features で KYOTEI_USE_MOTOR_WIN_PROXY=1（extended_features）を使用。
+未導入のモデル（lightgbm/xgboost）は ImportError で失敗する（libomp 等の環境依存はエラーメッセージで案内）。
+戦略は現状ベスト（top_n=6, ev_threshold=1.20）で固定。DB 必須。
+--feature-set extended_features で extended_features を使用（デフォルト）。
 出力: outputs/model_comparison_summary.json
 """
 
@@ -14,6 +15,7 @@ import sys
 from pathlib import Path
 
 ENV_MOTOR_PROXY = "KYOTEI_USE_MOTOR_WIN_PROXY"
+ENV_FEATURE_SET = "KYOTEI_FEATURE_SET"
 
 _THIS_DIR = Path(__file__).resolve().parent
 _PROJECT_ROOT = _THIS_DIR.parent.parent.parent
@@ -22,18 +24,19 @@ if str(_PROJECT_ROOT) not in sys.path:
 
 from kyotei_predictor.tools.rolling_validation_roi import run_rolling_validation_roi
 
-# 利用可能なモデルを実行時に判定（lightgbm/xgboost は import 失敗時スキップ。Mac では libomp 未導入で落ちる場合あり）
+# sklearn は常に利用可能。lightgbm/xgboost は import 失敗時は _available_models には含めず、
+# 実行時に model_type 指定があれば ImportError で明確に失敗する（libomp 等は baseline_model_runner で案内）
 def _available_models() -> list:
     out = [("sklearn", "baseline B (sklearn)")]
     try:
         import lightgbm  # noqa: F401
         out.append(("lightgbm", "baseline B (lightgbm)"))
-    except Exception:
+    except ImportError:
         pass
     try:
         import xgboost  # noqa: F401
         out.append(("xgboost", "baseline B (xgboost)"))
-    except Exception:
+    except ImportError:
         pass
     return out
 
@@ -52,13 +55,20 @@ def main() -> int:
     parser.add_argument("--calibration", type=str, default="sigmoid")
     parser.add_argument("--models", type=str, default=None,
                         help="Comma-separated model types, e.g. sklearn,lightgbm,xgboost")
+    parser.add_argument("--feature-set", type=str, default="extended_features",
+                        help="Feature set (default: extended_features)")
     parser.add_argument("--use-extended-features", action="store_true",
-                        help="Use extended features (KYOTEI_USE_MOTOR_WIN_PROXY=1)")
+                        help="Deprecated: use --feature-set extended_features")
     parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args()
 
-    prev_env = os.environ.get(ENV_MOTOR_PROXY)
+    feature_set = (args.feature_set or "extended_features").strip().lower()
     if args.use_extended_features:
+        feature_set = "extended_features"
+    prev_env = os.environ.get(ENV_MOTOR_PROXY)
+    prev_fs = os.environ.get(ENV_FEATURE_SET)
+    os.environ[ENV_FEATURE_SET] = feature_set
+    if feature_set == "extended_features":
         os.environ[ENV_MOTOR_PROXY] = "1"
     try:
         raw_dir = args.data_dir or _PROJECT_ROOT / "kyotei_predictor" / "data" / "raw"
@@ -91,6 +101,7 @@ def main() -> int:
                     ev_threshold=args.ev_threshold,
                     calibration=args.calibration,
                     model_type=model_type,
+                    feature_set=feature_set,
                     seed=args.seed,
                 )
             except Exception as e:
@@ -131,7 +142,7 @@ def main() -> int:
                 "model_types": [r["model_type"] for r in results],
                 "strategy": {"top_n": args.top_n, "ev_threshold": args.ev_threshold},
                 "calibration": args.calibration,
-                "feature_set": "extended_features" if args.use_extended_features else "current_features",
+                "feature_set": feature_set,
                 "n_windows": args.n_windows,
                 "results": results,
             }, f, ensure_ascii=False, indent=2)
@@ -142,6 +153,10 @@ def main() -> int:
             os.environ[ENV_MOTOR_PROXY] = prev_env
         elif ENV_MOTOR_PROXY in os.environ:
             os.environ.pop(ENV_MOTOR_PROXY, None)
+        if prev_fs is not None:
+            os.environ[ENV_FEATURE_SET] = prev_fs
+        elif ENV_FEATURE_SET in os.environ:
+            os.environ.pop(ENV_FEATURE_SET, None)
 
 
 if __name__ == "__main__":

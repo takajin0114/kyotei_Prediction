@@ -67,8 +67,11 @@ def create_baseline_model(
                 random_state=random_state,
                 verbosity=-1,
             )
-        except ImportError:
-            pass
+        except ImportError as e:
+            raise ImportError(
+                "LightGBM が使用できません。インストール: pip install lightgbm。"
+                " Mac では libomp が必要: brew install libomp。詳細: " + str(e)
+            ) from e
 
     if model_type == MODEL_TYPE_XGBOOST:
         try:
@@ -82,8 +85,11 @@ def create_baseline_model(
             if hasattr(xgb.XGBClassifier, "eval_metric"):
                 kwargs["eval_metric"] = "mlogloss"
             return xgb.XGBClassifier(**kwargs)
-        except ImportError:
-            pass
+        except ImportError as e:
+            raise ImportError(
+                "XGBoost が使用できません。インストール: pip install xgboost。"
+                " Mac では libomp が必要: brew install libomp。詳細: " + str(e)
+            ) from e
 
     # sklearn（デフォルトまたは lightgbm/xgboost 未導入時のフォールバック）
     try:
