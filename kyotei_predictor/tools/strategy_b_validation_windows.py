@@ -72,6 +72,8 @@ def main() -> int:
     strategies = [
         ("B top_n=5 EV>1.15", "top_n_ev", 5, 1.15),
         ("B top_n=5 EV>1.10", "top_n_ev", 5, 1.10),
+        ("B ev_threshold_only EV>1.15", "ev_threshold_only", 0, 1.15),
+        ("B ev_threshold_only EV>1.20", "ev_threshold_only", 0, 1.20),
     ]
 
     data_source = os.environ.get("KYOTEI_DATA_SOURCE")

@@ -50,6 +50,23 @@ DB パスは環境変数 `KYOTEI_DB_PATH` で指定（未設定時は `data/race
 
 ---
 
+## ChatGPT Review Workflow
+
+1. Cursor で作業する
+2. `bash scripts/ai_dev_cycle.sh` を実行する
+3. `docs/ai_dev/chat_context.md` が生成される
+4. GitHub に push する
+5. ChatGPT には `chat_context.md` の raw URL を渡す
+
+`chat_context.md` に含まれる内容:
+
+- **run_report** … 実装結果レポート（変更ファイル・実行コマンド・結果・懸念・次アクション）
+- **leaderboard** … 実験 ROI 一覧
+- **project_status** … プロジェクト状態
+- **latest experiment** … experiments/logs/ の最新実験ログ 1 件
+
+---
+
 ## 構造
 
 | ファイル / フォルダ | 説明 |
@@ -60,6 +77,7 @@ DB パスは環境変数 `KYOTEI_DB_PATH` で指定（未設定時は `data/race
 | chat_bootstrap_prompt.md | 新規 AI セッション用の標準引き継ぎプロンプト |
 | **current_task.md** | **AI開発フロー: ChatGPT が書く指示** |
 | **run_report.md** | **AI開発フロー: Cursor が書く実装結果レポート** |
+| **chat_context.md** | **ChatGPT レビュー用: run_report / leaderboard / project_status / 最新実験の統合** |
 | **templates/** | **current_task / run_report のテンプレート** |
 | experiment_log.md | モデル実験ログ（概要） |
 | experiments/（リポジトリルート） | 実験トラッカー（一覧・leaderboard・個別ログ） |

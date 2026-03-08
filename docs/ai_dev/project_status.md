@@ -11,4 +11,6 @@
 - **モデル比較**: sklearn / LightGBM / XGBoost を rolling validation で比較可能。EXP-0005 で XGBoost が最良 ROI（-20.7%）。LightGBM/XGBoost は環境に libomp が必要（brew install libomp）。
 - **成果物**: docs/MODEL_COMPARISON.md、docs/ROI_EVALUATION_N12_SUMMARY.md、outputs/*.json（gitignore）。rolling validation の summary は model_type / feature_set / n_windows / overall_roi_selected 等の標準キーで統一。
 
+- **EXP-0005 ev_threshold_sweep**: status: completed。purpose: EV threshold optimization（ev_threshold_only 戦略で 1.05〜1.25 を比較）。Kelly capped 実装済み（bet_size = bankroll * min(kelly, 0.05)）。
+
 更新日: プロジェクトのマイルストーンごとに更新する。

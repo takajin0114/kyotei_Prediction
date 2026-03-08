@@ -97,6 +97,8 @@ def run_one_window(
             suffix = ""
             if strategy == "top_n_ev":
                 suffix = f"_top{top_n}ev{int(ev_th * 100)}" if ev_th else ""
+            elif strategy == "ev_threshold_only":
+                suffix = f"_evonly{int(ev_th * 100)}" if ev_th else ""
             out_path = out_pred_dir / f"predictions_baseline_{day}{suffix}.json"
             if out_path.exists():
                 continue
@@ -125,6 +127,8 @@ def run_one_window(
         suffix = ""
         if strategy == "top_n_ev":
             suffix = f"_top{top_n}ev{int(ev_th * 100)}" if ev_th else ""
+        elif strategy == "ev_threshold_only":
+            suffix = f"_evonly{int(ev_th * 100)}" if ev_th else ""
         tb_sel = tp_sel = sc = rwr = hc = om = 0
         log_loss_list = []
         brier_list = []

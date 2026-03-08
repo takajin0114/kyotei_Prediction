@@ -14,6 +14,7 @@ STRATEGY_TOP_N = "top_n"
 STRATEGY_THRESHOLD = "threshold"
 STRATEGY_EV = "ev"
 STRATEGY_TOP_N_EV = "top_n_ev"  # 上位 top_n 候補のうち expected_roi >= ev_threshold のみ購入
+STRATEGY_EV_THRESHOLD_ONLY = "ev_threshold_only"  # EV >= ev_threshold の全候補を購入（top_n 制限なし）
 
 # EV 戦略のフォールバック: オッズなし or 閾値以上なし時に採用する上位点数
 DEFAULT_EV_TOP_N_FALLBACK = 5
@@ -114,6 +115,35 @@ def _compute_ev(probability: float, odds_ratio: float) -> float:
 def _expected_roi(probability: float, odds_ratio: float) -> float:
     """期待リターン（expected_roi = probability × odds）。閾値 1.05 は 5% プラス。"""
     return probability * odds_ratio
+
+
+def select_ev_threshold_only(
+    predictions: List[Dict[str, Any]],
+    ev_threshold: float,
+) -> List[str]:
+    """
+    expected_roi >= ev_threshold の全候補を購入。top_n 制限なし。
+
+    Args:
+        predictions: 予測候補リスト（probability と ratio または odds が必要）
+        ev_threshold: 期待リターン閾値（例: 1.05 = 5% プラス）
+
+    Returns:
+        購入する combination のリスト
+    """
+    if not predictions:
+        return []
+    out: List[str] = []
+    for c in predictions:
+        prob = _get_score(c)
+        ratio = _get_odds_ratio(c)
+        if ratio is not None and ratio > 0:
+            roi = _expected_roi(prob, ratio)
+            if roi >= ev_threshold:
+                comb = _get_combination(c)
+                if comb:
+                    out.append(comb)
+    return out
 
 
 def select_top_n_ev(
@@ -259,6 +289,8 @@ def select_bets(
         return select_score_threshold(predictions, score_threshold)
     if strategy == STRATEGY_TOP_N_EV:
         return select_top_n_ev(predictions, top_n, ev_threshold)
+    if strategy == STRATEGY_EV_THRESHOLD_ONLY:
+        return select_ev_threshold_only(predictions, ev_threshold)
     if strategy == STRATEGY_EV:
         result = select_ev(
             predictions,

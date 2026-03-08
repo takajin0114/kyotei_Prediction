@@ -90,7 +90,7 @@ Generated at: {timestamp}
 
 ## Next actions
 
-(次アクション候補をここに記入)
+(次アクション候補をここに記入。ChatGPT でレビューする場合は bash scripts/ai_dev_cycle.sh で chat_context.md を生成し raw URL を渡す。)
 """
 
     report_path.parent.mkdir(parents=True, exist_ok=True)
