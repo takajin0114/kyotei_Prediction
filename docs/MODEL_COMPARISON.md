@@ -13,3 +13,7 @@
 - **選定**: baseline B (sklearn)
 - **理由**: 上記条件で sklearn のみ実行済み。LightGBM / XGBoost は実行環境に OpenMP (libomp) が必要で、未導入の場合は model_sweep がスキップする。Mac では `brew install libomp` のうえで model_sweep を再実行すると 3 モデル比較が可能。
 - **評価指標**: overall_roi_selected, mean_roi_selected, std_roi_selected, total_selected_bets, mean_log_loss, mean_brier_score で比較。
+
+## EXP-0006 strategy grid とモデル再比較
+
+- scripts/exp0006_xgb_topn_threshold_grid.py で top_n × ev_threshold grid（XGBoost）と bet sizing 比較、xgboost vs lightgbm 再比較を実施。結果は outputs/exp0006_xgb_strategy_grid_and_bet_sizing.json。ev_threshold_only は reject（ROI 大幅悪化）。

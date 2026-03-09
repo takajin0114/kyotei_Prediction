@@ -8,7 +8,8 @@ fixed / kelly_half は賭け時点の資金と確率・オッズから stake を
 import math
 from typing import Any, Dict, List, Optional, Tuple
 
-from kyotei_predictor.betting.bet_sizing import kelly_fraction, BET_SIZING_KELLY_HALF
+from kyotei_predictor.betting.bet_sizing import kelly_fraction, BET_SIZING_KELLY_HALF, BET_SIZING_KELLY_CAPPED
+from kyotei_predictor.betting.kelly import kelly_capped
 
 
 def simulate_bankroll(
@@ -47,14 +48,23 @@ def simulate_bankroll(
     returns: List[float] = []
 
     bankroll = initial_bankroll
-    use_kelly = bet_sizing == BET_SIZING_KELLY_HALF
 
     for b in bets:
         odds = float(b.get("odds") or 0)
         hit = bool(b.get("hit"))
-        if use_kelly:
+        if bet_sizing == BET_SIZING_KELLY_HALF or bet_sizing == "half_kelly":
             prob = float(b.get("probability") or 0)
             kf = kelly_fraction(prob, odds) * 0.5
+            stake = min(bankroll, max(0, bankroll * kf))
+            stake = round(stake, 2)
+        elif bet_sizing in ("kelly_capped_0.02", "capped_kelly_0.02"):
+            prob = float(b.get("probability") or 0)
+            kf = kelly_capped(prob, odds, cap=0.02)
+            stake = min(bankroll, max(0, bankroll * kf))
+            stake = round(stake, 2)
+        elif bet_sizing in ("kelly_capped_0.05", "capped_kelly_0.05", BET_SIZING_KELLY_CAPPED):
+            prob = float(b.get("probability") or 0)
+            kf = kelly_capped(prob, odds, cap=0.05)
             stake = min(bankroll, max(0, bankroll * kf))
             stake = round(stake, 2)
         else:

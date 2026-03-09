@@ -12,6 +12,6 @@
 - **成果物**: docs/MODEL_COMPARISON.md、docs/ROI_EVALUATION_N12_SUMMARY.md、outputs/*.json（gitignore）。rolling validation の summary は model_type / feature_set / n_windows / overall_roi_selected 等の標準キーで統一。
 
 - **EXP-0005 ev_threshold_sweep**: status: completed。purpose: EV threshold optimization（ev_threshold_only 戦略で 1.05〜1.25 を比較）。Kelly capped 実装済み（bet_size = bankroll * min(kelly, 0.05)）。
-- **EXP-0006**: status: completed。purpose: XGBoost strategy optimization。XGBoost 固定で EV threshold sweep（1.05〜1.30）と top_n_ev vs ev_threshold_only 比較。**adopt ev=1.05**（overall_roi -19.71%、n_w=12）。次基準: top_n=6, ev_threshold=1.05。
+- **EXP-0006**: status: completed。purpose: XGBoost strategy grid + bet sizing。top_n×ev_threshold grid（top_n=3,5,6,8 × ev=1.05〜1.25）、bet sizing（fixed / half_kelly / capped_0.02 / capped_0.05）、xgboost vs lightgbm 再比較。ev_threshold_only は **reject**（-48.95%〜-51.35% で悪化）。grid 最良は top_n=3, ev=1.25（n_w=4 時）。要 n_w=12 再計で正式 adopt 決定。
 
 更新日: プロジェクトのマイルストーンごとに更新する。
