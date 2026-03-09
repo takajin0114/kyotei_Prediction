@@ -89,6 +89,8 @@ def _apply_selected_bets(
     pool_k: Optional[int] = None,
     alpha: Optional[float] = None,
     ev_gap_threshold: Optional[float] = None,
+    band_edges: Optional[List[float]] = None,
+    band_params: Optional[List[tuple]] = None,
 ) -> None:
     """
     各レースの all_combinations に betting_selector を適用し、
@@ -115,6 +117,10 @@ def _apply_selected_bets(
         extra_kwargs["alpha"] = float(alpha)
     if ev_gap_threshold is not None:
         extra_kwargs["ev_gap_threshold"] = float(ev_gap_threshold)
+    if band_edges is not None:
+        extra_kwargs["band_edges"] = list(band_edges)
+    if band_params is not None:
+        extra_kwargs["band_params"] = list(band_params)
     for pred in predictions:
         ac = pred.get("all_combinations") or []
         if not ac:
@@ -159,6 +165,8 @@ def run_baseline_predict(
     betting_pool_k: Optional[int] = None,
     betting_alpha: Optional[float] = None,
     betting_ev_gap_threshold: Optional[float] = None,
+    betting_band_edges: Optional[List[float]] = None,
+    betting_band_params: Optional[List[tuple]] = None,
     data_source: Optional[str] = None,
     race_repository: Optional[RaceDataRepositoryProtocol] = None,
     db_path: Optional[Union[str, Path]] = None,
@@ -312,6 +320,8 @@ def run_baseline_predict(
             pool_k=betting_pool_k,
             alpha=betting_alpha,
             ev_gap_threshold=betting_ev_gap_threshold,
+            band_edges=betting_band_edges,
+            band_params=betting_band_params,
         )
         # execution_summary に ev_selection 集計を追加（A案互換）
         ev_metas = [p.get("ev_selection_metadata") for p in predictions if p.get("ev_selection_metadata")]

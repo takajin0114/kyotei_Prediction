@@ -20,6 +20,7 @@ STRATEGY_RACE_FILTERED_TOP_N_EV = "race_filtered_top_n_ev"  # レースフィル
 STRATEGY_TOP_N_EV_PROB_POOL = "top_n_ev_prob_pool"  # 確率上位 pool_k に候補を限定し、その中で top_n_ev（または EV×confidence）で選抜
 STRATEGY_TOP_N_EV_POWER_PROB = "top_n_ev_power_prob"  # EV_adj = (pred_prob ** alpha) * odds でスコア化し、ev_threshold 以上から top_n 選抜
 STRATEGY_TOP_N_EV_GAP_FILTER = "top_n_ev_gap_filter"  # ev_gap = ev_rank1 - ev_rank2。ev_gap < threshold ならレースを skip
+STRATEGY_TOP_N_EV_CONDITIONAL_PROB_GAP = "top_n_ev_conditional_prob_gap"  # pred_prob_gap 帯ごとに (top_n, ev) を切り替え
 STRATEGY_EV_THRESHOLD_ONLY = "ev_threshold_only"  # EV >= ev_threshold の全候補を購入（top_n 制限なし）
 
 # top_n_ev_confidence の confidence_type
@@ -313,6 +314,41 @@ def select_top_n_ev_prob_pool(
     return select_top_n_ev(pool, top_n, ev_threshold)
 
 
+def select_top_n_ev_conditional_prob_gap(
+    predictions: List[Dict[str, Any]],
+    band_edges: List[float],
+    band_params: List[Tuple[int, float]],
+) -> List[str]:
+    """
+    pred_prob_gap（1位と2位の確率差）の帯ごとに (top_n, ev_threshold) を切り替えて top_n_ev を適用する。
+    band_edges: 閾値のリスト（昇順）。例 [0.03, 0.07] → 帯は [0, 0.03), [0.03, 0.07), [0.07, 1.0]。
+    band_params: 各帯に対する (top_n, ev_threshold) のリスト。len(band_params) == len(band_edges) + 1。
+
+    Args:
+        predictions: 予測候補リスト（同一レースの all_combinations）。probability と ratio 必須。
+        band_edges: 確率差の境界（昇順）。
+        band_params: 帯ごとの (top_n, ev_threshold)。
+
+    Returns:
+        購入する combination のリスト
+    """
+    if not predictions or not band_edges or not band_params:
+        return []
+    if len(band_params) != len(band_edges) + 1:
+        return []
+    probs = [_get_score(c) for c in predictions]
+    prob_gap = _prob_gap_top1_top2(probs)
+    band_idx = 0
+    for i, edge in enumerate(band_edges):
+        if prob_gap < edge:
+            band_idx = i
+            break
+    else:
+        band_idx = len(band_edges)
+    top_n, ev_threshold = band_params[band_idx]
+    return select_top_n_ev(predictions, top_n, ev_threshold)
+
+
 def select_top_n_ev_gap_filter(
     predictions: List[Dict[str, Any]],
     top_n: int,
@@ -538,6 +574,12 @@ def select_bets(
         return select_top_n_ev_gap_filter(
             predictions, top_n, ev_threshold, ev_gap_threshold=ev_gap_threshold
         )
+    if strategy == STRATEGY_TOP_N_EV_CONDITIONAL_PROB_GAP:
+        band_edges = kwargs.get("band_edges")
+        band_params = kwargs.get("band_params")
+        if not band_edges or not band_params or len(band_params) != len(band_edges) + 1:
+            return select_top_n_ev(predictions, top_n, ev_threshold)
+        return select_top_n_ev_conditional_prob_gap(predictions, band_edges, band_params)
     if strategy == STRATEGY_EV:
         result = select_ev(
             predictions,

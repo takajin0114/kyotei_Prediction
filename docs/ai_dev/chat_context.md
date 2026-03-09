@@ -41,11 +41,11 @@ leaderboard の 1 位。
 
 <!-- update_chat_context.py が自動更新 -->
 
-- **最新 EXP**: EXP-0013
-- **概要**: EV gap strategy（top_n_ev_gap_filter）。**ev_gap = ev_rank1 - ev_rank2**。ev_gap < threshold ならレースを skip。ev_gap_threshold=0.02,0.03,0.05,0.07 で sweep。ベースライン top_n_ev top_n=3 ev=1.18（-14.54%）と比較。
-- **結果**: ev_gap_threshold=0.05 が最良 **-13.81%**（+0.73%pt 改善）。**採用**。詳細は outputs/ev_gap_experiments/exp0013_ev_gap_results.json および experiments/logs/EXP-0013_ev_gap_strategy.md。
-- **ログ**: experiments/logs/EXP-0013_ev_gap_strategy.md
-- **結果 JSON**: outputs/ev_gap_experiments/exp0013_ev_gap_results.json
+- **最新 EXP**: EXP-0014
+- **概要**: 条件別サブ戦略化（top_n_ev_conditional_prob_gap）。pred_prob_gap 帯ごとに (top_n, ev_threshold) を切り替え。ベースライン top_n_ev top_n=3 ev=1.18（-14.54%）と比較。
+- **結果**: 全パターンでベースラインを下回り**採用見送り**。最良条件でも -15.64%（condpg_03_07）。詳細は outputs/conditional_sub_strategy_experiments/exp0014_conditional_results.json および experiments/logs/EXP-0014_conditional_sub_strategy.md。
+- **ログ**: experiments/logs/EXP-0014_conditional_sub_strategy.md
+- **結果 JSON**: outputs/conditional_sub_strategy_experiments/exp0014_conditional_results.json
 
 # Leaderboard Summary
 
@@ -59,6 +59,7 @@ leaderboard の 1 位。
 | 4 | EXP-0007 | top_n=4, ev=1.05 | **-17.85%** (n_w=12) | — | top_n 局所探索で最良（hold） |
 | — | EXP-0011 | top_n_ev_prob_pool | ベースライン超えず | — | 採用見送り。 |
 | — | EXP-0012 | top_n_ev_power_prob (alpha×top_n×ev) | ベースライン未達 | — | 全条件採用見送り。最良 -26.28%。 |
+| — | EXP-0014 | top_n_ev_conditional_prob_gap (pred_prob_gap 帯) | ベースライン未達 | — | 条件別サブ戦略。全パターン -14.54% 以下。採用見送り。 |
 
 詳細は experiments/leaderboard.md 参照。
 
@@ -73,6 +74,7 @@ leaderboard の 1 位。
 - EXP-0010: race_filtered_top_n_ev は full grid で全条件ベースライン以下。レースフィルタで bet 数は減るが ROI は未改善。
 - EXP-0011: top_n_ev_prob_pool はベースライン（top_n_ev 3/1.18）を超えず採用見送り。
 - EXP-0012: top_n_ev_power_prob は全グリッドでベースライン未達。採用見送り。
+- EXP-0014: pred_prob_gap 帯による条件別サブ戦略は全パターンでベースライン（-14.54%）を下回り採用見送り。
 
 ---
 
@@ -88,5 +90,6 @@ leaderboard の 1 位。
 - 現行ベスト戦略: top_n_ev_gap_filter, top_n=3, ev=1.18, ev_gap_threshold=0.05（ROI -13.81%）。EXP-0013 で採用。
 - ev_gap_threshold の追加 sweep（0.04, 0.06 等）で局所最適の確認を検討。
 - ensemble 不具合修正後の再評価。
+- 条件別サブ戦略の他軸（entropy 帯・1位オッズ帯・venue/race_class）は必要時に検討（EXP-0014 で pred_prob_gap 帯は見送り）。
 - top_n / EV threshold の追加 sweep（必要に応じて）。
 - probability calibration の詳細比較（必要に応じて）。
