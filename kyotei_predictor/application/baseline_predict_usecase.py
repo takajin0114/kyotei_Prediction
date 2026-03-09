@@ -88,6 +88,7 @@ def _apply_selected_bets(
     candidate_min: Optional[int] = None,
     pool_k: Optional[int] = None,
     alpha: Optional[float] = None,
+    ev_gap_threshold: Optional[float] = None,
 ) -> None:
     """
     各レースの all_combinations に betting_selector を適用し、
@@ -112,6 +113,8 @@ def _apply_selected_bets(
         extra_kwargs["pool_k"] = int(pool_k)
     if alpha is not None:
         extra_kwargs["alpha"] = float(alpha)
+    if ev_gap_threshold is not None:
+        extra_kwargs["ev_gap_threshold"] = float(ev_gap_threshold)
     for pred in predictions:
         ac = pred.get("all_combinations") or []
         if not ac:
@@ -155,6 +158,7 @@ def run_baseline_predict(
     betting_candidate_min: Optional[int] = None,
     betting_pool_k: Optional[int] = None,
     betting_alpha: Optional[float] = None,
+    betting_ev_gap_threshold: Optional[float] = None,
     data_source: Optional[str] = None,
     race_repository: Optional[RaceDataRepositoryProtocol] = None,
     db_path: Optional[Union[str, Path]] = None,
@@ -307,6 +311,7 @@ def run_baseline_predict(
             candidate_min=betting_candidate_min,
             pool_k=betting_pool_k,
             alpha=betting_alpha,
+            ev_gap_threshold=betting_ev_gap_threshold,
         )
         # execution_summary に ev_selection 集計を追加（A案互換）
         ev_metas = [p.get("ev_selection_metadata") for p in predictions if p.get("ev_selection_metadata")]

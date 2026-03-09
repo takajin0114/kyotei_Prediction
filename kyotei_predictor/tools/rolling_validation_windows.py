@@ -87,16 +87,22 @@ def run_one_window(
     )
 
     def _normalize_spec(s):
-        # (name, strategy, top_n, ev_threshold[, confidence_type[, prob_gap_min, entropy_max]])
+        # (name, strategy, top_n, ev_threshold[, confidence_type[, prob_gap_min, entropy_max[, ev_gap_threshold]]])
+        if len(s) >= 8:
+            return s[0], s[1], s[2], s[3], s[4], s[5], s[6], s[7]
         if len(s) >= 7:
-            return s[0], s[1], s[2], s[3], s[4], s[5], s[6]
+            return s[0], s[1], s[2], s[3], s[4], s[5], s[6], None
         if len(s) >= 5:
-            return s[0], s[1], s[2], s[3], s[4], None, None
-        return s[0], s[1], s[2], s[3], None, None, None
+            return s[0], s[1], s[2], s[3], s[4], None, None, None
+        return s[0], s[1], s[2], s[3], None, None, None, None
 
-    def _suffix_for_strategy(strategy, top_n, ev_th, confidence_type, prob_gap_min=None, entropy_max=None):
+    def _suffix_for_strategy(strategy, top_n, ev_th, confidence_type, prob_gap_min=None, entropy_max=None, ev_gap_threshold=None):
         if strategy == "top_n_ev":
             return f"_top{top_n}ev{int(ev_th * 100)}" if ev_th else ""
+        if strategy == "top_n_ev_gap_filter":
+            g = ev_gap_threshold if ev_gap_threshold is not None else 0.05
+            gstr = str(g).replace(".", "x")
+            return f"_top{top_n}ev{int(ev_th * 100)}_evgap{gstr}" if ev_th else f"_top{top_n}_evgap{gstr}"
         if strategy == "top_n_ev_confidence":
             base = f"_top{top_n}ev{int(ev_th * 100)}" if ev_th else ""
             conf = (confidence_type or "pred_prob").replace(" ", "_")
@@ -129,8 +135,10 @@ def run_one_window(
         if not data_dir_month.exists():
             continue
         for spec in strategies:
-            spec_name, strategy, top_n, ev_th, confidence_type, prob_gap_min, entropy_max = _normalize_spec(spec)
-            suffix = _suffix_for_strategy(strategy, top_n, ev_th, confidence_type, prob_gap_min, entropy_max)
+            norm = _normalize_spec(spec)
+            spec_name, strategy, top_n, ev_th, confidence_type, prob_gap_min, entropy_max = norm[0], norm[1], norm[2], norm[3], norm[4], norm[5], norm[6]
+            ev_gap_th = norm[7] if len(norm) >= 8 else None
+            suffix = _suffix_for_strategy(strategy, top_n, ev_th, confidence_type, prob_gap_min, entropy_max, ev_gap_th)
             out_path = out_pred_dir / f"predictions_baseline_{day}{suffix}.json"
             if out_path.exists():
                 continue
@@ -153,6 +161,8 @@ def run_one_window(
                     run_kw["betting_pool_k"] = int(prob_gap_min) if prob_gap_min is not None else 5
                 elif strategy == "top_n_ev_power_prob":
                     run_kw["betting_alpha"] = float(prob_gap_min) if prob_gap_min is not None else 1.0
+                elif strategy == "top_n_ev_gap_filter":
+                    run_kw["betting_ev_gap_threshold"] = float(ev_gap_th) if ev_gap_th is not None else 0.05
                 else:
                     run_kw["betting_prob_gap_min"] = prob_gap_min
                     run_kw["betting_entropy_max"] = entropy_max
@@ -165,8 +175,10 @@ def run_one_window(
     # 検証集計（戦略別）: selected_bets 用メトリクスを優先
     results = []
     for spec in strategies:
-        spec_name, strategy, top_n, ev_th, confidence_type, prob_gap_min, entropy_max = _normalize_spec(spec)
-        suffix = _suffix_for_strategy(strategy, top_n, ev_th, confidence_type, prob_gap_min, entropy_max)
+        norm = _normalize_spec(spec)
+        spec_name, strategy, top_n, ev_th, confidence_type, prob_gap_min, entropy_max = norm[0], norm[1], norm[2], norm[3], norm[4], norm[5], norm[6]
+        ev_gap_th = norm[7] if len(norm) >= 8 else None
+        suffix = _suffix_for_strategy(strategy, top_n, ev_th, confidence_type, prob_gap_min, entropy_max, ev_gap_th)
         tb_sel = tp_sel = sc = rwr = hc = om = rwsb = 0
         log_loss_list = []
         brier_list = []

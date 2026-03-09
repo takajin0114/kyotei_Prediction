@@ -2,7 +2,7 @@
 
 現在のプロジェクト状態。
 
-- **メイン戦略**: Strategy B（XGBoost + sigmoid + top_n_ev）。**正式 reference (n_w=12)**: (1) 1位 **top_n=3, ev=1.18**（-14.54%, EXP-0007 EV 高解像度探索 adopt）。(2) 2位 **top_n=3, ev=1.20**（-14.88%, 従来正式 reference）。(3) **top_n=6, ev=1.00**（-18.78%, 局所最適 adopt）。暫定 best（n_w=4）の top_n=3, ev=1.25 は未確定。
+- **メイン戦略**: Strategy B（XGBoost + sigmoid）。**正式 reference (n_w=12)**: (1) 1位 **top_n_ev_gap_filter, top_n=3, ev=1.18, ev_gap=0.05**（-13.81%, EXP-0013 adopt）。(2) 2位 **top_n=3, ev=1.18**（-14.54%, EXP-0007）。(3) 3位 **top_n=3, ev=1.20**（-14.88%, 従来正式 reference）。(4) **top_n=6, ev=1.00**（-18.78%, 局所最適 adopt）。暫定 best（n_w=4）の top_n=3, ev=1.25 は未確定。
 - **データ**: DB を唯一の正（`kyotei_predictor/data/kyotei_races.sqlite`）。JSON 直読みは使わない。
 - **評価**: rolling validation（n_windows=12）、extended_features、sigmoid calibration。extended_features_v2 は n12 正式比較で ROI 悪化のため hold。
 - **特徴量セット**: train / predict / rolling validation / feature_sweep で **feature_set を明示引数**で指定可能。優先順位は「明示引数 > 環境変数 KYOTEI_FEATURE_SET > デフォルト」。学習時に使った feature_set は **meta.json に保存**され、予測時に不一致の場合は **warning** を出す。
@@ -19,5 +19,6 @@
 - **EXP-0010**: status: completed。purpose: race_filtered_top_n_ev を **full grid** で評価（top_n=2,3 / ev=1.15,1.18,1.20 / prob_gap=0.03,0.05,0.07 / entropy_max=1.5,1.7）。**結果**: ベースライン top_n_ev ev=1.18（-14.54%）を上回る組み合わせなし。採用見送り。集計項目拡張済み。tool: `python3 -m kyotei_predictor.tools.run_race_filter_experiment`（--quick なしで full grid）。log: experiments/logs/EXP-0010_race_filter_selection.md。結果: outputs/race_filter_experiments/exp0010_race_filter_full_results.json。
 - **EXP-0011**: status: completed。purpose: 確率上位K候補プール制限型 selection（top_n_ev_prob_pool）の評価。**結果**: ベースラインを超えず採用見送り。log: experiments/logs/EXP-0011_prob_pool_selection.md。
 - **EXP-0012**: status: completed。purpose: EV スコア再設計（top_n_ev_power_prob）。EV_adj = (pred_prob ** alpha) * odds。alpha=0.7〜1.1 × top_n=2,3 × ev=1.15〜1.20。**結果**: outputs/power_prob_experiments/exp0012_power_prob_results.json を参照。ベースライン（top_n_ev 3/1.18）との比較は baseline_diff_roi。結論・採用判断はログに追記。tool: `python3 -m kyotei_predictor.tools.run_power_prob_experiment`。log: experiments/logs/EXP-0012_power_prob_ev.md。次の示唆: ベースラインを上回れば採用；上回らなければ別の EV 設計や別軸。
+- **EXP-0013**: status: completed。purpose: EV gap strategy（top_n_ev_gap_filter）。ev_gap = ev_rank1 - ev_rank2。ev_gap < threshold ならレースを skip。ev_gap_threshold=0.02,0.03,0.05,0.07 で sweep。**結果**: ev_gap=0.05 が最良 **-13.81%**（n_w=12）、ベースライン -14.54% を +0.73%pt 上回り**採用**。tool: `python3 -m kyotei_predictor.tools.run_ev_gap_experiment`。log: experiments/logs/EXP-0013_ev_gap_strategy.md。結果: outputs/ev_gap_experiments/exp0013_ev_gap_results.json。
 
 更新日: プロジェクトのマイルストーンごとに更新する。

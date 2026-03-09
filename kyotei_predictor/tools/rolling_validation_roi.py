@@ -211,6 +211,8 @@ def run_rolling_validation_roi(
             out["prob_gap_min"] = strat[5]
         if len(strat) >= 7 and strat[6] is not None:
             out["entropy_max"] = strat[6]
+        if s == "top_n_ev_gap_filter" and len(strat) >= 8 and strat[7] is not None:
+            out["ev_gap_threshold"] = float(strat[7])
         if log_losses:
             out["mean_log_loss"] = round(statistics.mean(log_losses), 6)
         else:
