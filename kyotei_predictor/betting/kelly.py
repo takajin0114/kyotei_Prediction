@@ -30,6 +30,15 @@ def kelly_fraction(prob: float, odds: float) -> float:
     return max(edge / (odds - 1.0), 0.0)
 
 
+def kelly_half_capped(prob: float, odds: float, cap: float = 0.02) -> float:
+    """
+    half Kelly + cap。fractional Kelly の安全側制限。
+    kelly = min(kelly_fraction(prob, odds) * 0.5, cap)
+    """
+    kf = kelly_fraction(prob, odds) * 0.5
+    return min(kf, cap)
+
+
 def kelly_capped(prob: float, odds: float, cap: float = KELLY_CAP_DEFAULT) -> float:
     """
     安全のため cap で上限を設けた Kelly 賭け率。

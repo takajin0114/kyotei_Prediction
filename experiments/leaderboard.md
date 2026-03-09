@@ -6,10 +6,11 @@
 
 | Rank | Experiment ID | Model | Calibration | Features | Strategy | overall_roi_selected | Notes |
 |---|---|---|---|---|---|---|---|
-| 1 | EXP-0005 | xgboost | sigmoid | extended_features | top_n_ev | **-20.7%** (n_w=12) | 新 reference 候補 |
-| 2 | EXP-0005 | lightgbm | sigmoid | extended_features | top_n_ev | -29.9% (n_w=12) | 安定性良好 |
-| 3 | EXP-0004 | sklearn baseline | sigmoid | extended_features | top_n_ev | -27.7% (n_w=12) | 現行 reference |
-| 4 | EXP-0001 | sklearn baseline | sigmoid | extended_features | top_n_ev | -28% | 旧 reference |
+| 1 | EXP-0006 | xgboost | sigmoid | extended_features | top_n_ev (ev=1.05) | **-19.71%** (n_w=12) | adopt: ev=1.05 最適化 |
+| 2 | EXP-0005 | xgboost | sigmoid | extended_features | top_n_ev (ev=1.20) | -20.7% (n_w=12) | 旧 reference |
+| 3 | EXP-0005 | lightgbm | sigmoid | extended_features | top_n_ev | -29.9% (n_w=12) | 安定性良好 |
+| 4 | EXP-0004 | sklearn baseline | sigmoid | extended_features | top_n_ev | -27.7% (n_w=12) | sklearn reference |
+| 5 | EXP-0001 | sklearn baseline | sigmoid | extended_features | top_n_ev | -28% | 旧 reference |
 | - | EXP-0002 | sklearn baseline | sigmoid | extended_features_v2 | top_n_ev | -35% (n_w=2) | v2 比較・hold |
 | - | EXP-0004 | sklearn baseline | sigmoid | extended_features_v2 | top_n_ev | -33.76% (n_w=12) | v2 正式比較・hold |
 
@@ -25,7 +26,8 @@
 
 ## Notes
 
-- EXP-0005 で sklearn / LightGBM / XGBoost を n_windows=12 で比較。XGBoost が最良 ROI（-20.7%）で adopt。
+- **EXP-0006**: XGBoost + top_n_ev (top_n=6) で EV threshold sweep。ev=1.05 が最良 ROI（-19.71%）。adopt ev=1.05。
+- 比較値の出典: overall_roi_selected は rolling_validation_roi の total_payout / total_bet から算出。n_windows=12 は同一条件。
 - EXP-0005 ev_threshold_sweep: ev_threshold_only 戦略で threshold 1.05〜1.25 を比較（n_w=6）。最良 ROI は ev=1.05 で -48.95%。
 - この表は主に overall_roi_selected で比較する
 - 同程度なら安定性（std_roi_selected）も考慮する
