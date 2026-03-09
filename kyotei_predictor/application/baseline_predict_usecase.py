@@ -86,6 +86,8 @@ def _apply_selected_bets(
     prob_gap_min: Optional[float] = None,
     entropy_max: Optional[float] = None,
     candidate_min: Optional[int] = None,
+    pool_k: Optional[int] = None,
+    alpha: Optional[float] = None,
 ) -> None:
     """
     各レースの all_combinations に betting_selector を適用し、
@@ -106,6 +108,10 @@ def _apply_selected_bets(
         extra_kwargs["entropy_max"] = entropy_max
     if candidate_min is not None:
         extra_kwargs["candidate_min"] = candidate_min
+    if pool_k is not None:
+        extra_kwargs["pool_k"] = int(pool_k)
+    if alpha is not None:
+        extra_kwargs["alpha"] = float(alpha)
     for pred in predictions:
         ac = pred.get("all_combinations") or []
         if not ac:
@@ -147,6 +153,8 @@ def run_baseline_predict(
     betting_entropy_max: Optional[float] = None,
     betting_race_ev_min: Optional[float] = None,
     betting_candidate_min: Optional[int] = None,
+    betting_pool_k: Optional[int] = None,
+    betting_alpha: Optional[float] = None,
     data_source: Optional[str] = None,
     race_repository: Optional[RaceDataRepositoryProtocol] = None,
     db_path: Optional[Union[str, Path]] = None,
@@ -297,6 +305,8 @@ def run_baseline_predict(
             prob_gap_min=betting_prob_gap_min,
             entropy_max=betting_entropy_max,
             candidate_min=betting_candidate_min,
+            pool_k=betting_pool_k,
+            alpha=betting_alpha,
         )
         # execution_summary に ev_selection 集計を追加（A案互換）
         ev_metas = [p.get("ev_selection_metadata") for p in predictions if p.get("ev_selection_metadata")]

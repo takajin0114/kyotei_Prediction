@@ -7,7 +7,7 @@ B案移行後も同じインターフェースで EV 戦略等に拡張しやす
 """
 
 import math
-from typing import Dict, List, Any, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 # 戦略名（config の betting.strategy と一致）
 STRATEGY_SINGLE = "single"
@@ -17,6 +17,8 @@ STRATEGY_EV = "ev"
 STRATEGY_TOP_N_EV = "top_n_ev"  # 上位 top_n 候補のうち expected_roi >= ev_threshold のみ購入
 STRATEGY_TOP_N_EV_CONFIDENCE = "top_n_ev_confidence"  # EV×信頼度でスコア化し top_n 選抜
 STRATEGY_RACE_FILTERED_TOP_N_EV = "race_filtered_top_n_ev"  # レースフィルタ通過後の top_n_ev
+STRATEGY_TOP_N_EV_PROB_POOL = "top_n_ev_prob_pool"  # 確率上位 pool_k に候補を限定し、その中で top_n_ev（または EV×confidence）で選抜
+STRATEGY_TOP_N_EV_POWER_PROB = "top_n_ev_power_prob"  # EV_adj = (pred_prob ** alpha) * odds でスコア化し、ev_threshold 以上から top_n 選抜
 STRATEGY_EV_THRESHOLD_ONLY = "ev_threshold_only"  # EV >= ev_threshold の全候補を購入（top_n 制限なし）
 
 # top_n_ev_confidence の confidence_type
@@ -275,6 +277,77 @@ def select_top_n_ev_confidence(
     return [comb for _, comb in scored[:top_n]]
 
 
+def select_top_n_ev_prob_pool(
+    predictions: List[Dict[str, Any]],
+    pool_k: int,
+    top_n: int,
+    ev_threshold: float,
+    confidence_type: Optional[str] = None,
+) -> List[str]:
+    """
+    確率上位 pool_k 件に候補を限定し、その中で EV >= ev_threshold の候補から top_n を選ぶ。
+    confidence_type を指定した場合は、限定候補内で EV×confidence の高い順に top_n 選抜。
+
+    Args:
+        predictions: 予測候補リスト（確率降順を想定）。probability と ratio 必須。
+        pool_k: 候補プールのサイズ（pred_prob 上位 K 件）。
+        top_n: 選抜する点数。
+        ev_threshold: 期待リターン閾値。
+        confidence_type: None のときは top_n_ev。 "pred_prob" | "prob_gap" のときは EV×confidence で top_n 選抜。
+
+    Returns:
+        購入する combination のリスト
+    """
+    if pool_k <= 0 or top_n <= 0 or not predictions:
+        return []
+    pool = predictions[:pool_k]
+    if confidence_type and confidence_type.strip().lower() in (CONFIDENCE_PROB_GAP, "prob_gap"):
+        return select_top_n_ev_confidence(
+            pool, top_n, ev_threshold, confidence_type=CONFIDENCE_PROB_GAP
+        )
+    if confidence_type and confidence_type.strip().lower() in (CONFIDENCE_PRED_PROB, "pred_prob"):
+        return select_top_n_ev_confidence(
+            pool, top_n, ev_threshold, confidence_type=CONFIDENCE_PRED_PROB
+        )
+    return select_top_n_ev(pool, top_n, ev_threshold)
+
+
+def select_top_n_ev_power_prob(
+    predictions: List[Dict[str, Any]],
+    alpha: float,
+    top_n: int,
+    ev_threshold: float,
+) -> List[str]:
+    """
+    EV_adj = (pred_prob ** alpha) * odds でスコア化し、
+    EV_adj >= ev_threshold の候補のうち EV_adj 降順で top_n 件選ぶ。
+
+    Args:
+        predictions: 予測候補リスト（probability と ratio または odds が必要）。
+        alpha: 確率のべき乗（0.7〜1.1 等）。alpha=1.0 のとき従来の expected_roi = prob * odds と一致。
+        top_n: 選抜する点数。
+        ev_threshold: EV_adj 閾値（この値以上のみ対象）。
+
+    Returns:
+        購入する combination のリスト
+    """
+    if top_n <= 0 or not predictions:
+        return []
+    scored: List[Tuple[float, str]] = []
+    for c in predictions:
+        prob = _get_score(c)
+        ratio = _get_odds_ratio(c)
+        if ratio is None or ratio <= 0:
+            continue
+        ev_adj = (prob ** alpha) * ratio
+        if ev_adj >= ev_threshold:
+            comb = _get_combination(c)
+            if comb:
+                scored.append((ev_adj, comb))
+    scored.sort(key=lambda x: -x[0])
+    return [comb for _, comb in scored[:top_n]]
+
+
 # EV メタデータのキー（execution_summary / ログ用）
 EV_META_THRESHOLD = "ev_threshold"
 EV_META_ADOPTED_COUNT = "ev_adopted_count"
@@ -409,6 +482,15 @@ def select_bets(
             candidate_min=candidate_min,
             ev_threshold_for_count=ev_threshold_for_count,
         )
+    if strategy == STRATEGY_TOP_N_EV_PROB_POOL:
+        pool_k = int(kwargs.get("pool_k", 5))
+        confidence_type = (kwargs.get("confidence_type") or "").strip().lower() or None
+        return select_top_n_ev_prob_pool(
+            predictions, pool_k, top_n, ev_threshold, confidence_type=confidence_type
+        )
+    if strategy == STRATEGY_TOP_N_EV_POWER_PROB:
+        alpha = float(kwargs.get("alpha", 1.0))
+        return select_top_n_ev_power_prob(predictions, alpha, top_n, ev_threshold)
     if strategy == STRATEGY_EV:
         result = select_ev(
             predictions,

@@ -12,6 +12,8 @@
 | 1 | EXP-0007 | xgboost | sigmoid | extended_features | top_n_ev | top_n=3, ev=1.18 | **-14.54%** (n_w=12) | EV 高解像度探索で最良（adopt） |
 | - | EXP-0009 | xgboost | sigmoid | extended_features | top_n_ev_confidence | top_n=3, ev=1.15/1.18/1.20, conf=pred_prob/prob_gap/entropy | -26%〜-39% (n_w=12) | 採用見送り（現行 top_n_ev が優位） |
 | - | EXP-0010 | xgboost | sigmoid | extended_features | race_filtered_top_n_ev | full grid: top_n=2,3 / ev=1.15,1.18,1.20 / pg=0.03,0.05,0.07 / ent=1.5,1.7 | 全条件でベースライン以下 (n_w=12) | レースフィルタ full grid 実施・ベースライン -14.54% を上回る組み合わせなし・採用見送り |
+| - | EXP-0011 | xgboost | sigmoid | extended_features | top_n_ev_prob_pool | pool_k=3,5,8 / top_n=2,3 / ev=1.15,1.18,1.20 (n_w=12) | ベースライン超えず (n_w=12) | 確率上位K候補プール制限型。採用見送り。log: experiments/logs/EXP-0011_prob_pool_selection.md。 |
+| - | EXP-0012 | xgboost | sigmoid | extended_features | top_n_ev_power_prob | alpha=0.7〜1.1 / top_n=2,3 / ev=1.15〜1.20 (n_w=12) | 結果は exp0012_power_prob_results.json 参照 | EV_adj=(prob^alpha)*odds。ベースライン比較は JSON の baseline_diff_roi。log: experiments/logs/EXP-0012_power_prob_ev.md。 |
 | 2 | EXP-0006 | xgboost | sigmoid | extended_features | top_n_ev | top_n=3, ev=1.20 | **-14.88%** (n_w=12) | **正式 reference**（従来 1 位） |
 | 3 | EXP-0007 | xgboost | sigmoid | extended_features | top_n_ev | top_n=4, ev=1.05 | **-17.85%** (n_w=12) | top_n 局所探索で最良（hold） |
 | 4 | EXP-0006 | xgboost | sigmoid | extended_features | top_n_ev | top_n=6, ev=1.00 | **-18.78%** (n_w=12) | 正式 reference 周辺の局所最適（adopt） |
@@ -112,6 +114,8 @@ selection 条件ごとの bet sizing 比較。overall_roi_selected / profit / ma
 - **EXP-0008**: (1) **Fractional Kelly**: cap=0.01 で ROI 最良 -6.99%（資金制約で破綻リスクあり、運用は fixed 推奨）。(2) **Calibration**: sigmoid -14.88% > none -15.80%。(3) **Model**: xgboost -14.88% > lightgbm -20.90%。ensemble は bet_count=0 の不具合あり要修正。log: experiments/logs/EXP-0008_fractional_kelly.md。
 - **EXP-0009**: selection strategy 拡張。top_n_ev と top_n_ev_confidence（EV×信頼度）を比較。top_n=3, ev=1.15/1.18/1.20, confidence_type=pred_prob/prob_gap/entropy_adjusted。**結果**: 現行 top_n_ev が最良（-14.54%）。top_n_ev_confidence は全条件で -26%〜-39%、bet 数約35k で ROI 悪化。採用見送り。log: experiments/logs/EXP-0009_selection_confidence_sweep.md。
 - **EXP-0010**: race_filtered_top_n_ev を **full grid** で実施。レース指標でフィルタし通過レースのみ top_n_ev。ベースライン top_n_ev ev=1.18（-14.54%）を上回る組み合わせはなく採用見送り。集計項目拡張（selected_race_count, selected_race_ratio, avg_bets_per_selected_race, baseline_diff_roi）を実施。log: experiments/logs/EXP-0010_race_filter_selection.md。結果 JSON: outputs/race_filter_experiments/exp0010_race_filter_full_results.json。
+- **EXP-0011**: 確率上位K候補プール制限型 selection（top_n_ev_prob_pool）を評価。**結果**: ベースラインを超えず採用見送り。log: experiments/logs/EXP-0011_prob_pool_selection.md。
+- **EXP-0012**: EV スコア再設計（top_n_ev_power_prob）。EV_adj = (pred_prob ** alpha) * odds。alpha=0.7,0.8,0.9,1.0,1.1 × top_n=2,3 × ev=1.15,1.17,1.18,1.19,1.20。ベースライン top_n_ev 3/1.18 と比較。結果は outputs/power_prob_experiments/exp0012_power_prob_results.json。tool: `python3 -m kyotei_predictor.tools.run_power_prob_experiment`。log: experiments/logs/EXP-0012_power_prob_ev.md。
 - 比較値の出典: overall_roi_selected は rolling_validation_roi の total_payout / total_bet から算出。n_windows=12 は同一条件。
 - EXP-0005 ev_threshold_sweep: ev_threshold_only 戦略で threshold 1.05〜1.25 を比較（n_w=6）。最良 ROI は ev=1.05 で -48.95%。
 - この表は主に overall_roi_selected で比較する

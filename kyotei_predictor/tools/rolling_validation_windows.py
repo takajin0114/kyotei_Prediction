@@ -106,6 +106,17 @@ def run_one_window(
             pg = int((prob_gap_min or 0.05) * 100)
             ent = int((entropy_max or 1.7) * 10)
             return f"{base}_pg{pg}_ent{ent}"
+        if strategy == "top_n_ev_prob_pool":
+            pk = int(prob_gap_min or 5) if prob_gap_min is not None else 5  # 5th element is pool_k for this strategy
+            base = f"_probpool_k{pk}_top{top_n}ev{int(ev_th * 100)}" if ev_th else f"_probpool_k{pk}_top{top_n}"
+            if confidence_type:
+                conf = (confidence_type or "").replace(" ", "_")
+                return f"{base}_conf_{conf}"
+            return base
+        if strategy == "top_n_ev_power_prob":
+            al = prob_gap_min if prob_gap_min is not None else 1.0  # 6th element is alpha for this strategy
+            astr = str(al).replace(".", "x")
+            return f"_powerprob_a{astr}_top{top_n}ev{int(ev_th * 100)}" if ev_th else f"_powerprob_a{astr}_top{top_n}"
         if strategy == "ev_threshold_only":
             return f"_evonly{int(ev_th * 100)}" if ev_th else ""
         return ""
@@ -124,22 +135,28 @@ def run_one_window(
             if out_path.exists():
                 continue
             try:
-                result = run_baseline_predict(
-                    model_path=model_path,
-                    data_dir=data_dir_month,
-                    prediction_date=day,
-                    include_selected_bets=True,
-                    betting_strategy=strategy,
-                    betting_top_n=top_n,
-                    betting_score_threshold=None,
-                    betting_ev_threshold=ev_th,
-                    betting_confidence_type=confidence_type,
-                    betting_prob_gap_min=prob_gap_min,
-                    betting_entropy_max=entropy_max,
-                    data_source=ds,
-                    db_path=dbp,
-                    feature_set=feature_set,
-                )
+                run_kw: dict = {
+                    "model_path": model_path,
+                    "data_dir": data_dir_month,
+                    "prediction_date": day,
+                    "include_selected_bets": True,
+                    "betting_strategy": strategy,
+                    "betting_top_n": top_n,
+                    "betting_score_threshold": None,
+                    "betting_ev_threshold": ev_th,
+                    "betting_confidence_type": confidence_type,
+                    "data_source": ds,
+                    "db_path": dbp,
+                    "feature_set": feature_set,
+                }
+                if strategy == "top_n_ev_prob_pool":
+                    run_kw["betting_pool_k"] = int(prob_gap_min) if prob_gap_min is not None else 5
+                elif strategy == "top_n_ev_power_prob":
+                    run_kw["betting_alpha"] = float(prob_gap_min) if prob_gap_min is not None else 1.0
+                else:
+                    run_kw["betting_prob_gap_min"] = prob_gap_min
+                    run_kw["betting_entropy_max"] = entropy_max
+                result = run_baseline_predict(**run_kw)
                 with open(out_path, "w", encoding="utf-8") as f:
                     json.dump(result, f, ensure_ascii=False, indent=2)
             except Exception:

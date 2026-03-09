@@ -203,7 +203,11 @@ def run_rolling_validation_roi(
         }
         if confidence_type is not None:
             out["confidence_type"] = confidence_type
-        if len(strat) >= 7 and strat[5] is not None:
+        if s == "top_n_ev_prob_pool" and len(strat) >= 6 and strat[5] is not None:
+            out["pool_k"] = int(strat[5])
+        elif s == "top_n_ev_power_prob" and len(strat) >= 6 and strat[5] is not None:
+            out["alpha"] = float(strat[5])
+        elif len(strat) >= 7 and strat[5] is not None:
             out["prob_gap_min"] = strat[5]
         if len(strat) >= 7 and strat[6] is not None:
             out["entropy_max"] = strat[6]
