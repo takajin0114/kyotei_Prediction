@@ -14,11 +14,12 @@ kyotei_Prediction
 
 ## Summary
 
-Generated at: 2026-03-09. EXP-0006 n_w=12 正式再評価を実行し、top_n=3, ev=1.20 を new reference として採用（adopt）。
+Generated at: 2026-03-09. EXP-0006 正式 reference（top_n=6, ev=1.05）周辺の局所最適化を実施。top_n=6 固定で ev 再探索の結果 **ev=1.00 が最良**（-18.78%）→ adopt。ドキュメント整合性回復（暫定 best / 正式 reference の区別、bet sizing 正式表の追加）。
 
 ## Changed files
 
 ```
+scripts/exp0006_local_opt_topn6_ev105.py
 experiments/logs/EXP-0006_strategy_grid.md
 experiments/leaderboard.md
 docs/ai_dev/project_status.md
@@ -28,15 +29,15 @@ docs/ai_dev/chat_context.md
 ## Commands run
 
 ```bash
-python3 scripts/exp0006_recheck_topn3_ev125_n12.py --db-path kyotei_predictor/data/kyotei_races.sqlite --n-windows 12 --seed 42
+python3 scripts/exp0006_local_opt_topn6_ev105.py --db-path kyotei_predictor/data/kyotei_races.sqlite --n-windows 12 --seed 42
 ```
 
 ## Execution results
 
-- Task1 (top_n=3, ev=1.25, n_w=12): overall_roi_selected -15.05%, profit -224,540, max_drawdown 245,110, mean_log_loss 5.013, mean_brier 0.9558
-- Task2 (top_n=3 固定 EV sweep): 最良 ev=1.20 → -14.88%（1.22:-15.13%, 1.25:-15.05%, 1.27:-15.63%, 1.30:-15.24%）
-- Task3 (bet sizing): fixed -14.88%, half_kelly -96.69%, capped_kelly_0.02 -8.66%, capped_kelly_0.05 -38.11%
-- 出力: outputs/exp0006_recheck_n12.json
+- Task1 (top_n=6 固定 ev sweep [1.00,1.02,1.05,1.07,1.10]): 最良 **ev=1.00 → -18.78%**（1.05:-19.71%, 1.07:-19.63%）
+- Task2 (ev=1.05 固定 top_n [5,6,7]): 最良 top_n=6 → -19.71%
+- Task3 (bet sizing, 最良条件 top_n=6 ev=1.00): fixed -18.78%, half_kelly -96.79%, capped_0.02 -23.51%, capped_0.05 -47.70%
+- 出力: outputs/exp0006_local_opt_topn6_ev105.json
 
 ## Diff summary
 
@@ -73,25 +74,22 @@ M docs/ai_dev/README.md
 
 # Experiment Leaderboard
 
-このファイルは主要実験の比較表を管理する。
+- **正式 reference (n_w=12)**: 同一条件・n_windows=12 で比較した公式結果。
+- **暫定 best (n_w=4 等)**: 少ない window 数のみで未確定。採用前に n_w=12 再評価を要する。
 
-## ROI Leaderboard
+| Rank | Experiment ID | Parameters | overall_roi_selected | Notes |
+|---|---|---|---|---|
+| 1 | EXP-0006 | top_n=3, ev=1.20 | **-14.88%** (n_w=12) | **new reference**（正式 adopt） |
+| 2 | EXP-0006 | top_n=6, ev=1.00 | **-18.78%** (n_w=12) | 正式 reference 周辺の局所最適（adopt） |
+| 4 | EXP-0006 | top_n=3, ev=1.25 (grid) | -11.15% (n_w=4) | **暫定 best**（未確定） |
+| 5 | EXP-0006 | top_n=6, ev=1.05 | -19.71% (n_w=12) | 正式 reference（top_n=6 系統・前回） |
+| 6 | EXP-0005 | top_n=6, ev=1.20 | -20.7% (n_w=12) | 旧 reference |
 
-| Rank | Experiment ID | Model | Calibration | Features | Strategy | Parameters | overall_roi_selected | Notes |
-|---|---|---|---|---|---|---|---|---|
-| 1 | EXP-0006 | xgboost | sigmoid | extended_features | top_n_ev | top_n=3, ev=1.20 | **-14.88%** (n_w=12) | **new reference**（正式再評価 adopt） |
-| 2 | EXP-0005 | xgboost | sigmoid | extended_features | top_n_ev | top_n=6, ev=1.20 | -20.7% (n_w=12) | 旧 reference |
-| 3 | EXP-0005 | lightgbm | sigmoid | extended_features | top_n_ev | - | -29.9% (n_w=12) | 安定性良好 |
-| 4 | EXP-0004 | sklearn baseline | sigmoid | extended_features | top_n_ev | - | -27.7% (n_w=12) | sklearn reference |
-| 5 | EXP-0001 | sklearn baseline | sigmoid | extended_features | top_n_ev | - | -28% | 旧 reference |
-| - | EXP-0002 | sklearn baseline | sigmoid | extended_features_v2 | top_n_ev | - | -35% (n_w=2) | v2 比較・hold |
-| - | EXP-0004 | sklearn baseline | sigmoid | extended_features_v2 | top_n_ev | - | -33.76% (n_w=12) | v2 正式比較・hold |
+Bet sizing 正式表は experiments/leaderboard.md の「Bet Sizing 比較」を参照。
 
 ## Notes
 
-- EXP-0006: 暫定ベスト（top_n=3, ev=1.25, n_w=4）を n_w=12 で再評価。ev 微調整の結果 **top_n=3, ev=1.20** が -14.88% で最良 → **new reference adopt**。
-- この表は主に overall_roi_selected で比較する。同程度なら安定性（std_roi_selected）も考慮する。
-- extended_features_v2 は n_windows=12 でも extended_features より ROI 悪化 → hold。
+- EXP-0006: 正式 reference (n_w=12) 1位 top_n=3, ev=1.20（-14.88%）。2位 top_n=6, ev=1.00（-18.78%, 局所最適 adopt）。暫定 best (n_w=4) top_n=3, ev=1.25 は未確定。
 - AI は新しい提案をする前に leaderboard を確認すること。
 
 ## Project Status
@@ -100,7 +98,7 @@ M docs/ai_dev/README.md
 
 現在のプロジェクト状態。
 
-- **メイン戦略**: Strategy B（XGBoost + sigmoid + top_n_ev, **top_n=3, ev_threshold=1.20**）。EXP-0006 n_w=12 正式再評価で new reference adopt（-14.88%）。
+- **メイン戦略**: Strategy B（XGBoost + sigmoid + top_n_ev）。**正式 reference (n_w=12)**: (1) 1位 **top_n=3, ev=1.20**（-14.88%, new reference adopt）。(2) 2位 **top_n=6, ev=1.00**（-18.78%, 正式 reference 周辺の局所最適 adopt）。暫定 best（n_w=4）の top_n=3, ev=1.25 は未確定。
 - **データ**: DB を唯一の正（`kyotei_predictor/data/kyotei_races.sqlite`）。JSON 直読みは使わない。
 - **評価**: rolling validation（n_windows=12）、extended_features、sigmoid calibration。extended_features_v2 は n12 正式比較で ROI 悪化のため hold。
 - **特徴量セット**: train / predict / rolling validation / feature_sweep で **feature_set を明示引数**で指定可能。優先順位は「明示引数 > 環境変数 KYOTEI_FEATURE_SET > デフォルト」。学習時に使った feature_set は **meta.json に保存**され、予測時に不一致の場合は **warning** を出す。
@@ -117,56 +115,47 @@ M docs/ai_dev/README.md
 experiment_id: EXP-0006
 date: "2026-03-09"
 status: completed
-objective: EXP-0006 暫定ベスト条件（top_n=3, ev=1.25）を n_w=12 で正式再評価し、EV 微調整・bet sizing 比較を行い new reference を決定する。再評価の結果 ev=1.20 が最良のため adopt。
+objective: 正式 reference（top_n=6, ev=1.05）周辺の局所最適化。top_n=6 固定で ev 再探索・ev=1.05 固定で top_n 近傍探索・bet sizing 比較。ドキュメント整合性回復（暫定/正式の区別、bet sizing 正式表）。
 model: xgboost
 calibration: sigmoid
 features: extended_features
 strategy: top_n_ev
 parameters:
-  top_n: 3
-  ev_threshold: 1.20
+  best_selection: top_n=6, ev=1.00
+  formal_reference_prior: top_n=6, ev=1.05
 validation:
   method: rolling_validation
   n_windows: 12
 seed: 42
-decision: adopt top_n=3, ev=1.20 as new reference（-14.88%）
+decision: adopt top_n=6, ev=1.00 as 正式 reference 周辺の局所最適（-18.78%, 旧 ev=1.05 の -19.71% より約 0.9pt 改善）
 priority: high
 tags:
   - exp0006
-  - recheck_n12
-  - bet_sizing
+  - local_opt
+  - topn6_ev105
 related_experiments:
   - EXP-0005
 ---
 
-# EXP-0006 n_w=12 正式再評価と new reference 採用
+# EXP-0006 正式 reference 周辺の局所最適化
 
 ## Purpose
 
-暫定ベスト（top_n=3, ev=1.25, n_w=4）を n_windows=12 で再評価し、top_n=3 固定で EV 微調整（1.20, 1.22, 1.25, 1.27, 1.30）と bet sizing 比較を行い、正式な reference を更新する。
+正式 reference（top_n=6, ev=1.05, -19.71% n_w=12）周辺で ev 細かく再探索（1.00, 1.02, 1.05, 1.07, 1.10）と top_n 近傍（5, 6, 7）、最良条件での bet sizing 比較。暫定 best / 正式 reference の区別と bet sizing 正式表でドキュメント整合性を回復。
 
-## Configuration
+## Results (n_w=12)
 
-- **Model**: xgboost
-- **Feature set**: extended_features
-- **Calibration**: sigmoid
-- **Strategy**: top_n_ev
-- **Validation**: rolling（n_windows=12）
-- **Seed**: 42
-
-## Results (n_windows=12)
-
-- **Task1** top_n=3, ev=1.25: overall_roi_selected **-15.05%**, profit -224,540, max_drawdown 245,110, mean_log_loss 5.013, mean_brier 0.9558
-- **Task2** top_n=3 固定 EV sweep: 最良 **ev=1.20** → **-14.88%**（1.22:-15.13%, 1.25:-15.05%, 1.27:-15.63%, 1.30:-15.24%）
-- **Task3** bet sizing（top_n=3, ev=1.20）: fixed -14.88%, half_kelly -96.69%, capped_kelly_0.02 **-8.66%**, capped_kelly_0.05 -38.11%
+- **Task1** top_n=6 ev sweep: 最良 **ev=1.00 → -18.78%**（1.05:-19.71%）
+- **Task2** ev=1.05 top_n sweep: 最良 top_n=6 → -19.71%
+- **Task3** bet sizing（top_n=6, ev=1.00）: fixed -18.78%, half_kelly -96.79%, capped_0.02 -23.51%, capped_0.05 -47.70%
 
 ## Conclusion
 
-- **decision**: **adopt** top_n=3, ev_threshold=1.20 を **new reference** とする（overall_roi_selected -14.88%, 旧 reference -20.7% より約 5.8pt 改善）
-- bet sizing は運用上 fixed を推奨（capped_0.02 は ROI 最良だが資金制約で破綻リスクあり）
+- **adopt** top_n=6, ev=1.00（-18.78%）を正式 reference（top_n=6 系統）の更新として採用。旧 ev=1.05（-19.71%）より約 0.9pt 改善。
+- bet sizing は fixed 推奨。leaderboard に正式表を追加済み。
 
 ## Notes
 
-- script: scripts/exp0006_recheck_topn3_ev125_n12.py
-- output: outputs/exp0006_recheck_n12.json
+- script: scripts/exp0006_local_opt_topn6_ev105.py
+- output: outputs/exp0006_local_opt_topn6_ev105.json
 - experiment log: experiments/logs/EXP-0006_strategy_grid.md

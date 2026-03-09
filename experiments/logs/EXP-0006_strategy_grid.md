@@ -105,3 +105,44 @@ top_n=6 固定では ev=1.05 が最良（-19.38%）。reference の ev=1.20 は 
 - **new reference 採用**: top_n=3, ev=1.20（adopt）。暫定ベストだった top_n=3, ev=1.25 は n_w=12 で -15.05% のため、ev=1.20 を正式採用。
 - bet sizing は fixed を基準とし、capped_kelly_0.02 が ROI 最良（資金制約で破綻リスクありのため fixed を運用基準とする場合あり）
 - 再評価実行: `python3 scripts/exp0006_recheck_topn3_ev125_n12.py --db-path kyotei_predictor/data/kyotei_races.sqlite --n-windows 12 --seed 42` → outputs/exp0006_recheck_n12.json
+
+---
+
+## 局所最適化（正式 reference 周辺, n_w=12, exp0006_local_opt_topn6_ev105.py）
+
+正式 reference（top_n=6, ev=1.05, -19.71%）周辺で ev 細かく再探索と top_n 近傍探索を実施。
+
+### Task1: top_n=6 固定 ev_threshold 再探索 (n_w=12)
+
+| ev_threshold | overall_roi_selected | mean_roi_selected | median_roi_selected | std_roi_selected | total_selected_bets | profit | max_drawdown |
+|--------------|---------------------|-------------------|---------------------|------------------|---------------------|--------|--------------|
+| 1.00 | **-18.78%** | -18.98 | -15.66 | 15.52 | 24,172 | -453,890 | 453,890 |
+| 1.02 | -19.17% | -19.35 | -15.54 | 15.99 | 23,902 | -458,130 | 458,130 |
+| 1.05 | -19.71% | -19.94 | -17.29 | 16.75 | 23,461 | -462,310 | 462,310 |
+| 1.07 | -19.63% | -19.85 | -17.58 | 17.20 | 23,193 | -455,290 | 455,290 |
+| 1.10 | -20.06% | -20.31 | -17.28 | 18.10 | 22,814 | -457,750 | 457,750 |
+
+**最良: ev=1.00**（-18.78%。正式 reference ev=1.05 の -19.71% より約 0.9pt 改善）
+
+### Task2: ev=1.05 固定 top_n 近傍 (n_w=12)
+
+| top_n | overall_roi_selected | mean_roi_selected | median_roi_selected | std_roi_selected | total_selected_bets | profit | max_drawdown |
+|-------|---------------------|-------------------|---------------------|------------------|---------------------|--------|--------------|
+| 5 | -21.92% | -21.11 | -23.86 | 15.80 | 24,744 | -542,460 | 542,460 |
+| 6 | **-19.71%** | -19.94 | -17.29 | 16.75 | 23,461 | -462,310 | 462,310 |
+| 7 | -20.75% | -20.79 | -18.21 | 12.14 | 25,793 | -535,280 | 535,280 |
+
+**最良: top_n=6**（ev=1.05 固定時）
+
+### Task3: bet sizing 比較（最良 selection: top_n=6, ev=1.00, n_w=12）
+
+| bet_sizing | overall_roi_selected | profit | max_drawdown | total_selected_bets |
+|------------|---------------------|--------|--------------|---------------------|
+| fixed | **-18.78%** | -453,890 | 487,750 | 24,172 |
+| half_kelly | -96.79% | -100,000 | 100,000 | 24,172 |
+| capped_kelly_0.02 | -23.51% | -99,999.76 | 99,999.76 | 24,172 |
+| capped_kelly_0.05 | -47.70% | -99,999.90 | 99,999.90 | 24,172 |
+
+top_n=6 系統では fixed が最良。Kelly 系は資金制約で破綻に近い。
+
+- 実行: `python3 scripts/exp0006_local_opt_topn6_ev105.py --db-path kyotei_predictor/data/kyotei_races.sqlite --n-windows 12 --seed 42` → outputs/exp0006_local_opt_topn6_ev105.json

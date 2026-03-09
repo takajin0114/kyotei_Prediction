@@ -2,7 +2,7 @@
 
 現在のプロジェクト状態。
 
-- **メイン戦略**: Strategy B（XGBoost + sigmoid + top_n_ev, **top_n=3, ev_threshold=1.20**）。EXP-0006 n_w=12 正式再評価で **new reference adopt**（overall_roi_selected -14.88%）。
+- **メイン戦略**: Strategy B（XGBoost + sigmoid + top_n_ev）。**正式 reference (n_w=12)**: (1) 1位 **top_n=3, ev=1.20**（-14.88%, new reference adopt）。(2) 2位 **top_n=6, ev=1.00**（-18.78%, 正式 reference 周辺の局所最適 adopt）。暫定 best（n_w=4）の top_n=3, ev=1.25 は未確定。
 - **データ**: DB を唯一の正（`kyotei_predictor/data/kyotei_races.sqlite`）。JSON 直読みは使わない。
 - **評価**: rolling validation（n_windows=12）、extended_features、sigmoid calibration。extended_features_v2 は n12 正式比較で ROI 悪化のため hold。
 - **特徴量セット**: train / predict / rolling validation / feature_sweep で **feature_set を明示引数**で指定可能。優先順位は「明示引数 > 環境変数 KYOTEI_FEATURE_SET > デフォルト」。学習時に使った feature_set は **meta.json に保存**され、予測時に不一致の場合は **warning** を出す。
@@ -12,6 +12,6 @@
 - **成果物**: docs/MODEL_COMPARISON.md、docs/ROI_EVALUATION_N12_SUMMARY.md、outputs/*.json（gitignore）。rolling validation の summary は model_type / feature_set / n_windows / overall_roi_selected 等の標準キーで統一。
 
 - **EXP-0005 ev_threshold_sweep**: status: completed。purpose: EV threshold optimization（ev_threshold_only 戦略で 1.05〜1.25 を比較）。Kelly capped 実装済み（bet_size = bankroll * min(kelly, 0.05)）。
-- **EXP-0006**: status: completed。purpose: XGBoost strategy grid + bet sizing + n_w=12 正式再評価。n_w=12 再評価で最良 **top_n=3, ev=1.20**（-14.88%）→ **new reference adopt**。暫定ベスト top_n=3, ev=1.25 は n_w=12 で -15.05%。top_n=3 固定で ev 微調整（1.20〜1.30）実施。bet sizing は capped_kelly_0.02 が ROI 最良（運用は fixed 推奨）。ev_threshold_only は **reject**。再評価実行: `scripts/exp0006_recheck_topn3_ev125_n12.py`（2026-03-09）。
+- **EXP-0006**: status: completed。purpose: XGBoost strategy grid + bet sizing + n_w=12 正式再評価 + 正式 reference（top_n=6, ev=1.05）周辺の局所最適化。**new reference** top_n=3, ev=1.20（-14.88%）。**正式 reference 周辺の局所最適** top_n=6, ev=1.00（-18.78%, ev=1.05 の -19.71% より約 0.9pt 改善 adopt）。暫定 best top_n=3, ev=1.25 は n_w=4 のみで未確定。bet sizing 正式表は leaderboard に記載。ev_threshold_only は **reject**。再評価: `scripts/exp0006_recheck_topn3_ev125_n12.py`。局所最適化: `scripts/exp0006_local_opt_topn6_ev105.py`。
 
 更新日: プロジェクトのマイルストーンごとに更新する。
