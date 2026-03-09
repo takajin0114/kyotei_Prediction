@@ -38,18 +38,18 @@ leaderboard の 1 位。
 
 # Latest Experiment
 
-**EXP-0008**
+**EXP-0009**
 
 実験内容
-正式 reference（xgboost, sigmoid, extended_features, top_n_ev, top_n=3, ev=1.20, ROI -14.88%）を前提に、(1) fractional Kelly キャップのスイープ、(2) calibration none vs sigmoid の比較、(3) xgboost / lightgbm / ensemble（確率平均）の EV 比較を行う。
+ROI 最大化のため、買い目選抜ロジックを改善する。予測モデルは変更せず、**selection strategy** を拡張し、EV 単独ではなく **EV × 信頼度** で選抜する `top_n_ev_confidence` を追加。現行 `top_n_ev` と比較する。
 
 結果
-- **Task1**: fractional Kelly cap 0.01 で ROI 最良（-6.99%）だが資金制約で破綻に近い。運用は fixed 推奨。 - **Task2**: calibration は sigmoid を採用（-14.88%）。none は -15.80%。 - **Task3**: xgboost > lightgbm。ensemble は不具合のため再実装・再評価が必要。
+- **現行 top_n_ev が最良**: ev=1.18 で overall_roi_selected **-14.54%**（1位）、ev=1.20 で -14.88%。bet 数は 15k 前後。 - **top_n_ev_confidence は ROI 悪化**: 全条件で overall_roi -26%〜-39%。bet 数は約 35k（ev≥閾値の**全候補**から top_n を選ぶため、対象レース数が増えている）。 - **結論**: 現状の「EV×信頼度」選抜では、閾値以上の候補を広く取るほど bet 数が増え ROI が悪化。**採用は見送り**。今後は「確率上位 K に限定したうえで EV×信頼度」など候補プールを絞る拡張を検討する。
 
 結論
-ROI のみ見ると cap=0.01 が最良（-6.99%）。いずれも資金制約で profit が約 -10 万に張り付いており、運用は fixed 推奨。fractional Kelly はリスク抑制効果はあるが破綻リスクは残る。
+現状の「EV×信頼度」選抜では、閾値以上の候補を広く取るほど bet 数が増え ROI が悪化。**採用は見送り**。今後は「確率上位 K に限定したうえで EV×信頼度」など候補プールを絞る拡張を検討する。
 
-ログ: experiments/logs/EXP-0008_fractional_kelly.md
+ログ: experiments/logs/EXP-0009_selection_confidence_sweep.md
 
 
 ---

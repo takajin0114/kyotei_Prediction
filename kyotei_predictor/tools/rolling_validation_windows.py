@@ -86,6 +86,22 @@ def run_one_window(
         seed=seed,
     )
 
+    def _normalize_spec(s):
+        if len(s) >= 5:
+            return s[0], s[1], s[2], s[3], s[4]
+        return s[0], s[1], s[2], s[3], None
+
+    def _suffix_for_strategy(strategy, top_n, ev_th, confidence_type):
+        if strategy == "top_n_ev":
+            return f"_top{top_n}ev{int(ev_th * 100)}" if ev_th else ""
+        if strategy == "top_n_ev_confidence":
+            base = f"_top{top_n}ev{int(ev_th * 100)}" if ev_th else ""
+            conf = (confidence_type or "pred_prob").replace(" ", "_")
+            return f"{base}_conf_{conf}"
+        if strategy == "ev_threshold_only":
+            return f"_evonly{int(ev_th * 100)}" if ev_th else ""
+        return ""
+
     test_dates = _date_range(test_start, test_end)
     # 日別に予測: 日付ごとに data_dir は月ディレクトリ
     for day in test_dates:
@@ -93,12 +109,9 @@ def run_one_window(
         data_dir_month = data_dir_raw / month
         if not data_dir_month.exists():
             continue
-        for spec_name, strategy, top_n, ev_th in strategies:
-            suffix = ""
-            if strategy == "top_n_ev":
-                suffix = f"_top{top_n}ev{int(ev_th * 100)}" if ev_th else ""
-            elif strategy == "ev_threshold_only":
-                suffix = f"_evonly{int(ev_th * 100)}" if ev_th else ""
+        for spec in strategies:
+            spec_name, strategy, top_n, ev_th, confidence_type = _normalize_spec(spec)
+            suffix = _suffix_for_strategy(strategy, top_n, ev_th, confidence_type)
             out_path = out_pred_dir / f"predictions_baseline_{day}{suffix}.json"
             if out_path.exists():
                 continue
@@ -112,6 +125,7 @@ def run_one_window(
                     betting_top_n=top_n,
                     betting_score_threshold=None,
                     betting_ev_threshold=ev_th,
+                    betting_confidence_type=confidence_type,
                     data_source=ds,
                     db_path=dbp,
                     feature_set=feature_set,
@@ -123,12 +137,9 @@ def run_one_window(
 
     # 検証集計（戦略別）: selected_bets 用メトリクスを優先
     results = []
-    for spec_name, strategy, top_n, ev_th in strategies:
-        suffix = ""
-        if strategy == "top_n_ev":
-            suffix = f"_top{top_n}ev{int(ev_th * 100)}" if ev_th else ""
-        elif strategy == "ev_threshold_only":
-            suffix = f"_evonly{int(ev_th * 100)}" if ev_th else ""
+    for spec in strategies:
+        spec_name, strategy, top_n, ev_th, confidence_type = _normalize_spec(spec)
+        suffix = _suffix_for_strategy(strategy, top_n, ev_th, confidence_type)
         tb_sel = tp_sel = sc = rwr = hc = om = 0
         log_loss_list = []
         brier_list = []

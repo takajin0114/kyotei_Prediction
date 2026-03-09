@@ -157,7 +157,7 @@ def run_rolling_validation_roi(
             }
             per_strategy_windows[j].append(rec)
 
-    def _summary(recs: list, strat: Tuple[str, str, int, Optional[float]]) -> dict:
+    def _summary(recs: list, strat: tuple) -> dict:
         rois = [r["roi_selected"] for r in recs]
         total_bet = sum(r["total_bet_selected"] for r in recs)
         total_payout = sum(r["total_payout_selected"] for r in recs)
@@ -165,7 +165,8 @@ def run_rolling_validation_roi(
         overall_roi = round((total_payout / total_bet - 1) * 100, 2) if total_bet else 0.0
         log_losses = [r["log_loss"] for r in recs if r.get("log_loss") is not None]
         briers = [r["brier_score"] for r in recs if r.get("brier_score") is not None]
-        name, s, tn, ev = strat
+        name, s, tn, ev = strat[0], strat[1], strat[2], strat[3]
+        confidence_type = strat[4] if len(strat) >= 5 else None
         out = {
             "model_type": _model_type,
             "model": model,
@@ -192,6 +193,8 @@ def run_rolling_validation_roi(
             "total_bet_selected": round(total_bet, 2),
             "total_payout_selected": round(total_payout, 2),
         }
+        if confidence_type is not None:
+            out["confidence_type"] = confidence_type
         if log_losses:
             out["mean_log_loss"] = round(statistics.mean(log_losses), 6)
         else:
@@ -200,6 +203,8 @@ def run_rolling_validation_roi(
             out["mean_brier_score"] = round(statistics.mean(briers), 6)
         else:
             out["mean_brier_score"] = None
+        hr1_list = [r.get("hit_rate_rank1_pct") for r in recs if r.get("hit_rate_rank1_pct") is not None]
+        out["hit_rate_rank1_pct"] = round(statistics.mean(hr1_list), 2) if hr1_list else None
         return out
 
     if len(strategies) == 1:

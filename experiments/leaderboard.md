@@ -10,6 +10,7 @@
 | Rank | Experiment ID | Model | Calibration | Features | Strategy | Parameters | overall_roi_selected | Notes |
 |---|---|---|---|---|---|---|---|---|
 | 1 | EXP-0007 | xgboost | sigmoid | extended_features | top_n_ev | top_n=3, ev=1.18 | **-14.54%** (n_w=12) | EV 高解像度探索で最良（adopt） |
+| - | EXP-0009 | xgboost | sigmoid | extended_features | top_n_ev_confidence | top_n=3, ev=1.15/1.18/1.20, conf=pred_prob/prob_gap/entropy | -26%〜-39% (n_w=12) | 採用見送り（現行 top_n_ev が優位） |
 | 2 | EXP-0006 | xgboost | sigmoid | extended_features | top_n_ev | top_n=3, ev=1.20 | **-14.88%** (n_w=12) | **正式 reference**（従来 1 位） |
 | 3 | EXP-0007 | xgboost | sigmoid | extended_features | top_n_ev | top_n=4, ev=1.05 | **-17.85%** (n_w=12) | top_n 局所探索で最良（hold） |
 | 4 | EXP-0006 | xgboost | sigmoid | extended_features | top_n_ev | top_n=6, ev=1.00 | **-18.78%** (n_w=12) | 正式 reference 周辺の局所最適（adopt） |
@@ -108,6 +109,7 @@ selection 条件ごとの bet sizing 比較。overall_roi_selected / profit / ma
 - **EXP-0006**: (1) **正式 reference (n_w=12)**: 2位 top_n=3, ev=1.20 **-14.88%**（従来 1 位）。top_n=6, ev=1.00 **-18.78%**（局所最適 adopt）。(2) **暫定 best (n_w=4)**: top_n=3, ev=1.25 で -11.15% は window 数少のため未確定。(3) bet sizing は fixed 推奨。ev_threshold_only は **reject**。
 - **EXP-0007**: (1) **top_n=3 EV 高解像度探索**: ev=1.18 が **-14.54%** で 1 位（adopt）。ev=1.20 は -14.88%。(2) **bet sizing 正式比較**: 条件 top_n=3, ev=1.18 で fixed -14.54%, capped_kelly_0.02 -8.17%。運用は fixed 推奨。(3) 従来 EXP-0007: top_n=4, ev=1.05 で -17.85%（hold）。calibration 比較は experiments/logs/EXP-0007_strategy_optimization.md。今回の局所探索は experiments/logs/EXP-0007_bet_sizing_and_local_search.md。
 - **EXP-0008**: (1) **Fractional Kelly**: cap=0.01 で ROI 最良 -6.99%（資金制約で破綻リスクあり、運用は fixed 推奨）。(2) **Calibration**: sigmoid -14.88% > none -15.80%。(3) **Model**: xgboost -14.88% > lightgbm -20.90%。ensemble は bet_count=0 の不具合あり要修正。log: experiments/logs/EXP-0008_fractional_kelly.md。
+- **EXP-0009**: selection strategy 拡張。top_n_ev と top_n_ev_confidence（EV×信頼度）を比較。top_n=3, ev=1.15/1.18/1.20, confidence_type=pred_prob/prob_gap/entropy_adjusted。**結果**: 現行 top_n_ev が最良（-14.54%）。top_n_ev_confidence は全条件で -26%〜-39%、bet 数約35k で ROI 悪化。採用見送り。log: experiments/logs/EXP-0009_selection_confidence_sweep.md。
 - 比較値の出典: overall_roi_selected は rolling_validation_roi の total_payout / total_bet から算出。n_windows=12 は同一条件。
 - EXP-0005 ev_threshold_sweep: ev_threshold_only 戦略で threshold 1.05〜1.25 を比較（n_w=6）。最良 ROI は ev=1.05 で -48.95%。
 - この表は主に overall_roi_selected で比較する

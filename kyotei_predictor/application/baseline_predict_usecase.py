@@ -81,6 +81,7 @@ def _apply_selected_bets(
     top_n: int,
     score_threshold: float,
     ev_threshold: float,
+    confidence_type: Optional[str] = None,
 ) -> None:
     """
     各レースの all_combinations に betting_selector を適用し、
@@ -90,6 +91,9 @@ def _apply_selected_bets(
         select_bets,
         STRATEGY_EV,
     )
+    extra_kwargs: Dict[str, Any] = {}
+    if confidence_type:
+        extra_kwargs["confidence_type"] = confidence_type
     for pred in predictions:
         ac = pred.get("all_combinations") or []
         if not ac:
@@ -104,6 +108,7 @@ def _apply_selected_bets(
                 score_threshold=score_threshold,
                 ev_threshold=ev_threshold,
                 return_metadata=use_metadata,
+                **extra_kwargs,
             )
             if use_metadata and isinstance(res, tuple):
                 pred["selected_bets"], pred["ev_selection_metadata"] = res[0], res[1]
@@ -125,6 +130,7 @@ def run_baseline_predict(
     betting_top_n: Optional[int] = None,
     betting_score_threshold: Optional[float] = None,
     betting_ev_threshold: Optional[float] = None,
+    betting_confidence_type: Optional[str] = None,
     data_source: Optional[str] = None,
     race_repository: Optional[RaceDataRepositoryProtocol] = None,
     db_path: Optional[Union[str, Path]] = None,
@@ -139,7 +145,7 @@ def run_baseline_predict(
         prediction_date: 予測日 YYYY-MM-DD
         venues: 対象会場リスト。None の場合は全レース
         include_selected_bets: True で既存 betting_selector を適用し selected_bets を付与
-        betting_strategy / betting_top_n / betting_score_threshold / betting_ev_threshold: 買い目パラメータ
+        betting_strategy / betting_top_n / betting_score_threshold / betting_ev_threshold / betting_confidence_type: 買い目パラメータ（top_n_ev_confidence 時は confidence_type）
         data_source: "json" | "db" | None。None のときは従来通り data_dir の JSON 直読。
         race_repository: 指定時はこのリポジトリでレース取得（data_source は無視）。
         db_path: data_source=db 時の SQLite パス。
@@ -267,7 +273,11 @@ def run_baseline_predict(
         top_n = betting_top_n if betting_top_n is not None else params["top_n"]
         score_threshold = betting_score_threshold if betting_score_threshold is not None else params["score_threshold"]
         ev_threshold = betting_ev_threshold if betting_ev_threshold is not None else params["ev_threshold"]
-        _apply_selected_bets(predictions, strategy, top_n, score_threshold, ev_threshold)
+        confidence_type = betting_confidence_type
+        _apply_selected_bets(
+            predictions, strategy, top_n, score_threshold, ev_threshold,
+            confidence_type=confidence_type,
+        )
         # execution_summary に ev_selection 集計を追加（A案互換）
         ev_metas = [p.get("ev_selection_metadata") for p in predictions if p.get("ev_selection_metadata")]
         if ev_metas:

@@ -6,6 +6,7 @@
 B案移行後も同じインターフェースで EV 戦略等に拡張しやすい設計とする。
 """
 
+import math
 from typing import Dict, List, Any, Optional, Tuple, Union
 
 # 戦略名（config の betting.strategy と一致）
@@ -14,7 +15,13 @@ STRATEGY_TOP_N = "top_n"
 STRATEGY_THRESHOLD = "threshold"
 STRATEGY_EV = "ev"
 STRATEGY_TOP_N_EV = "top_n_ev"  # 上位 top_n 候補のうち expected_roi >= ev_threshold のみ購入
+STRATEGY_TOP_N_EV_CONFIDENCE = "top_n_ev_confidence"  # EV×信頼度でスコア化し top_n 選抜
 STRATEGY_EV_THRESHOLD_ONLY = "ev_threshold_only"  # EV >= ev_threshold の全候補を購入（top_n 制限なし）
+
+# top_n_ev_confidence の confidence_type
+CONFIDENCE_PRED_PROB = "pred_prob"
+CONFIDENCE_PROB_GAP = "prob_gap"
+CONFIDENCE_ENTROPY_ADJUSTED = "entropy_adjusted"
 
 # EV 戦略のフォールバック: オッズなし or 閾値以上なし時に採用する上位点数
 DEFAULT_EV_TOP_N_FALLBACK = 5
@@ -179,6 +186,94 @@ def select_top_n_ev(
     return out
 
 
+def _race_entropy(probs: List[float]) -> float:
+    """
+    同一レース内の確率分布のエントロピー。
+    H = -sum(p * log(p)) for p in probs where p > 0.
+    """
+    if not probs:
+        return 0.0
+    total = sum(probs)
+    if total <= 0:
+        return 0.0
+    h = 0.0
+    for p in probs:
+        if p > 0:
+            q = p / total
+            h -= q * math.log(q + 1e-12)
+    return h
+
+
+def _prob_gap_top1_top2(probs: List[float]) -> float:
+    """
+    同一レース内の 1 位と 2 位の確率差。
+    降順で top1 - top2。要素が 1 つ以下なら 0。
+    """
+    if len(probs) < 2:
+        return 0.0
+    sorted_probs = sorted(probs, reverse=True)
+    return sorted_probs[0] - sorted_probs[1]
+
+
+def select_top_n_ev_confidence(
+    predictions: List[Dict[str, Any]],
+    top_n: int,
+    ev_threshold: float,
+    confidence_type: str = CONFIDENCE_PRED_PROB,
+) -> List[str]:
+    """
+    EV >= ev_threshold の候補のうち、selection_score = ev × confidence の高い順に top_n 件選ぶ。
+    confidence は confidence_type に応じて pred_prob / prob_gap / entropy_adjusted のいずれか。
+
+    Args:
+        predictions: 予測候補リスト（同一レースの all_combinations を想定）。probability と ratio 必須。
+        top_n: 選ぶ件数。
+        ev_threshold: 期待リターン閾値（expected_roi >= ev_threshold のみ対象）。
+        confidence_type: "pred_prob" | "prob_gap" | "entropy_adjusted"
+
+    Returns:
+        購入する combination のリスト
+    """
+    if top_n <= 0 or not predictions:
+        return []
+    probs = [_get_score(c) for c in predictions]
+    ratio_ok = [_get_odds_ratio(c) for c in predictions]
+    ev_list = []
+    for i, c in enumerate(predictions):
+        prob = probs[i]
+        ratio = ratio_ok[i]
+        if ratio is None or ratio <= 0:
+            continue
+        ev = _expected_roi(prob, ratio)
+        if ev < ev_threshold:
+            continue
+        ev_list.append((i, ev, prob))
+    if not ev_list:
+        return []
+
+    race_ent = _race_entropy(probs)
+    prob_gap = _prob_gap_top1_top2(probs)
+    entropy_adj = 1.0 / (1.0 + race_ent) if race_ent is not None else 1.0
+
+    scored = []
+    for idx, ev, prob in ev_list:
+        c = predictions[idx]
+        if confidence_type == CONFIDENCE_PRED_PROB:
+            conf = prob
+        elif confidence_type == CONFIDENCE_PROB_GAP:
+            conf = max(prob_gap, 1e-6)
+        elif confidence_type == CONFIDENCE_ENTROPY_ADJUSTED:
+            conf = entropy_adj
+        else:
+            conf = prob
+        selection_score = ev * conf
+        comb = _get_combination(c)
+        if comb:
+            scored.append((selection_score, comb))
+    scored.sort(key=lambda x: -x[0])
+    return [comb for _, comb in scored[:top_n]]
+
+
 # EV メタデータのキー（execution_summary / ログ用）
 EV_META_THRESHOLD = "ev_threshold"
 EV_META_ADOPTED_COUNT = "ev_adopted_count"
@@ -289,6 +384,11 @@ def select_bets(
         return select_score_threshold(predictions, score_threshold)
     if strategy == STRATEGY_TOP_N_EV:
         return select_top_n_ev(predictions, top_n, ev_threshold)
+    if strategy == STRATEGY_TOP_N_EV_CONFIDENCE:
+        confidence_type = (kwargs.get("confidence_type") or CONFIDENCE_PRED_PROB).strip().lower()
+        return select_top_n_ev_confidence(
+            predictions, top_n, ev_threshold, confidence_type=confidence_type
+        )
     if strategy == STRATEGY_EV_THRESHOLD_ONLY:
         return select_ev_threshold_only(predictions, ev_threshold)
     if strategy == STRATEGY_EV:
