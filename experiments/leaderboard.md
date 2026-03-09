@@ -6,13 +6,14 @@
 
 | Rank | Experiment ID | Model | Calibration | Features | Strategy | Parameters | overall_roi_selected | Notes |
 |---|---|---|---|---|---|---|---|---|
-| 1 | EXP-0006 | xgboost | sigmoid | extended_features | top_n_ev | top_n=3, ev=1.20 (grid) | **-10.94%** (n_w=6) | strategy grid 最良; bet sizing: capped_0.02 → -8.66% |
-| 2 | EXP-0006 | xgboost | sigmoid | extended_features | top_n_ev | top_n=3, ev=1.25 (grid) | -11.15% (n_w=4) | 旧 grid 最良 |
-| 3 | EXP-0006 | xgboost | sigmoid | extended_features | top_n_ev | top_n=6, ev=1.05 | -19.71% (n_w=12) | 前回 adopt |
-| 4 | EXP-0005 | xgboost | sigmoid | extended_features | top_n_ev | top_n=6, ev=1.20 | -20.7% (n_w=12) | 旧 reference |
-| 5 | EXP-0005 | lightgbm | sigmoid | extended_features | top_n_ev | - | -29.9% (n_w=12) | 安定性良好 |
-| 6 | EXP-0004 | sklearn baseline | sigmoid | extended_features | top_n_ev | - | -27.7% (n_w=12) | sklearn reference |
-| 7 | EXP-0001 | sklearn baseline | sigmoid | extended_features | top_n_ev | - | -28% | 旧 reference |
+| 1 | EXP-0006 | xgboost | sigmoid | extended_features | top_n_ev | top_n=3, ev=1.20 | **-14.88%** (n_w=12) | **new reference**（正式再評価 adopt） |
+| 2 | EXP-0006 | xgboost | sigmoid | extended_features | top_n_ev | top_n=3, ev=1.20 (grid) | -10.94% (n_w=6) | strategy grid; bet sizing capped_0.02 → -8.66% |
+| 3 | EXP-0006 | xgboost | sigmoid | extended_features | top_n_ev | top_n=3, ev=1.25 (grid) | -11.15% (n_w=4) | 旧 grid 最良 |
+| 4 | EXP-0006 | xgboost | sigmoid | extended_features | top_n_ev | top_n=6, ev=1.05 | -19.71% (n_w=12) | 前回 adopt |
+| 5 | EXP-0005 | xgboost | sigmoid | extended_features | top_n_ev | top_n=6, ev=1.20 | -20.7% (n_w=12) | 旧 reference |
+| 6 | EXP-0005 | lightgbm | sigmoid | extended_features | top_n_ev | - | -29.9% (n_w=12) | 安定性良好 |
+| 7 | EXP-0004 | sklearn baseline | sigmoid | extended_features | top_n_ev | - | -27.7% (n_w=12) | sklearn reference |
+| 8 | EXP-0001 | sklearn baseline | sigmoid | extended_features | top_n_ev | - | -28% | 旧 reference |
 | - | EXP-0002 | sklearn baseline | sigmoid | extended_features_v2 | top_n_ev | - | -35% (n_w=2) | v2 比較・hold |
 | - | EXP-0004 | sklearn baseline | sigmoid | extended_features_v2 | top_n_ev | - | -33.76% (n_w=12) | v2 正式比較・hold |
 
@@ -28,7 +29,7 @@
 
 ## Notes
 
-- **EXP-0006**: (1) strategy grid（top_n sweep + ev_threshold sweep）で最良は **top_n=3, ev=1.20**（n_w=6 時 **-10.94%**）。(2) bet sizing 比較で capped_kelly_0.02 が **-8.66%** で最良。(3) ev_threshold_only は 1.05〜1.25 で -48.95%〜-51.35% のため **reject**（不採用根拠: top_n 廃止で悪化）。
+- **EXP-0006**: (1) n_w=12 正式再評価で最良は **top_n=3, ev=1.20**（**-14.88%**）→ **new reference adopt**。(2) top_n=3 固定の ev 微調整（1.20, 1.22, 1.25, 1.27, 1.30）で 1.20 が最良。(3) bet sizing 比較で capped_kelly_0.02 が -8.66% で最良（運用は fixed を推奨）。(4) ev_threshold_only は 1.05〜1.25 で -48.95%〜-51.35% のため **reject**。
 - 比較値の出典: overall_roi_selected は rolling_validation_roi の total_payout / total_bet から算出。n_windows=12 は同一条件。
 - EXP-0005 ev_threshold_sweep: ev_threshold_only 戦略で threshold 1.05〜1.25 を比較（n_w=6）。最良 ROI は ev=1.05 で -48.95%。
 - この表は主に overall_roi_selected で比較する

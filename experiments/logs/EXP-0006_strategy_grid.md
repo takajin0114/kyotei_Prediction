@@ -55,7 +55,52 @@ top_n=6 固定では ev=1.05 が最良（-19.38%）。reference の ev=1.20 は 
 
 ## summary
 
-- **最良戦略**: top_n=3, ev_threshold=1.20 → overall_roi_selected **-10.94%**（fixed）
+- **最良戦略**: top_n=3, ev_threshold=1.20 → overall_roi_selected **-10.94%**（fixed, n_w=6）
 - **最良 bet sizing**: capped_kelly_0.02 で **-8.66%**（同一 bet 列）
 - reference（top_n=6, ev=1.20）の -20.7%（n_w=12）より、top_n=3 で約 10pt 改善（n_w=6 時点）
 - n_windows=12 での再計測を推奨
+
+---
+
+## 正式再評価 (n_windows=12, exp0006_recheck_topn3_ev125_n12.py)
+
+### Task1: top_n=3, ev_threshold=1.25 単体 (n_w=12)
+
+| 指標 | 値 |
+|------|-----|
+| overall_roi_selected | -15.05% |
+| mean_roi_selected | -15.58 |
+| median_roi_selected | -16.77 |
+| std_roi_selected | 21.40 |
+| total_selected_bets | 14,920 |
+| profit | -224,540 |
+| max_drawdown | 245,110 |
+| mean_log_loss | 5.013374 |
+| mean_brier_score | 0.95577 |
+
+### Task2: top_n=3 固定 EV threshold 微調整 (n_w=12)
+
+| ev_threshold | overall_roi_selected | mean_roi | total_bets | profit | max_drawdown |
+|--------------|---------------------|----------|------------|--------|--------------|
+| 1.20 | **-14.88%** | -15.36 | 15,249 | -226,920 | 246,340 |
+| 1.22 | -15.13% | -15.65 | 15,121 | -228,770 | 248,690 |
+| 1.25 | -15.05% | -15.58 | 14,920 | -224,540 | 245,110 |
+| 1.27 | -15.63% | -16.15 | 14,795 | -231,190 | 250,950 |
+| 1.30 | -15.24% | -15.73 | 14,614 | -222,780 | 242,750 |
+
+**最良: top_n=3, ev_threshold=1.20**（n_w=12 で -14.88%）
+
+### Task3: bet sizing 比較 (最良条件 top_n=3, ev=1.20, n_w=12)
+
+| bet_sizing | overall_roi_selected | profit | max_drawdown | total_selected_bets |
+|------------|---------------------|--------|--------------|---------------------|
+| fixed | -14.88% | -226,920 | 283,570 | 15,249 |
+| half_kelly | -96.69% | -100,000 | 100,000 | 15,249 |
+| capped_kelly_0.02 | **-8.66%** | -99,999.76 | 247,197 | 15,249 |
+| capped_kelly_0.05 | -38.11% | -99,999.90 | 99,999.90 | 15,249 |
+
+### 正式結果サマリ
+
+- **n_w=12 最良 selection**: top_n=3, ev_threshold=1.20 → **-14.88%**（旧 reference -20.7% より約 5.8pt 改善）
+- **new reference 採用**: top_n=3, ev=1.20（adopt）
+- bet sizing は fixed を基準とし、capped_kelly_0.02 が ROI 最良（資金制約で破綻リスクありのため fixed を運用基準とする場合あり）

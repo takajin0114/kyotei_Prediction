@@ -72,22 +72,22 @@ M docs/ai_dev/README.md
 
 ## ROI Leaderboard
 
-| Rank | Experiment ID | Model | Calibration | Features | Strategy | overall_roi_selected | Notes |
-|---|---|---|---|---|---|---|---|
-| 1 | EXP-0005 | xgboost | sigmoid | extended_features | top_n_ev | **-20.7%** (n_w=12) | 新 reference 候補 |
-| 2 | EXP-0005 | lightgbm | sigmoid | extended_features | top_n_ev | -29.9% (n_w=12) | 安定性良好 |
-| 3 | EXP-0004 | sklearn baseline | sigmoid | extended_features | top_n_ev | -27.7% (n_w=12) | 現行 reference |
-| 4 | EXP-0001 | sklearn baseline | sigmoid | extended_features | top_n_ev | -28% | 旧 reference |
-| - | EXP-0002 | sklearn baseline | sigmoid | extended_features_v2 | top_n_ev | -35% (n_w=2) | v2 比較・hold |
-| - | EXP-0004 | sklearn baseline | sigmoid | extended_features_v2 | top_n_ev | -33.76% (n_w=12) | v2 正式比較・hold |
+| Rank | Experiment ID | Model | Calibration | Features | Strategy | Parameters | overall_roi_selected | Notes |
+|---|---|---|---|---|---|---|---|---|
+| 1 | EXP-0006 | xgboost | sigmoid | extended_features | top_n_ev | top_n=3, ev=1.20 | **-14.88%** (n_w=12) | **new reference**（正式再評価 adopt） |
+| 2 | EXP-0005 | xgboost | sigmoid | extended_features | top_n_ev | top_n=6, ev=1.20 | -20.7% (n_w=12) | 旧 reference |
+| 3 | EXP-0005 | lightgbm | sigmoid | extended_features | top_n_ev | - | -29.9% (n_w=12) | 安定性良好 |
+| 4 | EXP-0004 | sklearn baseline | sigmoid | extended_features | top_n_ev | - | -27.7% (n_w=12) | sklearn reference |
+| 5 | EXP-0001 | sklearn baseline | sigmoid | extended_features | top_n_ev | - | -28% | 旧 reference |
+| - | EXP-0002 | sklearn baseline | sigmoid | extended_features_v2 | top_n_ev | - | -35% (n_w=2) | v2 比較・hold |
+| - | EXP-0004 | sklearn baseline | sigmoid | extended_features_v2 | top_n_ev | - | -33.76% (n_w=12) | v2 正式比較・hold |
 
 ## Notes
 
-- EXP-0005 で sklearn / LightGBM / XGBoost を n_windows=12 で比較。XGBoost が最良 ROI（-20.7%）で adopt。
-- この表は主に overall_roi_selected で比較する
-- 同程度なら安定性（std_roi_selected）も考慮する
-- extended_features_v2 は n_windows=12 でも extended_features より ROI 悪化 → hold
-- AI は新しい提案をする前に leaderboard を確認すること
+- EXP-0006 n_w=12 正式再評価で **top_n=3, ev=1.20** が -14.88% で **new reference adopt**。
+- この表は主に overall_roi_selected で比較する。同程度なら安定性（std_roi_selected）も考慮する。
+- extended_features_v2 は n_windows=12 でも extended_features より ROI 悪化 → hold。
+- AI は新しい提案をする前に leaderboard を確認すること。
 
 ## Project Status
 
@@ -95,7 +95,7 @@ M docs/ai_dev/README.md
 
 現在のプロジェクト状態。
 
-- **メイン戦略**: Strategy B（baseline B + sigmoid + top_n_ev, top_n=6, ev_threshold=1.20）
+- **メイン戦略**: Strategy B（XGBoost + sigmoid + top_n_ev, **top_n=3, ev_threshold=1.20**）。EXP-0006 n_w=12 正式再評価で new reference adopt（-14.88%）。
 - **データ**: DB を唯一の正（`kyotei_predictor/data/kyotei_races.sqlite`）。JSON 直読みは使わない。
 - **評価**: rolling validation（n_windows=12）、extended_features、sigmoid calibration。extended_features_v2 は n12 正式比較で ROI 悪化のため hold。
 - **特徴量セット**: train / predict / rolling validation / feature_sweep で **feature_set を明示引数**で指定可能。優先順位は「明示引数 > 環境変数 KYOTEI_FEATURE_SET > デフォルト」。学習時に使った feature_set は **meta.json に保存**され、予測時に不一致の場合は **warning** を出す。
@@ -109,68 +109,59 @@ M docs/ai_dev/README.md
 ## Latest Experiment
 
 ---
-experiment_id: EXP-0005
+experiment_id: EXP-0006
 date: "2026-03-08"
 status: completed
-objective: sklearn baseline に対して LightGBM / XGBoost を同条件で比較し、ROI 改善余地を確認する。
-model: sklearn baseline / LightGBM / XGBoost
+objective: EXP-0006 暫定ベスト条件（top_n=3, ev=1.25）を n_w=12 で正式再評価し、EV 微調整・bet sizing 比較を行い new reference を決定する。
+model: xgboost
 calibration: sigmoid
 features: extended_features
 strategy: top_n_ev
 parameters:
-  top_n: 6
+  top_n: 3
   ev_threshold: 1.20
 validation:
   method: rolling_validation
   n_windows: 12
 seed: 42
-decision: adopt XGBoost as next reference
+decision: adopt top_n=3, ev=1.20 as new reference（-14.88%）
 priority: high
 tags:
-  - model_comparison
-  - lightgbm
-  - xgboost
+  - exp0006
+  - recheck_n12
+  - bet_sizing
 related_experiments:
-  - EXP-0004
+  - EXP-0005
 ---
 
-# EXP-0005 sklearn / LightGBM / XGBoost モデル比較
+# EXP-0006 n_w=12 正式再評価と new reference 採用
 
 ## Purpose
 
-sklearn baseline に対して LightGBM / XGBoost を同条件（extended_features, sigmoid, top_n_ev）で rolling validation により比較し、ROI 改善余地を確認する。
+暫定ベスト（top_n=3, ev=1.25, n_w=4）を n_windows=12 で再評価し、top_n=3 固定で EV 微調整（1.20, 1.22, 1.25, 1.27, 1.30）と bet sizing 比較を行い、正式な reference を更新する。
 
 ## Configuration
 
-- **Models**: sklearn, lightgbm, xgboost
+- **Model**: xgboost
 - **Feature set**: extended_features
 - **Calibration**: sigmoid
-- **Strategy**: top_n_ev（top_n=6, ev_threshold=1.20）
+- **Strategy**: top_n_ev
 - **Validation**: rolling（n_windows=12）
 - **Seed**: 42
 
 ## Results (n_windows=12)
 
-| model_type | overall_roi_selected | mean_roi_selected | median_roi_selected | std_roi_selected | total_selected_bets | mean_log_loss | mean_brier_score |
-|------------|---------------------|-------------------|---------------------|------------------|---------------------|---------------|------------------|
-| sklearn | -31.81 | -31.86 | -33.91 | 12.92 | 46878 | 5.3718 | 0.9376 |
-| lightgbm | -29.91 | -29.48 | -30.67 | 11.43 | 26997 | 4.4383 | 0.9464 |
-| xgboost | -20.70 | -20.88 | -17.66 | 18.01 | 21581 | 5.0134 | 0.9558 |
-
-## Interpretation
-
-- **XGBoost** が最良の overall_roi_selected（-20.70%）で、sklearn より約 11pt 改善
-- LightGBM は sklearn より約 2pt 改善（-29.91%）
-- XGBoost は std がやや大きい（18.01）が、ROI の改善幅が大きいため許容
-- total_selected_bets は XGBoost が最少（21,581）。EV 閾値でより厳格に絞っている可能性
-- LightGBM の log_loss（4.44）が最良
+- **Task1** top_n=3, ev=1.25: overall_roi_selected **-15.05%**, profit -224,540, max_drawdown 245,110, mean_log_loss 5.013, mean_brier 0.9558
+- **Task2** top_n=3 固定 EV sweep: 最良 **ev=1.20** → **-14.88%**（1.22:-15.13%, 1.25:-15.05%, 1.27:-15.63%, 1.30:-15.24%）
+- **Task3** bet sizing（top_n=3, ev=1.20）: fixed -14.88%, half_kelly -96.69%, capped_kelly_0.02 **-8.66%**, capped_kelly_0.05 -38.11%
 
 ## Conclusion
 
-- **decision**: adopt XGBoost を次基準候補とする
-- 次の優先: XGBoost をデフォルトモデルとして運用検討、または LightGBM との追加比較（安定性重視の場合）
+- **decision**: **adopt** top_n=3, ev_threshold=1.20 を **new reference** とする（overall_roi_selected -14.88%, 旧 reference -20.7% より約 5.8pt 改善）
+- bet sizing は運用上 fixed を推奨（capped_0.02 は ROI 最良だが資金制約で破綻リスクあり）
 
 ## Notes
 
-- latest experiment file: EXP-0005_model_sweep_lightgbm_xgboost.md
-- generated by: scripts/generate_chat_context.py
+- script: scripts/exp0006_recheck_topn3_ev125_n12.py
+- output: outputs/exp0006_recheck_n12.json
+- experiment log: experiments/logs/EXP-0006_strategy_grid.md
