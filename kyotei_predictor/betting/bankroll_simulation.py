@@ -57,14 +57,21 @@ def simulate_bankroll(
             kf = kelly_fraction(prob, odds) * 0.5
             stake = min(bankroll, max(0, bankroll * kf))
             stake = round(stake, 2)
-        elif bet_sizing in ("kelly_capped_0.02", "capped_kelly_0.02"):
+        elif bet_sizing.startswith("capped_kelly_") or bet_sizing.startswith("kelly_capped_"):
+            # fractional Kelly cap: capped_kelly_0.002, capped_kelly_0.005, 0.01, 0.02, 0.05 等
             prob = float(b.get("probability") or 0)
-            kf = kelly_capped(prob, odds, cap=0.02)
-            stake = min(bankroll, max(0, bankroll * kf))
-            stake = round(stake, 2)
-        elif bet_sizing in ("kelly_capped_0.05", "capped_kelly_0.05", BET_SIZING_KELLY_CAPPED):
-            prob = float(b.get("probability") or 0)
-            kf = kelly_capped(prob, odds, cap=0.05)
+            cap = 0.05
+            if "0.002" in bet_sizing:
+                cap = 0.002
+            elif "0.005" in bet_sizing:
+                cap = 0.005
+            elif "0.01" in bet_sizing:
+                cap = 0.01
+            elif "0.02" in bet_sizing:
+                cap = 0.02
+            elif "0.05" in bet_sizing:
+                cap = 0.05
+            kf = kelly_capped(prob, odds, cap=cap)
             stake = min(bankroll, max(0, bankroll * kf))
             stake = round(stake, 2)
         else:

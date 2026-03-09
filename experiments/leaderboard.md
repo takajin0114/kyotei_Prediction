@@ -75,10 +75,16 @@ selection 条件ごとの bet sizing 比較。overall_roi_selected / profit / ma
 
 運用は fixed を推奨（Kelly 系は資金制約で破綻リスクあり）。
 
+## EXP-0008 Fractional Kelly / Calibration / Ensemble（n_w=12）
+
+- **条件**: reference 固定（xgboost, top_n=3, ev=1.20）。Task1 fractional Kelly cap: 0.002, 0.005, 0.01, 0.02。Task2 calibration: none vs sigmoid。Task3 model: xgboost / lightgbm / ensemble（確率平均）。
+- **結果**: 実行後 `outputs/exp0008_fractional_kelly.json` および experiments/logs/EXP-0008_fractional_kelly.md を参照。
+
 ## Notes
 
 - **EXP-0006**: (1) **正式 reference (n_w=12)**: 2位 top_n=3, ev=1.20 **-14.88%**（従来 1 位）。top_n=6, ev=1.00 **-18.78%**（局所最適 adopt）。(2) **暫定 best (n_w=4)**: top_n=3, ev=1.25 で -11.15% は window 数少のため未確定。(3) bet sizing は fixed 推奨。ev_threshold_only は **reject**。
 - **EXP-0007**: (1) **top_n=3 EV 高解像度探索**: ev=1.18 が **-14.54%** で 1 位（adopt）。ev=1.20 は -14.88%。(2) **bet sizing 正式比較**: 条件 top_n=3, ev=1.18 で fixed -14.54%, capped_kelly_0.02 -8.17%。運用は fixed 推奨。(3) 従来 EXP-0007: top_n=4, ev=1.05 で -17.85%（hold）。calibration 比較は experiments/logs/EXP-0007_strategy_optimization.md。今回の局所探索は experiments/logs/EXP-0007_bet_sizing_and_local_search.md。
+- **EXP-0008**: Fractional Kelly（cap 0.002/0.005/0.01/0.02）、calibration（none vs sigmoid）、model/ensemble（xgboost / lightgbm / 確率平均）の比較。script: scripts/exp0008_fractional_kelly.py。log: experiments/logs/EXP-0008_fractional_kelly.md。
 - 比較値の出典: overall_roi_selected は rolling_validation_roi の total_payout / total_bet から算出。n_windows=12 は同一条件。
 - EXP-0005 ev_threshold_sweep: ev_threshold_only 戦略で threshold 1.05〜1.25 を比較（n_w=6）。最良 ROI は ev=1.05 で -48.95%。
 - この表は主に overall_roi_selected で比較する
