@@ -41,9 +41,10 @@ leaderboard の 1 位。
 <!-- update_chat_context.py が自動更新 -->
 
 - **最新 EXP**: EXP-0010
-- **概要**: ROI 改善のため、レース単位のフィルタを追加した selection strategy「race_filtered_top_n_ev」を導入し、ベースライン top_n_ev と比較する。レース指標（race_max_ev, race_prob_gap_top1_top2, race_entropy, candidate_count_above_threshold）でフィルタし、通過レースのみ top_n_ev で買い目選定する。
-- **結果**: （結果は experiments/logs/ を参照）
+- **概要**: ROI 改善のため、レース単位のフィルタを追加した selection strategy「race_filtered_top_n_ev」を **full grid** で評価。レース指標（race_max_ev, race_prob_gap_top1_top2, race_entropy, candidate_count_above_threshold）でフィルタし、通過レースのみ top_n_ev で買い目選定する。
+- **結果**: ベースライン（top_n_ev ev=1.18）が最良 -14.54%。race_filtered_top_n_ev は full grid 全条件でベースラインを下回り採用見送り。集計項目拡張（selected_race_count, selected_race_ratio, avg_bets_per_selected_race, baseline_diff_roi）を実施。
 - **ログ**: experiments/logs/EXP-0010_race_filter_selection.md
+- **結果 JSON**: outputs/race_filter_experiments/exp0010_race_filter_full_results.json
 
 # Leaderboard Summary
 
@@ -64,6 +65,7 @@ leaderboard の 1 位。
 - bet sizing は fixed が最良。Kelly 系は資金制約で破綻リスクあり。
 - calibration は sigmoid が none より有利（-14.88% vs -15.80%）。
 - xgboost が lightgbm より ROI 良好（-14.88% vs -20.90%）。
+- EXP-0010: race_filtered_top_n_ev は full grid で全条件ベースライン以下。レースフィルタで bet 数は減るが ROI は未改善。
 
 ---
 
@@ -76,7 +78,7 @@ leaderboard の 1 位。
 
 # Next Experiments
 
-- EXP-0010: race_filtered_top_n_ev のフルグリッド実行（--quick なし）でパラメータ最良組み合わせの探索。
+- EXP-0010 完了: race_filtered_top_n_ev の full grid を実施。ベースラインを上回る組み合わせなしのため次は別軸を検討。
 - ensemble 不具合修正後の再評価。
 - top_n / EV threshold の追加 sweep（必要に応じて）。
 - probability calibration の詳細比較（必要に応じて）。

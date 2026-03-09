@@ -150,7 +150,7 @@ def run_one_window(
     for spec in strategies:
         spec_name, strategy, top_n, ev_th, confidence_type, prob_gap_min, entropy_max = _normalize_spec(spec)
         suffix = _suffix_for_strategy(strategy, top_n, ev_th, confidence_type, prob_gap_min, entropy_max)
-        tb_sel = tp_sel = sc = rwr = hc = om = 0
+        tb_sel = tp_sel = sc = rwr = hc = om = rwsb = 0
         log_loss_list = []
         brier_list = []
         for day in test_dates:
@@ -173,6 +173,7 @@ def run_one_window(
                 rwr += summary.get("races_with_result") or 0
                 hc += summary.get("hit_count") or 0
                 om += summary.get("odds_missing_count") or 0
+                rwsb += summary.get("races_with_selected_bets") or 0
                 if summary.get("log_loss") is not None:
                     log_loss_list.append(summary["log_loss"])
                 if summary.get("brier_score") is not None:
@@ -204,6 +205,7 @@ def run_one_window(
             "profit": profit,
             "hit_count": hc,
             "races_with_result": rwr,
+            "races_with_selected_bets": rwsb,
             "log_loss": mean_log_loss,
             "brier_score": mean_brier,
         })

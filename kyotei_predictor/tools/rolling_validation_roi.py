@@ -152,6 +152,8 @@ def run_rolling_validation_roi(
                 "roi_selected": res.get("roi_selected", 0.0),
                 "hit_rate_rank1_pct": res.get("hit_rate_rank1_pct", 0.0),
                 "odds_missing_count": res.get("odds_missing_count", 0),
+                "races_with_result": res.get("races_with_result", 0),
+                "races_with_selected_bets": res.get("races_with_selected_bets", 0),
                 "log_loss": res.get("log_loss"),
                 "brier_score": res.get("brier_score"),
             }
@@ -162,6 +164,8 @@ def run_rolling_validation_roi(
         total_bet = sum(r["total_bet_selected"] for r in recs)
         total_payout = sum(r["total_payout_selected"] for r in recs)
         total_selected_bets = sum(r["selected_bets_total_count"] for r in recs)
+        total_races_with_result = sum(r.get("races_with_result", 0) for r in recs)
+        total_races_with_selected_bets = sum(r.get("races_with_selected_bets", 0) for r in recs)
         overall_roi = round((total_payout / total_bet - 1) * 100, 2) if total_bet else 0.0
         log_losses = [r["log_loss"] for r in recs if r.get("log_loss") is not None]
         briers = [r["brier_score"] for r in recs if r.get("brier_score") is not None]
@@ -192,6 +196,10 @@ def run_rolling_validation_roi(
             "total_selected_bets": total_selected_bets,
             "total_bet_selected": round(total_bet, 2),
             "total_payout_selected": round(total_payout, 2),
+            "selected_race_count": total_races_with_selected_bets,
+            "total_evaluated_races": total_races_with_result,
+            "selected_race_ratio": round(total_races_with_selected_bets / total_races_with_result, 4) if total_races_with_result else None,
+            "avg_bets_per_selected_race": round(total_selected_bets / total_races_with_selected_bets, 2) if total_races_with_selected_bets else None,
         }
         if confidence_type is not None:
             out["confidence_type"] = confidence_type

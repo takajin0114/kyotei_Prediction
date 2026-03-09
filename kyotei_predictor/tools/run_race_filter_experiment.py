@@ -90,8 +90,22 @@ def main() -> int:
         seed=args.seed,
     )
 
+    # ベースライン ROI（top_n_ev ev=1.18）を取得
+    baseline_roi = None
+    for s in summaries:
+        if s.get("strategy") == "top_n_ev" and s.get("ev_threshold") == 1.18:
+            baseline_roi = s.get("overall_roi_selected")
+            break
+    if baseline_roi is None:
+        baseline_roi = next(
+            (s.get("overall_roi_selected") for s in summaries if "top_n_ev" in (s.get("strategy_name") or "") and s.get("ev_threshold") == 1.18),
+            None,
+        )
+
     results = []
     for s in summaries:
+        roi = s.get("overall_roi_selected")
+        baseline_diff_roi = (round(roi - baseline_roi, 2) if roi is not None and baseline_roi is not None else None)
         row = {
             "strategy": s.get("strategy"),
             "strategy_name": s.get("strategy_name"),
@@ -101,31 +115,59 @@ def main() -> int:
             "entropy_max": s.get("entropy_max"),
             "mean_roi_selected": s.get("mean_roi_selected"),
             "median_roi_selected": s.get("median_roi_selected"),
-            "overall_roi_selected": s.get("overall_roi_selected"),
+            "overall_roi_selected": roi,
             "total_selected_bets": s.get("total_selected_bets"),
             "hit_rate_rank1_pct": s.get("hit_rate_rank1_pct"),
+            "selected_race_count": s.get("selected_race_count"),
+            "selected_race_ratio": s.get("selected_race_ratio"),
+            "avg_bets_per_selected_race": s.get("avg_bets_per_selected_race"),
+            "total_evaluated_races": s.get("total_evaluated_races"),
+            "baseline_roi_selected": baseline_roi,
+            "baseline_diff_roi": baseline_diff_roi,
             "mean_log_loss": s.get("mean_log_loss"),
             "mean_brier_score": s.get("mean_brier_score"),
         }
         results.append(row)
         print(
-            f"  {s.get('strategy_name')} -> roi={s.get('overall_roi_selected')}% "
-            f"bets={s.get('total_selected_bets')} hit_rate_rank1={s.get('hit_rate_rank1_pct')}"
+            f"  {s.get('strategy_name')} -> roi={roi}% diff_baseline={baseline_diff_roi}% "
+            f"bets={s.get('total_selected_bets')} races_sel={s.get('selected_race_count')} "
+            f"hit_rate_rank1={s.get('hit_rate_rank1_pct')}"
         )
 
     out = {
         "experiment_id": "EXP-0010",
+        "full_grid": not args.quick,
         "model": "xgboost",
         "calibration": "sigmoid",
         "features": "extended_features",
         "n_windows": args.n_windows,
         "seed": args.seed,
+        "baseline_roi_selected": baseline_roi,
         "results": results,
     }
-    out_path = output_dir / "exp0010_race_filter_results.json"
+    out_name = "exp0010_race_filter_full_results.json" if not args.quick else "exp0010_race_filter_results.json"
+    out_path = output_dir / out_name
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(out, f, ensure_ascii=False, indent=2)
     print(f"Saved {out_path}")
+
+    # 診断用サマリ表（全項目）
+    print("\n--- Summary table (all strategies) ---")
+    print(
+        f"{'strategy_name':<35} {'roi%':>8} {'diff_base':>9} {'bets':>7} "
+        f"{'races_sel':>9} {'sel_ratio':>9} {'avg_bet/race':>11} {'hit_r1%':>8}"
+    )
+    for r in results:
+        print(
+            f"{str(r.get('strategy_name') or ''):<35} "
+            f"{r.get('overall_roi_selected') or 0:>7.2f}% "
+            f"{r.get('baseline_diff_roi') or 0:>+8.2f}% "
+            f"{r.get('total_selected_bets') or 0:>7} "
+            f"{r.get('selected_race_count') or 0:>9} "
+            f"{r.get('selected_race_ratio') or 0:>9.4f} "
+            f"{r.get('avg_bets_per_selected_race') or 0:>11.2f} "
+            f"{r.get('hit_rate_rank1_pct') or 0:>7.2f}%"
+        )
 
     # ROI ランキング（overall_roi_selected の良い順）
     by_roi = sorted(
@@ -135,7 +177,7 @@ def main() -> int:
     )
     print("\nTop 5 by overall_roi_selected:")
     for i, r in enumerate(by_roi[:5], 1):
-        print(f"  {i}. {r['strategy_name']} {r['overall_roi_selected']}% bets={r['total_selected_bets']}")
+        print(f"  {i}. {r['strategy_name']} {r['overall_roi_selected']}% bets={r['total_selected_bets']} diff={r.get('baseline_diff_roi')}%")
     return 0
 
 
