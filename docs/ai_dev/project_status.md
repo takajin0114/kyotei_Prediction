@@ -14,5 +14,6 @@
 - **EXP-0005 ev_threshold_sweep**: status: completed。purpose: EV threshold optimization（ev_threshold_only 戦略で 1.05〜1.25 を比較）。Kelly capped 実装済み（bet_size = bankroll * min(kelly, 0.05)）。
 - **EXP-0006**: status: completed。purpose: XGBoost strategy grid + bet sizing + n_w=12 正式再評価。**正式 reference** top_n=3, ev=1.20（-14.88%）。top_n=6, ev=1.00（-18.78%, adopt）。bet sizing 正式表は leaderboard に記載。ev_threshold_only は **reject**。
 - **EXP-0007**: status: completed。purpose: (1) 正式 reference（top_n=3, ev=1.20）近傍の EV 高解像度探索（1.18, 1.20, 1.22, 1.24, 1.25）と bet sizing 正式比較。(2) **結果**: ev=1.18 が最良 **-14.54%**（adopt）。bet sizing は fixed 推奨。script: `scripts/exp0007_local_search_topn3_ev_and_bet_sizing.py`。log: experiments/logs/EXP-0007_bet_sizing_and_local_search.md。
+- **EXP-0008**: status: completed。purpose: fractional Kelly（cap 0.002/0.005/0.01/0.02）、calibration（none vs sigmoid）、model/ensemble（xgboost / lightgbm / 確率平均）の比較。(2) **結果**: Task1 で cap=0.01 が ROI 最良 -6.99%（運用は fixed 推奨）。Task2 で sigmoid -14.88% > none -15.80%。Task3 で xgboost -14.88% > lightgbm -20.90%。ensemble は bet_count=0 の不具合あり要修正。script: `scripts/exp0008_fractional_kelly.py`。log: experiments/logs/EXP-0008_fractional_kelly.md。
 
 更新日: プロジェクトのマイルストーンごとに更新する。
