@@ -42,7 +42,7 @@ leaderboard の 1 位。
 
 - **最新 EXP**: EXP-0012
 - **概要**: EV スコアの再設計。**EV_adj = (pred_prob ** alpha) * odds** でスコア化し、ev_threshold 以上から top_n を選ぶ戦略「top_n_ev_power_prob」を評価。alpha=0.7,0.8,0.9,1.0,1.1 × top_n=2,3 × ev=1.15,1.17,1.18,1.19,1.20。ベースライン top_n_ev top_n=3 ev=1.18（-14.54%）と比較。
-- **結果**: 結果は **outputs/power_prob_experiments/exp0012_power_prob_results.json** を参照。ベースライン比較は JSON の baseline_diff_roi。結論・採用判断は experiments/logs/EXP-0012_power_prob_ev.md に追記。
+- **結果**: 全条件でベースライン（-14.54%）未達。**採用見送り**。最良は alpha=1.1, top_n=3, ev=1.20 の -26.28%。詳細は outputs/power_prob_experiments/exp0012_power_prob_results.json および experiments/logs/EXP-0012_power_prob_ev.md。
 - **ログ**: experiments/logs/EXP-0012_power_prob_ev.md
 - **結果 JSON**: outputs/power_prob_experiments/exp0012_power_prob_results.json
 
@@ -56,7 +56,7 @@ leaderboard の 1 位。
 | 2 | EXP-0006 | top_n=3, ev=1.20 | **-14.88%** (n_w=12) | — | **正式 reference**（従来 1 位） |
 | 3 | EXP-0007 | top_n=4, ev=1.05 | **-17.85%** (n_w=12) | — | top_n 局所探索で最良（hold） |
 | — | EXP-0011 | top_n_ev_prob_pool | ベースライン超えず | — | 採用見送り。 |
-| — | EXP-0012 | top_n_ev_power_prob (alpha×top_n×ev) | JSON 参照 | — | EV_adj=(prob^alpha)*odds。exp0012_power_prob_results.json。 |
+| — | EXP-0012 | top_n_ev_power_prob (alpha×top_n×ev) | ベースライン未達 | — | 全条件採用見送り。最良 -26.28%。 |
 
 詳細は experiments/leaderboard.md 参照。
 
@@ -69,6 +69,7 @@ leaderboard の 1 位。
 - xgboost が lightgbm より ROI 良好（-14.88% vs -20.90%）。
 - EXP-0010: race_filtered_top_n_ev は full grid で全条件ベースライン以下。レースフィルタで bet 数は減るが ROI は未改善。
 - EXP-0011: top_n_ev_prob_pool はベースライン（top_n_ev 3/1.18）を超えず採用見送り。
+- EXP-0012: top_n_ev_power_prob は全グリッドでベースライン未達。採用見送り。現行ベストは top_n_ev top_n=3 ev_threshold=1.18、ROI -14.54%。
 
 ---
 
@@ -81,7 +82,7 @@ leaderboard の 1 位。
 
 # Next Experiments
 
-- EXP-0011: prob_pool はベースラインを超えず採用見送り。EXP-0012: EV スコア再設計（power_prob）の結果に基づく採用判断。ベースラインを上回れば leaderboard 更新、上回らなければ別の EV 設計や別軸の実験。
+- 現行ベスト戦略（top_n_ev top_n=3 ev=1.18、ROI -14.54%）を維持。EXP-0011（prob_pool）・EXP-0012（power_prob）はいずれもベースライン未更新のため採用見送り。次は別の EV 設計や別軸の実験を検討。
 - ensemble 不具合修正後の再評価。
 - top_n / EV threshold の追加 sweep（必要に応じて）。
 - probability calibration の詳細比較（必要に応じて）。
