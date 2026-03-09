@@ -29,7 +29,7 @@
 
 ## Notes
 
-- **EXP-0006**: (1) n_w=12 正式再評価で最良は **top_n=3, ev=1.20**（**-14.88%**）→ **new reference adopt**。(2) top_n=3 固定の ev 微調整（1.20, 1.22, 1.25, 1.27, 1.30）で 1.20 が最良。(3) bet sizing 比較で capped_kelly_0.02 が -8.66% で最良（運用は fixed を推奨）。(4) ev_threshold_only は 1.05〜1.25 で -48.95%〜-51.35% のため **reject**。
+- **EXP-0006**: (1) 暫定ベスト top_n=3, ev=1.25（n_w=4 で -11.15%）を n_w=12 で再評価 → -15.05%。top_n=3 固定で ev 微調整した結果 **ev=1.20 が最良**（**-14.88%**）→ **new reference adopt**。(2) top_n=3 固定の ev 微調整（1.20, 1.22, 1.25, 1.27, 1.30）で 1.20 が最良。(3) bet sizing 比較で capped_kelly_0.02 が -8.66% で最良（運用は fixed を推奨）。(4) ev_threshold_only は 1.05〜1.25 で -48.95%〜-51.35% のため **reject**。
 - 比較値の出典: overall_roi_selected は rolling_validation_roi の total_payout / total_bet から算出。n_windows=12 は同一条件。
 - EXP-0005 ev_threshold_sweep: ev_threshold_only 戦略で threshold 1.05〜1.25 を比較（n_w=6）。最良 ROI は ev=1.05 で -48.95%。
 - この表は主に overall_roi_selected で比較する

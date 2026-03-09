@@ -1,7 +1,7 @@
 # Chat Context
 
 ## Generated At
-2026-03-08 11:36:56
+2026-03-09
 
 ## Repository
 kyotei_Prediction
@@ -14,24 +14,29 @@ kyotei_Prediction
 
 ## Summary
 
-Generated at: 2026-03-08 11:36:56
+Generated at: 2026-03-09. EXP-0006 n_w=12 正式再評価を実行し、top_n=3, ev=1.20 を new reference として採用（adopt）。
 
 ## Changed files
 
 ```
-docs/ai_dev/README.md
-docs/ai_dev/run_report.md
-scripts/ai_dev_cycle.sh
-scripts/generate_run_report.py
+experiments/logs/EXP-0006_strategy_grid.md
+experiments/leaderboard.md
+docs/ai_dev/project_status.md
+docs/ai_dev/chat_context.md
 ```
 
 ## Commands run
 
-(実行したコマンドをここに記入)
+```bash
+python3 scripts/exp0006_recheck_topn3_ev125_n12.py --db-path kyotei_predictor/data/kyotei_races.sqlite --n-windows 12 --seed 42
+```
 
 ## Execution results
 
-(実行結果をここに記入)
+- Task1 (top_n=3, ev=1.25, n_w=12): overall_roi_selected -15.05%, profit -224,540, max_drawdown 245,110, mean_log_loss 5.013, mean_brier 0.9558
+- Task2 (top_n=3 固定 EV sweep): 最良 ev=1.20 → -14.88%（1.22:-15.13%, 1.25:-15.05%, 1.27:-15.63%, 1.30:-15.24%）
+- Task3 (bet sizing): fixed -14.88%, half_kelly -96.69%, capped_kelly_0.02 -8.66%, capped_kelly_0.05 -38.11%
+- 出力: outputs/exp0006_recheck_n12.json
 
 ## Diff summary
 
@@ -84,7 +89,7 @@ M docs/ai_dev/README.md
 
 ## Notes
 
-- EXP-0006 n_w=12 正式再評価で **top_n=3, ev=1.20** が -14.88% で **new reference adopt**。
+- EXP-0006: 暫定ベスト（top_n=3, ev=1.25, n_w=4）を n_w=12 で再評価。ev 微調整の結果 **top_n=3, ev=1.20** が -14.88% で最良 → **new reference adopt**。
 - この表は主に overall_roi_selected で比較する。同程度なら安定性（std_roi_selected）も考慮する。
 - extended_features_v2 は n_windows=12 でも extended_features より ROI 悪化 → hold。
 - AI は新しい提案をする前に leaderboard を確認すること。
@@ -110,9 +115,9 @@ M docs/ai_dev/README.md
 
 ---
 experiment_id: EXP-0006
-date: "2026-03-08"
+date: "2026-03-09"
 status: completed
-objective: EXP-0006 暫定ベスト条件（top_n=3, ev=1.25）を n_w=12 で正式再評価し、EV 微調整・bet sizing 比較を行い new reference を決定する。
+objective: EXP-0006 暫定ベスト条件（top_n=3, ev=1.25）を n_w=12 で正式再評価し、EV 微調整・bet sizing 比較を行い new reference を決定する。再評価の結果 ev=1.20 が最良のため adopt。
 model: xgboost
 calibration: sigmoid
 features: extended_features

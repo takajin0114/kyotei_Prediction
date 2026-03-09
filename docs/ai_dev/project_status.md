@@ -12,6 +12,6 @@
 - **成果物**: docs/MODEL_COMPARISON.md、docs/ROI_EVALUATION_N12_SUMMARY.md、outputs/*.json（gitignore）。rolling validation の summary は model_type / feature_set / n_windows / overall_roi_selected 等の標準キーで統一。
 
 - **EXP-0005 ev_threshold_sweep**: status: completed。purpose: EV threshold optimization（ev_threshold_only 戦略で 1.05〜1.25 を比較）。Kelly capped 実装済み（bet_size = bankroll * min(kelly, 0.05)）。
-- **EXP-0006**: status: completed。purpose: XGBoost strategy grid + bet sizing + n_w=12 正式再評価。n_w=12 再評価で最良 **top_n=3, ev=1.20**（-14.88%）→ **new reference adopt**。top_n=3 固定で ev 微調整（1.20〜1.30）実施。bet sizing は capped_kelly_0.02 が ROI 最良（運用は fixed 推奨）。ev_threshold_only は **reject**。
+- **EXP-0006**: status: completed。purpose: XGBoost strategy grid + bet sizing + n_w=12 正式再評価。n_w=12 再評価で最良 **top_n=3, ev=1.20**（-14.88%）→ **new reference adopt**。暫定ベスト top_n=3, ev=1.25 は n_w=12 で -15.05%。top_n=3 固定で ev 微調整（1.20〜1.30）実施。bet sizing は capped_kelly_0.02 が ROI 最良（運用は fixed 推奨）。ev_threshold_only は **reject**。再評価実行: `scripts/exp0006_recheck_topn3_ev125_n12.py`（2026-03-09）。
 
 更新日: プロジェクトのマイルストーンごとに更新する。
