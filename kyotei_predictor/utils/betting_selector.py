@@ -16,6 +16,7 @@ STRATEGY_THRESHOLD = "threshold"
 STRATEGY_EV = "ev"
 STRATEGY_TOP_N_EV = "top_n_ev"  # 上位 top_n 候補のうち expected_roi >= ev_threshold のみ購入
 STRATEGY_TOP_N_EV_CONFIDENCE = "top_n_ev_confidence"  # EV×信頼度でスコア化し top_n 選抜
+STRATEGY_RACE_FILTERED_TOP_N_EV = "race_filtered_top_n_ev"  # レースフィルタ通過後の top_n_ev
 STRATEGY_EV_THRESHOLD_ONLY = "ev_threshold_only"  # EV >= ev_threshold の全候補を購入（top_n 制限なし）
 
 # top_n_ev_confidence の confidence_type
@@ -391,6 +392,23 @@ def select_bets(
         )
     if strategy == STRATEGY_EV_THRESHOLD_ONLY:
         return select_ev_threshold_only(predictions, ev_threshold)
+    if strategy == STRATEGY_RACE_FILTERED_TOP_N_EV:
+        from kyotei_predictor.strategies.race_filtered_top_n_ev import select_race_filtered_top_n_ev
+        ev_min = float(kwargs.get("race_ev_min", 1.15))
+        prob_gap_min = float(kwargs.get("prob_gap_min", 0.05))
+        entropy_max = float(kwargs.get("entropy_max", 1.7))
+        candidate_min = int(kwargs.get("candidate_min", 1))
+        ev_threshold_for_count = float(kwargs.get("ev_threshold_for_count", ev_min))
+        return select_race_filtered_top_n_ev(
+            predictions,
+            top_n,
+            ev_threshold,
+            ev_min=ev_min,
+            prob_gap_min=prob_gap_min,
+            entropy_max=entropy_max,
+            candidate_min=candidate_min,
+            ev_threshold_for_count=ev_threshold_for_count,
+        )
     if strategy == STRATEGY_EV:
         result = select_ev(
             predictions,

@@ -11,6 +11,7 @@
 |---|---|---|---|---|---|---|---|---|
 | 1 | EXP-0007 | xgboost | sigmoid | extended_features | top_n_ev | top_n=3, ev=1.18 | **-14.54%** (n_w=12) | EV 高解像度探索で最良（adopt） |
 | - | EXP-0009 | xgboost | sigmoid | extended_features | top_n_ev_confidence | top_n=3, ev=1.15/1.18/1.20, conf=pred_prob/prob_gap/entropy | -26%〜-39% (n_w=12) | 採用見送り（現行 top_n_ev が優位） |
+| - | EXP-0010 | xgboost | sigmoid | extended_features | race_filtered_top_n_ev | top_n=3, ev=1.18, pg=0.05, ent=1.7（quick） | -22.45% (n_w=12) | レースフィルタ導入・bet 数激減・ROI は未改善 |
 | 2 | EXP-0006 | xgboost | sigmoid | extended_features | top_n_ev | top_n=3, ev=1.20 | **-14.88%** (n_w=12) | **正式 reference**（従来 1 位） |
 | 3 | EXP-0007 | xgboost | sigmoid | extended_features | top_n_ev | top_n=4, ev=1.05 | **-17.85%** (n_w=12) | top_n 局所探索で最良（hold） |
 | 4 | EXP-0006 | xgboost | sigmoid | extended_features | top_n_ev | top_n=6, ev=1.00 | **-18.78%** (n_w=12) | 正式 reference 周辺の局所最適（adopt） |
@@ -110,6 +111,7 @@ selection 条件ごとの bet sizing 比較。overall_roi_selected / profit / ma
 - **EXP-0007**: (1) **top_n=3 EV 高解像度探索**: ev=1.18 が **-14.54%** で 1 位（adopt）。ev=1.20 は -14.88%。(2) **bet sizing 正式比較**: 条件 top_n=3, ev=1.18 で fixed -14.54%, capped_kelly_0.02 -8.17%。運用は fixed 推奨。(3) 従来 EXP-0007: top_n=4, ev=1.05 で -17.85%（hold）。calibration 比較は experiments/logs/EXP-0007_strategy_optimization.md。今回の局所探索は experiments/logs/EXP-0007_bet_sizing_and_local_search.md。
 - **EXP-0008**: (1) **Fractional Kelly**: cap=0.01 で ROI 最良 -6.99%（資金制約で破綻リスクあり、運用は fixed 推奨）。(2) **Calibration**: sigmoid -14.88% > none -15.80%。(3) **Model**: xgboost -14.88% > lightgbm -20.90%。ensemble は bet_count=0 の不具合あり要修正。log: experiments/logs/EXP-0008_fractional_kelly.md。
 - **EXP-0009**: selection strategy 拡張。top_n_ev と top_n_ev_confidence（EV×信頼度）を比較。top_n=3, ev=1.15/1.18/1.20, confidence_type=pred_prob/prob_gap/entropy_adjusted。**結果**: 現行 top_n_ev が最良（-14.54%）。top_n_ev_confidence は全条件で -26%〜-39%、bet 数約35k で ROI 悪化。採用見送り。log: experiments/logs/EXP-0009_selection_confidence_sweep.md。
+- **EXP-0010**: race_filtered_top_n_ev を追加。レース指標（race_max_ev, prob_gap, entropy, candidate_count）でフィルタし通過レースのみ top_n_ev。quick 実行で -22.45%（bet 1,993）、ベースライン -14.54% を下回る。フルグリッドでパラメータ探索推奨。log: experiments/logs/EXP-0010_race_filter_selection.md。
 - 比較値の出典: overall_roi_selected は rolling_validation_roi の total_payout / total_bet から算出。n_windows=12 は同一条件。
 - EXP-0005 ev_threshold_sweep: ev_threshold_only 戦略で threshold 1.05〜1.25 を比較（n_w=6）。最良 ROI は ev=1.05 で -48.95%。
 - この表は主に overall_roi_selected で比較する

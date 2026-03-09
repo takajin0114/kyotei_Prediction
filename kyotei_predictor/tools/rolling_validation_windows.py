@@ -87,17 +87,25 @@ def run_one_window(
     )
 
     def _normalize_spec(s):
+        # (name, strategy, top_n, ev_threshold[, confidence_type[, prob_gap_min, entropy_max]])
+        if len(s) >= 7:
+            return s[0], s[1], s[2], s[3], s[4], s[5], s[6]
         if len(s) >= 5:
-            return s[0], s[1], s[2], s[3], s[4]
-        return s[0], s[1], s[2], s[3], None
+            return s[0], s[1], s[2], s[3], s[4], None, None
+        return s[0], s[1], s[2], s[3], None, None, None
 
-    def _suffix_for_strategy(strategy, top_n, ev_th, confidence_type):
+    def _suffix_for_strategy(strategy, top_n, ev_th, confidence_type, prob_gap_min=None, entropy_max=None):
         if strategy == "top_n_ev":
             return f"_top{top_n}ev{int(ev_th * 100)}" if ev_th else ""
         if strategy == "top_n_ev_confidence":
             base = f"_top{top_n}ev{int(ev_th * 100)}" if ev_th else ""
             conf = (confidence_type or "pred_prob").replace(" ", "_")
             return f"{base}_conf_{conf}"
+        if strategy == "race_filtered_top_n_ev":
+            base = f"_racefilter_top{top_n}ev{int(ev_th * 100)}" if ev_th else ""
+            pg = int((prob_gap_min or 0.05) * 100)
+            ent = int((entropy_max or 1.7) * 10)
+            return f"{base}_pg{pg}_ent{ent}"
         if strategy == "ev_threshold_only":
             return f"_evonly{int(ev_th * 100)}" if ev_th else ""
         return ""
@@ -110,8 +118,8 @@ def run_one_window(
         if not data_dir_month.exists():
             continue
         for spec in strategies:
-            spec_name, strategy, top_n, ev_th, confidence_type = _normalize_spec(spec)
-            suffix = _suffix_for_strategy(strategy, top_n, ev_th, confidence_type)
+            spec_name, strategy, top_n, ev_th, confidence_type, prob_gap_min, entropy_max = _normalize_spec(spec)
+            suffix = _suffix_for_strategy(strategy, top_n, ev_th, confidence_type, prob_gap_min, entropy_max)
             out_path = out_pred_dir / f"predictions_baseline_{day}{suffix}.json"
             if out_path.exists():
                 continue
@@ -126,6 +134,8 @@ def run_one_window(
                     betting_score_threshold=None,
                     betting_ev_threshold=ev_th,
                     betting_confidence_type=confidence_type,
+                    betting_prob_gap_min=prob_gap_min,
+                    betting_entropy_max=entropy_max,
                     data_source=ds,
                     db_path=dbp,
                     feature_set=feature_set,
@@ -138,8 +148,8 @@ def run_one_window(
     # 検証集計（戦略別）: selected_bets 用メトリクスを優先
     results = []
     for spec in strategies:
-        spec_name, strategy, top_n, ev_th, confidence_type = _normalize_spec(spec)
-        suffix = _suffix_for_strategy(strategy, top_n, ev_th, confidence_type)
+        spec_name, strategy, top_n, ev_th, confidence_type, prob_gap_min, entropy_max = _normalize_spec(spec)
+        suffix = _suffix_for_strategy(strategy, top_n, ev_th, confidence_type, prob_gap_min, entropy_max)
         tb_sel = tp_sel = sc = rwr = hc = om = 0
         log_loss_list = []
         brier_list = []

@@ -82,6 +82,10 @@ def _apply_selected_bets(
     score_threshold: float,
     ev_threshold: float,
     confidence_type: Optional[str] = None,
+    race_ev_min: Optional[float] = None,
+    prob_gap_min: Optional[float] = None,
+    entropy_max: Optional[float] = None,
+    candidate_min: Optional[int] = None,
 ) -> None:
     """
     各レースの all_combinations に betting_selector を適用し、
@@ -94,6 +98,14 @@ def _apply_selected_bets(
     extra_kwargs: Dict[str, Any] = {}
     if confidence_type:
         extra_kwargs["confidence_type"] = confidence_type
+    if race_ev_min is not None:
+        extra_kwargs["race_ev_min"] = race_ev_min
+    if prob_gap_min is not None:
+        extra_kwargs["prob_gap_min"] = prob_gap_min
+    if entropy_max is not None:
+        extra_kwargs["entropy_max"] = entropy_max
+    if candidate_min is not None:
+        extra_kwargs["candidate_min"] = candidate_min
     for pred in predictions:
         ac = pred.get("all_combinations") or []
         if not ac:
@@ -131,6 +143,10 @@ def run_baseline_predict(
     betting_score_threshold: Optional[float] = None,
     betting_ev_threshold: Optional[float] = None,
     betting_confidence_type: Optional[str] = None,
+    betting_prob_gap_min: Optional[float] = None,
+    betting_entropy_max: Optional[float] = None,
+    betting_race_ev_min: Optional[float] = None,
+    betting_candidate_min: Optional[int] = None,
     data_source: Optional[str] = None,
     race_repository: Optional[RaceDataRepositoryProtocol] = None,
     db_path: Optional[Union[str, Path]] = None,
@@ -277,6 +293,10 @@ def run_baseline_predict(
         _apply_selected_bets(
             predictions, strategy, top_n, score_threshold, ev_threshold,
             confidence_type=confidence_type,
+            race_ev_min=betting_race_ev_min,
+            prob_gap_min=betting_prob_gap_min,
+            entropy_max=betting_entropy_max,
+            candidate_min=betting_candidate_min,
         )
         # execution_summary に ev_selection 集計を追加（A案互換）
         ev_metas = [p.get("ev_selection_metadata") for p in predictions if p.get("ev_selection_metadata")]

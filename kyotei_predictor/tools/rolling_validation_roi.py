@@ -195,6 +195,10 @@ def run_rolling_validation_roi(
         }
         if confidence_type is not None:
             out["confidence_type"] = confidence_type
+        if len(strat) >= 7 and strat[5] is not None:
+            out["prob_gap_min"] = strat[5]
+        if len(strat) >= 7 and strat[6] is not None:
+            out["entropy_max"] = strat[6]
         if log_losses:
             out["mean_log_loss"] = round(statistics.mean(log_losses), 6)
         else:
