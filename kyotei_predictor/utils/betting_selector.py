@@ -686,9 +686,13 @@ def select_bets(
         return select_top_n_ev_power_prob(predictions, alpha, top_n, ev_threshold)
     if strategy == STRATEGY_TOP_N_EV_GAP_FILTER:
         ev_gap_threshold = float(kwargs.get("ev_gap_threshold", 0.05))
-        return select_top_n_ev_gap_filter(
+        selected = select_top_n_ev_gap_filter(
             predictions, top_n, ev_threshold, ev_gap_threshold=ev_gap_threshold
         )
+        max_bets_per_race = kwargs.get("max_bets_per_race")
+        if max_bets_per_race is not None and int(max_bets_per_race) > 0:
+            selected = selected[: int(max_bets_per_race)]
+        return selected
     if strategy == STRATEGY_TOP_N_EV_GAP_FILTER_ENTROPY:
         ev_gap_threshold = float(kwargs.get("ev_gap_threshold", 0.05))
         entropy_threshold = float(kwargs.get("entropy_threshold", 1.5))
