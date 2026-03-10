@@ -20,6 +20,7 @@ STRATEGY_RACE_FILTERED_TOP_N_EV = "race_filtered_top_n_ev"  # レースフィル
 STRATEGY_TOP_N_EV_PROB_POOL = "top_n_ev_prob_pool"  # 確率上位 pool_k に候補を限定し、その中で top_n_ev（または EV×confidence）で選抜
 STRATEGY_TOP_N_EV_POWER_PROB = "top_n_ev_power_prob"  # EV_adj = (pred_prob ** alpha) * odds でスコア化し、ev_threshold 以上から top_n 選抜
 STRATEGY_TOP_N_EV_GAP_FILTER = "top_n_ev_gap_filter"  # ev_gap = ev_rank1 - ev_rank2。ev_gap < threshold ならレースを skip
+STRATEGY_TOP_N_EV_GAP_FILTER_ENTROPY = "top_n_ev_gap_filter_entropy"  # ev_gap filter + skip if race_entropy > entropy_threshold
 STRATEGY_TOP_N_EV_CONDITIONAL_PROB_GAP = "top_n_ev_conditional_prob_gap"  # pred_prob_gap 帯ごとに (top_n, ev) を切り替え
 STRATEGY_EV_THRESHOLD_ONLY = "ev_threshold_only"  # EV >= ev_threshold の全候補を購入（top_n 制限なし）
 
@@ -390,6 +391,39 @@ def select_top_n_ev_gap_filter(
     return select_top_n_ev(predictions, top_n, ev_threshold)
 
 
+def select_top_n_ev_gap_filter_entropy(
+    predictions: List[Dict[str, Any]],
+    top_n: int,
+    ev_threshold: float,
+    ev_gap_threshold: float,
+    entropy_threshold: float,
+) -> List[str]:
+    """
+    top_n_ev_gap_filter に entropy フィルタを追加。
+    race_entropy > entropy_threshold ならレースを skip。
+    それ以外は select_top_n_ev_gap_filter と同様。
+
+    Args:
+        predictions: 予測候補リスト（同一レースの all_combinations）。
+        top_n: 選抜する点数。
+        ev_threshold: 期待リターン閾値。
+        ev_gap_threshold: 1位と2位の EV 差の閾値。これ未満ならレースを skip。
+        entropy_threshold: レースエントロピーがこれを超えたらレースを skip。
+
+    Returns:
+        購入する combination のリスト（skip 時は []）
+    """
+    if top_n <= 0 or not predictions:
+        return []
+    probs = [_get_score(c) for c in predictions]
+    race_ent = _race_entropy(probs)
+    if race_ent > entropy_threshold:
+        return []
+    return select_top_n_ev_gap_filter(
+        predictions, top_n, ev_threshold, ev_gap_threshold=ev_gap_threshold
+    )
+
+
 def select_top_n_ev_power_prob(
     predictions: List[Dict[str, Any]],
     alpha: float,
@@ -573,6 +607,16 @@ def select_bets(
         ev_gap_threshold = float(kwargs.get("ev_gap_threshold", 0.05))
         return select_top_n_ev_gap_filter(
             predictions, top_n, ev_threshold, ev_gap_threshold=ev_gap_threshold
+        )
+    if strategy == STRATEGY_TOP_N_EV_GAP_FILTER_ENTROPY:
+        ev_gap_threshold = float(kwargs.get("ev_gap_threshold", 0.05))
+        entropy_threshold = float(kwargs.get("entropy_threshold", 1.5))
+        return select_top_n_ev_gap_filter_entropy(
+            predictions,
+            top_n,
+            ev_threshold,
+            ev_gap_threshold=ev_gap_threshold,
+            entropy_threshold=entropy_threshold,
         )
     if strategy == STRATEGY_TOP_N_EV_CONDITIONAL_PROB_GAP:
         band_edges = kwargs.get("band_edges")

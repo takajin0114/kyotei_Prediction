@@ -41,11 +41,11 @@ leaderboard の 1 位。
 
 <!-- update_chat_context.py が自動更新 -->
 
-- **最新 EXP**: EXP-0016
-- **概要**: EXP-0015 ベスト近傍の局所探索。ev_threshold 1.19/1.20/1.21 × ev_gap_threshold 0.06/0.07/0.08 でグリッド探索。
-- **結果**: 最良は ev=1.20, ev_gap=0.07 のまま（-12.71%）。ベスト更新なし**採用見送り**。詳細は outputs/ev_gap_experiments/exp0016_ev_gap_near_local_search_results.json および experiments/logs/EXP-0016_ev_gap_near_local_search.md。
-- **ログ**: experiments/logs/EXP-0016_ev_gap_near_local_search.md
-- **結果 JSON**: outputs/ev_gap_experiments/exp0016_ev_gap_near_local_search_results.json
+- **最新 EXP**: EXP-0017
+- **概要**: EV gap + entropy filter（top_n_ev_gap_filter_entropy）。skip if race_entropy > threshold。entropy_threshold=1.2,1.3,1.4,1.5。ベースライン EV gap のみ（-12.71%）と比較。
+- **結果**: 全条件でベースラインを下回り**採用見送り**。最良 ent=1.4 で -19.06%（bets=1,703）。詳細は outputs/ev_gap_experiments/exp0017_ev_gap_entropy_results.json および experiments/logs/EXP-0017_entropy_filter.md。
+- **ログ**: experiments/logs/EXP-0017_entropy_filter.md
+- **結果 JSON**: outputs/ev_gap_experiments/exp0017_ev_gap_entropy_results.json
 
 # Leaderboard Summary
 
@@ -62,6 +62,7 @@ leaderboard の 1 位。
 | — | EXP-0012 | top_n_ev_power_prob (alpha×top_n×ev) | ベースライン未達 | — | 全条件採用見送り。最良 -26.28%。 |
 | — | EXP-0014 | top_n_ev_conditional_prob_gap (pred_prob_gap 帯) | ベースライン未達 | — | 条件別サブ戦略。採用見送り。 |
 | — | EXP-0016 | top_n_ev_gap_filter 近傍 (ev=1.19〜1.21, ev_gap=0.06〜0.08) | 最良 -12.71%（同点） | — | ベスト更新なし。採用見送り。 |
+| — | EXP-0017 | top_n_ev_gap_filter_entropy (ev=1.20, ev_gap=0.07, ent=1.2〜1.5) | 最良 -19.06%（ent=1.4） | 1,529〜1,801 | 全条件ベースライン未達。採用見送り。 |
 
 詳細は experiments/leaderboard.md 参照。
 
@@ -69,6 +70,7 @@ leaderboard の 1 位。
 
 - **EXP-0015**: top_n_ev_gap_filter（ev=1.20, ev_gap=0.07）が現行ベスト **-12.71%**（n_w=12）。EXP-0013 ベスト -13.81% を 1.10%pt 上回り採用。
 - **EXP-0016**: EXP-0015 ベスト近傍（ev=1.19〜1.21, ev_gap=0.06〜0.08）を探索。最良は同点 -12.71%。ベスト更新なしで採用見送り。
+- **EXP-0017**: EV gap + entropy filter（skip if race_entropy > threshold）。ent=1.2〜1.5 で全条件ベースライン -12.71% を下回り採用見送り。bet 数が 1,500〜1,800 に激減し ROI 悪化。
 - EV threshold を下げると bet 数が増える。ev=1.18 が従来 1 位（-14.54%）、ev=1.20 が 2 位（-14.88%）。
 - top_n が大きいと ROI が悪化する傾向（top_n=3 が最良、top_n=6 で -18.78%）。
 - bet sizing は fixed が最良。Kelly 系は資金制約で破綻リスクあり。
@@ -91,7 +93,7 @@ leaderboard の 1 位。
 # Next Experiments
 
 - 現行ベスト戦略: top_n_ev_gap_filter, top_n=3, ev=1.20, ev_gap_threshold=0.07（ROI -12.71%）。EXP-0015 で採用。
-- EXP-0016 で近傍探索済み。別軸（top_n 変更・他戦略・calibration 等）の検討を検討。
+- EXP-0017 で EV gap + entropy filter を検証済み（採用見送り）。別軸（top_n 変更・他戦略・calibration 等）の検討を検討。
 - ensemble 不具合修正後の再評価。
 - 条件別サブ戦略の他軸（entropy 帯・1位オッズ帯・venue/race_class）は必要時に検討（EXP-0014 で pred_prob_gap 帯は見送り）。
 - top_n / EV threshold の追加 sweep（必要に応じて）。

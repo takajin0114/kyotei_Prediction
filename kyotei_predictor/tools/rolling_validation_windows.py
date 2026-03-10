@@ -103,6 +103,12 @@ def run_one_window(
             g = ev_gap_threshold if ev_gap_threshold is not None else 0.05
             gstr = str(g).replace(".", "x")
             return f"_top{top_n}ev{int(ev_th * 100)}_evgap{gstr}" if ev_th else f"_top{top_n}_evgap{gstr}"
+        if strategy == "top_n_ev_gap_filter_entropy":
+            g = ev_gap_threshold if ev_gap_threshold is not None else 0.07
+            gstr = str(g).replace(".", "x")
+            ent = entropy_max if entropy_max is not None else 1.5
+            estr = str(ent).replace(".", "x")
+            return f"_top{top_n}ev{int(ev_th * 100)}_evgap{gstr}_ent{estr}" if ev_th else f"_top{top_n}_evgap{gstr}_ent{estr}"
         if strategy == "top_n_ev_conditional_prob_gap":
             if isinstance(prob_gap_min, (list, tuple)) and prob_gap_min:
                 parts = [str(round(e, 2)).replace(".", "x") for e in prob_gap_min]
@@ -168,6 +174,9 @@ def run_one_window(
                     run_kw["betting_alpha"] = float(prob_gap_min) if prob_gap_min is not None else 1.0
                 elif strategy == "top_n_ev_gap_filter":
                     run_kw["betting_ev_gap_threshold"] = float(ev_gap_th) if ev_gap_th is not None else 0.05
+                elif strategy == "top_n_ev_gap_filter_entropy":
+                    run_kw["betting_ev_gap_threshold"] = float(ev_gap_th) if ev_gap_th is not None else 0.07
+                    run_kw["betting_entropy_threshold"] = float(entropy_max) if entropy_max is not None else 1.5
                 elif strategy == "top_n_ev_conditional_prob_gap" and isinstance(prob_gap_min, (list, tuple)) and isinstance(entropy_max, (list, tuple)):
                     run_kw["betting_band_edges"] = list(prob_gap_min)
                     run_kw["betting_band_params"] = list(entropy_max)

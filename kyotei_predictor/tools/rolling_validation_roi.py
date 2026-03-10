@@ -213,6 +213,11 @@ def run_rolling_validation_roi(
             out["entropy_max"] = strat[6]
         if s == "top_n_ev_gap_filter" and len(strat) >= 8 and strat[7] is not None:
             out["ev_gap_threshold"] = float(strat[7])
+        if s == "top_n_ev_gap_filter_entropy" and len(strat) >= 8:
+            if strat[6] is not None:
+                out["entropy_threshold"] = float(strat[6])
+            if strat[7] is not None:
+                out["ev_gap_threshold"] = float(strat[7])
         if s == "top_n_ev_conditional_prob_gap" and len(strat) >= 7 and strat[5] is not None and strat[6] is not None:
             out["condition_definition"] = {"band_edges": list(strat[5]), "band_params": list(strat[6])}
         if log_losses:
