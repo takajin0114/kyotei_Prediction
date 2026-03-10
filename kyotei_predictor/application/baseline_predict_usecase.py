@@ -90,6 +90,8 @@ def _apply_selected_bets(
     alpha: Optional[float] = None,
     ev_gap_threshold: Optional[float] = None,
     entropy_threshold: Optional[float] = None,
+    odds_low: Optional[float] = None,
+    odds_high: Optional[float] = None,
     band_edges: Optional[List[float]] = None,
     band_params: Optional[List[tuple]] = None,
 ) -> None:
@@ -120,6 +122,10 @@ def _apply_selected_bets(
         extra_kwargs["ev_gap_threshold"] = float(ev_gap_threshold)
     if entropy_threshold is not None:
         extra_kwargs["entropy_threshold"] = float(entropy_threshold)
+    if odds_low is not None:
+        extra_kwargs["odds_low"] = float(odds_low)
+    if odds_high is not None:
+        extra_kwargs["odds_high"] = float(odds_high)
     if band_edges is not None:
         extra_kwargs["band_edges"] = list(band_edges)
     if band_params is not None:
@@ -169,6 +175,8 @@ def run_baseline_predict(
     betting_alpha: Optional[float] = None,
     betting_ev_gap_threshold: Optional[float] = None,
     betting_entropy_threshold: Optional[float] = None,
+    betting_odds_low: Optional[float] = None,
+    betting_odds_high: Optional[float] = None,
     betting_band_edges: Optional[List[float]] = None,
     betting_band_params: Optional[List[tuple]] = None,
     data_source: Optional[str] = None,
@@ -325,6 +333,8 @@ def run_baseline_predict(
             alpha=betting_alpha,
             ev_gap_threshold=betting_ev_gap_threshold,
             entropy_threshold=betting_entropy_threshold,
+            odds_low=betting_odds_low,
+            odds_high=betting_odds_high,
             band_edges=betting_band_edges,
             band_params=betting_band_params,
         )
