@@ -99,7 +99,7 @@ leaderboard の 1 位。
 # Next Experiments
 
 - 現行ベスト戦略: top_n_ev_gap_filter, top_n=3, ev=1.20, ev_gap_threshold=0.07（ROI -12.71%）。EXP-0015 で採用。
-- EXP-0020 で top_n_ev_gap_filter に max_bets_per_race を直接適用し検証済み（改善なし）。別軸（top_n 変更・他戦略・calibration 等）の検討を検討。
+- EXP-0020 で top_n_ev_gap_filter に max_bets_per_race を直接適用し検証済み（改善なし）。別軸（top_n 変更・他戦略・calibration 等）の検討を行う。
 - ensemble 不具合修正後の再評価。
 - 条件別サブ戦略の他軸（entropy 帯・1位オッズ帯・venue/race_class）は必要時に検討（EXP-0014 で pred_prob_gap 帯は見送り）。
 - top_n / EV threshold の追加 sweep（必要に応じて）。
