@@ -2,7 +2,7 @@
 
 現在のプロジェクト状態。
 
-- **メイン戦略**: Strategy B（XGBoost + sigmoid）。**正式 reference (n_w=12)**: (1) 1位 **top_n_ev_gap_filter, top_n=3, ev=1.20, ev_gap=0.07**（-12.71%, EXP-0015 adopt）。(2) 2位 **top_n_ev_gap_filter, top_n=3, ev=1.18, ev_gap=0.05**（-13.81%, EXP-0013 adopt）。(3) 3位 **top_n=3, ev=1.18**（-14.54%, EXP-0007）。(4) **top_n=3, ev=1.20**（-14.88%, 従来正式 reference）。(5) **top_n=6, ev=1.00**（-18.78%, 局所最適 adopt）。暫定 best（n_w=4）の top_n=3, ev=1.25 は未確定。
+- **メイン戦略**: Strategy B（XGBoost + sigmoid）。**正式 reference (n_w=12)**: (1) 1位 **top_n_ev_gap_filter, top_n=3, ev=1.18, ev_gap=0.05**（-13.81%, EXP-0013 adopt）。(2) 2位 **top_n=3, ev=1.18**（-14.54%, EXP-0007）。(3) **top_n=3, ev=1.20**（-14.88%, 従来正式 reference）。(4) **top_n=6, ev=1.00**（-18.78%, 局所最適 adopt）。暫定 best（n_w=4）の top_n=3, ev=1.25 は未確定。
 - **データ**: DB を唯一の正（`kyotei_predictor/data/kyotei_races.sqlite`）。JSON 直読みは使わない。
 - **評価**: rolling validation（n_windows=12）、extended_features、sigmoid calibration。extended_features_v2 は n12 正式比較で ROI 悪化のため hold。
 - **特徴量セット**: train / predict / rolling validation / feature_sweep で **feature_set を明示引数**で指定可能。優先順位は「明示引数 > 環境変数 KYOTEI_FEATURE_SET > デフォルト」。学習時に使った feature_set は **meta.json に保存**され、予測時に不一致の場合は **warning** を出す。
@@ -21,6 +21,5 @@
 - **EXP-0012**: status: completed。purpose: EV スコア再設計（top_n_ev_power_prob）。EV_adj = (pred_prob ** alpha) * odds。alpha=0.7〜1.1 × top_n=2,3 × ev=1.15〜1.20。**結果**: outputs/power_prob_experiments/exp0012_power_prob_results.json を参照。ベースライン（top_n_ev 3/1.18）との比較は baseline_diff_roi。結論・採用判断はログに追記。tool: `python3 -m kyotei_predictor.tools.run_power_prob_experiment`。log: experiments/logs/EXP-0012_power_prob_ev.md。次の示唆: ベースラインを上回れば採用；上回らなければ別の EV 設計や別軸。
 - **EXP-0013**: status: completed。purpose: EV gap strategy（top_n_ev_gap_filter）。ev_gap = ev_rank1 - ev_rank2。ev_gap < threshold ならレースを skip。ev_gap_threshold=0.02,0.03,0.05,0.07 で sweep。**結果**: ev_gap=0.05 が最良 **-13.81%**（n_w=12）、ベースライン -14.54% を +0.73%pt 上回り**採用**。tool: `python3 -m kyotei_predictor.tools.run_ev_gap_experiment`。log: experiments/logs/EXP-0013_ev_gap_strategy.md。結果: outputs/ev_gap_experiments/exp0013_ev_gap_results.json。
 - **EXP-0014**: status: completed。purpose: 条件別サブ戦略化（top_n_ev_conditional_prob_gap）。pred_prob_gap 帯ごとに (top_n, ev_threshold) を切り替え。**結果**: 全パターンでベースライン -14.54% を下回り**採用見送り**。tool: `python3 -m kyotei_predictor.tools.run_conditional_sub_strategy_experiment`。log: experiments/logs/EXP-0014_conditional_sub_strategy.md。結果: outputs/conditional_sub_strategy_experiments/exp0014_conditional_results.json。次の示唆: pred_prob_gap 帯では改善せず。他軸（entropy 帯等）は必要時に検討。
-- **EXP-0015**: status: completed。purpose: EV gap 局所探索。ev_threshold × ev_gap_threshold のグリッド探索（ev=1.17〜1.20, ev_gap=0.03〜0.07）。**結果**: ev=1.20, ev_gap=0.07 が最良 **-12.71%**（n_w=12）、EXP-0013 ベスト -13.81% を +1.10%pt 上回り**採用**。tool: `python3 -m kyotei_predictor.tools.run_ev_gap_local_search_experiment`。log: experiments/logs/EXP-0015_ev_gap_local_search.md。結果: outputs/ev_gap_experiments/exp0015_ev_gap_local_search_results.json。
 
 更新日: プロジェクトのマイルストーンごとに更新する。
