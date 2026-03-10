@@ -43,9 +43,9 @@ leaderboard の 1 位。
 
 - **最新 EXP**: EXP-0021
 - **概要**: EXP-0015 周辺の局所探索を top_n も含めて再実施。top_n=2,3,4 × ev=1.19,1.20,1.21 × ev_gap=0.06,0.07,0.08 の 27 条件で n_w=12 実行。
-- **結果**: 実験実行中。結果確定次第で Best/採用判断を更新。詳細は outputs/ev_gap_experiments/exp0021_ev_gap_topn_local_search_results.json および experiments/logs/EXP-0021_ev_gap_topn_local_search.md。
+- **結果**: 最良条件は EXP-0015 と同一（top_n=3, ev=1.20, ev_gap=0.07, ROI -12.71%）で、ROI 改善なし。新ベストは出ず**採用見送り**。詳細は outputs/ev_gap_experiments/exp0021_ev_gap_topn_local_search_results.json および experiments/logs/EXP-0021_ev_gap_topn_local_search.md。
 - **ログ**: experiments/logs/EXP-0021_ev_gap_topn_local_search.md
-- **結果 JSON**: outputs/ev_gap_experiments/exp0021_ev_gap_topn_local_search_results.json（完了後に生成）
+- **結果 JSON**: outputs/ev_gap_experiments/exp0021_ev_gap_topn_local_search_results.json
 
 # Leaderboard Summary
 
@@ -66,7 +66,7 @@ leaderboard の 1 位。
 | — | EXP-0018 | top_n_ev_gap_filter_odds_band (ev=1.20, ev_gap=0.07, odds_low/high) | 最良 -20.36%（odds_high=25） | 1,867〜2,388 | 全条件ベースライン未達。採用見送り。 |
 | — | EXP-0019 | top_n_ev_gap_filter_odds_band_bet_limit (odds=1.3/25, max=1/2) | 最良 -14.25%（max=1） | 1,980 / 2,167 | odds_band に max=1 で +6.11%pt。全体1位は更新せず。odds_band 時は max=1 推奨。 |
 | — | EXP-0020 | top_n_ev_gap_filter + max_bets_per_race (None/1/2) | 全条件 -12.71% | 14,700 | EXP-0015 に max を直接適用。改善なし。採用見送り。 |
-| — | EXP-0021 | top_n_ev_gap_filter (top_n×ev×ev_gap 局所探索) | （結果確定次第） | — | 実験実行中。結果確定次第で更新。 |
+| — | EXP-0021 | top_n_ev_gap_filter (top_n×ev×ev_gap 局所探索) | 最良 -12.71%（top_n=3, ev=1.20, ev_gap=0.07） | 14,700 | EXP-0015 条件を含む再探索。top_n=2/4 系列はいずれも ROI 悪化、top_n=3 でも EXP-0015 と同点で新ベストなし（reject）。 |
 
 詳細は experiments/leaderboard.md 参照。
 
@@ -78,7 +78,7 @@ leaderboard の 1 位。
 - **EXP-0018**: EV gap + odds band filter（skip if odds_rank1 < odds_low or > odds_high）。odds_low=1.2〜1.4 × odds_high=20,25,30 で全条件ベースライン -12.71% を下回り採用見送り。最良 odds_high=25 で -20.36%（bets=2,179）。
 - **EXP-0019**: odds_band（1.3, 25）に max_bets_per_race=1 を追加すると -20.36% → -14.25%（+6.11%pt）。全体1位は EXP-0015 のまま。odds_band 採用時は max_bets_per_race=1 推奨。
 - **EXP-0020**: top_n_ev_gap_filter（EXP-0015 条件）に max_bets_per_race=None/1/2 を直接適用。全条件で ROI -12.71%、差なし。採用見送り。
-- **EXP-0021**: top_n × ev × ev_gap 局所探索（top_n=2,3,4 × ev=1.19,1.20,1.21 × ev_gap=0.06,0.07,0.08）を実行中。結果確定次第で Current Findings を更新。
+- **EXP-0021**: top_n × ev × ev_gap 局所探索（top_n=2,3,4 × ev=1.19,1.20,1.21 × ev_gap=0.06,0.07,0.08）。最良は EXP-0015 と同一条件（top_n=3, ev=1.20, ev_gap=0.07, ROI -12.71%）で、新ベストは出ず採用見送り。top_n=2 は -13% 台、top_n=4 は -18% 前後と悪化。
 - EV threshold を下げると bet 数が増える。ev=1.18 が従来 1 位（-14.54%）、ev=1.20 が 2 位（-14.88%）。
 - top_n が大きいと ROI が悪化する傾向（top_n=3 が最良、top_n=6 で -18.78%）。
 - bet sizing は fixed が最良。Kelly 系は資金制約で破綻リスクあり。
@@ -101,7 +101,7 @@ leaderboard の 1 位。
 # Next Experiments
 
 - 現行ベスト戦略: top_n_ev_gap_filter, top_n=3, ev=1.20, ev_gap_threshold=0.07（ROI -12.71%）。EXP-0015 で採用。
-- EXP-0021 で top_n を含む局所探索（top_n=2,3,4 × ev × ev_gap）を実行中。結果確定次第で採用/見送りと Next Experiments を更新。
+- EXP-0021 で top_n/ev/ev_gap の局所探索を実施したが、EXP-0015 ベースラインと同点止まりで新ベストなし。次は別軸（モデル・特徴量・calibration・条件別サブ戦略など）の検討を優先。
 - ensemble 不具合修正後の再評価。
 - 条件別サブ戦略の他軸（entropy 帯・1位オッズ帯・venue/race_class）は必要時に検討（EXP-0014 で pred_prob_gap 帯は見送り）。
 - top_n / EV threshold の追加 sweep（必要に応じて）。
