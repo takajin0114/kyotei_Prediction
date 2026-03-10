@@ -22,6 +22,7 @@ STRATEGY_TOP_N_EV_POWER_PROB = "top_n_ev_power_prob"  # EV_adj = (pred_prob ** a
 STRATEGY_TOP_N_EV_GAP_FILTER = "top_n_ev_gap_filter"  # ev_gap = ev_rank1 - ev_rank2。ev_gap < threshold ならレースを skip
 STRATEGY_TOP_N_EV_GAP_FILTER_ENTROPY = "top_n_ev_gap_filter_entropy"  # ev_gap filter + skip if race_entropy > entropy_threshold
 STRATEGY_TOP_N_EV_GAP_FILTER_ODDS_BAND = "top_n_ev_gap_filter_odds_band"  # ev_gap filter + skip if odds_rank1 < odds_low or > odds_high
+STRATEGY_TOP_N_EV_GAP_FILTER_ODDS_BAND_BET_LIMIT = "top_n_ev_gap_filter_odds_band_bet_limit"  # 上記 + 1レースあたり最大 max_bets_per_race 点に制限
 STRATEGY_TOP_N_EV_CONDITIONAL_PROB_GAP = "top_n_ev_conditional_prob_gap"  # pred_prob_gap 帯ごとに (top_n, ev) を切り替え
 STRATEGY_EV_THRESHOLD_ONLY = "ev_threshold_only"  # EV >= ev_threshold の全候補を購入（top_n 制限なし）
 
@@ -471,6 +472,39 @@ def select_top_n_ev_gap_filter_odds_band(
     )
 
 
+def select_top_n_ev_gap_filter_odds_band_bet_limit(
+    predictions: List[Dict[str, Any]],
+    top_n: int,
+    ev_threshold: float,
+    ev_gap_threshold: float,
+    odds_low: float,
+    odds_high: float,
+    max_bets_per_race: int,
+) -> List[str]:
+    """
+    top_n_ev_gap_filter_odds_band の結果を 1 レースあたり最大 max_bets_per_race 点に制限する。
+    EV 順で選ばれた組み合わせの先頭 max_bets_per_race 件のみ返す。
+
+    Args:
+        predictions: 予測候補リスト（同一レースの all_combinations）。
+        top_n: 選抜する点数（odds_band 内部で使用）。
+        ev_threshold: 期待リターン閾値。
+        ev_gap_threshold: 1位と2位の EV 差の閾値。
+        odds_low: 1位オッズがこれ未満ならレースを skip。
+        odds_high: 1位オッズがこれを超えたらレースを skip。
+        max_bets_per_race: 1 レースあたりの最大購入点数（1 または 2）。
+
+    Returns:
+        購入する combination のリスト（最大 max_bets_per_race 件）
+    """
+    selected = select_top_n_ev_gap_filter_odds_band(
+        predictions, top_n, ev_threshold, ev_gap_threshold, odds_low, odds_high
+    )
+    if max_bets_per_race <= 0:
+        return selected
+    return selected[:max_bets_per_race]
+
+
 def select_top_n_ev_power_prob(
     predictions: List[Dict[str, Any]],
     alpha: float,
@@ -676,6 +710,20 @@ def select_bets(
             ev_gap_threshold=ev_gap_threshold,
             odds_low=odds_low,
             odds_high=odds_high,
+        )
+    if strategy == STRATEGY_TOP_N_EV_GAP_FILTER_ODDS_BAND_BET_LIMIT:
+        ev_gap_threshold = float(kwargs.get("ev_gap_threshold", 0.07))
+        odds_low = float(kwargs.get("odds_low", 1.3))
+        odds_high = float(kwargs.get("odds_high", 25.0))
+        max_bets_per_race = int(kwargs.get("max_bets_per_race", 1))
+        return select_top_n_ev_gap_filter_odds_band_bet_limit(
+            predictions,
+            top_n,
+            ev_threshold,
+            ev_gap_threshold=ev_gap_threshold,
+            odds_low=odds_low,
+            odds_high=odds_high,
+            max_bets_per_race=max_bets_per_race,
         )
     if strategy == STRATEGY_TOP_N_EV_CONDITIONAL_PROB_GAP:
         band_edges = kwargs.get("band_edges")

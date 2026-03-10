@@ -225,6 +225,15 @@ def run_rolling_validation_roi(
                 out["odds_low"] = float(strat[8])
             if strat[9] is not None:
                 out["odds_high"] = float(strat[9])
+        if s == "top_n_ev_gap_filter_odds_band_bet_limit" and len(strat) >= 11:
+            if strat[7] is not None:
+                out["ev_gap_threshold"] = float(strat[7])
+            if strat[8] is not None:
+                out["odds_low"] = float(strat[8])
+            if strat[9] is not None:
+                out["odds_high"] = float(strat[9])
+            if strat[10] is not None:
+                out["max_bets_per_race"] = int(strat[10])
         if s == "top_n_ev_conditional_prob_gap" and len(strat) >= 7 and strat[5] is not None and strat[6] is not None:
             out["condition_definition"] = {"band_edges": list(strat[5]), "band_params": list(strat[6])}
         if log_losses:

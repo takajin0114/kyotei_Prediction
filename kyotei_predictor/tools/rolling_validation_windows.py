@@ -87,18 +87,20 @@ def run_one_window(
     )
 
     def _normalize_spec(s):
-        # (name, strategy, top_n, ev_threshold[, ... [, ev_gap_threshold[, odds_low, odds_high]]])
+        # (name, strategy, top_n, ev_threshold[, ... [, odds_low, odds_high[, max_bets_per_race]]])
+        if len(s) >= 11:
+            return s[0], s[1], s[2], s[3], s[4], s[5], s[6], s[7], s[8], s[9], s[10]
         if len(s) >= 10:
-            return s[0], s[1], s[2], s[3], s[4], s[5], s[6], s[7], s[8], s[9]
+            return s[0], s[1], s[2], s[3], s[4], s[5], s[6], s[7], s[8], s[9], None
         if len(s) >= 8:
-            return s[0], s[1], s[2], s[3], s[4], s[5], s[6], s[7], None, None
+            return s[0], s[1], s[2], s[3], s[4], s[5], s[6], s[7], None, None, None
         if len(s) >= 7:
-            return s[0], s[1], s[2], s[3], s[4], s[5], s[6], None, None, None
+            return s[0], s[1], s[2], s[3], s[4], s[5], s[6], None, None, None, None
         if len(s) >= 5:
-            return s[0], s[1], s[2], s[3], s[4], None, None, None, None, None
-        return s[0], s[1], s[2], s[3], None, None, None, None, None, None
+            return s[0], s[1], s[2], s[3], s[4], None, None, None, None, None, None
+        return s[0], s[1], s[2], s[3], None, None, None, None, None, None, None
 
-    def _suffix_for_strategy(strategy, top_n, ev_th, confidence_type, prob_gap_min=None, entropy_max=None, ev_gap_threshold=None, odds_low=None, odds_high=None):
+    def _suffix_for_strategy(strategy, top_n, ev_th, confidence_type, prob_gap_min=None, entropy_max=None, ev_gap_threshold=None, odds_low=None, odds_high=None, max_bets_per_race=None):
         if strategy == "top_n_ev":
             return f"_top{top_n}ev{int(ev_th * 100)}" if ev_th else ""
         if strategy == "top_n_ev_gap_filter":
@@ -117,6 +119,13 @@ def run_one_window(
             lo = odds_low if odds_low is not None else 1.2
             hi = odds_high if odds_high is not None else 25
             return f"_top{top_n}ev{int(ev_th * 100)}_evgap{gstr}_odds{str(lo).replace('.', 'x')}_{int(hi)}"
+        if strategy == "top_n_ev_gap_filter_odds_band_bet_limit":
+            g = ev_gap_threshold if ev_gap_threshold is not None else 0.07
+            gstr = str(g).replace(".", "x")
+            lo = odds_low if odds_low is not None else 1.3
+            hi = odds_high if odds_high is not None else 25
+            mx = max_bets_per_race if max_bets_per_race is not None else 1
+            return f"_top{top_n}ev{int(ev_th * 100)}_evgap{gstr}_odds{str(lo).replace('.', 'x')}_{int(hi)}_max{mx}"
         if strategy == "top_n_ev_conditional_prob_gap":
             if isinstance(prob_gap_min, (list, tuple)) and prob_gap_min:
                 parts = [str(round(e, 2)).replace(".", "x") for e in prob_gap_min]
@@ -158,7 +167,8 @@ def run_one_window(
             spec_name, strategy, top_n, ev_th, confidence_type, prob_gap_min, entropy_max = norm[0], norm[1], norm[2], norm[3], norm[4], norm[5], norm[6]
             ev_gap_th = norm[7] if len(norm) >= 8 else None
             odds_lo, odds_hi = (norm[8], norm[9]) if len(norm) >= 10 else (None, None)
-            suffix = _suffix_for_strategy(strategy, top_n, ev_th, confidence_type, prob_gap_min, entropy_max, ev_gap_th, odds_lo, odds_hi)
+            max_bpr = norm[10] if len(norm) >= 11 else None
+            suffix = _suffix_for_strategy(strategy, top_n, ev_th, confidence_type, prob_gap_min, entropy_max, ev_gap_th, odds_lo, odds_hi, max_bpr)
             out_path = out_pred_dir / f"predictions_baseline_{day}{suffix}.json"
             if out_path.exists():
                 continue
@@ -192,6 +202,14 @@ def run_one_window(
                         run_kw["betting_odds_low"] = float(odds_lo)
                     if odds_hi is not None:
                         run_kw["betting_odds_high"] = float(odds_hi)
+                elif strategy == "top_n_ev_gap_filter_odds_band_bet_limit":
+                    run_kw["betting_ev_gap_threshold"] = float(ev_gap_th) if ev_gap_th is not None else 0.07
+                    if odds_lo is not None:
+                        run_kw["betting_odds_low"] = float(odds_lo)
+                    if odds_hi is not None:
+                        run_kw["betting_odds_high"] = float(odds_hi)
+                    if max_bpr is not None:
+                        run_kw["betting_max_bets_per_race"] = int(max_bpr)
                 elif strategy == "top_n_ev_conditional_prob_gap" and isinstance(prob_gap_min, (list, tuple)) and isinstance(entropy_max, (list, tuple)):
                     run_kw["betting_band_edges"] = list(prob_gap_min)
                     run_kw["betting_band_params"] = list(entropy_max)
@@ -211,7 +229,8 @@ def run_one_window(
         spec_name, strategy, top_n, ev_th, confidence_type, prob_gap_min, entropy_max = norm[0], norm[1], norm[2], norm[3], norm[4], norm[5], norm[6]
         ev_gap_th = norm[7] if len(norm) >= 8 else None
         odds_lo, odds_hi = (norm[8], norm[9]) if len(norm) >= 10 else (None, None)
-        suffix = _suffix_for_strategy(strategy, top_n, ev_th, confidence_type, prob_gap_min, entropy_max, ev_gap_th, odds_lo, odds_hi)
+        max_bpr = norm[10] if len(norm) >= 11 else None
+        suffix = _suffix_for_strategy(strategy, top_n, ev_th, confidence_type, prob_gap_min, entropy_max, ev_gap_th, odds_lo, odds_hi, max_bpr)
         tb_sel = tp_sel = sc = rwr = hc = om = rwsb = 0
         log_loss_list = []
         brier_list = []

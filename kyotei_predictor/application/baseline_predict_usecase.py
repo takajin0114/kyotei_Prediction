@@ -92,6 +92,7 @@ def _apply_selected_bets(
     entropy_threshold: Optional[float] = None,
     odds_low: Optional[float] = None,
     odds_high: Optional[float] = None,
+    max_bets_per_race: Optional[int] = None,
     band_edges: Optional[List[float]] = None,
     band_params: Optional[List[tuple]] = None,
 ) -> None:
@@ -126,6 +127,8 @@ def _apply_selected_bets(
         extra_kwargs["odds_low"] = float(odds_low)
     if odds_high is not None:
         extra_kwargs["odds_high"] = float(odds_high)
+    if max_bets_per_race is not None:
+        extra_kwargs["max_bets_per_race"] = int(max_bets_per_race)
     if band_edges is not None:
         extra_kwargs["band_edges"] = list(band_edges)
     if band_params is not None:
@@ -177,6 +180,7 @@ def run_baseline_predict(
     betting_entropy_threshold: Optional[float] = None,
     betting_odds_low: Optional[float] = None,
     betting_odds_high: Optional[float] = None,
+    betting_max_bets_per_race: Optional[int] = None,
     betting_band_edges: Optional[List[float]] = None,
     betting_band_params: Optional[List[tuple]] = None,
     data_source: Optional[str] = None,
@@ -335,6 +339,7 @@ def run_baseline_predict(
             entropy_threshold=betting_entropy_threshold,
             odds_low=betting_odds_low,
             odds_high=betting_odds_high,
+            max_bets_per_race=betting_max_bets_per_race,
             band_edges=betting_band_edges,
             band_params=betting_band_params,
         )

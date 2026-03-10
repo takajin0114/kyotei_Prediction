@@ -41,11 +41,11 @@ leaderboard の 1 位。
 
 <!-- update_chat_context.py が自動更新 -->
 
-- **最新 EXP**: EXP-0018
-- **概要**: EV gap + odds band filter（top_n_ev_gap_filter_odds_band）。skip if odds_rank1 < odds_low or > odds_high。odds_low=1.2,1.3,1.4 × odds_high=20,25,30。ベースライン EV gap のみ（-12.71%）と比較。
-- **結果**: 全条件でベースラインを下回り**採用見送り**。最良 odds_high=25 で -20.36%（bets=2,179）。詳細は outputs/ev_gap_experiments/exp0018_ev_gap_odds_band_results.json および experiments/logs/EXP-0018_odds_band_filter.md。
-- **ログ**: experiments/logs/EXP-0018_odds_band_filter.md
-- **結果 JSON**: outputs/ev_gap_experiments/exp0018_ev_gap_odds_band_results.json
+- **最新 EXP**: EXP-0019
+- **概要**: EV gap + odds band + max bets per race（top_n_ev_gap_filter_odds_band_bet_limit）。odds_low=1.3, odds_high=25 のうえで max_bets_per_race=1,2 を検証。ベースラインは odds_band のみ（制限なし）。
+- **結果**: max_bets_per_race=1 で **-14.25%**（ベースライン -20.36% から +6.11%pt 改善）。全体1位 EXP-0015（-12.71%）は更新せず。odds_band 採用時は max_bets_per_race=1 推奨。詳細は outputs/ev_gap_experiments/exp0019_ev_gap_odds_band_bet_limit_results.json および experiments/logs/EXP-0019_max_bet_limit.md。
+- **ログ**: experiments/logs/EXP-0019_max_bet_limit.md
+- **結果 JSON**: outputs/ev_gap_experiments/exp0019_ev_gap_odds_band_bet_limit_results.json
 
 # Leaderboard Summary
 
@@ -64,6 +64,7 @@ leaderboard の 1 位。
 | — | EXP-0016 | top_n_ev_gap_filter 近傍 (ev=1.19〜1.21, ev_gap=0.06〜0.08) | 最良 -12.71%（同点） | — | ベスト更新なし。採用見送り。 |
 | — | EXP-0017 | top_n_ev_gap_filter_entropy (ev=1.20, ev_gap=0.07, ent=1.2〜1.5) | 最良 -19.06%（ent=1.4） | 1,529〜1,801 | 全条件ベースライン未達。採用見送り。 |
 | — | EXP-0018 | top_n_ev_gap_filter_odds_band (ev=1.20, ev_gap=0.07, odds_low/high) | 最良 -20.36%（odds_high=25） | 1,867〜2,388 | 全条件ベースライン未達。採用見送り。 |
+| — | EXP-0019 | top_n_ev_gap_filter_odds_band_bet_limit (odds=1.3/25, max=1/2) | 最良 -14.25%（max=1） | 1,980 / 2,167 | odds_band に max=1 で +6.11%pt。全体1位は更新せず。odds_band 時は max=1 推奨。 |
 
 詳細は experiments/leaderboard.md 参照。
 
@@ -73,6 +74,7 @@ leaderboard の 1 位。
 - **EXP-0016**: EXP-0015 ベスト近傍（ev=1.19〜1.21, ev_gap=0.06〜0.08）を探索。最良は同点 -12.71%。ベスト更新なしで採用見送り。
 - **EXP-0017**: EV gap + entropy filter（skip if race_entropy > threshold）。ent=1.2〜1.5 で全条件ベースライン -12.71% を下回り採用見送り。bet 数が 1,500〜1,800 に激減し ROI 悪化。
 - **EXP-0018**: EV gap + odds band filter（skip if odds_rank1 < odds_low or > odds_high）。odds_low=1.2〜1.4 × odds_high=20,25,30 で全条件ベースライン -12.71% を下回り採用見送り。最良 odds_high=25 で -20.36%（bets=2,179）。
+- **EXP-0019**: odds_band（1.3, 25）に max_bets_per_race=1 を追加すると -20.36% → -14.25%（+6.11%pt）。全体1位は EXP-0015 のまま。odds_band 採用時は max_bets_per_race=1 推奨。
 - EV threshold を下げると bet 数が増える。ev=1.18 が従来 1 位（-14.54%）、ev=1.20 が 2 位（-14.88%）。
 - top_n が大きいと ROI が悪化する傾向（top_n=3 が最良、top_n=6 で -18.78%）。
 - bet sizing は fixed が最良。Kelly 系は資金制約で破綻リスクあり。
@@ -95,7 +97,7 @@ leaderboard の 1 位。
 # Next Experiments
 
 - 現行ベスト戦略: top_n_ev_gap_filter, top_n=3, ev=1.20, ev_gap_threshold=0.07（ROI -12.71%）。EXP-0015 で採用。
-- EXP-0018 で EV gap + odds band filter を検証済み（採用見送り）。別軸（top_n 変更・他戦略・calibration 等）の検討を検討。
+- EXP-0019 で odds_band + max_bets_per_race を検証済み（max=1 で odds_band 改善。全体1位は更新せず）。別軸（top_n 変更・他戦略・calibration 等）の検討を検討。
 - ensemble 不具合修正後の再評価。
 - 条件別サブ戦略の他軸（entropy 帯・1位オッズ帯・venue/race_class）は必要時に検討（EXP-0014 で pred_prob_gap 帯は見送り）。
 - top_n / EV threshold の追加 sweep（必要に応じて）。
