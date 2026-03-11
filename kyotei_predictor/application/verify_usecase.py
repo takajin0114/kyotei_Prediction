@@ -20,6 +20,84 @@ from kyotei_predictor.infrastructure.file_loader import load_json
 # 1レースあたりの購入単価（円）。ROI 計算の基準。
 BET_PER_COMBINATION = 100
 
+# confidence-weighted sizing: 既定の ev_gap / prob_gap 閾値
+DEFAULT_EV_GAP_HIGH = 0.10
+DEFAULT_EV_GAP_MID = 0.07
+DEFAULT_PROB_GAP_HIGH = 0.05
+
+
+def _ev_gap_and_prob_gap_from_combinations(
+    all_comb: List[dict],
+) -> Tuple[Optional[float], Optional[float]]:
+    """
+    all_combinations から ev_rank1 - ev_rank2 (ev_gap) と
+    prob_rank1 - prob_rank2 (pred_prob_gap) を計算する。
+    EV = probability * ratio。ソートして上位2件の差を返す。
+    """
+    if not all_comb:
+        return None, None
+    ev_list: List[Tuple[float, float]] = []
+    for c in all_comb:
+        prob = float(c.get("probability", c.get("score", 0.0)))
+        r = c.get("ratio") or c.get("odds")
+        if r is None:
+            continue
+        try:
+            ratio = float(r)
+        except (TypeError, ValueError):
+            continue
+        if ratio <= 0:
+            continue
+        ev = prob * ratio
+        ev_list.append((ev, prob))
+    if len(ev_list) < 2:
+        return None, None
+    ev_list.sort(key=lambda x: -x[0])
+    ev_gap = ev_list[0][0] - ev_list[1][0]
+    prob_gap = ev_list[0][1] - ev_list[1][1]
+    return ev_gap, prob_gap
+
+
+def _unit_size_for_race(
+    ev_gap: Optional[float],
+    pred_prob_gap: Optional[float],
+    bet_sizing_mode: str,
+    config: Optional[Dict[str, float]] = None,
+) -> float:
+    """
+    confidence-weighted fixed sizing: レースの ev_gap / pred_prob_gap に応じて
+    ベット単位 (1.0 = 100円, 0.5 = 50円相当) を返す。
+    bet_sizing_mode: "fixed" | "confidence_weighted_ev_gap_v1" | "confidence_weighted_ev_gap_v2" | "confidence_weighted_prob_gap_v1"
+    """
+    if bet_sizing_mode is None or (isinstance(bet_sizing_mode, str) and bet_sizing_mode.strip().lower() == "fixed"):
+        return 1.0
+    mode = (bet_sizing_mode or "fixed").strip().lower()
+    cfg = config or {}
+    if mode == "fixed":
+        return 1.0
+    if mode == "confidence_weighted_ev_gap_v1":
+        # high: 1.0, normal: 0.5
+        high = float(cfg.get("ev_gap_high", DEFAULT_EV_GAP_HIGH))
+        if ev_gap is not None and ev_gap >= high:
+            return 1.0
+        return float(cfg.get("normal_unit", 0.5))
+    if mode == "confidence_weighted_ev_gap_v2":
+        # high: 1.0, mid: 0.75, normal: 0.5
+        high = float(cfg.get("ev_gap_high", DEFAULT_EV_GAP_HIGH))
+        mid = float(cfg.get("ev_gap_mid", DEFAULT_EV_GAP_MID))
+        if ev_gap is not None and ev_gap >= high:
+            return 1.0
+        if ev_gap is not None and ev_gap >= mid:
+            return float(cfg.get("mid_unit", 0.75))
+        return float(cfg.get("normal_unit", 0.5))
+    if mode == "confidence_weighted_prob_gap_v1":
+        # high: 1.0, normal: 0.5 (pred_prob_gap ベース)
+        high = float(cfg.get("prob_gap_high", DEFAULT_PROB_GAP_HIGH))
+        if pred_prob_gap is not None and pred_prob_gap >= high:
+            return 1.0
+        return float(cfg.get("normal_unit", 0.5))
+    return 1.0
+
 
 def _load_odds_for_race(data_dir: Path, prediction_date: str, venue: str, rno: int) -> Optional[dict]:
     """指定レースのオッズJSONを読み、辞書で返す。存在しなければ None。"""
@@ -36,6 +114,8 @@ def run_verify(
     data_source: Optional[str] = None,
     race_repository: Optional[RaceDataRepositoryProtocol] = None,
     db_path: Optional[Union[str, Path]] = None,
+    bet_sizing_mode: Optional[str] = None,
+    bet_sizing_config: Optional[Dict[str, float]] = None,
 ) -> Tuple[Dict, List[Dict]]:
     """
     予測JSONと race_data を照合し、集計結果とレース別詳細を返す。
@@ -48,6 +128,8 @@ def run_verify(
         data_source: "json" | "db" | None。None のときは data_dir の JSON 直読。
         race_repository: 指定時はこのリポジトリで race_data 取得。
         db_path: data_source=db 時の SQLite パス。
+        bet_sizing_mode: "fixed" | "confidence_weighted_ev_gap_v1" | "confidence_weighted_ev_gap_v2" | "confidence_weighted_prob_gap_v1"。selected_bets 時のみ有効。
+        bet_sizing_config: 閾値等（ev_gap_high, ev_gap_mid, prob_gap_high, normal_unit, mid_unit）。None で既定値。
 
     Returns:
         (summary_dict, details_list) 既存 tools.verify_predictions と同じ形式。
@@ -129,6 +211,7 @@ def run_verify(
     total_bet_selected = 0.0
     total_payout_selected = 0.0
     hit_count_selected = 0
+    selected_bets_count = 0  # 組み合わせ数（weighted でもカウントは同一）
     sum_log_loss = 0.0
     sum_brier = 0.0
     n_prob_races = 0
@@ -210,6 +293,13 @@ def run_verify(
         if use_selected_bets:
             selected = race.get("selected_bets") or []
             purchased_bets = len(selected)
+            ev_gap, pred_prob_gap = _ev_gap_and_prob_gap_from_combinations(all_comb)
+            unit = _unit_size_for_race(
+                ev_gap, pred_prob_gap,
+                bet_sizing_mode or "fixed",
+                bet_sizing_config,
+            )
+            bet_per_bet = unit * BET_PER_COMBINATION
             payout = 0.0
             if purchased_bets > 0 and actual is not None:
                 if repo is not None and hasattr(repo, "get_odds"):
@@ -222,19 +312,20 @@ def run_verify(
                         continue
                     od = get_odds_for_combination(odds_data, c) if odds_data else None
                     if od is not None and c.replace(" ", "") == actual.replace(" ", ""):
-                        payout += BET_PER_COMBINATION * od
-                total_bet_selected += BET_PER_COMBINATION * purchased_bets
+                        payout += bet_per_bet * od
+                total_bet_selected += bet_per_bet * purchased_bets
                 total_payout_selected += payout
                 if payout > 0:
                     hit_count_selected += 1
+            selected_bets_count += purchased_bets
             detail["purchased_bets"] = purchased_bets
             detail["payout"] = round(payout, 2)
-            detail["race_profit"] = round(payout - BET_PER_COMBINATION * purchased_bets, 2) if purchased_bets > 0 else 0.0
+            detail["race_profit"] = round(payout - bet_per_bet * purchased_bets, 2) if purchased_bets > 0 else 0.0
 
         details.append(detail)
 
-    # 1日ごとの bet 件数（今回の verify は 1 日分なので prediction_date のみ）
-    selected_bets_total_count = int(total_bet_selected / BET_PER_COMBINATION) if total_bet_selected else 0
+    # 組み合わせ数（fixed のときは total_bet_selected/100 と一致。weighted では別途カウント）
+    selected_bets_total_count = selected_bets_count
     if prediction_date:
         bets_per_date[prediction_date] = selected_bets_total_count
 
@@ -274,6 +365,10 @@ def run_verify(
         "result_missing": skip_result_missing,
     }
     summary_dict["selected_bets_total_count"] = selected_bets_total_count
+    summary_dict["total_staked"] = round(total_bet_selected, 2)
+    summary_dict["total_profit"] = round(total_payout_selected - total_bet_selected, 2) if total_bet_selected else 0.0
+    summary_dict["average_bet_size"] = round(total_bet_selected / selected_bets_total_count, 2) if selected_bets_total_count else 0.0
+    summary_dict["profit_per_1000_bets"] = round(1000.0 * (total_payout_selected - total_bet_selected) / selected_bets_total_count, 2) if selected_bets_total_count else 0.0
     summary_dict["bets_per_date"] = bets_per_date
     summary_dict["odds_missing_count"] = skip_odds_missing  # conditions で参照する用
     summary_dict["skipped_race_identifiers"] = skipped_identifiers

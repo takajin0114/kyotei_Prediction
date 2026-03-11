@@ -41,11 +41,11 @@ leaderboard の 1 位。
 
 <!-- update_chat_context.py が自動更新 -->
 
-- **最新 EXP**: EXP-0022
-- **概要**: venue 別 ev ・ ev_gap 戦略（top_n_ev_gap_venue）。top_n=3, ev=1.20, ev_gap=0.07、venue_config={TODA,HEIWAJIMA,SUMINOE} で n_w=12 実行。
-- **結果**: 最良 -14.58%（bets=14,699）。同一 run ベースライン -14.68% より +0.10%pt 改善。詳細は outputs/venue_strategy_experiments/exp0022_venue_strategy_results.json および experiments/logs/EXP-0022_venue_strategy.md。
-- **ログ**: experiments/logs/EXP-0022_venue_strategy.md
-- **結果 JSON**: outputs/venue_strategy_experiments/exp0022_venue_strategy_results.json
+- **最新 EXP**: EXP-0023
+- **概要**: confidence-weighted fixed sizing。現行ベスト戦略はそのままに、ev_gap / pred_prob_gap に応じてベットサイズを 2〜3 段階化（fixed vs weighted_ev_gap_v1/v2, weighted_prob_gap_v1）。n_w=12。
+- **結果**: 最良 ROI は weighted_ev_gap_v1（-14.31%、fixed 比 +0.37%pt）。利益指標（total_profit, max_drawdown, profit_per_1000_bets）も fixed より改善。ROI 最適化から利益最大化フェーズへ移行中の検証として実施。
+- **ログ**: experiments/logs/EXP-0023_confidence_weighted_fixed_sizing.md
+- **結果 JSON**: outputs/confidence_weighted_sizing_experiments/exp0023_confidence_weighted_sizing_results.json
 
 # Leaderboard Summary
 
@@ -69,6 +69,7 @@ leaderboard の 1 位。
 | — | EXP-0021 | top_n_ev_gap_filter (top_n×ev×ev_gap 局所探索) | 最良 -12.71%（top_n=3, ev=1.20, ev_gap=0.07） | 14,700 | EXP-0015 条件を含む再探索。top_n=2/4 系列はいずれも ROI 悪化、top_n=3 でも EXP-0015 と同点で新ベストなし（reject）。 |
 | — | EXP-0022 | top_n_ev_gap_venue_filter (venue_ev_config) | 最良 -14.6%, bets=14,702 | 14,702 | 会場別 EV。同一 run ベースラインより +0.08%pt。EXP-0015 未達で採用見送り。 |
 | — | EXP-0022 | top_n_ev_gap_venue (venue_config ev+ev_gap) | 最良 -14.58%, bets=14,699 | 14,699 | 会場別 ev・ev_gap。同一 run ベースラインより +0.10%pt 改善。 |
+| — | EXP-0023 | top_n_ev_gap_filter + confidence_weighted_sizing | 最良 -14.31%（weighted_ev_gap_v1）, bets=14,705 | 14,705 | ROI は adopt 未達。利益指標改善。hold・実運用候補。 |
 
 詳細は experiments/leaderboard.md 参照。
 
@@ -82,6 +83,7 @@ leaderboard の 1 位。
 - **EXP-0020**: top_n_ev_gap_filter（EXP-0015 条件）に max_bets_per_race=None/1/2 を直接適用。全条件で ROI -12.71%、差なし。採用見送り。
 - **EXP-0021**: top_n × ev × ev_gap 局所探索（top_n=2,3,4 × ev=1.19,1.20,1.21 × ev_gap=0.06,0.07,0.08）。最良は EXP-0015 と同一条件（top_n=3, ev=1.20, ev_gap=0.07, ROI -12.71%）で、新ベストは出ず採用見送り。top_n=2 は -13% 台、top_n=4 は -18% 前後と悪化。
 - **EXP-0022**: (1) venue 別 EV（top_n_ev_gap_venue_filter）最良 -14.6%（bets=14,702）。(2) venue 別 ev・ev_gap（top_n_ev_gap_venue）最良 -14.58%（bets=14,699）、同一 run ベースラインより +0.10%pt 改善。
+- **EXP-0023**: confidence-weighted fixed sizing（ev_gap / pred_prob_gap で 2〜3 段階）。weighted_ev_gap_v1 が最良（ROI -14.31%、profit・drawdown・profit/1000bets 改善）。ROI は EXP-0015 未達で adopt 見送り。利益指標では改善あり。**ROI 最適化から利益最大化フェーズへ移行中**の検証。
 - EV threshold を下げると bet 数が増える。ev=1.18 が従来 1 位（-14.54%）、ev=1.20 が 2 位（-14.88%）。
 - top_n が大きいと ROI が悪化する傾向（top_n=3 が最良、top_n=6 で -18.78%）。
 - bet sizing は fixed が最良。Kelly 系は資金制約で破綻リスクあり。
@@ -104,8 +106,8 @@ leaderboard の 1 位。
 # Next Experiments
 
 - 現行ベスト戦略: top_n_ev_gap_filter, top_n=3, ev=1.20, ev_gap_threshold=0.07（ROI -12.71%）。EXP-0015 で採用。
-- EXP-0022 で会場別戦略を実施。top_n_ev_gap_venue（ev+ev_gap 会場別）で -14.58%（+0.10%pt 改善）。EXP-0015 未達のため採用見送り。会場別パラメータの拡張は必要時に検討。
-- 別軸（モデル・特徴量・calibration・条件別サブ戦略など）の検討を継続。
+- **ROI 最適化から利益最大化フェーズへ移行中**。EXP-0023 で confidence-weighted sizing を実施。weighted_ev_gap_v1 で利益指標改善を確認。閾値微調整（ev_gap_high 等）は必要時に実施。
+- 会場別パラメータ拡張・別軸（モデル・特徴量・calibration）の検討を継続。
 - ensemble 不具合修正後の再評価。
 - 条件別サブ戦略の他軸（entropy 帯・1位オッズ帯・venue/race_class）は必要時に検討（EXP-0014 で pred_prob_gap 帯は見送り）。
 - top_n / EV threshold の追加 sweep（必要に応じて）。
