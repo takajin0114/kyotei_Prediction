@@ -23,6 +23,7 @@ STRATEGY_TOP_N_EV_GAP_FILTER = "top_n_ev_gap_filter"  # ev_gap = ev_rank1 - ev_r
 STRATEGY_TOP_N_EV_GAP_FILTER_ENTROPY = "top_n_ev_gap_filter_entropy"  # ev_gap filter + skip if race_entropy > entropy_threshold
 STRATEGY_TOP_N_EV_GAP_FILTER_ODDS_BAND = "top_n_ev_gap_filter_odds_band"  # ev_gap filter + skip if odds_rank1 < odds_low or > odds_high
 STRATEGY_TOP_N_EV_GAP_FILTER_ODDS_BAND_BET_LIMIT = "top_n_ev_gap_filter_odds_band_bet_limit"  # 上記 + 1レースあたり最大 max_bets_per_race 点に制限
+STRATEGY_TOP_N_EV_GAP_VENUE_FILTER = "top_n_ev_gap_venue_filter"  # ev_gap filter + 会場別 ev_threshold（venue_ev_config で指定）
 STRATEGY_TOP_N_EV_CONDITIONAL_PROB_GAP = "top_n_ev_conditional_prob_gap"  # pred_prob_gap 帯ごとに (top_n, ev) を切り替え
 STRATEGY_EV_THRESHOLD_ONLY = "ev_threshold_only"  # EV >= ev_threshold の全候補を購入（top_n 制限なし）
 
@@ -505,6 +506,37 @@ def select_top_n_ev_gap_filter_odds_band_bet_limit(
     return selected[:max_bets_per_race]
 
 
+def select_top_n_ev_gap_venue_filter(
+    predictions: List[Dict[str, Any]],
+    top_n: int,
+    ev_threshold: float,
+    ev_gap_threshold: float,
+    venue: Optional[str],
+    venue_ev_config: Optional[Dict[str, float]] = None,
+) -> List[str]:
+    """
+    top_n_ev_gap_filter の会場別 EV 閾値版。
+    venue_ev_config に venue が含まれる場合はその ev_threshold を使用し、
+    そうでなければ ev_threshold をそのまま使用する。
+
+    Args:
+        predictions: 予測候補リスト（同一レースの all_combinations）。probability と ratio 必須。
+        top_n: 選抜する点数。
+        ev_threshold: デフォルト期待リターン閾値。
+        ev_gap_threshold: 1位と2位の EV 差の閾値。これ未満ならレースを skip。
+        venue: 会場名（例: TODA, SUMINOE）。None のときは ev_threshold のみ使用。
+        venue_ev_config: 会場別 ev_threshold。例: {"TODA": 1.23, "SUMINOE": 1.17}。
+
+    Returns:
+        購入する combination のリスト（skip 時は []）
+    """
+    if venue and venue_ev_config and venue in venue_ev_config:
+        ev_threshold = venue_ev_config[venue]
+    return select_top_n_ev_gap_filter(
+        predictions, top_n, ev_threshold, ev_gap_threshold=ev_gap_threshold
+    )
+
+
 def select_top_n_ev_power_prob(
     predictions: List[Dict[str, Any]],
     alpha: float,
@@ -693,6 +725,18 @@ def select_bets(
         if max_bets_per_race is not None and int(max_bets_per_race) > 0:
             selected = selected[: int(max_bets_per_race)]
         return selected
+    if strategy == STRATEGY_TOP_N_EV_GAP_VENUE_FILTER:
+        ev_gap_threshold = float(kwargs.get("ev_gap_threshold", 0.07))
+        venue = kwargs.get("venue")
+        venue_ev_config = kwargs.get("venue_ev_config") or {}
+        return select_top_n_ev_gap_venue_filter(
+            predictions,
+            top_n,
+            ev_threshold,
+            ev_gap_threshold=ev_gap_threshold,
+            venue=venue,
+            venue_ev_config=venue_ev_config,
+        )
     if strategy == STRATEGY_TOP_N_EV_GAP_FILTER_ENTROPY:
         ev_gap_threshold = float(kwargs.get("ev_gap_threshold", 0.05))
         entropy_threshold = float(kwargs.get("entropy_threshold", 1.5))

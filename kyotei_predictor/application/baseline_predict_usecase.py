@@ -95,6 +95,7 @@ def _apply_selected_bets(
     max_bets_per_race: Optional[int] = None,
     band_edges: Optional[List[float]] = None,
     band_params: Optional[List[tuple]] = None,
+    venue_ev_config: Optional[Dict[str, float]] = None,
 ) -> None:
     """
     各レースの all_combinations に betting_selector を適用し、
@@ -103,6 +104,7 @@ def _apply_selected_bets(
     from kyotei_predictor.utils.betting_selector import (
         select_bets,
         STRATEGY_EV,
+        STRATEGY_TOP_N_EV_GAP_VENUE_FILTER,
     )
     extra_kwargs: Dict[str, Any] = {}
     if confidence_type:
@@ -133,12 +135,18 @@ def _apply_selected_bets(
         extra_kwargs["band_edges"] = list(band_edges)
     if band_params is not None:
         extra_kwargs["band_params"] = list(band_params)
+    if venue_ev_config is not None:
+        extra_kwargs["venue_ev_config"] = dict(venue_ev_config)
     for pred in predictions:
         ac = pred.get("all_combinations") or []
         if not ac:
             pred["selected_bets"] = []
             continue
         use_metadata = strategy == STRATEGY_EV
+        run_kw = dict(extra_kwargs)
+        if strategy == STRATEGY_TOP_N_EV_GAP_VENUE_FILTER:
+            run_kw["venue"] = pred.get("venue")
+            run_kw["venue_ev_config"] = extra_kwargs.get("venue_ev_config") or {}
         try:
             res = select_bets(
                 ac,
@@ -147,7 +155,7 @@ def _apply_selected_bets(
                 score_threshold=score_threshold,
                 ev_threshold=ev_threshold,
                 return_metadata=use_metadata,
-                **extra_kwargs,
+                **run_kw,
             )
             if use_metadata and isinstance(res, tuple):
                 pred["selected_bets"], pred["ev_selection_metadata"] = res[0], res[1]
@@ -183,6 +191,7 @@ def run_baseline_predict(
     betting_max_bets_per_race: Optional[int] = None,
     betting_band_edges: Optional[List[float]] = None,
     betting_band_params: Optional[List[tuple]] = None,
+    betting_venue_ev_config: Optional[Dict[str, float]] = None,
     data_source: Optional[str] = None,
     race_repository: Optional[RaceDataRepositoryProtocol] = None,
     db_path: Optional[Union[str, Path]] = None,
@@ -342,6 +351,7 @@ def run_baseline_predict(
             max_bets_per_race=betting_max_bets_per_race,
             band_edges=betting_band_edges,
             band_params=betting_band_params,
+            venue_ev_config=betting_venue_ev_config,
         )
         # execution_summary に ev_selection 集計を追加（A案互換）
         ev_metas = [p.get("ev_selection_metadata") for p in predictions if p.get("ev_selection_metadata")]
