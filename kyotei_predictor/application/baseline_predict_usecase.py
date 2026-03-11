@@ -96,6 +96,7 @@ def _apply_selected_bets(
     band_edges: Optional[List[float]] = None,
     band_params: Optional[List[tuple]] = None,
     venue_ev_config: Optional[Dict[str, float]] = None,
+    venue_config: Optional[Dict[str, Dict[str, float]]] = None,
 ) -> None:
     """
     各レースの all_combinations に betting_selector を適用し、
@@ -105,6 +106,7 @@ def _apply_selected_bets(
         select_bets,
         STRATEGY_EV,
         STRATEGY_TOP_N_EV_GAP_VENUE_FILTER,
+        STRATEGY_TOP_N_EV_GAP_VENUE,
     )
     extra_kwargs: Dict[str, Any] = {}
     if confidence_type:
@@ -137,6 +139,8 @@ def _apply_selected_bets(
         extra_kwargs["band_params"] = list(band_params)
     if venue_ev_config is not None:
         extra_kwargs["venue_ev_config"] = dict(venue_ev_config)
+    if venue_config is not None:
+        extra_kwargs["venue_config"] = {k: dict(v) for k, v in venue_config.items()}
     for pred in predictions:
         ac = pred.get("all_combinations") or []
         if not ac:
@@ -147,6 +151,9 @@ def _apply_selected_bets(
         if strategy == STRATEGY_TOP_N_EV_GAP_VENUE_FILTER:
             run_kw["venue"] = pred.get("venue")
             run_kw["venue_ev_config"] = extra_kwargs.get("venue_ev_config") or {}
+        if strategy == STRATEGY_TOP_N_EV_GAP_VENUE:
+            run_kw["venue"] = pred.get("venue")
+            run_kw["venue_config"] = extra_kwargs.get("venue_config") or {}
         try:
             res = select_bets(
                 ac,
@@ -192,6 +199,7 @@ def run_baseline_predict(
     betting_band_edges: Optional[List[float]] = None,
     betting_band_params: Optional[List[tuple]] = None,
     betting_venue_ev_config: Optional[Dict[str, float]] = None,
+    betting_venue_config: Optional[Dict[str, Dict[str, float]]] = None,
     data_source: Optional[str] = None,
     race_repository: Optional[RaceDataRepositoryProtocol] = None,
     db_path: Optional[Union[str, Path]] = None,
@@ -352,6 +360,7 @@ def run_baseline_predict(
             band_edges=betting_band_edges,
             band_params=betting_band_params,
             venue_ev_config=betting_venue_ev_config,
+            venue_config=betting_venue_config,
         )
         # execution_summary に ev_selection 集計を追加（A案互換）
         ev_metas = [p.get("ev_selection_metadata") for p in predictions if p.get("ev_selection_metadata")]

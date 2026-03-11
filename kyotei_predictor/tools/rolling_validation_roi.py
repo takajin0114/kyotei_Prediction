@@ -241,6 +241,11 @@ def run_rolling_validation_roi(
                 out["ev_gap_threshold"] = float(strat[7])
             if strat[11] is not None:
                 out["venue_ev_config"] = dict(strat[11])
+        if s == "top_n_ev_gap_venue" and len(strat) >= 12:
+            if strat[7] is not None:
+                out["ev_gap_threshold"] = float(strat[7])
+            if strat[11] is not None:
+                out["venue_config"] = {k: dict(v) for k, v in strat[11].items()}
         if s == "top_n_ev_conditional_prob_gap" and len(strat) >= 7 and strat[5] is not None and strat[6] is not None:
             out["condition_definition"] = {"band_edges": list(strat[5]), "band_params": list(strat[6])}
         if log_losses:
