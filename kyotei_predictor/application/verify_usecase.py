@@ -148,6 +148,7 @@ def run_verify(
     db_path: Optional[Union[str, Path]] = None,
     bet_sizing_mode: Optional[str] = None,
     bet_sizing_config: Optional[Dict[str, float]] = None,
+    odds_cap: Optional[float] = None,
 ) -> Tuple[Dict, List[Dict]]:
     """
     予測JSONと race_data を照合し、集計結果とレース別詳細を返す。
@@ -160,8 +161,9 @@ def run_verify(
         data_source: "json" | "db" | None。None のときは data_dir の JSON 直読。
         race_repository: 指定時はこのリポジトリで race_data 取得。
         db_path: data_source=db 時の SQLite パス。
-        bet_sizing_mode: "fixed" | "confidence_weighted_ev_gap_v1" | "confidence_weighted_ev_gap_v2" | "confidence_weighted_prob_gap_v1"。selected_bets 時のみ有効。
-        bet_sizing_config: 閾値等（ev_gap_high, ev_gap_mid, prob_gap_high, normal_unit, mid_unit）。None で既定値。
+        bet_sizing_mode: "fixed" | "confidence_weighted_ev_gap_v1" | ... selected_bets 時のみ有効。
+        bet_sizing_config: 閾値等。None で既定値。
+        odds_cap: selected_bets 時のみ。オッズがこの値を超える組み合わせはベット対象外。None でキャップなし。
 
     Returns:
         (summary_dict, details_list) 既存 tools.verify_predictions と同じ形式。
@@ -330,6 +332,7 @@ def run_verify(
             use_kelly = mode == "kelly_fraction" and "kelly_fraction" in cfg
             payout = 0.0
             race_staked = 0.0
+            cap = float(odds_cap) if odds_cap is not None else None
             if use_kelly:
                 kelly_fraction = float(cfg.get("kelly_fraction", 0.5))
                 unit_cap = float(cfg.get("unit_cap", 2.0))
@@ -338,13 +341,17 @@ def run_verify(
                     odds_data = repo.get_odds(prediction_date, venue, rno)
                 else:
                     odds_data = _load_odds_for_race(data_dir, prediction_date, venue, rno)
+                effective = 0
                 for comb in selected:
                     c = (comb if isinstance(comb, str) else "").strip()
                     if not c:
                         continue
-                    model_prob = comb_to_prob.get(c, 0.0)
                     od = get_odds_for_combination(odds_data, c) if odds_data else None
                     od_val = float(od) if od is not None and od > 0 else None
+                    if cap is not None and (od_val is None or od_val > cap):
+                        continue
+                    effective += 1
+                    model_prob = comb_to_prob.get(c, 0.0)
                     unit = _unit_size_for_bet_kelly(
                         model_prob, od_val if od_val else 0.0, kelly_fraction, unit_cap
                     ) if od_val else 0.0
@@ -356,7 +363,9 @@ def run_verify(
                 total_payout_selected += payout
                 if payout > 0:
                     hit_count_selected += 1
-                bet_per_bet = (race_staked / purchased_bets) if purchased_bets > 0 else 0.0
+                selected_bets_count += effective
+                bet_per_bet = (race_staked / effective) if effective > 0 else 0.0
+                detail["purchased_bets"] = effective
             else:
                 ev_gap, pred_prob_gap = _ev_gap_and_prob_gap_from_combinations(all_comb)
                 unit = _unit_size_for_race(
@@ -365,6 +374,7 @@ def run_verify(
                     bet_sizing_config,
                 )
                 bet_per_bet = unit * BET_PER_COMBINATION
+                effective = 0
                 if purchased_bets > 0 and actual is not None:
                     if repo is not None and hasattr(repo, "get_odds"):
                         odds_data = repo.get_odds(prediction_date, venue, rno)
@@ -375,17 +385,20 @@ def run_verify(
                         if not c:
                             continue
                         od = get_odds_for_combination(odds_data, c) if odds_data else None
+                        if cap is not None and (od is None or float(od) > cap):
+                            continue
+                        effective += 1
                         if od is not None and c.replace(" ", "") == actual.replace(" ", ""):
                             payout += bet_per_bet * od
-                    total_bet_selected += bet_per_bet * purchased_bets
+                    total_bet_selected += bet_per_bet * effective
                     total_payout_selected += payout
                     if payout > 0:
                         hit_count_selected += 1
-                race_staked = bet_per_bet * purchased_bets
-            selected_bets_count += purchased_bets
-            detail["purchased_bets"] = purchased_bets
+                    race_staked = bet_per_bet * effective
+                selected_bets_count += effective
+                detail["purchased_bets"] = effective
             detail["payout"] = round(payout, 2)
-            detail["race_profit"] = round(payout - race_staked, 2) if purchased_bets > 0 else 0.0
+            detail["race_profit"] = round(payout - race_staked, 2) if detail.get("purchased_bets", 0) > 0 else 0.0
 
         details.append(detail)
 
