@@ -41,11 +41,11 @@ leaderboard の 1 位。
 
 <!-- update_chat_context.py が自動更新 -->
 
-- **最新 EXP**: EXP-0037
-- **概要**: EV帯フィルタ戦略の検証。skip_top20pct のうえで 3<=EV<5 / 4<=EV<5 等の EV 帯のみ購入、n_w=18。
-- **結果**: 全 EV 帯条件でベースライン（EV<=5）を上回る。最良 ev_band_3_5: ROI +18.71%、total_profit +83,955、max_drawdown 36,525。ev_band_4_5: ROI +33.78%。adopt。
-- **ログ**: experiments/logs/EXP-0037_ev_band_strategy.md
-- **結果 JSON**: outputs/ev_band_strategy/exp0037_ev_band_strategy_results.json
+- **最新 EXP**: EXP-0038
+- **概要**: EV band + probability フィルタの検証。skip_top20pct + 3<=EV<5 に prob>=0.05/0.08/0.10/0.12 を追加、n_w=18。
+- **結果**: ev3_5_prob005 が最良。ROI +24.67%、total_profit +70,965、max_drawdown 18,940。baseline（ev_band_3_5）を上回り adopt。
+- **ログ**: experiments/logs/EXP-0038_ev_prob_band_strategy.md
+- **結果 JSON**: outputs/ev_prob_band_strategy/exp0038_ev_prob_band_strategy_results.json
 
 # Leaderboard Summary
 
@@ -84,6 +84,7 @@ leaderboard の 1 位。
 | — | EXP-0035 | high EV skip 率局所探索 (ev_cap_5.0 固定) | skip_top10/15/20/25/30pct, n_w=18 | 10,564（全条件同一） | 全条件同一。ev_cap が支配的。reject。 |
 | — | EXP-0036 | EV帯ごとの成績分析 | EV帯別 bet_count/hit_rate/ROI/profit, n_w=18 | 帯別 | 黒字: 3–4, 4–5, 6–8。ev_cap=5.0 支持。hold。 |
 | — | EXP-0037 | EV帯フィルタ戦略 | 3<=EV<5 / 4<=EV<5 等, n_w=18 | 2,079〜10,564 | 最良 ev_band_3_5: ROI +18.71%, profit +83,955。ev_band_4_5: ROI +33.78%。adopt。 |
+| — | EXP-0038 | EV band + probability フィルタ | 3<=EV<5 + prob>=0.05/0.08/0.10/0.12, n_w=18 | 2,162〜4,565 | 最良 ev3_5_prob005: ROI +24.67%, profit +70,965, max_dd 18,940。adopt。 |
 
 詳細は experiments/leaderboard.md 参照。
 
@@ -112,6 +113,7 @@ leaderboard の 1 位。
 - **EXP-0035**: high EV skip 率局所探索（ev_cap_5.0 固定、skip_top10/15/20/25/30pct、n_w=18）。全条件で同一結果（ROI -2.27%、bets=10,564）。ev_cap が支配的で skip 率差なし。**reject**。実運用は skip_top20pct + ev_cap_5.0 維持。
 - **EXP-0036**: EV帯ごとの成績分析（n_w=18）。黒字帯: 3–4（+6.07%）, 4–5（+33.78%）, 6–8（+4.05%）。赤字: 5–6, 8–10, >=10。ev_cap=5.0 の妥当性を支持。**hold**。
 - **EXP-0037**: EV帯フィルタ戦略（n_w=18）。黒字帯のみ購入でベースラインを大きく上回る。ev_band_3_5: ROI +18.71%、profit +83,955、max_dd 36,525。ev_band_4_5: ROI +33.78%。**adopt**。実運用候補を skip_top20pct + 3<=EV<5 に更新。
+- **EXP-0038**: EV band + probability フィルタ（n_w=18）。3<=EV<5 に prob>=0.05 を追加した ev3_5_prob005 が最良（ROI +24.67%、profit +70,965、max_dd 18,940）。**adopt**。実運用候補を skip_top20pct + 3<=EV<5 + prob>=0.05 に更新。
 - EV threshold を下げると bet 数が増える。ev=1.18 が従来 1 位（-14.54%）、ev=1.20 が 2 位（-14.88%）。
 - top_n が大きいと ROI が悪化する傾向（top_n=3 が最良、top_n=6 で -18.78%）。
 - bet sizing は fixed が最良。Kelly 系は資金制約で破綻リスクあり。
