@@ -41,11 +41,11 @@ leaderboard の 1 位。
 
 <!-- update_chat_context.py が自動更新 -->
 
-- **最新 EXP**: EXP-0029
-- **概要**: 確率キャリブレーション実験。sigmoid（baseline）vs isotonic（calibrated）を EXP-0015, EXP-0013, EXP-0007 で比較、n_w=12。
-- **結果**: 全戦略で baseline が有利。isotonic は ROI 約 5%pt 悪化・選別数約 2 倍。reject。
-- **ログ**: experiments/logs/EXP-0029_probability_calibration.md
-- **結果 JSON**: outputs/probability_calibration_experiments/exp0029_probability_calibration_results.json
+- **最新 EXP**: EXP-0030
+- **概要**: EXP-0015（top_n_ev_gap_filter, top_n=3, ev=1.20, ev_gap=0.07）をベースラインとして、fixed と confidence_weighted sizing を正式比較、n_w=12。
+- **結果**: 同一 run で fixed -14.68%、weighted -14.20%。total_profit・max_drawdown・profit_per_1000_bets は weighted で改善。hold・実運用で fixed より weighted 推奨。
+- **ログ**: experiments/logs/EXP-0030_confidence_weighted_formal_baseline.md
+- **結果 JSON**: outputs/confidence_weighted_sizing_experiments/exp0030_confidence_weighted_formal_baseline_results.json
 
 # Leaderboard Summary
 
@@ -76,6 +76,7 @@ leaderboard の 1 位。
 | — | EXP-0027 | EV percentile ROI analysis (EXP-0015/0013/0007) | 全帯赤字。高EV帯が損失源、full が相対最良 | 132〜15,407 | EV percentile 分析で有望 cutoff 候補を特定。hold。 |
 | — | EXP-0028 | odds cap (EXP-0015/0013/0007) | 最良 none。cap で ROI 悪化 | 6,307〜15,407 | 高オッズ除外では改善せず。reject。 |
 | — | EXP-0029 | probability calibration (EXP-0015/0013/0007) | baseline（sigmoid）が有利。isotonic で約5%pt悪化 | 14,705〜32,883 | isotonic は選別数約2倍で損失拡大。reject。 |
+| — | EXP-0030 | confidence_weighted formal baseline (EXP-0015) | 同一 run fixed -14.68%, weighted -14.20%, bets=14,705 | 14,705 | EXP-0015 条件で正式比較。weighted で全指標改善。hold・実運用で weighted 推奨。 |
 
 詳細は experiments/leaderboard.md 参照。
 
@@ -96,6 +97,7 @@ leaderboard の 1 位。
 - **EXP-0027**: EV percentile 別 ROI 分析。高 EV 帯（top 1〜20%）が損失源、full が相対最良。利益源となる帯はなし。有望 cutoff 候補として「高 EV 帯除外」を次の実験で検証可能。
 - **EXP-0028**: オッズキャップ実験。odds_cap 30/50/80 は none より ROI 悪化。高 EV 帯の損失原因として高オッズ単純除外は有効でなかった。reject。
 - **EXP-0029**: 確率キャリブレーション実験。isotonic は sigmoid baseline より ROI 約 5%pt 悪化・選別数約 2 倍。sigmoid 維持。reject。
+- **EXP-0030**: EXP-0015 条件で fixed vs confidence_weighted を正式比較。同一 run で weighted が ROI・total_profit・max_drawdown・profit_per_1000_bets で改善。EXP-0024/0025 の知見を EXP-0015 ベスト条件で再現。**hold**・実運用で fixed より confidence_weighted 推奨。
 - EV threshold を下げると bet 数が増える。ev=1.18 が従来 1 位（-14.54%）、ev=1.20 が 2 位（-14.88%）。
 - top_n が大きいと ROI が悪化する傾向（top_n=3 が最良、top_n=6 で -18.78%）。
 - bet sizing は fixed が最良。Kelly 系は資金制約で破綻リスクあり。
