@@ -42,7 +42,8 @@
 | - | EXP-0037 | xgboost | sigmoid | extended_features | EV帯フィルタ戦略 | skip_top20pct + 3<=EV<5/4<=EV<5 等, n_w=18 | 最良 ev_band_3_5: ROI +18.71%, profit +83,955, max_dd 36,525。ev_band_4_5: ROI +33.78%。adopt。log: experiments/logs/EXP-0037_ev_band_strategy.md。 |
 | - | EXP-0038 | xgboost | sigmoid | extended_features | EV band + probability フィルタ | skip_top20pct + 3<=EV<5 + prob>=0.05/0.08/0.10/0.12, n_w=18 | 最良 ev3_5_prob005: ROI +24.67%, profit +70,965, max_dd 18,940。adopt。log: experiments/logs/EXP-0038_ev_prob_band_strategy.md。 |
 | - | EXP-0039 | xgboost | sigmoid | extended_features | EV band + prob + race内EV順位 | 3<=EV<5 + prob>=0.05 + rank≤3/≤5/2-5/2-7, n_w=18 | baseline と rank_le_3/5 は同一。rank_2_5/2_7 は bet 激減・赤字。reject。log: experiments/logs/EXP-0039_ev_prob_rank_strategy.md。 |
-| - | EXP-0040 | xgboost | sigmoid | extended_features | ベットサイジング最適化 | 条件固定、unit=EV×prob cap 等, n_w=18 | 最良 size_by_ev_prob_capped: ROI +155.8%, profit +226,307, max_dd 3,081。adopt。log: experiments/logs/EXP-0040_bet_sizing_optimization.md。 |
+| - | EXP-0040 | xgboost | sigmoid | extended_features | ベットサイジング最適化 | 条件固定、unit=EV×prob cap 等, n_w=18 | 最良 size_by_ev_prob_capped: ROI +155.8%, profit +226,307。**参考値**（後段 stake 再計算のため過大評価。厳密値は EXP-0041）。log: experiments/logs/EXP-0040_bet_sizing_optimization.md。 |
+| - | EXP-0041 | xgboost | sigmoid | extended_features | ベットサイジング厳密検証 | 条件固定、bet 単位で stake/payout 整合, n_w=18 | 全 variant 赤字。最良 baseline_fixed: ROI -4.39%, profit -9,210。**厳密再検証の正**。log: experiments/logs/EXP-0041_bet_sizing_verified.md。 |
 | 4 | EXP-0006 | xgboost | sigmoid | extended_features | top_n_ev | top_n=3, ev=1.20 | **-14.88%** (n_w=12) | **正式 reference**（従来 1 位） |
 | 5 | EXP-0007 | xgboost | sigmoid | extended_features | top_n_ev | top_n=4, ev=1.05 | **-17.85%** (n_w=12) | top_n 局所探索で最良（hold） |
 | 6 | EXP-0006 | xgboost | sigmoid | extended_features | top_n_ev | top_n=6, ev=1.00 | **-18.78%** (n_w=12) | 正式 reference 周辺の局所最適（adopt） |
