@@ -41,11 +41,11 @@ leaderboard の 1 位。
 
 <!-- update_chat_context.py が自動更新 -->
 
-- **最新 EXP**: EXP-0031
-- **概要**: EXP-0015 + confidence_weighted を前提に高EV帯除外（no_skip / skip_top10pct / skip_top20pct）を比較、n_w=12。
-- **結果**: 同一 run で skip_top20pct が最良（ROI -8.85%、total_profit -103,665、max_drawdown 133,205、bet_count 11,871）。高EV帯除外で ROI・profit・drawdown 改善。adopt。
-- **ログ**: experiments/logs/EXP-0031_ev_high_skip.md
-- **結果 JSON**: outputs/confidence_weighted_sizing_experiments/exp0031_ev_high_skip_results.json
+- **最新 EXP**: EXP-0032
+- **概要**: EXP-0031 の正式評価。no_skip / skip_top10pct / skip_top20pct を longer horizon（n_w=18）で比較。
+- **結果**: 同一 run で skip_top20pct が最良（ROI -2.85%、total_profit -51,160、max_drawdown 133,205、bet_count 18,195）。skip_top20pct の ROI 改善が期間延長で再現。adopt。
+- **ログ**: experiments/logs/EXP-0032_ev_high_skip_longer_horizon.md
+- **結果 JSON**: outputs/ev_high_skip_experiments/exp0032_ev_high_skip_longer_horizon_results.json
 
 # Leaderboard Summary
 
@@ -78,6 +78,7 @@ leaderboard の 1 位。
 | — | EXP-0029 | probability calibration (EXP-0015/0013/0007) | baseline（sigmoid）が有利。isotonic で約5%pt悪化 | 14,705〜32,883 | isotonic は選別数約2倍で損失拡大。reject。 |
 | — | EXP-0030 | confidence_weighted formal baseline (EXP-0015) | 同一 run fixed -14.68%, weighted -14.20%, bets=14,705 | 14,705 | EXP-0015 条件で正式比較。weighted で全指標改善。hold・実運用で weighted 推奨。 |
 | — | EXP-0031 | EV high skip (EXP-0015 + confidence_weighted) | 同一 run 最良 -8.85%（skip_top20pct）, bets=11,871 | 11,871〜14,705 | 高EV帯除外で ROI・profit・drawdown 改善。adopt。 |
+| — | EXP-0032 | EV high skip longer horizon (n_w=18) | 同一 run 最良 -2.85%（skip_top20pct）, bets=18,195 | 18,195〜22,580 | longer horizon で skip_top20pct 優位再現。adopt。 |
 
 詳細は experiments/leaderboard.md 参照。
 
@@ -100,6 +101,7 @@ leaderboard の 1 位。
 - **EXP-0029**: 確率キャリブレーション実験。isotonic は sigmoid baseline より ROI 約 5%pt 悪化・選別数約 2 倍。sigmoid 維持。reject。
 - **EXP-0030**: EXP-0015 条件で fixed vs confidence_weighted を正式比較。同一 run で weighted が ROI・total_profit・max_drawdown・profit_per_1000_bets で改善。EXP-0024/0025 の知見を EXP-0015 ベスト条件で再現。**hold**・実運用で fixed より confidence_weighted 推奨。
 - **EXP-0031**: EXP-0015 + confidence_weighted を前提に高EV帯除外（no_skip / skip_top10pct / skip_top20pct）を比較。同一 run で skip_top20pct が最良（ROI -8.85%）。EXP-0027 の示唆どおり高EV帯除外が有効。**adopt**。
+- **EXP-0032**: EXP-0031 の正式評価。longer horizon（n_w=18）で no_skip / skip_top10pct / skip_top20pct を比較。skip_top20pct が最良（ROI -2.85%）。期間延長でも高EV帯除外の優位性が再現。**adopt**。
 - EV threshold を下げると bet 数が増える。ev=1.18 が従来 1 位（-14.54%）、ev=1.20 が 2 位（-14.88%）。
 - top_n が大きいと ROI が悪化する傾向（top_n=3 が最良、top_n=6 で -18.78%）。
 - bet sizing は fixed が最良。Kelly 系は資金制約で破綻リスクあり。
