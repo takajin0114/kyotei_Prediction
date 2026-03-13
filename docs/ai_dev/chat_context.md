@@ -41,11 +41,11 @@ leaderboard の 1 位。
 
 <!-- update_chat_context.py が自動更新 -->
 
-- **最新 EXP**: EXP-0028
-- **概要**: オッズキャップ実験（高 EV 帯の損失原因切り分け）。odds_cap none / 30 / 50 / 80 を EXP-0015, EXP-0013, EXP-0007 で比較、n_w=12。
-- **結果**: 最良は none。cap をかけると ROI 悪化。高オッズ除外では ROI 改善せず。reject。
-- **ログ**: experiments/logs/EXP-0028_odds_cap_experiment.md
-- **結果 JSON**: outputs/confidence_weighted_sizing_experiments/exp0028_odds_cap_experiment_results.json
+- **最新 EXP**: EXP-0029
+- **概要**: 確率キャリブレーション実験。sigmoid（baseline）vs isotonic（calibrated）を EXP-0015, EXP-0013, EXP-0007 で比較、n_w=12。
+- **結果**: 全戦略で baseline が有利。isotonic は ROI 約 5%pt 悪化・選別数約 2 倍。reject。
+- **ログ**: experiments/logs/EXP-0029_probability_calibration.md
+- **結果 JSON**: outputs/probability_calibration_experiments/exp0029_probability_calibration_results.json
 
 # Leaderboard Summary
 
@@ -75,6 +75,7 @@ leaderboard の 1 位。
 | — | EXP-0026 | Kelly sizing (EXP-0015/0013/0007) | 最良 ROI confidence_weighted -13.61%。Kelly は -22.6%〜-23% | 14,705〜15,407 | profit・drawdown は Kelly が小さい。ROI 採用 reject、リスク目的 hold。 |
 | — | EXP-0027 | EV percentile ROI analysis (EXP-0015/0013/0007) | 全帯赤字。高EV帯が損失源、full が相対最良 | 132〜15,407 | EV percentile 分析で有望 cutoff 候補を特定。hold。 |
 | — | EXP-0028 | odds cap (EXP-0015/0013/0007) | 最良 none。cap で ROI 悪化 | 6,307〜15,407 | 高オッズ除外では改善せず。reject。 |
+| — | EXP-0029 | probability calibration (EXP-0015/0013/0007) | baseline（sigmoid）が有利。isotonic で約5%pt悪化 | 14,705〜32,883 | isotonic は選別数約2倍で損失拡大。reject。 |
 
 詳細は experiments/leaderboard.md 参照。
 
@@ -94,6 +95,7 @@ leaderboard の 1 位。
 - **EXP-0026**: Kelly sizing（fraction 0.25/0.5/0.75）を fixed・confidence_weighted と比較。ROI は Kelly が悪化（-22.6%〜-23%）。profit・max_drawdown は Kelly が小さい（リスク抑制）。ROI 採用 **reject**、リスク重視時 **hold**。
 - **EXP-0027**: EV percentile 別 ROI 分析。高 EV 帯（top 1〜20%）が損失源、full が相対最良。利益源となる帯はなし。有望 cutoff 候補として「高 EV 帯除外」を次の実験で検証可能。
 - **EXP-0028**: オッズキャップ実験。odds_cap 30/50/80 は none より ROI 悪化。高 EV 帯の損失原因として高オッズ単純除外は有効でなかった。reject。
+- **EXP-0029**: 確率キャリブレーション実験。isotonic は sigmoid baseline より ROI 約 5%pt 悪化・選別数約 2 倍。sigmoid 維持。reject。
 - EV threshold を下げると bet 数が増える。ev=1.18 が従来 1 位（-14.54%）、ev=1.20 が 2 位（-14.88%）。
 - top_n が大きいと ROI が悪化する傾向（top_n=3 が最良、top_n=6 で -18.78%）。
 - bet sizing は fixed が最良。Kelly 系は資金制約で破綻リスクあり。
