@@ -99,6 +99,38 @@ def _unit_size_for_race(
     return 1.0
 
 
+def _unit_size_for_bet_kelly(
+    model_prob: float,
+    odds: float,
+    kelly_fraction: float,
+    unit_cap: float = 2.0,
+) -> float:
+    """
+    Kelly 型ベット単位: unit = kelly_fraction * edge / odds。
+    edge = model_prob * odds - 1。
+    0 以下または unit_cap 超はクランプする。
+    """
+    if odds is None or odds <= 0:
+        return 0.0
+    edge = model_prob * odds - 1.0
+    unit = kelly_fraction * (edge / odds)
+    return max(0.0, min(unit_cap, unit))
+
+
+def _comb_to_prob_from_all_comb(all_comb: List[dict]) -> Dict[str, float]:
+    """all_combinations から combination 文字列 -> probability の辞書を返す。"""
+    out: Dict[str, float] = {}
+    for c in all_comb or []:
+        comb_raw = (c.get("combination") or "").strip()
+        if comb_raw:
+            prob = c.get("probability", c.get("score", 0.0))
+            try:
+                out[comb_raw] = float(prob)
+            except (TypeError, ValueError):
+                out[comb_raw] = 0.0
+    return out
+
+
 def _load_odds_for_race(data_dir: Path, prediction_date: str, venue: str, rno: int) -> Optional[dict]:
     """指定レースのオッズJSONを読み、辞書で返す。存在しなければ None。"""
     odds_file = data_dir / f"odds_data_{prediction_date}_{venue}_R{rno}.json"
@@ -293,15 +325,15 @@ def run_verify(
         if use_selected_bets:
             selected = race.get("selected_bets") or []
             purchased_bets = len(selected)
-            ev_gap, pred_prob_gap = _ev_gap_and_prob_gap_from_combinations(all_comb)
-            unit = _unit_size_for_race(
-                ev_gap, pred_prob_gap,
-                bet_sizing_mode or "fixed",
-                bet_sizing_config,
-            )
-            bet_per_bet = unit * BET_PER_COMBINATION
+            mode = (bet_sizing_mode or "fixed").strip().lower()
+            cfg = bet_sizing_config or {}
+            use_kelly = mode == "kelly_fraction" and "kelly_fraction" in cfg
             payout = 0.0
-            if purchased_bets > 0 and actual is not None:
+            race_staked = 0.0
+            if use_kelly:
+                kelly_fraction = float(cfg.get("kelly_fraction", 0.5))
+                unit_cap = float(cfg.get("unit_cap", 2.0))
+                comb_to_prob = _comb_to_prob_from_all_comb(all_comb)
                 if repo is not None and hasattr(repo, "get_odds"):
                     odds_data = repo.get_odds(prediction_date, venue, rno)
                 else:
@@ -310,17 +342,50 @@ def run_verify(
                     c = (comb if isinstance(comb, str) else "").strip()
                     if not c:
                         continue
+                    model_prob = comb_to_prob.get(c, 0.0)
                     od = get_odds_for_combination(odds_data, c) if odds_data else None
-                    if od is not None and c.replace(" ", "") == actual.replace(" ", ""):
-                        payout += bet_per_bet * od
-                total_bet_selected += bet_per_bet * purchased_bets
+                    od_val = float(od) if od is not None and od > 0 else None
+                    unit = _unit_size_for_bet_kelly(
+                        model_prob, od_val if od_val else 0.0, kelly_fraction, unit_cap
+                    ) if od_val else 0.0
+                    stake = unit * BET_PER_COMBINATION
+                    race_staked += stake
+                    if od is not None and c.replace(" ", "") == (actual or "").replace(" ", ""):
+                        payout += stake * float(od)
+                total_bet_selected += race_staked
                 total_payout_selected += payout
                 if payout > 0:
                     hit_count_selected += 1
+                bet_per_bet = (race_staked / purchased_bets) if purchased_bets > 0 else 0.0
+            else:
+                ev_gap, pred_prob_gap = _ev_gap_and_prob_gap_from_combinations(all_comb)
+                unit = _unit_size_for_race(
+                    ev_gap, pred_prob_gap,
+                    bet_sizing_mode or "fixed",
+                    bet_sizing_config,
+                )
+                bet_per_bet = unit * BET_PER_COMBINATION
+                if purchased_bets > 0 and actual is not None:
+                    if repo is not None and hasattr(repo, "get_odds"):
+                        odds_data = repo.get_odds(prediction_date, venue, rno)
+                    else:
+                        odds_data = _load_odds_for_race(data_dir, prediction_date, venue, rno)
+                    for comb in selected:
+                        c = (comb if isinstance(comb, str) else "").strip()
+                        if not c:
+                            continue
+                        od = get_odds_for_combination(odds_data, c) if odds_data else None
+                        if od is not None and c.replace(" ", "") == actual.replace(" ", ""):
+                            payout += bet_per_bet * od
+                    total_bet_selected += bet_per_bet * purchased_bets
+                    total_payout_selected += payout
+                    if payout > 0:
+                        hit_count_selected += 1
+                race_staked = bet_per_bet * purchased_bets
             selected_bets_count += purchased_bets
             detail["purchased_bets"] = purchased_bets
             detail["payout"] = round(payout, 2)
-            detail["race_profit"] = round(payout - bet_per_bet * purchased_bets, 2) if purchased_bets > 0 else 0.0
+            detail["race_profit"] = round(payout - race_staked, 2) if purchased_bets > 0 else 0.0
 
         details.append(detail)
 

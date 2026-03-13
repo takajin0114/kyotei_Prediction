@@ -41,11 +41,11 @@ leaderboard の 1 位。
 
 <!-- update_chat_context.py が自動更新 -->
 
-- **最新 EXP**: EXP-0025
-- **概要**: confidence-weighted sizing（ev_gap_high=0.11, normal_unit=0.5）を ROI 上位 3 戦略（EXP-0015, EXP-0013, EXP-0007）に横展開。fixed_base と weighted を同条件 n_w=12 で比較。
-- **結果**: 3 戦略いずれも weighted が fixed より ROI・total_profit・max_drawdown・profit_per_1000_bets で改善。同一 run 最良は exp0013+weighted -13.61%。ROI 1 位は EXP-0015 公式 -12.71% のまま。hold・実運用で全戦略に weighted 推奨。
-- **ログ**: experiments/logs/EXP-0025_confidence_weighted_sizing_rollout.md
-- **結果 JSON**: outputs/confidence_weighted_sizing_experiments/exp0025_confidence_weighted_sizing_rollout_results.json
+- **最新 EXP**: EXP-0026
+- **概要**: Kelly 型 bet sizing（unit = kelly_fraction * edge / odds, fraction=0.25/0.5/0.75）を実装し、fixed_base・confidence_weighted と比較。対象戦略は EXP-0015, EXP-0013, EXP-0007、n_w=12。
+- **結果**: ROI は confidence_weighted が最良（-13.61%）。Kelly は -22.6%〜-23% で ROI 悪化。profit・drawdown は Kelly が小さい（リスク抑制）。ROI 採用は reject、リスク目的で hold。
+- **ログ**: experiments/logs/EXP-0026_kelly_sizing_experiment.md
+- **結果 JSON**: outputs/confidence_weighted_sizing_experiments/exp0026_kelly_sizing_experiment_results.json
 
 # Leaderboard Summary
 
@@ -72,6 +72,7 @@ leaderboard の 1 位。
 | — | EXP-0023 | top_n_ev_gap_filter + confidence_weighted_sizing | 最良 -14.31%（weighted_ev_gap_v1）, bets=14,705 | 14,705 | ROI は adopt 未達。利益指標改善。hold・実運用候補。 |
 | — | EXP-0024 | confidence_weighted_sizing threshold sweep | 最良 -14.20%（ev_gap_high=0.11, normal_unit=0.5）, bets=14,705 | 14,705 | 閾値スイープで 0.11 が最良。利益・drawdown・efficiency 改善。hold・実運用推奨。 |
 | — | EXP-0025 | confidence_weighted_sizing rollout (EXP-0015/0013/0007) | 同一 run 最良 -13.61%（exp0013+weighted）, bets=14,994 | 14,705〜15,407 | 3戦略とも weighted で改善。hold・実運用で全戦略に weighted 推奨。 |
+| — | EXP-0026 | Kelly sizing (EXP-0015/0013/0007) | 最良 ROI confidence_weighted -13.61%。Kelly は -22.6%〜-23% | 14,705〜15,407 | profit・drawdown は Kelly が小さい。ROI 採用 reject、リスク目的 hold。 |
 
 詳細は experiments/leaderboard.md 参照。
 
@@ -88,6 +89,7 @@ leaderboard の 1 位。
 - **EXP-0023**: confidence-weighted fixed sizing（ev_gap / pred_prob_gap で 2〜3 段階）。weighted_ev_gap_v1 が最良（ROI -14.31%、profit・drawdown・profit/1000bets 改善）。ROI は EXP-0015 未達で adopt 見送り。利益指標では改善あり。**ROI 最適化から利益最大化フェーズへ移行中**の検証。
 - **EXP-0024**: confidence-weighted sizing 閾値スイープ（ev_gap_high=0.09/0.10/0.11, normal_unit=0.5/0.6/0.7）。ev_gap_high=0.11, normal_unit=0.5 が最良（ROI -14.20%、profit・drawdown・profit/1000bets で EXP-0023 より改善）。ROI は EXP-0015 未達で adopt 見送り。利益効率・リスク改善のため **hold**・実運用推奨。
 - **EXP-0025**: confidence-weighted sizing を EXP-0015/0013/0007 に横展開。3 戦略とも fixed より weighted で ROI・profit・drawdown・profit/1000bets が改善。同一 run 最良 exp0013+weighted -13.61%。ROI 1 位は EXP-0015 のまま。**hold**・実運用で全戦略に weighted 推奨。
+- **EXP-0026**: Kelly sizing（fraction 0.25/0.5/0.75）を fixed・confidence_weighted と比較。ROI は Kelly が悪化（-22.6%〜-23%）。profit・max_drawdown は Kelly が小さい（リスク抑制）。ROI 採用 **reject**、リスク重視時 **hold**。
 - EV threshold を下げると bet 数が増える。ev=1.18 が従来 1 位（-14.54%）、ev=1.20 が 2 位（-14.88%）。
 - top_n が大きいと ROI が悪化する傾向（top_n=3 が最良、top_n=6 で -18.78%）。
 - bet sizing は fixed が最良。Kelly 系は資金制約で破綻リスクあり。
@@ -110,7 +112,7 @@ leaderboard の 1 位。
 # Next Experiments
 
 - 現行ベスト戦略: top_n_ev_gap_filter, top_n=3, ev=1.20, ev_gap_threshold=0.07（ROI -12.71%）。EXP-0015 で採用。
-- **ROI 最適化から利益最大化フェーズへ移行中**。EXP-0025 で confidence-weighted（ev_gap_high=0.11, normal_unit=0.5）を 3 戦略に横展開し、いずれも fixed より改善を確認。実運用では全戦略に weighted 推奨。
+- **ROI 最適化から利益最大化フェーズへ移行中**。EXP-0026 で Kelly は ROI で fixed/confidence_weighted に劣るが、profit・drawdown は小さい。実運用の ROI 目的では confidence-weighted 推奨。リスク抑制目的では Kelly は選択肢。
 - 次の実験候補: confidence-weighted × max_bets_per_race（テーマ B）、venue 別 × weighted sizing（テーマ C）を必要時に実施。
 - 会場別パラメータ拡張・別軸（モデル・特徴量・calibration）の検討を継続。
 - ensemble 不具合修正後の再評価。
