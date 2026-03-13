@@ -41,11 +41,11 @@ leaderboard の 1 位。
 
 <!-- update_chat_context.py が自動更新 -->
 
-- **最新 EXP**: EXP-0026
-- **概要**: Kelly 型 bet sizing（unit = kelly_fraction * edge / odds, fraction=0.25/0.5/0.75）を実装し、fixed_base・confidence_weighted と比較。対象戦略は EXP-0015, EXP-0013, EXP-0007、n_w=12。
-- **結果**: ROI は confidence_weighted が最良（-13.61%）。Kelly は -22.6%〜-23% で ROI 悪化。profit・drawdown は Kelly が小さい（リスク抑制）。ROI 採用は reject、リスク目的で hold。
-- **ログ**: experiments/logs/EXP-0026_kelly_sizing_experiment.md
-- **結果 JSON**: outputs/confidence_weighted_sizing_experiments/exp0026_kelly_sizing_experiment_results.json
+- **最新 EXP**: EXP-0027
+- **概要**: EV percentile 別 ROI 分析。selected bets を EV 順に並べ top 1/5/10/20/50% / full の帯ごとに ROI・profit・drawdown・profit_per_1000_bets・bet_count を集計。対象戦略 EXP-0015, EXP-0013, EXP-0007、n_w=12。
+- **結果**: 全帯で赤字。高 EV 帯（top 1〜20%）が損失源。full が相対最良。EV percentile 分析により有望 cutoff 候補（高 EV 除外）を特定。hold。
+- **ログ**: experiments/logs/EXP-0027_ev_percentile_analysis.md
+- **結果 JSON**: outputs/confidence_weighted_sizing_experiments/exp0027_ev_percentile_analysis_results.json
 
 # Leaderboard Summary
 
@@ -73,6 +73,7 @@ leaderboard の 1 位。
 | — | EXP-0024 | confidence_weighted_sizing threshold sweep | 最良 -14.20%（ev_gap_high=0.11, normal_unit=0.5）, bets=14,705 | 14,705 | 閾値スイープで 0.11 が最良。利益・drawdown・efficiency 改善。hold・実運用推奨。 |
 | — | EXP-0025 | confidence_weighted_sizing rollout (EXP-0015/0013/0007) | 同一 run 最良 -13.61%（exp0013+weighted）, bets=14,994 | 14,705〜15,407 | 3戦略とも weighted で改善。hold・実運用で全戦略に weighted 推奨。 |
 | — | EXP-0026 | Kelly sizing (EXP-0015/0013/0007) | 最良 ROI confidence_weighted -13.61%。Kelly は -22.6%〜-23% | 14,705〜15,407 | profit・drawdown は Kelly が小さい。ROI 採用 reject、リスク目的 hold。 |
+| — | EXP-0027 | EV percentile ROI analysis (EXP-0015/0013/0007) | 全帯赤字。高EV帯が損失源、full が相対最良 | 132〜15,407 | EV percentile 分析で有望 cutoff 候補を特定。hold。 |
 
 詳細は experiments/leaderboard.md 参照。
 
@@ -90,6 +91,7 @@ leaderboard の 1 位。
 - **EXP-0024**: confidence-weighted sizing 閾値スイープ（ev_gap_high=0.09/0.10/0.11, normal_unit=0.5/0.6/0.7）。ev_gap_high=0.11, normal_unit=0.5 が最良（ROI -14.20%、profit・drawdown・profit/1000bets で EXP-0023 より改善）。ROI は EXP-0015 未達で adopt 見送り。利益効率・リスク改善のため **hold**・実運用推奨。
 - **EXP-0025**: confidence-weighted sizing を EXP-0015/0013/0007 に横展開。3 戦略とも fixed より weighted で ROI・profit・drawdown・profit/1000bets が改善。同一 run 最良 exp0013+weighted -13.61%。ROI 1 位は EXP-0015 のまま。**hold**・実運用で全戦略に weighted 推奨。
 - **EXP-0026**: Kelly sizing（fraction 0.25/0.5/0.75）を fixed・confidence_weighted と比較。ROI は Kelly が悪化（-22.6%〜-23%）。profit・max_drawdown は Kelly が小さい（リスク抑制）。ROI 採用 **reject**、リスク重視時 **hold**。
+- **EXP-0027**: EV percentile 別 ROI 分析。高 EV 帯（top 1〜20%）が損失源、full が相対最良。利益源となる帯はなし。有望 cutoff 候補として「高 EV 帯除外」を次の実験で検証可能。
 - EV threshold を下げると bet 数が増える。ev=1.18 が従来 1 位（-14.54%）、ev=1.20 が 2 位（-14.88%）。
 - top_n が大きいと ROI が悪化する傾向（top_n=3 が最良、top_n=6 で -18.78%）。
 - bet sizing は fixed が最良。Kelly 系は資金制約で破綻リスクあり。
@@ -112,8 +114,8 @@ leaderboard の 1 位。
 # Next Experiments
 
 - 現行ベスト戦略: top_n_ev_gap_filter, top_n=3, ev=1.20, ev_gap_threshold=0.07（ROI -12.71%）。EXP-0015 で採用。
-- **ROI 最適化から利益最大化フェーズへ移行中**。EXP-0026 で Kelly は ROI で fixed/confidence_weighted に劣るが、profit・drawdown は小さい。実運用の ROI 目的では confidence-weighted 推奨。リスク抑制目的では Kelly は選択肢。
-- 次の実験候補: confidence-weighted × max_bets_per_race（テーマ B）、venue 別 × weighted sizing（テーマ C）を必要時に実施。
+- **ROI 最適化から利益最大化フェーズへ移行中**。EXP-0027 で EV percentile 分析を実施。高 EV 帯が損失源であることを特定。次の実験候補として「高 EV 帯除外」（top 10% または 20% skip）の検証が有望。
+- 次の実験候補: EV top 10% または 20% を skip する戦略の検証。confidence-weighted × max_bets_per_race（テーマ B）、venue 別 × weighted sizing（テーマ C）は必要時に実施。
 - 会場別パラメータ拡張・別軸（モデル・特徴量・calibration）の検討を継続。
 - ensemble 不具合修正後の再評価。
 - 条件別サブ戦略の他軸（entropy 帯・1位オッズ帯・venue/race_class）は必要時に検討（EXP-0014 で pred_prob_gap 帯は見送り）。
