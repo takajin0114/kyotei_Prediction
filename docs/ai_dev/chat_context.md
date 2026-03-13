@@ -41,11 +41,11 @@ leaderboard の 1 位。
 
 <!-- update_chat_context.py が自動更新 -->
 
-- **最新 EXP**: EXP-0033
-- **概要**: EV high skip 戦略（EXP-0015 + confidence_weighted + skip_top10/20pct）に race-level EV cap（max_ev > cap のレース除外）を追加し、ev_cap=none/3/4/5 を比較、n_w=18。
-- **結果**: 最良は skip_top20pct + ev_cap_5.0（ROI -2.27%、total_profit -23,625、max_drawdown 117,910、bet_count 10,564）。ev_cap 3.0/4.0 は ROI 悪化。EV cap 5.0 で ROI・profit・drawdown・profit_per_1000bets 改善。adopt。
-- **ログ**: experiments/logs/EXP-0033_ev_cap_experiment.md
-- **結果 JSON**: outputs/ev_cap_experiments/exp0033_ev_cap_experiment_results.json
+- **最新 EXP**: EXP-0034
+- **概要**: race-level EV cap の最適値を局所探索。skip_top20pct 固定で ev_cap=no_cap/4.5/5.0/5.5/6.0/6.5 を比較、n_w=18。
+- **結果**: ev_cap_5.0 が最良のまま（ROI -2.27%、total_profit -23,625、max_drawdown 117,910、bet_count 10,564）。4.5 は切りすぎ、5.5 以上は ROI・profit 悪化。reject。実運用は引き続き skip_top20pct + ev_cap_5.0。
+- **ログ**: experiments/logs/EXP-0034_ev_cap_local_search.md
+- **結果 JSON**: outputs/ev_cap_experiments/exp0034_ev_cap_local_search_results.json
 
 # Leaderboard Summary
 
@@ -80,6 +80,7 @@ leaderboard の 1 位。
 | — | EXP-0031 | EV high skip (EXP-0015 + confidence_weighted) | 同一 run 最良 -8.85%（skip_top20pct）, bets=11,871 | 11,871〜14,705 | 高EV帯除外で ROI・profit・drawdown 改善。adopt。 |
 | — | EXP-0032 | EV high skip longer horizon (n_w=18) | 同一 run 最良 -2.85%（skip_top20pct）, bets=18,195 | 18,195〜22,580 | longer horizon で skip_top20pct 優位再現。adopt。 |
 | — | EXP-0033 | EV high skip + EV cap (race-level) | skip_top10/20pct × ev_cap=none/3/4/5, n_w=18 | 5,999〜20,411 | 最良 skip_top20pct+ev_cap_5.0（ROI -2.27%、bets=10,564）。cap 3/4 は ROI 悪化。adopt。 |
+| — | EXP-0034 | EV cap 局所探索 (skip_top20pct 固定) | ev_cap=no_cap/4.5/5.0/5.5/6.0/6.5, n_w=18 | 9,588〜18,195 | ev_cap_5.0 が最良のまま。4.5 切りすぎ・5.5 以上悪化。reject。 |
 
 詳細は experiments/leaderboard.md 参照。
 
@@ -104,6 +105,7 @@ leaderboard の 1 位。
 - **EXP-0031**: EXP-0015 + confidence_weighted を前提に高EV帯除外（no_skip / skip_top10pct / skip_top20pct）を比較。同一 run で skip_top20pct が最良（ROI -8.85%）。EXP-0027 の示唆どおり高EV帯除外が有効。**adopt**。
 - **EXP-0032**: EXP-0031 の正式評価。longer horizon（n_w=18）で no_skip / skip_top10pct / skip_top20pct を比較。skip_top20pct が最良（ROI -2.85%）。期間延長でも高EV帯除外の優位性が再現。**adopt**。
 - **EXP-0033**: EV high skip 戦略に race-level EV cap を追加し、ev_cap=none/3/4/5 を比較（n_w=18）。skip_top20pct+ev_cap_5.0 が最良（ROI -2.27%、profit -23,625、max_drawdown 117,910、profit_per_1000bets -2,236.37、bet_count 10,564）。EV cap 3/4 は ROI 悪化。EV cap 5.0 を採用。**adopt**。
+- **EXP-0034**: EV cap 局所探索（skip_top20pct 固定、ev_cap=no_cap/4.5/5.0/5.5/6.0/6.5、n_w=18）。ev_cap_5.0 が最良のまま。4.5 は切りすぎ、5.5 以上は ROI・profit 悪化。**reject**。実運用は skip_top20pct + ev_cap_5.0 維持。
 - EV threshold を下げると bet 数が増える。ev=1.18 が従来 1 位（-14.54%）、ev=1.20 が 2 位（-14.88%）。
 - top_n が大きいと ROI が悪化する傾向（top_n=3 が最良、top_n=6 で -18.78%）。
 - bet sizing は fixed が最良。Kelly 系は資金制約で破綻リスクあり。
