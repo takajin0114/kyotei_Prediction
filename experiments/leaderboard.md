@@ -39,6 +39,7 @@
 | - | EXP-0034 | xgboost | sigmoid | extended_features | EV cap 局所探索 (skip_top20pct 固定) | ev_cap=no_cap/4.5/5.0/5.5/6.0/6.5, n_w=18 | ev_cap_5.0 が最良のまま。4.5 は切りすぎ、5.5 以上は ROI・profit 悪化。reject。log: experiments/logs/EXP-0034_ev_cap_local_search.md。 |
 | - | EXP-0035 | xgboost | sigmoid | extended_features | high EV skip 率局所探索 (ev_cap_5.0 固定) | skip_top10/15/20/25/30pct, n_w=18 | 全条件同一（ROI -2.27%、bets=10,564）。ev_cap が支配的で skip 率差なし。reject。log: experiments/logs/EXP-0035_skip_rate_local_search.md。 |
 | - | EXP-0036 | xgboost | sigmoid | extended_features | EV帯ごとの成績分析 | EV帯別 bet_count/hit_rate/ROI/profit, n_w=18 | 黒字: 3–4, 4–5, 6–8。赤字: 5–6, >=10。ev_cap=5.0 の妥当性を支持。hold。log: experiments/logs/EXP-0036_ev_band_analysis.md。 |
+| - | EXP-0037 | xgboost | sigmoid | extended_features | EV帯フィルタ戦略 | skip_top20pct + 3<=EV<5/4<=EV<5 等, n_w=18 | 最良 ev_band_3_5: ROI +18.71%, profit +83,955, max_dd 36,525。ev_band_4_5: ROI +33.78%。adopt。log: experiments/logs/EXP-0037_ev_band_strategy.md。 |
 | 4 | EXP-0006 | xgboost | sigmoid | extended_features | top_n_ev | top_n=3, ev=1.20 | **-14.88%** (n_w=12) | **正式 reference**（従来 1 位） |
 | 5 | EXP-0007 | xgboost | sigmoid | extended_features | top_n_ev | top_n=4, ev=1.05 | **-17.85%** (n_w=12) | top_n 局所探索で最良（hold） |
 | 6 | EXP-0006 | xgboost | sigmoid | extended_features | top_n_ev | top_n=6, ev=1.00 | **-18.78%** (n_w=12) | 正式 reference 周辺の局所最適（adopt） |

@@ -41,11 +41,11 @@ leaderboard の 1 位。
 
 <!-- update_chat_context.py が自動更新 -->
 
-- **最新 EXP**: EXP-0036
-- **概要**: EV帯ごとの成績分析。EXP-0015+confidence_weighted、n_w=18。EV帯別に bet_count/hit_rate/ROI/total_profit を集計。
-- **結果**: 黒字帯は 3–4, 4–5, 6–8（最良は 4–5で ROI +33.78%）。赤字は 5–6, 8–10, >=10。ev_cap=5.0 の妥当性を支持。hold。
-- **ログ**: experiments/logs/EXP-0036_ev_band_analysis.md
-- **結果**: outputs/ev_distribution_analysis/exp0036_ev_band_analysis_results.json, .csv
+- **最新 EXP**: EXP-0037
+- **概要**: EV帯フィルタ戦略の検証。skip_top20pct のうえで 3<=EV<5 / 4<=EV<5 等の EV 帯のみ購入、n_w=18。
+- **結果**: 全 EV 帯条件でベースライン（EV<=5）を上回る。最良 ev_band_3_5: ROI +18.71%、total_profit +83,955、max_drawdown 36,525。ev_band_4_5: ROI +33.78%。adopt。
+- **ログ**: experiments/logs/EXP-0037_ev_band_strategy.md
+- **結果 JSON**: outputs/ev_band_strategy/exp0037_ev_band_strategy_results.json
 
 # Leaderboard Summary
 
@@ -83,6 +83,7 @@ leaderboard の 1 位。
 | — | EXP-0034 | EV cap 局所探索 (skip_top20pct 固定) | ev_cap=no_cap/4.5/5.0/5.5/6.0/6.5, n_w=18 | 9,588〜18,195 | ev_cap_5.0 が最良のまま。4.5 切りすぎ・5.5 以上悪化。reject。 |
 | — | EXP-0035 | high EV skip 率局所探索 (ev_cap_5.0 固定) | skip_top10/15/20/25/30pct, n_w=18 | 10,564（全条件同一） | 全条件同一。ev_cap が支配的。reject。 |
 | — | EXP-0036 | EV帯ごとの成績分析 | EV帯別 bet_count/hit_rate/ROI/profit, n_w=18 | 帯別 | 黒字: 3–4, 4–5, 6–8。ev_cap=5.0 支持。hold。 |
+| — | EXP-0037 | EV帯フィルタ戦略 | 3<=EV<5 / 4<=EV<5 等, n_w=18 | 2,079〜10,564 | 最良 ev_band_3_5: ROI +18.71%, profit +83,955。ev_band_4_5: ROI +33.78%。adopt。 |
 
 詳細は experiments/leaderboard.md 参照。
 
@@ -110,6 +111,7 @@ leaderboard の 1 位。
 - **EXP-0034**: EV cap 局所探索（skip_top20pct 固定、ev_cap=no_cap/4.5/5.0/5.5/6.0/6.5、n_w=18）。ev_cap_5.0 が最良のまま。4.5 は切りすぎ、5.5 以上は ROI・profit 悪化。**reject**。実運用は skip_top20pct + ev_cap_5.0 維持。
 - **EXP-0035**: high EV skip 率局所探索（ev_cap_5.0 固定、skip_top10/15/20/25/30pct、n_w=18）。全条件で同一結果（ROI -2.27%、bets=10,564）。ev_cap が支配的で skip 率差なし。**reject**。実運用は skip_top20pct + ev_cap_5.0 維持。
 - **EXP-0036**: EV帯ごとの成績分析（n_w=18）。黒字帯: 3–4（+6.07%）, 4–5（+33.78%）, 6–8（+4.05%）。赤字: 5–6, 8–10, >=10。ev_cap=5.0 の妥当性を支持。**hold**。
+- **EXP-0037**: EV帯フィルタ戦略（n_w=18）。黒字帯のみ購入でベースラインを大きく上回る。ev_band_3_5: ROI +18.71%、profit +83,955、max_dd 36,525。ev_band_4_5: ROI +33.78%。**adopt**。実運用候補を skip_top20pct + 3<=EV<5 に更新。
 - EV threshold を下げると bet 数が増える。ev=1.18 が従来 1 位（-14.54%）、ev=1.20 が 2 位（-14.88%）。
 - top_n が大きいと ROI が悪化する傾向（top_n=3 が最良、top_n=6 で -18.78%）。
 - bet sizing は fixed が最良。Kelly 系は資金制約で破綻リスクあり。
