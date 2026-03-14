@@ -51,6 +51,7 @@
 | - | EXP-0046 | xgboost | sigmoid | extended_features | variant_d 近傍安定化探索（厳密評価） | d_base/d_hi475/d_mid 等, n_w=24 | d_hi475: ROI +13.65%, max_dd 9,420, longest_lose=4。主軸を安定版 d_hi475 に更新。log: experiments/logs/EXP-0046_variant_d_stability_search_verified.md。 |
 | - | EXP-0047 | xgboost | sigmoid | extended_features | d_hi475 運用制御（厳密評価） | base/cap1/dd_guard/sizing_80 等, n_w=24 | base 維持。保守版 sizing_80 で max_dd・worst_w 改善。2本立て採用。log: experiments/logs/EXP-0047_d_hi475_execution_controls_verified.md。 |
 | - | EXP-0048 | xgboost | sigmoid | extended_features | 通常/保守モード切替ルール（厳密評価） | normal_only/switch_dd5000/recover 等, n_w=24 | 主軸は通常版維持。switch_dd5000 で profit・max_dd 改善をオプション化。log: experiments/logs/EXP-0048_mode_switch_rules_verified.md。 |
+| - | EXP-0049 | xgboost | sigmoid | extended_features | switch_dd 閾値感度（厳密評価） | switch_dd3000〜7000, n_w=24 | 推奨閾値を 5000→4000 に更新。switch_dd4000 で profit 最大・max_dd 同水準。log: experiments/logs/EXP-0049_dd_threshold_sensitivity_verified.md。 |
 | 4 | EXP-0006 | xgboost | sigmoid | extended_features | top_n_ev | top_n=3, ev=1.20 | **-14.88%** (n_w=12) | **正式 reference**（従来 1 位） |
 | 5 | EXP-0007 | xgboost | sigmoid | extended_features | top_n_ev | top_n=4, ev=1.05 | **-17.85%** (n_w=12) | top_n 局所探索で最良（hold） |
 | 6 | EXP-0006 | xgboost | sigmoid | extended_features | top_n_ev | top_n=6, ev=1.00 | **-18.78%** (n_w=12) | 正式 reference 周辺の局所最適（adopt） |
