@@ -41,11 +41,11 @@ leaderboard の 1 位。
 
 <!-- update_chat_context.py が自動更新 -->
 
-- **最新 EXP**: EXP-0050
-- **概要**: switch_dd4000 の長期頑健性確認。d_hi475 前提で normal_only / conservative_only / switch_dd4000 / switch_dd5000 を n_windows=24・30・36 で比較。
-- **結果**: 24→30→36 で switch_dd4000 が常に profit・ROI 1位。30/36 でも normal より profit/DD で優位維持。switch_dd4000 を「実運用標準候補」へ格上げ。
-- **ログ**: experiments/logs/EXP-0050_switch_dd4000_robustness_verified.md
-- **結果 JSON**: outputs/selection_verified/exp0050_switch_dd4000_robustness_verified_results.json
+- **最新 EXP**: EXP-0051
+- **概要**: switch_dd4000 の期間安定性・regime 差分析。n_w=36 でブロック別 profit/ROI/DD・switch 発動回数・発動 window を集計。
+- **結果**: 全ブロックで switch が normal 以上。後半（7月後半〜10月）で成績悪化傾向。注意条件付き標準採用。
+- **ログ**: experiments/logs/EXP-0051_switch_dd4000_regime_analysis.md
+- **結果 JSON**: outputs/selection_verified/exp0051_switch_dd4000_regime_analysis_results.json
 
 # Leaderboard Summary
 
@@ -97,6 +97,7 @@ leaderboard の 1 位。
 | — | EXP-0048 | 通常/保守モード切替ルール（厳密評価） | normal_only/switch_dd5000 等, n_w=24 | 704 | 主軸通常版維持。switch_dd5000 をオプション化。 |
 | — | EXP-0049 | switch_dd 閾値感度（厳密評価） | switch_dd3000〜7000, n_w=24 | 704 | 推奨閾値を switch_dd4000 に更新。profit 最大・max_dd 同水準。 |
 | — | EXP-0050 | switch_dd4000 長期頑健性（厳密評価） | normal_only/switch_dd4000/5000, n_w=24/30/36 | 704〜1031 | 30/36 でも優位維持。実運用標準候補へ格上げ。 |
+| — | EXP-0051 | switch_dd4000 期間安定性・regime（厳密評価） | normal_only/switch_dd4000/conservative, n_w=36, 6block | 1031 | 後半で悪化傾向。注意条件付き標準採用。 |
 
 詳細は experiments/leaderboard.md 参照。
 
@@ -138,6 +139,7 @@ leaderboard の 1 位。
 - **EXP-0048**: **通常/保守モード切替ルール**（n_w=24）。normal_only / conservative_only / switch_after_2_loss / switch_after_3_loss / switch_dd5000 / recover_after_1win を比較。**switch_dd5000**（累積DD≥5000で当該 window を stake=80）が profit 10,814・max_dd 7,766 で最良。**結論: 通常版主軸維持＋切替版をオプション化**。推奨オプション: switch_dd5000。補助: switch_after_2_loss。
 - **EXP-0049**: **switch_dd 閾値感度**（n_w=24）。閾値 3000/4000/5000/6000/7000 を比較。**switch_dd4000** が total_profit 11,744 で最大、max_dd 7,766 は 5000 と同水準。**推奨閾値を 5000 から 4000 に更新**（別閾値へ更新）。
 - **EXP-0050**: **switch_dd4000 長期頑健性**（n_w=24/30/36）。normal_only / conservative_only / switch_dd4000 / switch_dd5000 を比較。24→30→36 で switch_dd4000 が常に profit・ROI 1位。30/36 でも normal より profit 高・max_dd 低（または唯一黒字）を維持。**switch_dd4000 を「推奨オプション」から「実運用標準候補」へ格上げ**（adopt）。
+- **EXP-0051**: **switch_dd4000 期間安定性・regime**（n_w=36、6ブロック）。全ブロックで switch が normal 以上。後半（7月後半〜10月）で成績悪化傾向。switch 発動 22/36 窓。**注意条件付き標準採用**（adopt with caveats）：後半期間の損失を前提とした資金配分・モニタリングを推奨。
 - EV threshold を下げると bet 数が増える。ev=1.18 が従来 1 位（-14.54%）、ev=1.20 が 2 位（-14.88%）。
 - top_n が大きいと ROI が悪化する傾向（top_n=3 が最良、top_n=6 で -18.78%）。
 - bet sizing は fixed が最良。Kelly 系は資金制約で破綻リスクあり。
@@ -160,7 +162,7 @@ leaderboard の 1 位。
 # Next Experiments
 
 - 現行ベスト戦略: top_n_ev_gap_filter, top_n=3, ev=1.20, ev_gap_threshold=0.07（ROI -12.71%）。EXP-0015 で採用。
-- **実運用候補（厳密評価）**: EXP-0050 で switch_dd4000 の長期頑健性を確認済み。**主軸**: 通常版固定（d_hi475 + stake=100）。**実運用標準候補**: **switch_dd4000**（累積DD≥4000で当該 window を stake=80）。n_w=30/36 でも優位維持のため「推奨オプション」から格上げ。補助: switch_after_2_loss、参考: switch_dd5000。
+- **実運用候補（厳密評価）**: EXP-0051 で switch_dd4000 の期間安定性を確認済み。**主軸**: 通常版固定（d_hi475 + stake=100）。**実運用標準候補**: **switch_dd4000**（累積DD≥4000で当該 window を stake=80）。**注意条件**（EXP-0051）: 後半（7月後半〜10月相当）で成績悪化傾向のため、後半期間の資金配分・ブロック単位モニタリングを推奨。補助: switch_after_2_loss、参考: switch_dd5000。
 - 次の実験候補: 別軸（venue 別 × weighted sizing、他 EV 帯の微調整等）は必要時に実施。
 - 会場別パラメータ拡張・別軸（モデル・特徴量・calibration）の検討を継続。
 - ensemble 不具合修正後の再評価。
