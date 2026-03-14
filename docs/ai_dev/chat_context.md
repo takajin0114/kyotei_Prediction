@@ -41,11 +41,11 @@ leaderboard の 1 位。
 
 <!-- update_chat_context.py が自動更新 -->
 
-- **最新 EXP**: EXP-0043
-- **概要**: selection 条件の局所探索（baseline_c / baseline_b 周辺）。EV 帯・prob 閾値を微調整し、厳密評価のまま赤字幅縮小・黒字化を検証、n_w=18。
-- **結果**: 複数条件で黒字。最良 variant_j（4.3≤EV<4.9）: ROI +12.34%、profit +11,660。variant_l（4.3≤EV<4.9, prob≥0.05）: +5.82%、max_dd 15,040。variant_d（4≤EV<4.8）: +4.07%。EXP-0042 の baseline_c より改善。
-- **ログ**: experiments/logs/EXP-0043_selection_local_search_verified.md
-- **結果 JSON**: outputs/selection_verified/exp0043_selection_local_search_verified_results.json
+- **最新 EXP**: EXP-0044
+- **概要**: EV帯の超微調整（4.3≤EV<4.9 周辺）。EXP-0043 で有望だった帯を 0.05〜0.10 刻みで細かく刻み、ROI・total_profit・max_drawdown の改善を検証、n_w=18。
+- **結果**: reference_1/2 を上回る条件が複数。最良 variant_g（4.40≤EV<4.85）: ROI +30.46%、profit +21,660。variant_c（4.30≤EV<4.80）: +27.57%、profit +22,440。variant_d（4.30≤EV<4.80, prob≥0.05）: +18.34%、max_dd 11,820。
+- **ログ**: experiments/logs/EXP-0044_ev_band_fine_tuning_verified.md
+- **結果 JSON**: outputs/selection_verified/exp0044_ev_band_fine_tuning_verified_results.json
 
 # Leaderboard Summary
 
@@ -90,6 +90,7 @@ leaderboard の 1 位。
 | — | EXP-0041 | ベットサイジング厳密検証 | 条件固定、bet 単位 stake/payout 整合, n_w=18 | 2,097 | 厳密再検証。全 variant 赤字、最良 baseline_fixed ROI -4.39%。 |
 | — | EXP-0042 | selection 条件厳密再検証 | stake=100 固定、selection のみ比較, n_w=18 | 1,628〜6,942 | 最良 baseline_c（4≤EV<5）ROI -5.17%。次点 baseline_b。 |
 | — | EXP-0043 | selection 局所探索（厳密評価） | baseline_c/b 周辺の EV・prob 微調整, n_w=18 | 656〜2,465 | 最良 variant_j ROI +12.34%。variant_l +5.82%、max_dd 15,040。 |
+| — | EXP-0044 | EV帯超微調整（厳密評価） | 4.3≤EV<4.9 周辺の EV 帯・prob 微調整, n_w=18 | 495〜1,112 | 最良 variant_g ROI +30.46%。variant_d（prob≥0.05）: +18.34%, max_dd 11,820。 |
 
 詳細は experiments/leaderboard.md 参照。
 
@@ -124,6 +125,7 @@ leaderboard の 1 位。
 - **EXP-0041**: ベットサイジングの**厳密再検証**（各 bet で stake と payout を対応させて計算）。全 variant で赤字。最良は baseline_fixed（ROI -4.39%、total_profit -9,210）。EXP-0040 の数値は過大評価であり、**評価系の厳密化は EXP-0041** で実施した。
 - **EXP-0042**: **selection 条件の厳密再採点**（stake=100 固定）。baseline_c（4≤EV<5）と baseline_b（3≤EV<5+prob≥0.05）が候補となり、いずれも赤字だったが最もマシな条件として整理した。
 - **EXP-0043**: **selection の局所探索**（EXP-0042 の baseline_c / baseline_b 周辺で EV 帯・prob 閾値を微調整、同一厳密評価）。複数条件で黒字。最良 variant_j（4.3≤EV<4.9）: ROI +12.34%。バランス重視は variant_l（4.3≤EV<4.9, prob≥0.05）: +5.82%、max_dd 15,040。実運用候補を **skip_top20pct + 4.3≤EV<4.9**（必要なら prob≥0.05）に更新。
+- **EXP-0044**: **EV帯の超微調整**（4.3≤EV<4.9 周辺を 0.05〜0.10 刻みで探索、同一厳密評価）。reference_1/2 を上回る条件が複数。最良 variant_g（4.40≤EV<4.85）: ROI +30.46%、profit +21,660。variant_d（4.30≤EV<4.80, prob≥0.05）: +18.34%、max_dd 11,820。実運用候補を **skip_top20pct + 4.40≤EV<4.85**（リスク重視時は 4.30≤EV<4.80 + prob≥0.05）に更新。
 - EV threshold を下げると bet 数が増える。ev=1.18 が従来 1 位（-14.54%）、ev=1.20 が 2 位（-14.88%）。
 - top_n が大きいと ROI が悪化する傾向（top_n=3 が最良、top_n=6 で -18.78%）。
 - bet sizing は fixed が最良。Kelly 系は資金制約で破綻リスクあり。
@@ -146,7 +148,7 @@ leaderboard の 1 位。
 # Next Experiments
 
 - 現行ベスト戦略: top_n_ev_gap_filter, top_n=3, ev=1.20, ev_gap_threshold=0.07（ROI -12.71%）。EXP-0015 で採用。
-- **実運用候補（n_w=18・厳密評価）**: EXP-0043 で baseline_c/b 周辺を局所探索し、**skip_top20pct + 4.3≤EV<4.9**（variant_j / variant_l）で黒字を確認。推奨は variant_l（prob≥0.05 で max_dd 15,040）。sizing は stake=100 固定または EXP-0041 で相対的にマシな variant を参考とする。
+- **実運用候補（n_w=18・厳密評価）**: EXP-0044 で 4.3≤EV<4.9 周辺を超微調整し、**skip_top20pct + 4.40≤EV<4.85**（variant_g）で ROI +30.46%。リスク重視時は **skip_top20pct + 4.30≤EV<4.80 + prob≥0.05**（variant_d、max_dd 11,820）。sizing は stake=100 固定。
 - 次の実験候補: 別軸（venue 別 × weighted sizing、他 EV 帯の微調整等）は必要時に実施。
 - 会場別パラメータ拡張・別軸（モデル・特徴量・calibration）の検討を継続。
 - ensemble 不具合修正後の再評価。
