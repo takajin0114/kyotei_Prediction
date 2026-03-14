@@ -59,6 +59,7 @@
 | - | EXP-0054 | xgboost | sigmoid | extended_features | Low Payout Regime Filter（厳密評価） | d_hi475+switch_dd4000+EV/odds/top1_prob フィルタ, n_w=36 | 低配当回避で profit/DD 改善。CASE2 最良・CASE6 バランス型。hold。log: experiments/logs/EXP-0054_low_payout_filter.md。 |
 | - | EXP-0055 | xgboost | sigmoid | extended_features | Low Payout Filter 頑健性（厳密評価） | baseline/CASE2/CASE4/CASE5/CASE6, n_w=24/30/36 | CASE2 攻め版・CASE6 実運用版の2本立て採用。log: experiments/logs/EXP-0055_low_payout_filter_robustness.md。 |
 | - | EXP-0056 | xgboost | sigmoid | extended_features | CASE6 複合条件（厳密評価） | CASE6+EV≥4.30/4.40/4.50, n_w=24/30/36 | CASE6 単体を標準採用。複合EVは bet 減・longest_lose 増で置き換え見送り。log: experiments/logs/EXP-0056_case6_composite_filter.md。 |
+| - | EXP-0057 | xgboost | sigmoid | extended_features | CASE6+攻め用小ロット混成（厳密評価） | CASE6 100%+CASE2/CASE6_ev_ge_450 25%/50%, n_w=24/30/36 | 混成で profit 改善するが max_dd・longest_lose 悪化。標準は CASE6 単体維持、混成は攻め用オプション。log: experiments/logs/EXP-0057_mixed_strategy.md。 |
 | 4 | EXP-0006 | xgboost | sigmoid | extended_features | top_n_ev | top_n=3, ev=1.20 | **-14.88%** (n_w=12) | **正式 reference**（従来 1 位） |
 | 5 | EXP-0007 | xgboost | sigmoid | extended_features | top_n_ev | top_n=4, ev=1.05 | **-17.85%** (n_w=12) | top_n 局所探索で最良（hold） |
 | 6 | EXP-0006 | xgboost | sigmoid | extended_features | top_n_ev | top_n=6, ev=1.00 | **-18.78%** (n_w=12) | 正式 reference 周辺の局所最適（adopt） |

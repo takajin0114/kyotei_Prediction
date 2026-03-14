@@ -41,11 +41,11 @@ leaderboard の 1 位。
 
 <!-- update_chat_context.py が自動更新 -->
 
-- **最新 EXP**: EXP-0056
-- **概要**: CASE6 ベース複合条件。CASE6+EV≥4.30/4.40/4.50 を n_w=24/30/36 で比較。
-- **結果**: CASE6 単体が実運用向きバランス最良。CASE6+軽EVフィルタへの置き換えは行わず、CASE6 単体を標準採用。
-- **ログ**: experiments/logs/EXP-0056_case6_composite_filter.md
-- **結果 JSON**: outputs/selection_verified/exp0056_case6_composite_filter_results.json
+- **最新 EXP**: EXP-0057
+- **概要**: CASE6 標準 + 攻め用小ロット混成。CASE6 100% + CASE2 / CASE6_ev_ge_450 を 25%・50% で併用し n_w=24/30/36 で比較。
+- **結果**: 混成で total_profit 改善（CASE6_C2_50 で 17,560 vs CASE6 単体 8,764）するが max_drawdown・longest_losing_streak 悪化。実運用標準は CASE6 単体維持、混成は攻め用オプションとして許容。
+- **ログ**: experiments/logs/EXP-0057_mixed_strategy.md
+- **結果 JSON**: outputs/selection_verified/exp0057_mixed_standard_attack_results.json
 
 # Leaderboard Summary
 
