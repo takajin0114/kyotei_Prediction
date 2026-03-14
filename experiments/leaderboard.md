@@ -60,6 +60,9 @@
 | - | EXP-0055 | xgboost | sigmoid | extended_features | Low Payout Filter 頑健性（厳密評価） | baseline/CASE2/CASE4/CASE5/CASE6, n_w=24/30/36 | CASE2 攻め版・CASE6 実運用版の2本立て採用。log: experiments/logs/EXP-0055_low_payout_filter_robustness.md。 |
 | - | EXP-0056 | xgboost | sigmoid | extended_features | CASE6 複合条件（厳密評価） | CASE6+EV≥4.30/4.40/4.50, n_w=24/30/36 | CASE6 単体を標準採用。複合EVは bet 減・longest_lose 増で置き換え見送り。log: experiments/logs/EXP-0056_case6_composite_filter.md。 |
 | - | EXP-0057 | xgboost | sigmoid | extended_features | CASE6+攻め用小ロット混成（厳密評価） | CASE6 100%+CASE2/CASE6_ev_ge_450 25%/50%, n_w=24/30/36 | 混成で profit 改善するが max_dd・longest_lose 悪化。標準は CASE6 単体維持、混成は攻め用オプション。log: experiments/logs/EXP-0057_mixed_strategy.md。 |
+| - | EXP-0058 | xgboost | sigmoid | extended_features | CASE6+CASE2 stake最適化（厳密評価） | C6:C2=100:0〜100:100, n_w=24/30/36 | 最大profit/ROI/profit_dd は100:100。longest_lose 14のため標準はCASE6単体維持、100:50/100は攻め用。log: experiments/logs/EXP-0058_stake_optimization.md。 |
+| - | EXP-0059 | xgboost | sigmoid | extended_features | CASE2 フィルタ改善（厳密評価） | CASE2_base/prob/odds/prob_odds/full, n_w=24/30/36 | profit維持+longest_lose短縮は未達成。攻め戦略はCASE2_base維持。log: experiments/logs/EXP-0059_case2_filter_refinement.md。 |
+| - | EXP-0060 | xgboost | sigmoid | extended_features | CASE2 race hardness（厳密評価） | CASE2_base + top1_prob≤0.35/0.40/0.45, n_w=24/30/36 | hardnessでprofit・profit/dd改善するがlongest_lose悪化。CASE2_base維持。log: experiments/logs/EXP-0060_case2_race_hardness.md。 |
 | 4 | EXP-0006 | xgboost | sigmoid | extended_features | top_n_ev | top_n=3, ev=1.20 | **-14.88%** (n_w=12) | **正式 reference**（従来 1 位） |
 | 5 | EXP-0007 | xgboost | sigmoid | extended_features | top_n_ev | top_n=4, ev=1.05 | **-17.85%** (n_w=12) | top_n 局所探索で最良（hold） |
 | 6 | EXP-0006 | xgboost | sigmoid | extended_features | top_n_ev | top_n=6, ev=1.00 | **-18.78%** (n_w=12) | 正式 reference 周辺の局所最適（adopt） |
