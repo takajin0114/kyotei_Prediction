@@ -41,11 +41,11 @@ leaderboard の 1 位。
 
 <!-- update_chat_context.py が自動更新 -->
 
-- **最新 EXP**: EXP-0060
-- **概要**: CASE2 race hardness。CASE2_base に top1_prob ≤ 0.35/0.40/0.45 を追加した 4 条件を n_w=24/30/36 で比較。
-- **結果**: hardness で profit・profit/dd は改善するが longest_losing_streak は悪化。採用ルール（3条件同時）未達のため CASE2_base 維持。
-- **ログ**: experiments/logs/EXP-0060_case2_race_hardness.md
-- **結果 JSON**: outputs/selection_verified/exp0060_case2_race_hardness_results.json
+- **最新 EXP**: EXP-0061
+- **概要**: Stop/Resume Rule。CASE6 / CASE2 / MIX に window 内 N 連敗で残り bet 停止（stop3/stop4）を適用し、max_drawdown・longest_losing_streak・total_profit のバランスを評価。
+- **結果**: CASE2 にのみ stop が有効。CASE2_stop4 で total_profit 増・max_dd 改善・longest_lose 6。CASE6/MIX は stop で profit 激減・longest_lose 悪化のため不採用。
+- **ログ**: experiments/logs/EXP-0061_stop_resume_rules.md
+- **結果 JSON**: outputs/selection_verified/exp0061_stop_resume_rules_results.json
 
 # Leaderboard Summary
 
@@ -103,6 +103,7 @@ leaderboard の 1 位。
 | — | EXP-0054 | Low Payout Regime Filter（厳密評価） | EV/odds/top1_prob フィルタ, n_w=36 | 343〜1031 | 低配当回避で profit/DD 改善。CASE2 最良・CASE6 バランス。hold。 |
 | — | EXP-0055 | Low Payout Filter 頑健性（厳密評価） | n_w=24/30/36 比較 | 343〜1031 | CASE2 攻め版・CASE6 実運用版 2本立て採用。 |
 | — | EXP-0056 | CASE6 複合条件（厳密評価） | CASE6+EV≥4.30/4.40/4.50, n_w=24/30/36 | 297〜1031 | CASE6 単体を標準採用。複合EVは置き換え見送り。 |
+| — | EXP-0061 | Stop/Resume Rule（厳密評価） | CASE6/CASE2/MIX × base/stop3/stop4, n_w=24/30/36 | 119〜703 | CASE2のみstop採用。CASE2_stop4でprofit増・max_dd改善・longest_lose 6。 |
 
 詳細は experiments/leaderboard.md 参照。
 
@@ -150,6 +151,7 @@ leaderboard の 1 位。
 - **EXP-0054**: **Low Payout Regime Filter**（d_hi475+switch_dd4000 に EV≥4.50/4.60、odds≥10/12/15、top1_prob≤0.35 を追加）。全 CASE で baseline より profit・max_dd 改善。CASE2 最良（profit 17,592）、CASE6 バランス型（profit 8,764、longest_lose 5）。**hold**。
 - **EXP-0055**: **Low Payout Filter 頑健性**（n_w=24/30/36 で baseline/CASE2/CASE4/CASE5/CASE6 を比較）。CASE2 は全期間で profit 1 位だが bet 343・longest_lose 9・block 2 依存大。CASE6 は 30/36 で 2 位・longest_lose 5 で安定。**結論**: CASE2 を攻め版、CASE6 を実運用版として **2 本立て採用**。
 - **EXP-0056**: **CASE6 ベース複合条件**（CASE6+EV≥4.30/4.40/4.50 を n_w=24/30/36 で比較）。CASE6_ev_ge_450 は profit 最良だが bet 297・longest_lose 10。CASE6 単体が bet 533・longest_lose 5 でバランス最良。**結論**: **CASE6 単体を標準採用**。CASE6+軽EVフィルタへの置き換えは行わない。
+- **EXP-0061**: **Stop/Resume Rule**（window 内 N 連敗で残り bet 停止、次 window で再開）。CASE6/CASE2/MIX × base/stop3/stop4 を比較。**CASE2 にのみ** stop が有効：CASE2_stop4 で total_profit 増・max_dd 改善・longest_lose 6。CASE6/MIX は stop で profit 激減・longest_lose 悪化。**結論**: **3. CASE2 のみ stop 採用**（CASE2_stop4 推奨）。
 - EV threshold を下げると bet 数が増える。ev=1.18 が従来 1 位（-14.54%）、ev=1.20 が 2 位（-14.88%）。
 - top_n が大きいと ROI が悪化する傾向（top_n=3 が最良、top_n=6 で -18.78%）。
 - bet sizing は fixed が最良。Kelly 系は資金制約で破綻リスクあり。

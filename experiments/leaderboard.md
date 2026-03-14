@@ -63,6 +63,7 @@
 | - | EXP-0058 | xgboost | sigmoid | extended_features | CASE6+CASE2 stake最適化（厳密評価） | C6:C2=100:0〜100:100, n_w=24/30/36 | 最大profit/ROI/profit_dd は100:100。longest_lose 14のため標準はCASE6単体維持、100:50/100は攻め用。log: experiments/logs/EXP-0058_stake_optimization.md。 |
 | - | EXP-0059 | xgboost | sigmoid | extended_features | CASE2 フィルタ改善（厳密評価） | CASE2_base/prob/odds/prob_odds/full, n_w=24/30/36 | profit維持+longest_lose短縮は未達成。攻め戦略はCASE2_base維持。log: experiments/logs/EXP-0059_case2_filter_refinement.md。 |
 | - | EXP-0060 | xgboost | sigmoid | extended_features | CASE2 race hardness（厳密評価） | CASE2_base + top1_prob≤0.35/0.40/0.45, n_w=24/30/36 | hardnessでprofit・profit/dd改善するがlongest_lose悪化。CASE2_base維持。log: experiments/logs/EXP-0060_case2_race_hardness.md。 |
+| - | EXP-0061 | xgboost | sigmoid | extended_features | Stop/Resume Rule（厳密評価） | CASE6/CASE2/MIX × base/stop3/stop4, n_w=24/30/36 | CASE2のみstop採用。CASE2_stop4でprofit増・max_dd改善・longest_lose 6。log: experiments/logs/EXP-0061_stop_resume_rules.md。 |
 | 4 | EXP-0006 | xgboost | sigmoid | extended_features | top_n_ev | top_n=3, ev=1.20 | **-14.88%** (n_w=12) | **正式 reference**（従来 1 位） |
 | 5 | EXP-0007 | xgboost | sigmoid | extended_features | top_n_ev | top_n=4, ev=1.05 | **-17.85%** (n_w=12) | top_n 局所探索で最良（hold） |
 | 6 | EXP-0006 | xgboost | sigmoid | extended_features | top_n_ev | top_n=6, ev=1.00 | **-18.78%** (n_w=12) | 正式 reference 周辺の局所最適（adopt） |
