@@ -41,11 +41,11 @@ leaderboard の 1 位。
 
 <!-- update_chat_context.py が自動更新 -->
 
-- **最新 EXP**: EXP-0052
-- **概要**: Seasonality/Regime 分析。月別・block・累積曲線・switch 発動・regime 特徴（bet_count/hit_rate/EV）を n_w=36 で集計。
-- **結果**: 月別で08・09が悪化。負け期間は bet 数少なめ・hit_rate 高め・EV 同程度。分析知見として hold。
-- **ログ**: experiments/logs/EXP-0052_seasonality_analysis.md
-- **結果 JSON**: outputs/selection_verified/exp0052_seasonality_analysis_results.json
+- **最新 EXP**: EXP-0053
+- **概要**: Payout/Odds Regime 分析。的中時オッズ・払戻・profit_per_hit を block/月別で集計（n_w=36）。
+- **結果**: 負け block は hit_odds 低・payout_per_hit 約半額。利益悪化は高配当ヒット不足で説明できる。分析知見として hold。
+- **ログ**: experiments/logs/EXP-0053_payout_regime_analysis.md
+- **結果 JSON**: outputs/selection_verified/exp0053_payout_regime_analysis_results.json
 
 # Leaderboard Summary
 
@@ -99,6 +99,7 @@ leaderboard の 1 位。
 | — | EXP-0050 | switch_dd4000 長期頑健性（厳密評価） | normal_only/switch_dd4000/5000, n_w=24/30/36 | 704〜1031 | 30/36 でも優位維持。実運用標準候補へ格上げ。 |
 | — | EXP-0051 | switch_dd4000 期間安定性・regime（厳密評価） | normal_only/switch_dd4000/conservative, n_w=36, 6block | 1031 | 後半で悪化傾向。注意条件付き標準採用。 |
 | — | EXP-0052 | Seasonality/Regime 分析（厳密評価） | 月別・block・累積・switch・regime特徴, n_w=36 | 1031 | 月別・block強弱・負けはhit_rate高め・bet少なめ。hold。 |
+| — | EXP-0053 | Payout/Odds Regime 分析（厳密評価） | 的中時オッズ・払戻・profit_per_hit, n_w=36 | 1031 | 負けblockはhit_odds低・payout約半額。利益悪化は高配当不足で説明。hold。 |
 
 詳細は experiments/leaderboard.md 参照。
 
@@ -142,6 +143,7 @@ leaderboard の 1 位。
 - **EXP-0050**: **switch_dd4000 長期頑健性**（n_w=24/30/36）。normal_only / conservative_only / switch_dd4000 / switch_dd5000 を比較。24→30→36 で switch_dd4000 が常に profit・ROI 1位。30/36 でも normal より profit 高・max_dd 低（または唯一黒字）を維持。**switch_dd4000 を「推奨オプション」から「実運用標準候補」へ格上げ**（adopt）。
 - **EXP-0051**: **switch_dd4000 期間安定性・regime**（n_w=36、6ブロック）。全ブロックで switch が normal 以上。後半（7月後半〜10月）で成績悪化傾向。switch 発動 22/36 窓。**注意条件付き標準採用**（adopt with caveats）：後半期間の損失を前提とした資金配分・モニタリングを推奨。
 - **EXP-0052**: **Seasonality/Regime 分析**（月別・block・累積曲線・switch 発動・regime 特徴）。月別で 08・09 が悪化。負けブロックは bet 数少なめ・hit_rate 高め・EV 同程度。オッズ分布の regime 差の可能性。**hold**（分析知見の整理）。
+- **EXP-0053**: **Payout/Odds Regime 分析**（的中時オッズ・払戻・profit_per_hit の block/月別）。勝ち block は avg_hit_odds 18.44・payout_per_hit 1,810、負け block は 8.52・734。hit_rate は負け block の方が高いため、「当たっても低配当に寄っている」ことで利益悪化が説明できる。**hold**（分析知見の反映、即時運用変更なし）。
 - EV threshold を下げると bet 数が増える。ev=1.18 が従来 1 位（-14.54%）、ev=1.20 が 2 位（-14.88%）。
 - top_n が大きいと ROI が悪化する傾向（top_n=3 が最良、top_n=6 で -18.78%）。
 - bet sizing は fixed が最良。Kelly 系は資金制約で破綻リスクあり。
