@@ -48,6 +48,7 @@
 | - | EXP-0043 | xgboost | sigmoid | extended_features | selection 局所探索（厳密評価） | baseline_c/b 周辺の EV・prob 微調整, n_w=18 | 最良 variant_j（4.3≤EV<4.9）: ROI +12.34%。variant_l（4.3≤EV<4.9, prob≥0.05）: +5.82%, max_dd 15,040。log: experiments/logs/EXP-0043_selection_local_search_verified.md。 |
 | - | EXP-0044 | xgboost | sigmoid | extended_features | EV帯超微調整（厳密評価） | 4.3≤EV<4.9 周辺の EV 帯・prob 微調整, n_w=18 | 最良 variant_g（4.40≤EV<4.85）: ROI +30.46%。variant_d（4.30≤EV<4.80, prob≥0.05）: +18.34%, max_dd 11,820。log: experiments/logs/EXP-0044_ev_band_fine_tuning_verified.md。 |
 | - | EXP-0045 | xgboost | sigmoid | extended_features | EV帯頑健性確認（厳密評価） | ref1/ref2/variant_g/variant_d, n_w=24 | variant_g ROI +9.52%だが longest_lose=10。variant_d +7.02%, max_dd 11,820, 安定。主軸を variant_d に格上げ。log: experiments/logs/EXP-0045_ev_band_robustness_verified.md。 |
+| - | EXP-0046 | xgboost | sigmoid | extended_features | variant_d 近傍安定化探索（厳密評価） | d_base/d_hi475/d_mid 等, n_w=24 | d_hi475: ROI +13.65%, max_dd 9,420, longest_lose=4。主軸を安定版 d_hi475 に更新。log: experiments/logs/EXP-0046_variant_d_stability_search_verified.md。 |
 | 4 | EXP-0006 | xgboost | sigmoid | extended_features | top_n_ev | top_n=3, ev=1.20 | **-14.88%** (n_w=12) | **正式 reference**（従来 1 位） |
 | 5 | EXP-0007 | xgboost | sigmoid | extended_features | top_n_ev | top_n=4, ev=1.05 | **-17.85%** (n_w=12) | top_n 局所探索で最良（hold） |
 | 6 | EXP-0006 | xgboost | sigmoid | extended_features | top_n_ev | top_n=6, ev=1.00 | **-18.78%** (n_w=12) | 正式 reference 周辺の局所最適（adopt） |

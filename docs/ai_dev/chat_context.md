@@ -41,11 +41,11 @@ leaderboard の 1 位。
 
 <!-- update_chat_context.py が自動更新 -->
 
-- **最新 EXP**: EXP-0045
-- **概要**: EV帯の頑健性確認（EXP-0044 採用条件の長期・複数分割での再現性）。n_windows=24 で reference_1/2, variant_g, variant_d を比較。longest_losing_streak / 前半・後半 regime を追加算出。
-- **結果**: variant_g は n=24 でも黒字（ROI +9.52%）だが longest_losing_streak=10 で不安定。variant_d は +7.02%、max_dd 11,820、longest_lose=4 で安定。実運用主軸を variant_d に格上げ。
-- **ログ**: experiments/logs/EXP-0045_ev_band_robustness_verified.md
-- **結果 JSON**: outputs/selection_verified/exp0045_ev_band_robustness_verified_results.json
+- **最新 EXP**: EXP-0046
+- **概要**: variant_d 近傍安定化探索。EXP-0045 主軸（4.30≤EV<4.80 + prob≥0.05）を基準に、EV上限・下限・prob の軽微変更版を n_windows=24 で比較。max_drawdown・longest_losing_streak・worst_window_profit を重視。
+- **結果**: d_hi475（4.30≤EV<4.75, prob≥0.05）が d_base より ROI・profit・max_dd・worst_w すべて改善、longest_lose=4 維持。主軸を安定版 d_hi475 に更新。
+- **ログ**: experiments/logs/EXP-0046_variant_d_stability_search_verified.md
+- **結果 JSON**: outputs/selection_verified/exp0046_variant_d_stability_search_verified_results.json
 
 # Leaderboard Summary
 
@@ -92,6 +92,7 @@ leaderboard の 1 位。
 | — | EXP-0043 | selection 局所探索（厳密評価） | baseline_c/b 周辺の EV・prob 微調整, n_w=18 | 656〜2,465 | 最良 variant_j ROI +12.34%。variant_l +5.82%、max_dd 15,040。 |
 | — | EXP-0044 | EV帯超微調整（厳密評価） | 4.3≤EV<4.9 周辺の EV 帯・prob 微調整, n_w=18 | 495〜1,112 | 最良 variant_g ROI +30.46%。variant_d（prob≥0.05）: +18.34%, max_dd 11,820。 |
 | — | EXP-0045 | EV帯頑健性確認（厳密評価） | ref1/ref2/variant_g/variant_d, n_w=24 | 772〜1,292 | variant_g +9.52%だが不安定。variant_d 主軸格上げ、max_dd 11,820。 |
+| — | EXP-0046 | variant_d 近傍安定化探索（厳密評価） | d_base/d_hi475/d_mid 等, n_w=24 | 612〜900 | d_hi475 主軸更新、ROI +13.65%, max_dd 9,420, longest_lose=4。 |
 
 詳細は experiments/leaderboard.md 参照。
 
@@ -128,6 +129,7 @@ leaderboard の 1 位。
 - **EXP-0043**: **selection の局所探索**（EXP-0042 の baseline_c / baseline_b 周辺で EV 帯・prob 閾値を微調整、同一厳密評価）。複数条件で黒字。最良 variant_j（4.3≤EV<4.9）: ROI +12.34%。バランス重視は variant_l（4.3≤EV<4.9, prob≥0.05）: +5.82%、max_dd 15,040。実運用候補を **skip_top20pct + 4.3≤EV<4.9**（必要なら prob≥0.05）に更新。
 - **EXP-0044**: **EV帯の超微調整**（4.3≤EV<4.9 周辺を 0.05〜0.10 刻みで探索、同一厳密評価）。reference_1/2 を上回る条件が複数。最良 variant_g（4.40≤EV<4.85）: ROI +30.46%、profit +21,660。variant_d（4.30≤EV<4.80, prob≥0.05）: +18.34%、max_dd 11,820。実運用候補を **skip_top20pct + 4.40≤EV<4.85**（リスク重視時は 4.30≤EV<4.80 + prob≥0.05）に更新。
 - **EXP-0045**: **EV帯の頑健性確認**（n_w=24 で長期・前半後半を評価）。variant_g は黒字維持だが longest_losing_streak=10 で不安定。variant_d は安定（longest_lose=4、max_dd 11,820）。**実運用主軸を variant_d に格上げ**。主軸: skip_top20pct + 4.30≤EV<4.80 + prob≥0.05。サブ: 4.40≤EV<4.85（リスク許容時）。
+- **EXP-0046**: **variant_d 近傍安定化探索**（n_w=24）。d_hi475（4.30≤EV<4.75, prob≥0.05）が d_base より ROI 13.65%、max_dd 9,420、longest_lose=4、worst_w -2,810 とすべて維持または改善。**主軸を安定版 d_hi475 に更新**。攻め版 d_mid（4.35≤EV<4.75, prob≥0.05）は ROI 18.21% だが longest_lose=6 のためサブ扱い。
 - EV threshold を下げると bet 数が増える。ev=1.18 が従来 1 位（-14.54%）、ev=1.20 が 2 位（-14.88%）。
 - top_n が大きいと ROI が悪化する傾向（top_n=3 が最良、top_n=6 で -18.78%）。
 - bet sizing は fixed が最良。Kelly 系は資金制約で破綻リスクあり。
@@ -150,7 +152,7 @@ leaderboard の 1 位。
 # Next Experiments
 
 - 現行ベスト戦略: top_n_ev_gap_filter, top_n=3, ev=1.20, ev_gap_threshold=0.07（ROI -12.71%）。EXP-0015 で採用。
-- **実運用候補（厳密評価）**: EXP-0045 で長期（n_w=24）頑健性を確認。**主軸**: **skip_top20pct + 4.30≤EV<4.80 + prob≥0.05**（variant_d）。**サブ（リスク許容）**: skip_top20pct + 4.40≤EV<4.85（variant_g）。sizing は stake=100 固定。
+- **実運用候補（厳密評価）**: EXP-0046 で variant_d 近傍安定化を実施。**主軸（安定版）**: **skip_top20pct + 4.30≤EV<4.75 + prob≥0.05**（d_hi475）。**サブ（攻め版）**: skip_top20pct + 4.35≤EV<4.75 + prob≥0.05（d_mid、連敗6のリスクあり）。sizing は stake=100 固定。
 - 次の実験候補: 別軸（venue 別 × weighted sizing、他 EV 帯の微調整等）は必要時に実施。
 - 会場別パラメータ拡張・別軸（モデル・特徴量・calibration）の検討を継続。
 - ensemble 不具合修正後の再評価。
