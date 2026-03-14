@@ -41,11 +41,11 @@ leaderboard の 1 位。
 
 <!-- update_chat_context.py が自動更新 -->
 
-- **最新 EXP**: EXP-0053
-- **概要**: Payout/Odds Regime 分析。的中時オッズ・払戻・profit_per_hit を block/月別で集計（n_w=36）。
-- **結果**: 負け block は hit_odds 低・payout_per_hit 約半額。利益悪化は高配当ヒット不足で説明できる。分析知見として hold。
-- **ログ**: experiments/logs/EXP-0053_payout_regime_analysis.md
-- **結果 JSON**: outputs/selection_verified/exp0053_payout_regime_analysis_results.json
+- **最新 EXP**: EXP-0055
+- **概要**: Low Payout Filter 頑健性。baseline/CASE2/CASE4/CASE5/CASE6 を n_w=24/30/36 で比較。
+- **結果**: CASE2 が全期間で profit 1 位（尖りあり）。CASE6 が安定 2 位。CASE2 攻め版・CASE6 実運用版の 2 本立て採用。
+- **ログ**: experiments/logs/EXP-0055_low_payout_filter_robustness.md
+- **結果 JSON**: outputs/selection_verified/exp0055_low_payout_filter_robustness_results.json
 
 # Leaderboard Summary
 
@@ -100,6 +100,8 @@ leaderboard の 1 位。
 | — | EXP-0051 | switch_dd4000 期間安定性・regime（厳密評価） | normal_only/switch_dd4000/conservative, n_w=36, 6block | 1031 | 後半で悪化傾向。注意条件付き標準採用。 |
 | — | EXP-0052 | Seasonality/Regime 分析（厳密評価） | 月別・block・累積・switch・regime特徴, n_w=36 | 1031 | 月別・block強弱・負けはhit_rate高め・bet少なめ。hold。 |
 | — | EXP-0053 | Payout/Odds Regime 分析（厳密評価） | 的中時オッズ・払戻・profit_per_hit, n_w=36 | 1031 | 負けblockはhit_odds低・payout約半額。利益悪化は高配当不足で説明。hold。 |
+| — | EXP-0054 | Low Payout Regime Filter（厳密評価） | EV/odds/top1_prob フィルタ, n_w=36 | 343〜1031 | 低配当回避で profit/DD 改善。CASE2 最良・CASE6 バランス。hold。 |
+| — | EXP-0055 | Low Payout Filter 頑健性（厳密評価） | n_w=24/30/36 比較 | 343〜1031 | CASE2 攻め版・CASE6 実運用版 2本立て採用。 |
 
 詳細は experiments/leaderboard.md 参照。
 
@@ -144,6 +146,8 @@ leaderboard の 1 位。
 - **EXP-0051**: **switch_dd4000 期間安定性・regime**（n_w=36、6ブロック）。全ブロックで switch が normal 以上。後半（7月後半〜10月）で成績悪化傾向。switch 発動 22/36 窓。**注意条件付き標準採用**（adopt with caveats）：後半期間の損失を前提とした資金配分・モニタリングを推奨。
 - **EXP-0052**: **Seasonality/Regime 分析**（月別・block・累積曲線・switch 発動・regime 特徴）。月別で 08・09 が悪化。負けブロックは bet 数少なめ・hit_rate 高め・EV 同程度。オッズ分布の regime 差の可能性。**hold**（分析知見の整理）。
 - **EXP-0053**: **Payout/Odds Regime 分析**（的中時オッズ・払戻・profit_per_hit の block/月別）。勝ち block は avg_hit_odds 18.44・payout_per_hit 1,810、負け block は 8.52・734。hit_rate は負け block の方が高いため、「当たっても低配当に寄っている」ことで利益悪化が説明できる。**hold**（分析知見の反映、即時運用変更なし）。
+- **EXP-0054**: **Low Payout Regime Filter**（d_hi475+switch_dd4000 に EV≥4.50/4.60、odds≥10/12/15、top1_prob≤0.35 を追加）。全 CASE で baseline より profit・max_dd 改善。CASE2 最良（profit 17,592）、CASE6 バランス型（profit 8,764、longest_lose 5）。**hold**。
+- **EXP-0055**: **Low Payout Filter 頑健性**（n_w=24/30/36 で baseline/CASE2/CASE4/CASE5/CASE6 を比較）。CASE2 は全期間で profit 1 位だが bet 343・longest_lose 9・block 2 依存大。CASE6 は 30/36 で 2 位・longest_lose 5 で安定。**結論**: CASE2 を攻め版、CASE6 を実運用版として **2 本立て採用**。
 - EV threshold を下げると bet 数が増える。ev=1.18 が従来 1 位（-14.54%）、ev=1.20 が 2 位（-14.88%）。
 - top_n が大きいと ROI が悪化する傾向（top_n=3 が最良、top_n=6 で -18.78%）。
 - bet sizing は fixed が最良。Kelly 系は資金制約で破綻リスクあり。
