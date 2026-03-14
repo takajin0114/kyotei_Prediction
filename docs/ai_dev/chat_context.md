@@ -41,11 +41,11 @@ leaderboard の 1 位。
 
 <!-- update_chat_context.py が自動更新 -->
 
-- **最新 EXP**: EXP-0047
-- **概要**: d_hi475 運用制御の追加効果検証。レースごとの点数制限（cap1/cap2/top1_prob/top1_ev）、dd_guard_light（前 window 赤字時は次 window 賭けなし）、sizing_80 を n_windows=24 で比較。
-- **結果**: base 維持（既にほぼ1レース1点のため cap 効果は微小）。sizing_80 で ROI 維持・max_dd・worst_w 改善。通常版 base / 保守版 sizing_80 の 2 本立て採用。
-- **ログ**: experiments/logs/EXP-0047_d_hi475_execution_controls_verified.md
-- **結果 JSON**: outputs/selection_verified/exp0047_d_hi475_execution_controls_verified_results.json
+- **最新 EXP**: EXP-0048
+- **概要**: 通常版/保守版のモード切替ルール検証。normal_only / conservative_only / switch_after_2_loss / switch_after_3_loss / switch_dd5000 / recover_after_1win を n_windows=24 で比較。
+- **結果**: 主軸は通常版固定維持。switch_dd5000（累積DD≥5000で stake=80）で total_profit・ROI・max_dd が改善。通常版主軸＋切替版をオプション化。
+- **ログ**: experiments/logs/EXP-0048_mode_switch_rules_verified.md
+- **結果 JSON**: outputs/selection_verified/exp0048_mode_switch_rules_verified_results.json
 
 # Leaderboard Summary
 
@@ -94,6 +94,7 @@ leaderboard の 1 位。
 | — | EXP-0045 | EV帯頑健性確認（厳密評価） | ref1/ref2/variant_g/variant_d, n_w=24 | 772〜1,292 | variant_g +9.52%だが不安定。variant_d 主軸格上げ、max_dd 11,820。 |
 | — | EXP-0046 | variant_d 近傍安定化探索（厳密評価） | d_base/d_hi475/d_mid 等, n_w=24 | 612〜900 | d_hi475 主軸更新、ROI +13.65%, max_dd 9,420, longest_lose=4。 |
 | — | EXP-0047 | d_hi475 運用制御（厳密評価） | base/cap1/dd_guard/sizing_80 等, n_w=24 | 291〜704 | base 維持、保守版 sizing_80 で max_dd・worst_w 改善。2本立て採用。 |
+| — | EXP-0048 | 通常/保守モード切替ルール（厳密評価） | normal_only/switch_dd5000 等, n_w=24 | 704 | 主軸通常版維持。switch_dd5000 をオプション化。 |
 
 詳細は experiments/leaderboard.md 参照。
 
@@ -132,6 +133,7 @@ leaderboard の 1 位。
 - **EXP-0045**: **EV帯の頑健性確認**（n_w=24 で長期・前半後半を評価）。variant_g は黒字維持だが longest_losing_streak=10 で不安定。variant_d は安定（longest_lose=4、max_dd 11,820）。**実運用主軸を variant_d に格上げ**。主軸: skip_top20pct + 4.30≤EV<4.80 + prob≥0.05。サブ: 4.40≤EV<4.85（リスク許容時）。
 - **EXP-0046**: **variant_d 近傍安定化探索**（n_w=24）。d_hi475（4.30≤EV<4.75, prob≥0.05）が d_base より ROI 13.65%、max_dd 9,420、longest_lose=4、worst_w -2,810 とすべて維持または改善。**主軸を安定版 d_hi475 に更新**。攻め版 d_mid（4.35≤EV<4.75, prob≥0.05）は ROI 18.21% だが longest_lose=6 のためサブ扱い。
 - **EXP-0047**: **d_hi475 運用制御**（n_w=24）。base/cap1/cap2/top1_prob/top1_ev/dd_guard_light/sizing_80 を比較。d_hi475 はもともと avg_bets_per_race≈1 のため cap 効果は微小。**sizing_80** で ROI 維持・max_dd 7,536・worst_w -2,248 と改善。**通常版 base / 保守版 sizing_80 の 2 本立て採用**。dd_guard_light は max_dd・longest_lose 抑制に有効だが bet 激減のためオプション。
+- **EXP-0048**: **通常/保守モード切替ルール**（n_w=24）。normal_only / conservative_only / switch_after_2_loss / switch_after_3_loss / switch_dd5000 / recover_after_1win を比較。**switch_dd5000**（累積DD≥5000で当該 window を stake=80）が profit 10,814・max_dd 7,766 で最良。**結論: 通常版主軸維持＋切替版をオプション化**。推奨オプション: switch_dd5000。補助: switch_after_2_loss。
 - EV threshold を下げると bet 数が増える。ev=1.18 が従来 1 位（-14.54%）、ev=1.20 が 2 位（-14.88%）。
 - top_n が大きいと ROI が悪化する傾向（top_n=3 が最良、top_n=6 で -18.78%）。
 - bet sizing は fixed が最良。Kelly 系は資金制約で破綻リスクあり。
@@ -154,7 +156,7 @@ leaderboard の 1 位。
 # Next Experiments
 
 - 現行ベスト戦略: top_n_ev_gap_filter, top_n=3, ev=1.20, ev_gap_threshold=0.07（ROI -12.71%）。EXP-0015 で採用。
-- **実運用候補（厳密評価）**: EXP-0047 で d_hi475 運用制御を検証。**通常版**: **skip_top20pct + 4.30≤EV<4.75 + prob≥0.05**、stake=100（base）。**保守版**: 同条件で **stake=80**（sizing_80）。DD・worst_w を抑えたい場合は保守版を使用。
+- **実運用候補（厳密評価）**: EXP-0048 でモード切替を検証。**主軸**: 通常版固定（d_hi475 + stake=100）。**オプション**: **switch_dd5000**（累積DD≥5000で当該 window を stake=80）。利益・DD 両面で改善可能。補助: switch_after_2_loss（直近2 window 連続赤字で次 window を stake=80）。
 - 次の実験候補: 別軸（venue 別 × weighted sizing、他 EV 帯の微調整等）は必要時に実施。
 - 会場別パラメータ拡張・別軸（モデル・特徴量・calibration）の検討を継続。
 - ensemble 不具合修正後の再評価。
