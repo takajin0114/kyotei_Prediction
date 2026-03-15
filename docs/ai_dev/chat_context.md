@@ -41,11 +41,11 @@ leaderboard の 1 位。
 
 <!-- update_chat_context.py が自動更新 -->
 
-- **最新 EXP**: EXP-0074
-- **概要**: profit zone 分解分析。利益源EV帯（4.50≤EV<4.75, prob≥0.05）を odds_band / prob_band / top1_prob_band / venue / race_number_band で分解し、勝つ条件・負ける条件を特定。
-- **結果**: 勝ち条件＝高オッズ(30+)、低予測確率(0.12未満)、top1_prob 0-0.30、7-9R、黒字会場。負け条件＝低オッズ、prob 0.12+、top1_prob 0.30+、4-6R。分析のため leaderboard には追加しない。
-- **ログ**: experiments/logs/EXP-0074_profit_zone_analysis.md
-- **結果**: outputs/profit_zone/exp0074_profit_zone.json, exp0074_profit_zone.csv（gitignoreのため未コミット）
+- **最新 EXP**: EXP-0075
+- **概要**: probability cap experiment。EXP-0074 で prob≥0.12 が損失源と判明したため、主軸（4.50≤EV<4.75, prob≥0.05）に prob 上限フィルタを追加し、CASE0（baseline）〜CASE4（prob<0.08）を比較。
+- **結果**: 全 cap CASE が baseline を大幅上回る。最良 CASE3（0.05≤prob<0.09）: ROI 187.63%、profit 15,010、max_dd 3,980、bet 91。prob 上限の採用を推奨。
+- **ログ**: experiments/logs/EXP-0075_prob_cap_experiment.md
+- **結果**: outputs/prob_cap/exp0075_prob_cap.json（gitignoreのため未コミット）
 
 # Leaderboard Summary
 
@@ -105,6 +105,7 @@ leaderboard の 1 位。
 | — | EXP-0056 | CASE6 複合条件（厳密評価） | CASE6+EV≥4.30/4.40/4.50, n_w=24/30/36 | 297〜1031 | CASE6 単体を標準採用。複合EVは置き換え見送り。 |
 | — | EXP-0061 | Stop/Resume Rule（厳密評価） | CASE6/CASE2/MIX × base/stop3/stop4, n_w=24/30/36 | 119〜703 | CASE2のみstop採用。CASE2_stop4でprofit増・max_dd改善・longest_lose 6。 |
 | — | EXP-0070 | d_hi475 local search（厳密評価） | EV帯・prob_min 局所探索（CASE0〜7）, switch_dd4000, n_w=36 | 441〜1031 | CASE2（4.50≤EV<4.75）最良。ROI 11.12%, profit 5,772, max_dd 8,838。adopt。 |
+| — | EXP-0075 | probability cap（厳密評価） | 4.50≤EV<4.75, 0.05≤prob<0.12/0.10/0.09/0.08, switch_dd4000, n_w=36 | 75〜590 | CASE3（prob<0.09）最良。ROI 187.63%, profit 15,010, max_dd 3,980。adopt。 |
 | — | EXP-0062 | Race EV Filter（厳密評価） | race_ev≥1.00/1.02/1.05/1.10 + d_hi475+switch_dd4000, n_w=12 | 326 | n_w=12で全CASE同一。race_ev分布・n_w拡大が次の検証候補。 |
 | — | EXP-0063 | Selected Race EV Filter（厳密評価） | race_selected_ev≥1.05/1.10/1.15/1.20 + d_hi475+switch_dd4000, n_w=12 | 298 | 選択betのみでEV。ROI 11.31%、profit 2942、max_dd 6178。adopt。 |
 | — | EXP-0064 | Selected Race EV threshold search（厳密評価） | race_selected_ev≥1.02〜1.08, n_w=36 | 944〜1031 | n_w=36でbaseline最良。フィルタはhorizon依存で不採用。 |
@@ -170,6 +171,7 @@ leaderboard の 1 位。
 - **EXP-0068**: **Probability normalization**（prob_norm = prob/Σ(prob)、EV = prob_norm×odds、d_hi475+switch_dd4000、n_w=36）。baseline と CASE1 で同一（ROI -3.5%、bet 943）。レース内確率和が 1 に近いため差なし。**hold**。
 - **EXP-0069**: **EV percentile strategy**（レース内 EV ランキングで selection。d_hi475 vs top 0.5/1/2/5% EV、n_w=36）。baseline が最良（-3.5%、bet 943）。percentile は bet 増・ROI -14.31%。**reject**、固定閾値 d_hi475 維持。
 - **EXP-0070**: **d_hi475 local search**（EV 帯・prob 下限の局所探索）。CASE0（4.30≤EV<4.75, prob≥0.05）を baseline に CASE1〜7 を比較、n_w=36。CASE2（4.50≤EV<4.75, prob≥0.05）が ROI 11.12%、profit 5,772、max_dd 8,838 で最良。prob_min=0.06 は全 CASE 悪化。**adopt**（CASE2 を主軸候補）。
+- **EXP-0075**: **probability cap experiment**（EXP-0074 で prob≥0.12 が損失源と判明したため、4.50≤EV<4.75, prob≥0.05 に prob 上限を追加）。CASE0（baseline）〜CASE4（prob<0.08）を比較、n_w=36。全 cap CASE が baseline を大幅上回る。最良 CASE3（0.05≤prob<0.09）: ROI 187.63%、profit 15,010、max_dd 3,980。**adopt**（実運用候補を CASE3 に更新）。
 - EV threshold を下げると bet 数が増える。ev=1.18 が従来 1 位（-14.54%）、ev=1.20 が 2 位（-14.88%）。
 - top_n が大きいと ROI が悪化する傾向（top_n=3 が最良、top_n=6 で -18.78%）。
 - bet sizing は fixed が最良。Kelly 系は資金制約で破綻リスクあり。
