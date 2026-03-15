@@ -41,11 +41,11 @@ leaderboard の 1 位。
 
 <!-- update_chat_context.py が自動更新 -->
 
-- **最新 EXP**: EXP-0073
-- **概要**: EV distribution 分析。baseline 4.30≤EV<6.00, prob≥0.05 で EV 帯別に ROI・profit・bet_count・hit_rate・avg_odds・profit_per_1000_bets を集計し、利益源EV帯を特定。
-- **結果**: 黒字は **4.50-4.75 のみ**（ROI 11.12%, profit 5,772, bet 590）。4.30-4.50 / 4.75-5.00 / 5.00-6.00 は赤字。主軸戦略（4.50≤EV<4.75）の妥当性を支持。分析のため leaderboard には追加しない。
-- **ログ**: experiments/logs/EXP-0073_ev_distribution_analysis.md
-- **結果**: outputs/ev_distribution/exp0073_ev_distribution.json, exp0073_ev_distribution.csv（gitignoreのため未コミット）
+- **最新 EXP**: EXP-0074
+- **概要**: profit zone 分解分析。利益源EV帯（4.50≤EV<4.75, prob≥0.05）を odds_band / prob_band / top1_prob_band / venue / race_number_band で分解し、勝つ条件・負ける条件を特定。
+- **結果**: 勝ち条件＝高オッズ(30+)、低予測確率(0.12未満)、top1_prob 0-0.30、7-9R、黒字会場。負け条件＝低オッズ、prob 0.12+、top1_prob 0.30+、4-6R。分析のため leaderboard には追加しない。
+- **ログ**: experiments/logs/EXP-0074_profit_zone_analysis.md
+- **結果**: outputs/profit_zone/exp0074_profit_zone.json, exp0074_profit_zone.csv（gitignoreのため未コミット）
 
 # Leaderboard Summary
 
