@@ -7,7 +7,7 @@ EXP-0074 の profit zone 分析で **prob ≥ 0.12 が大きな損失源**であ
 ## 実装内容
 
 - **ツール**: `kyotei_predictor/tools/run_exp0075_prob_cap_experiment.py`
-- **出力**: `outputs/prob_cap/exp0075_prob_cap.json`（outputs は gitignore のため未コミット）
+- **出力**: `outputs/prob_cap/exp0075_prob_cap.json`（outputs は gitignore のため**未コミット**）
 - 既存 calib_sigmoid 予測（ev_cap_experiments/rolling_roi_predictions）を利用し、selection に prob 上限のみ追加して評価。
 
 ## 共通条件
