@@ -61,6 +61,8 @@ N_WINDOWS = 36
 EV_LO = 4.50
 EV_HI = 4.75
 PROB_MIN = 0.05
+# ref_profit / switch_dd4000 は EXP-0070 と一致させるため CASE0 (d_hi475) で算出
+REF_EV_LO, REF_EV_HI, REF_PROB_MIN = 4.30, 4.75, 0.05
 
 # (variant_name, filter_fn). filter_fn(race_difficulty) -> True ならレースを採用
 def _no_filter(_: Dict[str, float]) -> bool:
@@ -248,6 +250,8 @@ def main() -> int:
     parser.add_argument("--predictions-dir", type=Path, default=None)
     parser.add_argument("--n-windows", type=int, default=N_WINDOWS)
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--exp-id", type=str, default="EXP-0072", help="e.g. EXP-0072b")
+    parser.add_argument("--output-name", type=str, default="exp0072_race_difficulty.json", help="e.g. exp0072b_race_difficulty.json")
     args = parser.parse_args()
 
     n_w = args.n_windows
@@ -334,7 +338,7 @@ def main() -> int:
             if races_data:
                 day_races_raw[day] = races_data
 
-    # Reference schedule: CASE0（difficulty filter なし）で ref_profit を計算
+    # Reference schedule: EXP-0070 と一致させるため CASE0 (4.30, 4.75, 0.05) で ref_profit を計算
     day_to_wi_ref: Dict[str, int] = {}
     for wi, (_ts, _te, tst, tend) in enumerate(window_list):
         if wi >= n_w:
@@ -351,7 +355,7 @@ def main() -> int:
         k_skip = int(n * SKIP_TOP_PCT)
         idx_start = min(k_skip, n)
         for max_ev, bets, _ in races_sorted[idx_start:]:
-            for _ev, _prob, odds, hit in _filter_bets_by_selection(bets, EV_LO, EV_HI, PROB_MIN):
+            for _ev, _prob, odds, hit in _filter_bets_by_selection(bets, REF_EV_LO, REF_EV_HI, REF_PROB_MIN):
                 ref_profit[wi] += (FIXED_STAKE * odds if hit else 0.0) - FIXED_STAKE
     schedule = _stake_schedule_dd(n_w, ref_profit, 4000)
 
@@ -372,7 +376,7 @@ def main() -> int:
         })
 
     payload = {
-        "experiment_id": "EXP-0072",
+        "experiment_id": getattr(args, "exp_id", "EXP-0072"),
         "purpose": "race difficulty filter on CASE2 (4.50<=EV<4.75, prob>=0.05), n_w=36",
         "db_path_used": db_path_str,
         "n_windows": n_w,
@@ -388,7 +392,7 @@ def main() -> int:
         "results_by_case": results_by_case,
     }
 
-    out_path = output_dir / "exp0072_race_difficulty.json"
+    out_path = output_dir / getattr(args, "output_name", "exp0072_race_difficulty.json")
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(payload, f, ensure_ascii=False, indent=2)
     print("Saved {}".format(out_path))

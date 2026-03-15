@@ -41,11 +41,11 @@ leaderboard の 1 位。
 
 <!-- update_chat_context.py が自動更新 -->
 
-- **最新 EXP**: EXP-0072
-- **概要**: race difficulty filter。CASE2（4.50≤EV<4.75, prob≥0.05）をベースに、レース難易度（top1_prob / entropy / prob_gap）でフィルタした 6 条件を n_w=36 で比較。
-- **結果**: CASE0（filter なし）が最良（ROI 8.29%, total_profit 4,524, max_drawdown 9,266）。全 difficulty フィルタで baseline 未達。reject。
-- **ログ**: experiments/logs/EXP-0072_race_difficulty_filter.md
-- **結果 JSON**: outputs/race_difficulty/exp0072_race_difficulty.json（gitignoreのため未コミット）
+- **最新 EXP**: EXP-0072b
+- **概要**: baseline 再現性検証のうえで race difficulty filter を再実行。EXP-0072 の ref_profit を EXP-0070 と一致（CASE0 4.30~4.75 で算出）に修正し、同条件で difficulty フィルタ 6 条件を n_w=36 で比較。
+- **結果**: CASE0（baseline）= EXP-0070 CASE2 と一致（ROI 11.12%, profit 5,772, max_dd 8,838）。全 difficulty フィルタで baseline 未達。reject。
+- **ログ**: experiments/logs/EXP-0072b_race_difficulty_recheck.md
+- **結果 JSON**: outputs/race_difficulty/exp0072b_race_difficulty.json（gitignoreのため未コミット）
 
 # Leaderboard Summary
 
