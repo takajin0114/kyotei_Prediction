@@ -41,11 +41,11 @@ leaderboard の 1 位。
 
 <!-- update_chat_context.py が自動更新 -->
 
-- **最新 EXP**: EXP-0077
-- **概要**: EV band × probability band 最適領域探索。6 EV帯×6 prob帯の36条件を n_w=36 で評価し、利益源・損失源を定量化。
-- **結果**: 最良 ev450_490_prob005_009（4.50≤EV<4.90, 0.05≤prob<0.09）: profit 17,338, ROI 159.36%, max_dd 5,400, bet 124。ev430_460 は全条件で -100%。adopt。
-- **ログ**: experiments/logs/EXP-0077_ev_prob_matrix.md
-- **結果**: outputs/ev_prob_matrix/exp0077_ev_prob_matrix.json（gitignoreのため未コミット）
+- **最新 EXP**: EXP-0078
+- **概要**: EV band robustness。新主軸候補 4.50≤EV<4.90, 0.05≤prob<0.09（new_main）を n_w=24/30/36/48 で baseline と比較。
+- **結果**: 全 horizon で new_main が baseline を上回る。n_w=48 で new_main profit 19,858, ROI 155.14%, max_dd 5,400。頑健性確認 adopt。
+- **ログ**: experiments/logs/EXP-0078_ev_band_robustness.md
+- **結果**: outputs/ev_band_robustness/exp0078_ev_band_robustness.json（gitignoreのため未コミット）
 
 # Leaderboard Summary
 
@@ -108,6 +108,7 @@ leaderboard の 1 位。
 | — | EXP-0075 | probability cap（厳密評価） | 4.50≤EV<4.75, 0.05≤prob<0.12/0.10/0.09/0.08, switch_dd4000, n_w=36 | 75〜590 | CASE3（prob<0.09）最良。ROI 187.63%, profit 15,010, max_dd 3,980。adopt。 |
 | — | EXP-0076 | probability cap robustness（厳密評価） | CASE0〜CASE3, n_w=24/30/36, switch_dd4000 | 60〜590 | 全 horizon で cap が baseline 上回る。CASE3 は 24: 319.89%, 30: 223.17%, 36: 187.63%。adopt。 |
 | — | EXP-0077 | EV×prob matrix（厳密評価） | EV帯6×prob帯6, baseline 4.30-4.75/0.05-0.09, n_w=36 | 43〜188 | 最良 ev450_490_prob005_009: profit 17,338, ROI 159.36%。ev430_460 は全 -100%。adopt。 |
+| — | EXP-0078 | EV band robustness（厳密評価） | baseline vs new_main 4.50-4.90, n_w=24/30/36/48 | 81〜199 | 全 horizon で new_main 優位。n_w=48 で profit 19,858。adopt。 |
 | — | EXP-0062 | Race EV Filter（厳密評価） | race_ev≥1.00/1.02/1.05/1.10 + d_hi475+switch_dd4000, n_w=12 | 326 | n_w=12で全CASE同一。race_ev分布・n_w拡大が次の検証候補。 |
 | — | EXP-0063 | Selected Race EV Filter（厳密評価） | race_selected_ev≥1.05/1.10/1.15/1.20 + d_hi475+switch_dd4000, n_w=12 | 298 | 選択betのみでEV。ROI 11.31%、profit 2942、max_dd 6178。adopt。 |
 | — | EXP-0064 | Selected Race EV threshold search（厳密評価） | race_selected_ev≥1.02〜1.08, n_w=36 | 944〜1031 | n_w=36でbaseline最良。フィルタはhorizon依存で不採用。 |
@@ -176,6 +177,7 @@ leaderboard の 1 位。
 - **EXP-0075**: **probability cap experiment**（EXP-0074 で prob≥0.12 が損失源と判明したため、4.50≤EV<4.75, prob≥0.05 に prob 上限を追加）。CASE0（baseline）〜CASE4（prob<0.08）を比較、n_w=36。全 cap CASE が baseline を大幅上回る。最良 CASE3（0.05≤prob<0.09）: ROI 187.63%、profit 15,010、max_dd 3,980。**adopt**（実運用候補を CASE3 に更新）。
 - **EXP-0076**: **probability cap robustness check**（n_windows=24/30/36 で CASE0〜CASE3 を比較）。全 horizon で prob cap CASE が baseline を上回る。CASE3 は n_w=24: 319.89%、30: 223.17%、36: 187.63%。頑健性確認 **adopt**。
 - **EXP-0077**: **EV×prob matrix**（6 EV帯×6 prob帯の36条件、n_w=36）。最良は 4.50≤EV<4.90, 0.05≤prob<0.09: profit 17,338, ROI 159.36%, bet 124。4.30≤EV<4.60 は全条件で -100%。**adopt**（実運用候補を ev450_490_prob005_009 に更新する選択肢）。
+- **EXP-0078**: **EV band robustness**（baseline 4.30-4.75 vs new_main 4.50-4.90、n_w=24/30/36/48）。全 horizon で new_main が baseline を上回る。n_w=48 で new_main profit 19,858, ROI 155.14%。**adopt**（新主軸を 4.50≤EV<4.90, 0.05≤prob<0.09 に更新）。
 - EV threshold を下げると bet 数が増える。ev=1.18 が従来 1 位（-14.54%）、ev=1.20 が 2 位（-14.88%）。
 - top_n が大きいと ROI が悪化する傾向（top_n=3 が最良、top_n=6 で -18.78%）。
 - bet sizing は fixed が最良。Kelly 系は資金制約で破綻リスクあり。
