@@ -41,11 +41,11 @@ leaderboard の 1 位。
 
 <!-- update_chat_context.py が自動更新 -->
 
-- **最新 EXP**: EXP-0061
-- **概要**: Stop/Resume Rule。CASE6 / CASE2 / MIX に window 内 N 連敗で残り bet 停止（stop3/stop4）を適用し、max_drawdown・longest_losing_streak・total_profit のバランスを評価。
-- **結果**: CASE2 にのみ stop が有効。CASE2_stop4 で total_profit 増・max_dd 改善・longest_lose 6。CASE6/MIX は stop で profit 激減・longest_lose 悪化のため不採用。
-- **ログ**: experiments/logs/EXP-0061_stop_resume_rules.md
-- **結果 JSON**: outputs/selection_verified/exp0061_stop_resume_rules_results.json
+- **最新 EXP**: EXP-0072
+- **概要**: race difficulty filter。CASE2（4.50≤EV<4.75, prob≥0.05）をベースに、レース難易度（top1_prob / entropy / prob_gap）でフィルタした 6 条件を n_w=36 で比較。
+- **結果**: CASE0（filter なし）が最良（ROI 8.29%, total_profit 4,524, max_drawdown 9,266）。全 difficulty フィルタで baseline 未達。reject。
+- **ログ**: experiments/logs/EXP-0072_race_difficulty_filter.md
+- **結果 JSON**: outputs/race_difficulty/exp0072_race_difficulty.json（gitignoreのため未コミット）
 
 # Leaderboard Summary
 
@@ -104,6 +104,15 @@ leaderboard の 1 位。
 | — | EXP-0055 | Low Payout Filter 頑健性（厳密評価） | n_w=24/30/36 比較 | 343〜1031 | CASE2 攻め版・CASE6 実運用版 2本立て採用。 |
 | — | EXP-0056 | CASE6 複合条件（厳密評価） | CASE6+EV≥4.30/4.40/4.50, n_w=24/30/36 | 297〜1031 | CASE6 単体を標準採用。複合EVは置き換え見送り。 |
 | — | EXP-0061 | Stop/Resume Rule（厳密評価） | CASE6/CASE2/MIX × base/stop3/stop4, n_w=24/30/36 | 119〜703 | CASE2のみstop採用。CASE2_stop4でprofit増・max_dd改善・longest_lose 6。 |
+| — | EXP-0070 | d_hi475 local search（厳密評価） | EV帯・prob_min 局所探索（CASE0〜7）, switch_dd4000, n_w=36 | 441〜1031 | CASE2（4.50≤EV<4.75）最良。ROI 11.12%, profit 5,772, max_dd 8,838。adopt。 |
+| — | EXP-0062 | Race EV Filter（厳密評価） | race_ev≥1.00/1.02/1.05/1.10 + d_hi475+switch_dd4000, n_w=12 | 326 | n_w=12で全CASE同一。race_ev分布・n_w拡大が次の検証候補。 |
+| — | EXP-0063 | Selected Race EV Filter（厳密評価） | race_selected_ev≥1.05/1.10/1.15/1.20 + d_hi475+switch_dd4000, n_w=12 | 298 | 選択betのみでEV。ROI 11.31%、profit 2942、max_dd 6178。adopt。 |
+| — | EXP-0064 | Selected Race EV threshold search（厳密評価） | race_selected_ev≥1.02〜1.08, n_w=36 | 944〜1031 | n_w=36でbaseline最良。フィルタはhorizon依存で不採用。 |
+| — | EXP-0065 | Calibration comparison（厳密評価） | none/sigmoid/isotonic, d_hi475+switch_dd4000, n_w=36 | sigmoid 0.53%、none -11.71%、isotonic -22.22% | sigmoid のみ黒字。sigmoid 維持 adopt。 |
+| — | EXP-0066 | Prediction diagnostics（分析） | calibration, Brier, log loss, EV bucket ROI, n_w=36 | Brier 0.955, log loss 5.01, EV1.5-2.0 が -7.77% | ボトルネック候補: EV 1.2-1.5。 |
+| — | EXP-0067 | EV shrinkage（厳密評価） | EV_adj=EV^alpha, d_hi475+switch_dd4000, n_w=36 | 全CASE同一 -3.5%、bet 943 | EV帯が狭く差なし。hold。 |
+| — | EXP-0068 | Probability normalization（厳密評価） | prob_norm=prob/Σ(prob), d_hi475+switch_dd4000, n_w=36 | baseline と CASE1 同一 -3.5% | 確率和≈1のため差なし。hold。 |
+| — | EXP-0069 | EV percentile strategy（厳密評価） | d_hi475 vs top 0.5/1/2/5% EV, n_w=36 | baseline -3.5%、percentile -14.31% | 固定閾値維持。reject。 |
 
 詳細は experiments/leaderboard.md 参照。
 
@@ -152,6 +161,15 @@ leaderboard の 1 位。
 - **EXP-0055**: **Low Payout Filter 頑健性**（n_w=24/30/36 で baseline/CASE2/CASE4/CASE5/CASE6 を比較）。CASE2 は全期間で profit 1 位だが bet 343・longest_lose 9・block 2 依存大。CASE6 は 30/36 で 2 位・longest_lose 5 で安定。**結論**: CASE2 を攻め版、CASE6 を実運用版として **2 本立て採用**。
 - **EXP-0056**: **CASE6 ベース複合条件**（CASE6+EV≥4.30/4.40/4.50 を n_w=24/30/36 で比較）。CASE6_ev_ge_450 は profit 最良だが bet 297・longest_lose 10。CASE6 単体が bet 533・longest_lose 5 でバランス最良。**結論**: **CASE6 単体を標準採用**。CASE6+軽EVフィルタへの置き換えは行わない。
 - **EXP-0061**: **Stop/Resume Rule**（window 内 N 連敗で残り bet 停止、次 window で再開）。CASE6/CASE2/MIX × base/stop3/stop4 を比較。**CASE2 にのみ** stop が有効：CASE2_stop4 で total_profit 増・max_dd 改善・longest_lose 6。CASE6/MIX は stop で profit 激減・longest_lose 悪化。**結論**: **3. CASE2 のみ stop 採用**（CASE2_stop4 推奨）。
+- **EXP-0062**: **Race EV Filter**（race_ev = Σ(prob×odds) でレースフィルタ）。CASE0（なし）〜CASE4（race_ev≥1.10）を d_hi475+switch_dd4000 で比較、n_w=12。全 CASE 同一（ROI 3.29%、profit 934）。対象期間で race_ev&lt;1.10 のレースなしと解釈。**hold**。n_w 拡大・race_ev 分布確認が次の検証候補。
+- **EXP-0063**: **Selected Race EV Filter**（実際に賭ける bet のみで race_selected_ev = Σ(selected_prob×odds)）。CASE1（≥1.05）以降で ROI 11.31%、profit 2,942、max_dd 6,178、profit/1k 9,872。**adopt**。実運用で race_selected_ev≥1.05 をレースフィルタとして推奨（n_w=12 時）。
+- **EXP-0064**: **Selected Race EV threshold search**（閾値 1.02〜1.08、n_w=36）。baseline が最良（ROI 0.53%、profit 484）。フィルタ条件はすべて -1.05%、-894。**n_w=36 ではフィルタ不採用**。horizon に応じた使い分け（n_w=12 では EXP-0063 フィルタ、n_w=36 ではフィルタなし）を推奨。
+- **EXP-0065**: **Calibration comparison**（none / sigmoid / isotonic、d_hi475+switch_dd4000、n_w=36）。CASE1_sigmoid のみ黒字（ROI 0.53%、profit 484）。CASE0_none -11.71%、CASE2_isotonic -22.22%。**sigmoid 維持 adopt**。
+- **EXP-0066**: **Prediction diagnostics**（calibration curve / Brier / log loss / EV bucket ROI、n_w=36）。Brier 0.955、log loss 5.01。EV 1.5-2.0 が -7.77%、1.2-1.5 が -29.23%。**EV 1.2-1.5 がボトルネック候補**。
+- **EXP-0067**: **EV shrinkage**（EV_adj = EV^alpha、d_hi475+switch_dd4000、n_w=36）。CASE0〜4 で全同一（ROI -3.5%、bet 943）。d_hi475 の EV 帯が狭く、shrinkage で選択 bet が変わらなかった。**hold**。
+- **EXP-0068**: **Probability normalization**（prob_norm = prob/Σ(prob)、EV = prob_norm×odds、d_hi475+switch_dd4000、n_w=36）。baseline と CASE1 で同一（ROI -3.5%、bet 943）。レース内確率和が 1 に近いため差なし。**hold**。
+- **EXP-0069**: **EV percentile strategy**（レース内 EV ランキングで selection。d_hi475 vs top 0.5/1/2/5% EV、n_w=36）。baseline が最良（-3.5%、bet 943）。percentile は bet 増・ROI -14.31%。**reject**、固定閾値 d_hi475 維持。
+- **EXP-0070**: **d_hi475 local search**（EV 帯・prob 下限の局所探索）。CASE0（4.30≤EV<4.75, prob≥0.05）を baseline に CASE1〜7 を比較、n_w=36。CASE2（4.50≤EV<4.75, prob≥0.05）が ROI 11.12%、profit 5,772、max_dd 8,838 で最良。prob_min=0.06 は全 CASE 悪化。**adopt**（CASE2 を主軸候補）。
 - EV threshold を下げると bet 数が増える。ev=1.18 が従来 1 位（-14.54%）、ev=1.20 が 2 位（-14.88%）。
 - top_n が大きいと ROI が悪化する傾向（top_n=3 が最良、top_n=6 で -18.78%）。
 - bet sizing は fixed が最良。Kelly 系は資金制約で破綻リスクあり。
