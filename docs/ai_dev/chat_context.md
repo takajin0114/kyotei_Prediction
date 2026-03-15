@@ -41,11 +41,20 @@ leaderboard の 1 位。
 
 <!-- update_chat_context.py が自動更新 -->
 
-- **最新 EXP**: EXP-0078
-- **概要**: EV band robustness。新主軸候補 4.50≤EV<4.90, 0.05≤prob<0.09（new_main）を n_w=24/30/36/48 で baseline と比較。
-- **結果**: 全 horizon で new_main が baseline を上回る。n_w=48 で new_main profit 19,858, ROI 155.14%, max_dd 5,400。頑健性確認 adopt。
-- **ログ**: experiments/logs/EXP-0078_ev_band_robustness.md
-- **結果**: outputs/ev_band_robustness/exp0078_ev_band_robustness.json（gitignoreのため未コミット）
+- **最新 EXP**: EXP-0079
+- **概要**: schedule / ref_profit 再最適化（new_main 向け）。ベットは new_main 固定で、ref_profit を旧基準 vs 新基準＋dd3000/4000/5000 で比較、n_w=24/30/36/48。
+- **結果**: 全 horizon で CASE0（旧 ref）が total_profit・ROI 最大。new_ref は max_dd 改善するが profit 減。ref は旧基準維持 hold。
+- **ログ**: experiments/logs/EXP-0079_schedule_refprofit_reopt.md
+- **結果**: outputs/schedule_refprofit_reopt/exp0079_schedule_refprofit_reopt.json（gitignoreのため未コミット）
+
+# Current Findings
+
+- 主軸ベット: new_main（4.50≤EV<4.90, 0.05≤prob<0.09）で確定（EXP-0077/0078 で採用）。
+- risk control: ref_profit は旧基準（4.30≤EV<4.75, prob≥0.05）＋ switch_dd4000 を維持（EXP-0079 で new_ref は profit 減のため不採用）。
+
+# Next Experiments
+
+- 主軸・ref は現状維持。別軸（レースフィルタ・会場・時間帯など）の検証や、実運用モニタリングが候補。
 
 # Leaderboard Summary
 
@@ -109,6 +118,7 @@ leaderboard の 1 位。
 | — | EXP-0076 | probability cap robustness（厳密評価） | CASE0〜CASE3, n_w=24/30/36, switch_dd4000 | 60〜590 | 全 horizon で cap が baseline 上回る。CASE3 は 24: 319.89%, 30: 223.17%, 36: 187.63%。adopt。 |
 | — | EXP-0077 | EV×prob matrix（厳密評価） | EV帯6×prob帯6, baseline 4.30-4.75/0.05-0.09, n_w=36 | 43〜188 | 最良 ev450_490_prob005_009: profit 17,338, ROI 159.36%。ev430_460 は全 -100%。adopt。 |
 | — | EXP-0078 | EV band robustness（厳密評価） | baseline vs new_main 4.50-4.90, n_w=24/30/36/48 | 81〜199 | 全 horizon で new_main 優位。n_w=48 で profit 19,858。adopt。 |
+| — | EXP-0079 | schedule/ref_profit 再最適化（厳密評価） | ref 旧基準 vs 新基準＋dd3000/4000/5000, n_w=24/30/36/48 | 81〜148 | 旧 ref が profit 最大。new_ref は DD 改善のみで profit 減。hold。 |
 | — | EXP-0062 | Race EV Filter（厳密評価） | race_ev≥1.00/1.02/1.05/1.10 + d_hi475+switch_dd4000, n_w=12 | 326 | n_w=12で全CASE同一。race_ev分布・n_w拡大が次の検証候補。 |
 | — | EXP-0063 | Selected Race EV Filter（厳密評価） | race_selected_ev≥1.05/1.10/1.15/1.20 + d_hi475+switch_dd4000, n_w=12 | 298 | 選択betのみでEV。ROI 11.31%、profit 2942、max_dd 6178。adopt。 |
 | — | EXP-0064 | Selected Race EV threshold search（厳密評価） | race_selected_ev≥1.02〜1.08, n_w=36 | 944〜1031 | n_w=36でbaseline最良。フィルタはhorizon依存で不採用。 |
