@@ -41,11 +41,11 @@ leaderboard の 1 位。
 
 <!-- update_chat_context.py が自動更新 -->
 
-- **最新 EXP**: EXP-0072b
-- **概要**: baseline 再現性検証のうえで race difficulty filter を再実行。EXP-0072 の ref_profit を EXP-0070 と一致（CASE0 4.30~4.75 で算出）に修正し、同条件で difficulty フィルタ 6 条件を n_w=36 で比較。
-- **結果**: CASE0（baseline）= EXP-0070 CASE2 と一致（ROI 11.12%, profit 5,772, max_dd 8,838）。全 difficulty フィルタで baseline 未達。reject。
-- **ログ**: experiments/logs/EXP-0072b_race_difficulty_recheck.md
-- **結果 JSON**: outputs/race_difficulty/exp0072b_race_difficulty.json（gitignoreのため未コミット）
+- **最新 EXP**: EXP-0073
+- **概要**: EV distribution 分析。baseline 4.30≤EV<6.00, prob≥0.05 で EV 帯別に ROI・profit・bet_count・hit_rate・avg_odds・profit_per_1000_bets を集計し、利益源EV帯を特定。
+- **結果**: 黒字は **4.50-4.75 のみ**（ROI 11.12%, profit 5,772, bet 590）。4.30-4.50 / 4.75-5.00 / 5.00-6.00 は赤字。主軸戦略（4.50≤EV<4.75）の妥当性を支持。分析のため leaderboard には追加しない。
+- **ログ**: experiments/logs/EXP-0073_ev_distribution_analysis.md
+- **結果**: outputs/ev_distribution/exp0073_ev_distribution.json, exp0073_ev_distribution.csv（gitignoreのため未コミット）
 
 # Leaderboard Summary
 
